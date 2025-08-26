@@ -1,0 +1,18 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SportAcademy.Domain.Entities
+{
+    internal class SportSubscriptionType
+    {
+        public int SportId { get; set; }
+        public int SubscriptionTypeId { get; set; }
+
+        // Navigation Property
+        public virtual Sport Sport { get; set; }
+        public virtual SubscriptionType SubscriptionType { get; set; }
+    }
+}
