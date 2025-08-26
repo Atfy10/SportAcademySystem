@@ -11,23 +11,22 @@ namespace SportAcademy.Domain.Entities
     internal class Employee
     {
         public int Id { get; set; }
-        //Name Prop
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
-        //SSN Prop
         public required string SSN { get; set; }
-        //Phone Number Prop
-        public string PhoneNumber { get; set; }
         public decimal Salary { get; set; }
         public Gender Gender { get; set; }
         public DateTime HireDate { get; set; }
         public required string Address { get; set; }
+        public required string PhoneNumber { get; set; }
         public string? SecondPhoneNumber { get; set; }
         public string Position { get; set; } = "Employee";
-        // nav For Branch 
         public int BranchId { get; set; }
+        public required string AppUserId { get; set; }
 
-        [ForeignKey(nameof(BranchId))]
-        public virtual Branch Branch { get; set; }
+        // Navigation Property
+        public virtual AppUser AppUser { get; set; } = null!;
+        public virtual Branch Branch { get; set; } = null!;
+        public virtual Coach Coach { get; set; } = null!;
     }
 }

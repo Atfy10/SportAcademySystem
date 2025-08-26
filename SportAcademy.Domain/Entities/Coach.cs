@@ -10,11 +10,12 @@ namespace SportAcademy.Domain.Entities
     internal class Coach
     {
         public required string SkillLevel { get; set; }
-        // nav For Sport 
+        public int EmployeeId { get; set; }
         public int SportId { get; set; }
+        public DateOnly BirthDate { get; set; }
 
-        [ForeignKey(nameof(SportId))]
-        public virtual Sport Sport { get; set; }
-
+        // Navigation Properties
+        public virtual Employee Employee { get; set; } = null!;
+        public virtual Sport Sport { get; set; } = null!;
     }
 }

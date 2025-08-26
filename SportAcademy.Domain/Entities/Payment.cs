@@ -12,12 +12,10 @@ namespace SportAcademy.Domain.Entities
         public required string PaymentNumber { get; set; }
         public required string Method { get; set; }
         public DateTime PaidDate { get; set; } = DateTime.Now;
-        // nav For Branch 
-        public  int BranchId { get; set; }
+        public int BranchId { get; set; }
 
-        [ForeignKey(nameof(BranchId))]
-        public virtual Branch Branch { get; set; }
-
-
+        // Navigation Property
+        public virtual Branch Branch { get; set; } = null!;
+        public virtual SubscriptionDetails SubscriptionDetails { get; set; } = null!;
     }
 }

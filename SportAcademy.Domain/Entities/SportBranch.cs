@@ -12,7 +12,7 @@ namespace SportAcademy.Domain.Entities
         public int BranchId { get; set; }
 
         // Navigation Property
-        public virtual Sport Sport { get; set; }
-        public virtual Branch Branch { get; set; }
+        public virtual Sport Sport { get; set; } = null!;
+        public virtual Branch Branch { get; set; } = null!;
     }
 }

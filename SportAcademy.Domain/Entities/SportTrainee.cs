@@ -13,8 +13,8 @@ namespace SportAcademy.Domain.Entities
         public required string SkillLevel { get; set; }
 
         // Navigation Property
-        public virtual Sport Sport { get; set; }
-        public virtual Trainee Trainee { get; set; }
+        public virtual Sport Sport { get; set; } = null!;
+        public virtual Trainee Trainee { get; set; } = null!;
 
     }
 }

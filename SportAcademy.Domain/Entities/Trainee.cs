@@ -10,15 +10,20 @@ namespace SportAcademy.Domain.Entities
     internal class Trainee
     {
         public int Id { get; set; }
-        //Name Prop
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        // SSN Prop 
-        public string SSN { get; set; }
-        // Status Prop 
-        public string Status { get; set; }
+        public required string FirstName { get; set; }
+        public required string LastName { get; set; }
+        public required string SSN { get; set; }
+        public bool IsSubscribed { get; set; }
         public string? ParentNumber { get; set; }
         public string? GuardianName { get; set; }
+        public DateOnly BirthDate { get; set; }
         public Gender Gender { get; set; }
+        public required string AppUserId { get; set; }
+
+        // Navigation Properties
+        public virtual AppUser AppUser { get; set; } = null!;
+        public virtual ICollection<SportTrainee> Sports { get; set; } = [];
+        public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
+        public virtual ICollection<SubscriptionDetails> SubscriptionDetails { get; set; } = [];
     }
 }

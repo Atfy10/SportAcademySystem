@@ -16,7 +16,13 @@ namespace SportAcademy.Domain.Entities
         public string? Email { get; set; }
         public required string CoX { get; set; }
         public required string CoY { get; set; }
-        // IsActive
-        public required bool IsActive { get; set; }
+        public bool IsActive { get; set; }
+
+        // Navigation properties
+        public virtual ICollection<Session> Sessions { get; set; } = [];
+        public virtual ICollection<Employee> Employees { get; set; } = [];
+        public virtual ICollection<SportBranch> Sports { get; set; } = [];
+        public virtual ICollection<SportPrice> SportPrices { get; set; } = [];
+        public virtual ICollection<Payment> Payments { get; set; } = [];
     }
 }

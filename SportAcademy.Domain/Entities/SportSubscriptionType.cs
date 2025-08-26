@@ -12,7 +12,7 @@ namespace SportAcademy.Domain.Entities
         public int SubscriptionTypeId { get; set; }
 
         // Navigation Property
-        public virtual Sport Sport { get; set; }
-        public virtual SubscriptionType SubscriptionType { get; set; }
+        public virtual Sport Sport { get; set; } = null!;
+        public virtual SubscriptionType SubscriptionType { get; set; } = null!;
     }
 }

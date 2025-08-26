@@ -9,10 +9,10 @@ namespace SportAcademy.Domain.Entities
 {
     internal class AppUser : IdentityUser
     {
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public required string SSN { get; set; }
-        public DateTime? DateOfBirth { get; set; }
         public bool IsBanned { get; set; }
+
+        // Navigation Properties
+        public virtual Employee Employee { get; set; } = null!;
+        public virtual Trainee Trainee { get; set; } = null!;
     }
 }

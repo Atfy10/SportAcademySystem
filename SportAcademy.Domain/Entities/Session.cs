@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Entities
 {
-    internal class Sessions
+    internal class Session
     {
         public int Id { get; set; }
         public DayOfWeek Day { get; set; }
@@ -17,15 +17,12 @@ namespace SportAcademy.Domain.Entities
         public DateOnly Date { get; set; }
         public int DurationInMinutes { get; set; } = 55;
         public required string Gender { get; set; }
-        // nav For Branch 
         public int BranchId { get; set; }
-
-        [ForeignKey(nameof(BranchId))]
-        public virtual Branch Branch { get; set; }
-        // nav For Coach 
         public int CoachId { get; set; }
 
-        [ForeignKey(nameof(CoachId))]
-        public virtual Coach Coach { get; set; }
+        // Navigation Property
+        public virtual Branch Branch { get; set; } = null!;
+        public virtual Coach Coach { get; set; } = null!;
+        public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
     }
 }
