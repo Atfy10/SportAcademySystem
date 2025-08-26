@@ -15,5 +15,6 @@ namespace SportAcademy.Domain.Entities
 
         // Navigation Property
 
+
     }
 }

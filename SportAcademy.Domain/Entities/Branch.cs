@@ -16,5 +16,7 @@ namespace SportAcademy.Domain.Entities
         public string? Email { get; set; }
         public required string CoX { get; set; }
         public required string CoY { get; set; }
+        // IsActive
+        public required bool IsActive { get; set; }
     }
 }

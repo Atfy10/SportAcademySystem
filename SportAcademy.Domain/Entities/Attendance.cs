@@ -12,5 +12,7 @@ namespace SportAcademy.Domain.Entities
         public DateTime AttendanceDate { get; set; }
         public bool IsPresent { get; set; }
         public TimeOnly CheckInTime { get; set; }
+        //Coach Note
+        public string CoachNote { get; set; }
     }
 }
