@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SportAcademy.Domain.Entities
+﻿namespace SportAcademy.Domain.Entities
 {
-    internal class Session
+    public class Session
     {
         public int Id { get; set; }
         public DayOfWeek Day { get; set; }

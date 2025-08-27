@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Entities
 {
-    internal class Payment
+    public class Payment
     {
         public required string PaymentNumber { get; set; }
         public required string Method { get; set; }

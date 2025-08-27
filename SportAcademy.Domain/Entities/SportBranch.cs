@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SportAcademy.Domain.Entities
+﻿namespace SportAcademy.Domain.Entities
 {
-    internal class SportBranch
+    public class SportBranch
     {
         public int SportId { get; set; }
         public int BranchId { get; set; }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Entities
 {
-    internal class Branch
+    public class Branch
     {
         public int Id { get; set; }
         public required string Name { get; set; }
