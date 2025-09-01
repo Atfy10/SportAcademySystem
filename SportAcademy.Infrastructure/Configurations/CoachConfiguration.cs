@@ -21,25 +21,24 @@ namespace SportAcademy.Infrastructure.Configurations
 
             // Props
             builder.Property(c => c.SkillLevel)
-                   .IsRequired()
-                   .HasMaxLength(100);
+                .IsRequired()
+                .HasConversion<string>();
 
             builder.Property(c => c.BirthDate)
-                   .IsRequired();
+                .IsRequired();
 
             // Relationships
-
             // 1:1  Employee
             builder.HasOne(c => c.Employee)
-                   .WithOne(e => e.Coach)
-                   .HasForeignKey<Coach>(c => c.EmployeeId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(e => e.Coach)
+                .HasForeignKey<Coach>(c => c.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // M:1  Sport
             builder.HasOne(c => c.Sport)
-                   .WithMany(s => s.Coaches)
-                   .HasForeignKey(c => c.SportId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(s => s.Coaches)
+                .HasForeignKey(c => c.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

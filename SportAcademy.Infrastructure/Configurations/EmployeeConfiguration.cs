@@ -21,56 +21,59 @@ namespace SportAcademy.Infrastructure.Configurations
 
             // Props
             builder.Property(e => e.FirstName)
-                   .IsRequired()
-                   .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(50);
 
             builder.Property(e => e.LastName)
-                   .IsRequired()
-                   .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(50);
 
             builder.Property(e => e.SSN)
-                   .IsRequired()
-                   .HasMaxLength(14);
+                .IsRequired()
+                .HasMaxLength(14);
 
             builder.Property(e => e.Address)
-                   .IsRequired()
-                   .HasMaxLength(200);
+                .IsRequired()
+                .HasMaxLength(200);
 
             builder.Property(e => e.PhoneNumber)
-                   .IsRequired()
-                   .HasMaxLength(20);
+                .IsRequired()
+                .HasMaxLength(13);
 
             builder.Property(e => e.SecondPhoneNumber)
-                   .HasMaxLength(20);
+                .HasMaxLength(13);
 
-            //builder.Property(e => e.Position)
-            //       .HasDefaultValue("Employee");
+            builder.Property(e => e.Position)
+                .HasConversion<string>();
 
             builder.Property(e => e.Salary)
-                   .HasColumnType("decimal(18,2)");
+                .HasPrecision(18, 2);
+            //  .HasColumnType("decimal(18,2)");
 
             builder.Property(e => e.AppUserId)
-                   .IsRequired();
+                .IsRequired();
+
+            builder.HasIndex(e => e.AppUserId)
+                .IsUnique();
 
             // Relationships
-
             // 1:1   AppUser
             builder.HasOne(e => e.AppUser)
-                   .WithOne(u => u.Employee)
-                   .HasForeignKey<Employee>(e => e.AppUserId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(u => u.Employee)
+                .HasForeignKey<Employee>(e => e.AppUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // 1:1   Branch
             builder.HasOne(e => e.Branch)
-                   .WithMany(b => b.Employees)
-                   .HasForeignKey(e => e.BranchId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(b => b.Employees)
+                .HasForeignKey(e => e.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // 1:1   Coach
             builder.HasOne(e => e.Coach)
-                   .WithOne(c => c.Employee)
-                   .HasForeignKey<Coach>(c => c.EmployeeId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(c => c.Employee)
+                .HasForeignKey<Coach>(c => c.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

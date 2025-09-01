@@ -14,21 +14,22 @@ namespace SportAcademy.Infrastructure.Configurations
         {
             //Table Name
             builder.ToTable("SportSubscriptionTypes");
+
             //PK
-            builder.HasKey(sst => new { sst.SportId ,sst.SubscriptionTypeId});
+            builder.HasKey(sst => new { sst.SportId, sst.SubscriptionTypeId });
 
             // Relationships
-
             // 1:M  Sport
             builder.HasOne(sst => sst.Sport)
-                  .WithMany(s => s.SubscriptionTypes)
-                  .HasForeignKey(sp => sp.SportId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(s => s.SubscriptionTypes)
+                .HasForeignKey(sp => sp.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // 1:M  SubscriptionType
             builder.HasOne(sst => sst.SubscriptionType)
-                  .WithMany(s => s.Sports)
-                  .HasForeignKey(sp => sp.SubscriptionTypeId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(s => s.Sports)
+                .HasForeignKey(sp => sp.SubscriptionTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

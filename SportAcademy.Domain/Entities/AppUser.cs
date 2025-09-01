@@ -9,7 +9,6 @@ namespace SportAcademy.Domain.Entities
         // Navigation Properties
         public virtual Employee Employee { get; set; } = null!;
         public virtual Trainee Trainee { get; set; } = null!;
-        //Add Nav Profile
         public virtual Profile Profile { get; set; } = null!;
     }
 }

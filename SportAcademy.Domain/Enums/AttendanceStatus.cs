@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Enums
 {
-    internal enum AttendanceStatus
+    public enum AttendanceStatus
     {
         Present,
         Absent,

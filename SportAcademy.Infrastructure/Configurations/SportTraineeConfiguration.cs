@@ -21,20 +21,21 @@ namespace SportAcademy.Infrastructure.Configurations
             //props
             builder.Property(st => st.SkillLevel)
                   .IsRequired()
-                  .HasMaxLength(50);
+                  .HasConversion<string>();
 
             // Relationships
 
             // 1:M  Sport
             builder.HasOne(st => st.Sport)
-                  .WithMany(s => s.Trainees)
-                  .HasForeignKey(st => st.SportId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(s => s.Trainees)
+                .HasForeignKey(st => st.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // 1:M  Trainee
             builder.HasOne(st => st.Trainee)
-                    .WithMany(t => t.Sports)
-                    .HasForeignKey(st => st.TraineeId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(t => t.Sports)
+                .HasForeignKey(st => st.TraineeId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

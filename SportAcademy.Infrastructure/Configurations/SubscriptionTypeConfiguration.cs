@@ -21,38 +21,37 @@ namespace SportAcademy.Infrastructure.Configurations
 
             // Props
             builder.Property(st => st.Name)
-                   .IsRequired()
-                   .HasMaxLength(100);
+                .IsRequired()
+                .HasConversion<string>();
 
-          
             builder.Property(st => st.DaysPerMonth)
-                   .IsRequired();
+                .IsRequired();
 
             builder.Property(st => st.IsActive)
-                   .HasDefaultValue(true);
+                .HasDefaultValue(true);
 
             builder.Property(st => st.IsOffer)
-                   .HasDefaultValue(false);
+                .HasDefaultValue(false);
 
             // Relationships
 
             // 1:M SubscriptionDetails
             builder.HasMany(st => st.SubscriptionDetails)
-                   .WithOne(sd => sd.SubscriptionType)
-                   .HasForeignKey(sd => sd.SubscriptionTypeId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(sd => sd.SubscriptionType)
+                .HasForeignKey(sd => sd.SubscriptionTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // 1:M SportPrices
             builder.HasMany(st => st.SportPrices)
-                   .WithOne(sp => sp.SubscriptionType)
-                   .HasForeignKey(sp => sp.SubsTypeId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(sp => sp.SubscriptionType)
+                .HasForeignKey(sp => sp.SubsTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // 1:M Sports
             builder.HasMany(st => st.Sports)
-                   .WithOne(sst => sst.SubscriptionType)
-                   .HasForeignKey(sst => sst.SubscriptionTypeId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                .WithOne(sst => sst.SubscriptionType)
+                .HasForeignKey(sst => sst.SubscriptionTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

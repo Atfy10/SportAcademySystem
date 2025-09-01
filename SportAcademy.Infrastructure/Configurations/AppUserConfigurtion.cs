@@ -10,24 +10,28 @@ namespace SportAcademy.Infrastructure.Configurations
         {
             // TableName 
             builder.ToTable("AppUsers");
-            //PK
-            builder.HasKey(a => a.Id);
 
-            // Relationships
+            builder.Property(u => u.IsBanned)
+                .HasDefaultValue(false);
 
-            // 1:1  Emp
+            //  Relations
+            //  1:1  Emp
             builder.HasOne(u => u.Employee)
-                   .WithOne(e => e.AppUser)
-                   .HasForeignKey<Employee>(e => e.AppUserId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(e => e.AppUser)
+                .HasForeignKey<Employee>(e => e.AppUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-
-
-            // 1:1  Trainee
+            //  1:1  Trainee
             builder.HasOne(u => u.Trainee)
                 .WithOne(t => t.AppUser)
                 .HasForeignKey<Trainee>(t => t.AppUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            //  1:1 Profile
+            builder.HasOne(u => u.Profile)
+                .WithOne(p => p.User)
+                .HasForeignKey<Profile>(p => p.AppUserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

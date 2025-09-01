@@ -14,7 +14,7 @@ namespace SportAcademy.Domain.Entities
         public required string Address { get; set; }
         public required string PhoneNumber { get; set; }
         public string? SecondPhoneNumber { get; set; }
-        public string Position { get; set; } = "Employee";
+        public Position Position { get; set; }
         public int BranchId { get; set; }
         public required string AppUserId { get; set; }
 

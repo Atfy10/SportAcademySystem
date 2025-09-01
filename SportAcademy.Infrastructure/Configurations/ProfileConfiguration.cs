@@ -25,7 +25,7 @@ namespace SportAcademy.Infrastructure.Configurations
                    .HasMaxLength(255); 
 
             builder.Property(p => p.Bio)
-                   .HasMaxLength(500); 
+                   .HasMaxLength(300); 
 
 
             // Relationship

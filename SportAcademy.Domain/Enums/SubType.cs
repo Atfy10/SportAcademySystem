@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Enums
 {
-    public enum Position
+    public enum SubType
     {
-        Coach,
-        Manager,
-        HR,
-        Accountant,
-        IT
+        Monthly,
+        Quarterly,
+        Yearly,
+        Gold,
+        Platinum,
+        Silver,
+        Normal
     }
 }

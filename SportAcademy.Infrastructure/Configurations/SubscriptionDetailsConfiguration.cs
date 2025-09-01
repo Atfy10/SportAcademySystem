@@ -22,12 +22,17 @@ namespace SportAcademy.Infrastructure.Configurations
 
             // Props
             builder.Property(sd => sd.PaymentNumber)
-                   .IsRequired()
-                   .HasMaxLength(50);
+                .IsRequired()
+                .HasMaxLength(50);
 
-          
-            builder.Property(sd => sd.StartDate).IsRequired();
-            builder.Property(sd => sd.EndDate).IsRequired();
+            builder.Property(sd => sd.StartDate)
+                .IsRequired();
+
+            builder.Property(sd => sd.EndDate)
+                .IsRequired();
+
+            builder.Property(sd => sd.IsActive)
+                .HasDefaultValue(true);
 
             // Relationships
             // 1:1 Payment

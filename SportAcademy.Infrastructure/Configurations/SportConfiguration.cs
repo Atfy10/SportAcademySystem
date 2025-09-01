@@ -16,50 +16,50 @@ namespace SportAcademy.Infrastructure.Configurations
 
             // Props
             builder.Property(s => s.Name)
-                   .IsRequired()
-                   .HasMaxLength(100);
+                .IsRequired()
+                .HasMaxLength(50);
 
             builder.Property(s => s.Description)
-                   .HasMaxLength(500);
+                .HasMaxLength(500);
 
             builder.Property(s => s.Category)
-                   .IsRequired()
-                   .HasMaxLength(100);
+                .HasConversion<string>()
+                .IsRequired();
 
             builder.Property(s => s.IsRequireHealthTest)
-                   .IsRequired();
+                .IsRequired()
+                .HasDefaultValue(true);
 
-            // Relationships
-
-            // 1:M  Coach
+            //  Relationships
+            //  1:M  Coach
             builder.HasMany(s => s.Coaches)
-                   .WithOne(c => c.Sport)
-                   .HasForeignKey(c => c.SportId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(c => c.Sport)
+                .HasForeignKey(c => c.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M  SportSubscriptionType 
+            //  1:M  SportSubscriptionType 
             builder.HasMany(s => s.SubscriptionTypes)
-                   .WithOne(sst => sst.Sport)
-                   .HasForeignKey(sst => sst.SportId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(sst => sst.Sport)
+                .HasForeignKey(sst => sst.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M  SportBranch 
+            //  1:M  SportBranch 
             builder.HasMany(s => s.Branches)
-                   .WithOne(sb => sb.Sport)
-                   .HasForeignKey(sb => sb.SportId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(sb => sb.Sport)
+                .HasForeignKey(sb => sb.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M  SportTrainee 
+            //  1:M  SportTrainee 
             builder.HasMany(s => s.Trainees)
-                   .WithOne(st => st.Sport)
-                   .HasForeignKey(st => st.SportId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(st => st.Sport)
+                .HasForeignKey(st => st.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M  SportPrice
+            //  1:M  SportPrice
             builder.HasMany(s => s.Prices)
-                   .WithOne(sp => sp.Sport)
-                   .HasForeignKey(sp => sp.SportId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(sp => sp.Sport)
+                .HasForeignKey(sp => sp.SportId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

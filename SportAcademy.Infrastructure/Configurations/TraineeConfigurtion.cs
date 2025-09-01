@@ -22,11 +22,11 @@ namespace SportAcademy.Infrastructure.Configurations
             // Props
             builder.Property(t => t.FirstName)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(50);
 
             builder.Property(t => t.LastName)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(50);
 
             builder.Property(t => t.SSN)
                 .IsRequired()
@@ -36,17 +36,16 @@ namespace SportAcademy.Infrastructure.Configurations
                    .IsRequired();
 
             builder.Property(t => t.ParentNumber)
-                   .HasMaxLength(20);
+                   .HasMaxLength(13);
 
             builder.Property(t => t.GuardianName)
-                .HasMaxLength(100);
+                .HasMaxLength(50);
 
             builder.Property(t => t.BirthDate)
                 .IsRequired();
 
-           // هنا هيخزن القيمه ب int 
             builder.Property(t => t.Gender)
-                .HasConversion<int>() 
+                .HasConversion<string>() 
                 .IsRequired();
 
             builder.Property(t => t.AppUserId)

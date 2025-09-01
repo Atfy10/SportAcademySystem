@@ -13,34 +13,34 @@ namespace SportAcademy.Infrastructure.Configurations
     {
         public void Configure(EntityTypeBuilder<Attendance> builder)
         {
-            // Table Name
+            //  Table Name
             builder.ToTable("Attendances");
 
-            // PK
+            //  PK
             builder.HasKey(a => a.Id);
 
-            //props
+            //  props
             builder.Property(a => a.AttendanceDate)
-                  .IsRequired();
+                .IsRequired();
 
-            builder.Property(a => a.IsPresent)
-                   .IsRequired();
+            builder.Property(a => a.AttendanceStatus)
+                .IsRequired()
+                .HasConversion<string>();
 
             builder.Property(a => a.CheckInTime)
-                   .IsRequired();
+                .IsRequired();
 
             builder.Property(a => a.CoachNote)
-                   .IsRequired()
-                   .HasMaxLength(500);
+                .IsRequired()
+                .HasMaxLength(500);
 
-
-            // Relationship
-            // 1:M Enrollment
+            //  Relationship
+            //  1:M Enrollment
 
             builder.HasOne(a => a.Enrollment)
-                  .WithMany(e => e.Attendances)
-                  .HasForeignKey(a => a.EnrollmentId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(e => e.Attendances)
+                .HasForeignKey(a => a.EnrollmentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

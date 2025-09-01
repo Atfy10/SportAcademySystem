@@ -25,7 +25,7 @@ namespace SportAcademy.Infrastructure.Configurations
 
             builder.Property(p => p.Method)
                    .IsRequired()
-                   .HasMaxLength(50);
+                   .HasConversion<string>();
 
             builder.Property(p => p.PaidDate)
                    .IsRequired();

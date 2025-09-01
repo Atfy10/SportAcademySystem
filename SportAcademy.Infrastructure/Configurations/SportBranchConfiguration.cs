@@ -19,7 +19,8 @@ namespace SportAcademy.Infrastructure.Configurations
             // PK
             builder.HasKey(sb => new { sb.SportId, sb.BranchId });
 
-            // 1:M Sport
+            //  Relations
+            //  1:M Sport
             builder.HasOne(sb => sb.Sport)
                    .WithMany(s => s.Branches)
                    .HasForeignKey(sb => sb.SportId)

@@ -1,11 +1,13 @@
-﻿namespace SportAcademy.Domain.Entities
+﻿using SportAcademy.Domain.Enums;
+
+namespace SportAcademy.Domain.Entities
 {
     public class Sport
     {
         public int Id { get; set; }
         public required string Name { get; set; }
         public string? Description { get; set; }
-        public required string Category { get; set; }
+        public SportCategory Category { get; set; }
         public bool IsRequireHealthTest { get; set; } = true;
 
         // Navigation Properties

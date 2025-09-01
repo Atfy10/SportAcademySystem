@@ -21,44 +21,44 @@ namespace SportAcademy.Infrastructure.Configurations
 
             // Props
             builder.Property(s => s.SkillLevel)
-                   .IsRequired()
-                   .HasMaxLength(100);
+                .HasConversion<string>()
+                .IsRequired();
 
             builder.Property(s => s.Gender)
-                   .IsRequired()
-                   .HasMaxLength(20);
+                .IsRequired()
+                .HasConversion<string>();
 
             builder.Property(s => s.MaximumCapacity)
-                   .HasDefaultValue(15);
+                .HasDefaultValue(15);
 
             builder.Property(s => s.DurationInMinutes)
-                   .HasDefaultValue(55);
+                .HasDefaultValue(55);
 
             builder.Property(s => s.Date)
-                   .IsRequired();
+                .IsRequired();
 
             builder.Property(s => s.StartTime)
-                   .IsRequired();
+                .IsRequired();
 
             // Relationships
 
-            // 1:M Branch
+            //  1:M Branch
             builder.HasOne(s => s.Branch)
-                   .WithMany(b => b.Sessions)
-                   .HasForeignKey(s => s.BranchId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(b => b.Sessions)
+                .HasForeignKey(s => s.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            //1:M Coach
+            //  1:M Coach
             builder.HasOne(s => s.Coach)
-                   .WithMany(c => c.Sessions)
-                   .HasForeignKey(s => s.CoachId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(c => c.Sessions)
+                .HasForeignKey(s => s.CoachId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M Enrollments
+            //  1:M Enrollments
             builder.HasMany(s => s.Enrollments)
-                   .WithOne(e => e.Session)
-                   .HasForeignKey(e => e.SessionId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                .WithOne(e => e.Session)
+                .HasForeignKey(e => e.SessionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

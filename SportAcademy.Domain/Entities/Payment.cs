@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SportAcademy.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace SportAcademy.Domain.Entities
     public class Payment
     {
         public required string PaymentNumber { get; set; }
-        public required string Method { get; set; }
+        public PaymentMethod Method { get; set; }
         public DateTime PaidDate { get; set; } = DateTime.Now;
         public int BranchId { get; set; }
 

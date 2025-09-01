@@ -6,14 +6,9 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Enums
 {
-    internal enum SubTypes
+    public enum SportCategory
     {
-        Monthly,
-        Quarterly,
-        Yearly,
-        Gold,
-        Platinum,
-        Silver,
-        Normal
+        Individual,
+        Team
     }
 }
