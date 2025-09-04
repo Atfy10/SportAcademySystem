@@ -10,7 +10,6 @@
 		<Folder Include="Behavior\" />
 		<Folder Include="Interfaces\" />
 		<Folder Include="DTOs\" />
-		<Folder Include="Services\" />
 	</ItemGroup>
 
 	<ItemGroup>
