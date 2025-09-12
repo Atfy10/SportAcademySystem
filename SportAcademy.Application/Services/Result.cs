@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SportAcademy.Application.Services
 {
@@ -16,13 +17,23 @@ namespace SportAcademy.Application.Services
             Data = data;
         }
 
-        public static Result<EType> Success(EType data, string operation, string message = "Operation done successfully")
+        public static Result<EType> Success(EType data, string operation,
+            string message = "Operation done successfully")
             => new(true, data, operation, message);
+    }
 
-        public static Result<EType> Failure(string operation, string message, int statusCode = 500)
-            => new(false, default!, operation, message)
-            {
-                StatusCode = statusCode
-            };
+    public class Result : ResultBase
+    {
+        private Result(bool isSuccess, string operationType, string message)
+        : base(isSuccess, operationType, message)
+        {
+        }
+
+        public static Result Failure(string operation, string message, int statusCode = 500)
+        => new(false, operation, message)
+        {
+            StatusCode = statusCode
+        };
+
     }
 }

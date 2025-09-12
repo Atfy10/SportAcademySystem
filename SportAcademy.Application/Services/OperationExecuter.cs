@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
