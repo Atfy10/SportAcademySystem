@@ -25,6 +25,7 @@ namespace SportAcademy.Infrastructure.Configurations
             builder.HasOne(u => u.Trainee)
                 .WithOne(t => t.AppUser)
                 .HasForeignKey<Trainee>(t => t.AppUserId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             //  1:1 Profile
