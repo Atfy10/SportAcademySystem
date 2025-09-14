@@ -13,10 +13,10 @@ namespace SportAcademy.Domain.Entities
         public string? GuardianName { get; set; }
         public DateOnly BirthDate { get; set; }
         public Gender Gender { get; set; }
-        public required string AppUserId { get; set; }
+        public string? AppUserId { get; set; }
 
         // Navigation Properties
-        public virtual AppUser AppUser { get; set; } = null!;
+        public virtual AppUser? AppUser { get; set; }
         public virtual ICollection<SportTrainee> Sports { get; set; } = [];
         public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
         public virtual ICollection<SubscriptionDetails> SubscriptionDetails { get; set; } = [];

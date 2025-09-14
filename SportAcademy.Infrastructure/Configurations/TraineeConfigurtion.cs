@@ -48,15 +48,13 @@ namespace SportAcademy.Infrastructure.Configurations
                 .HasConversion<string>() 
                 .IsRequired();
 
-            builder.Property(t => t.AppUserId)
-                .IsRequired();
-
             // Relationships
 
             // 1:1  AppUser
             builder.HasOne(t => t.AppUser)
                 .WithOne(u => u.Trainee)
                 .HasForeignKey<Trainee>(t => t.AppUserId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // 1:M  SportTrainee
