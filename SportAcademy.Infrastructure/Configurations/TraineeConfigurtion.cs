@@ -19,6 +19,9 @@ namespace SportAcademy.Infrastructure.Configurations
             //PK
             builder.HasKey(t => t.Id);
 
+            builder.Property(t => t.Id)
+                .ValueGeneratedNever();
+
             // Props
             builder.Property(t => t.FirstName)
                 .IsRequired()
