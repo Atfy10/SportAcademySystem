@@ -22,8 +22,6 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 {
                     SportId = s.Id
                 }).ToList()))
-                .ForMember(dest => dest.AppUserId,
-                opt => opt.Ignore())
                 .ForAllMembers(opts =>
                     opts.Condition((src, dest, srcMember) => srcMember != null));
 

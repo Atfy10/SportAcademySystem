@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using SportAcademy.Application.Behaviors;
@@ -8,11 +9,25 @@ using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.TraineeProfile;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.DBContext;
 using SportAcademy.Infrastructure.Repositories;
+using SportAcademy.Web;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+{
+    // Example password settings (optional)
+    options.Password.RequiredLength = 4;
+    options.Password.RequireDigit = true;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireNonAlphanumeric = false;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -48,6 +63,8 @@ builder.Services.AddSwaggerGen(c =>
 
 //builder.Services.AddOpenApi();
 
+builder.Services.AddUserSeeder();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,6 +72,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
 }
 
 app.UseHttpsRedirection();

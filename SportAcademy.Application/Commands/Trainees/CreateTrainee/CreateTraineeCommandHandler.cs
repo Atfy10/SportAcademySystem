@@ -45,15 +45,18 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             trainee.Id = _traineeService.CreateTraineeCode(trainee, request.BranchId);
 
             bool isAdult = _traineeService.IsAdult(trainee.BirthDate);
-            if (!isAdult && (string.IsNullOrEmpty(trainee.ParentNumber)
-                || string.IsNullOrEmpty(trainee.GuardianName)))
+            bool isNull = (string.IsNullOrEmpty(trainee.ParentNumber)
+                || string.IsNullOrEmpty(trainee.GuardianName));
+            
+            if (!isAdult && isNull)
                 throw new GuardianInfoMissingException();
 
-            if (isAdult)
-            {
-                trainee.ParentNumber = null;
-                trainee.GuardianName = null;
-            }
+
+            //if (isAdult && isNull)
+            //{
+            //    trainee.ParentNumber = null;
+            //    trainee.GuardianName = null;
+            //}
 
             trainee.IsSubscribed = false;
 
