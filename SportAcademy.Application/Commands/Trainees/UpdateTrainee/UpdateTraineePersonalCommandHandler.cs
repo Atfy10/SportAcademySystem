@@ -31,12 +31,15 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 
         public async Task<Result<UpdateTraineePersonalCommand>> Handle(UpdateTraineePersonalCommand request, CancellationToken cancellationToken)
         {
-            var trainee = await _traineeRepository.GetByIdAsync(request.Id, cancellationToken)
+            var trainee = await _traineeRepository.GetFullTrainee(request.Id, cancellationToken)
                 ?? throw new KeyNotFoundException("Trainee not found");
 
-            
-
             _mapper.Map(request, trainee);
+
+            trainee.AppUser.Email = request.Email;
+            trainee.AppUser.UserName = request.UserName;
+            trainee.AppUser.PhoneNumber = request.PhoneNumber;
+
             await _traineeRepository.UpdateAsync(trainee, cancellationToken);
 
             return Result<UpdateTraineePersonalCommand>.Success(request, OperationType.Update.ToString());

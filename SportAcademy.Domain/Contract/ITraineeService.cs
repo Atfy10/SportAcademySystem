@@ -10,7 +10,7 @@ namespace SportAcademy.Domain.Contract
     public interface ITraineeService
     {
         int CreateTraineeCode(Trainee trainee, int branchId);
-        bool IsSSNValid(string ssn);
+        bool IsSSNValid(string ssn, DateOnly birthDate);
         int CalculateAge(DateOnly birthDate);
         bool IsAdult(DateOnly birthDate);
     }

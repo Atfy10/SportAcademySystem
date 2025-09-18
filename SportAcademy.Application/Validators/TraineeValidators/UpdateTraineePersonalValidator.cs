@@ -1,10 +1,5 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Validators.TraineeValidators
 {

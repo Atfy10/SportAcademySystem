@@ -80,7 +80,7 @@ namespace SportAcademy.Infrastructure.Migrations
                 onDelete: ReferentialAction.Restrict);
 
         }
-
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(

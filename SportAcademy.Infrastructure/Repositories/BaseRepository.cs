@@ -22,6 +22,7 @@ namespace SportAcademy.Infrastructure.Repositories
         public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             await _context.Set<TEntity>().AddAsync(entity, cancellationToken);
+            await SaveChanges();
         }
 
         public Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
@@ -52,6 +53,11 @@ namespace SportAcademy.Infrastructure.Repositories
         public Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
+        }
+
+        private async Task SaveChanges()
+        {
+            await _context.SaveChangesAsync();
         }
     }
 }

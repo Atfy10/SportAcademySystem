@@ -21,7 +21,7 @@ namespace SportAcademy.Domain.Services
             var dobCode = $"{year:D2}{month:D2}";
 
             var firstLetter = char.ToUpper(trainee.FirstName[0]);
-            var ascii = ((int)firstLetter).ToString("D3");
+            var ascii = ((int)firstLetter).ToString("D2");
 
             var prefix = $"{branchId}{dobCode}{ascii}";
 
@@ -36,9 +36,17 @@ namespace SportAcademy.Domain.Services
         public bool IsAdult(DateOnly birthDate) =>
             CalculateAge(birthDate) >= 15;
 
-        public bool IsSSNValid(string ssn)
+        public bool IsSSNValid(string ssn, DateOnly birthDate)
         {
-            throw new NotImplementedException();
+            // 3 04 03 03
+            var year = birthDate.Year > 1999 ? 3 : 2;
+            var sixNumbersOfBirth = birthDate.ToString("yyMMdd");
+
+            if (!ssn.StartsWith($"{year}{sixNumbersOfBirth}"))
+                return false;
+
+            return true;
+
         }
     }
 }

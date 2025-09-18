@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 using System;
@@ -18,9 +19,9 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         string? GuardianName,
         DateOnly BirthDate,
         Gender Gender,
-        string AppUserId,
-        int branchId,
-        HashSet<SportName> Sports) : IRequest<Result<int>>;
+        string? AppUserId,
+        int BranchId,
+        HashSet<SportDto> Sports) : IRequest<Result<int>>;
     //{
     //    public int Id { get; set; }
     //    public required string FirstName { get; set; }

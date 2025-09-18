@@ -34,14 +34,15 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         {
             var trainee = _mapper.Map<Trainee>(request);
 
-            if (!_traineeService.IsSSNValid(trainee.SSN))
+            if (!_traineeService.IsSSNValid(trainee.SSN, trainee.BirthDate))
                 throw new SSNSyntaxErrorException();
 
-            var isSSNExist = await _traineeRepository.IsSSNExistAsync(trainee.SSN, cancellationToken);
+            var isSSNExist = await _traineeRepository
+                .IsSSNExistAsync(trainee.SSN, cancellationToken);
             if (isSSNExist)
                 throw new SSNNotUniqueException();
 
-            trainee.Id = _traineeService.CreateTraineeCode(trainee, request.branchId);
+            trainee.Id = _traineeService.CreateTraineeCode(trainee, request.BranchId);
 
             bool isAdult = _traineeService.IsAdult(trainee.BirthDate);
             if (!isAdult && (string.IsNullOrEmpty(trainee.ParentNumber)
