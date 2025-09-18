@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Queries.TraineeQueries.GetById;
+using System.Threading.Tasks;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -31,9 +33,10 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("get/{id}")]
-        public ActionResult Details(int id)
+        public async Task<ActionResult> Details(int id)
         {
-            return NoContent();
+            var trainee = await _mediator.Send(new GetTraineeByIdQuery(id));
+            return Ok(trainee);
         }
 
         [HttpPost("create")]

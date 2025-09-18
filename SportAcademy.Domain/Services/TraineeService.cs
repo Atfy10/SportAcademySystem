@@ -27,7 +27,7 @@ namespace SportAcademy.Domain.Services
 
             var count = 0; // count of trianees with same prefix
 
-            var counter = (count + 1).ToString("D3");
+            var counter = (count + 1).ToString("D2");
 
             var codeString = $"{prefix}{counter}";
             return int.Parse(codeString);

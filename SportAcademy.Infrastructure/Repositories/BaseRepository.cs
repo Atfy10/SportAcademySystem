@@ -1,4 +1,6 @@
-﻿using SportAcademy.Application.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Exceptions;
 using SportAcademy.Infrastructure.DBContext;
 using System;
 using System.Collections.Generic;
@@ -14,7 +16,7 @@ namespace SportAcademy.Infrastructure.Repositories
     {
         private readonly ApplicationDbContext _context;
 
-        public BaseRepository(ApplicationDbContext context) 
+        public BaseRepository(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -22,42 +24,42 @@ namespace SportAcademy.Infrastructure.Repositories
         public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             await _context.Set<TEntity>().AddAsync(entity, cancellationToken);
-            await SaveChanges();
+            await SaveChanges(cancellationToken);
         }
 
-        public Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var entity = await GetByIdAsync(id, cancellationToken)
+                ?? throw new IdNotFoundException(typeof(TEntity).Name, id.ToString());
+
+            _context.Set<TEntity>().Remove(entity);
+            await SaveChanges(cancellationToken);
         }
 
-        public Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
+        public async Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            _context.Set<TEntity>().Remove(entity);
+            await SaveChanges(cancellationToken);
         }
 
-        public Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+            => await _context.Set<TEntity>().ToListAsync(cancellationToken);
+
+        public async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
+            => await _context.Set<TEntity>().FindAsync(id, cancellationToken);
+
+        public async Task<TEntity?> GetByIdsAsync(CancellationToken cancellationToken = default, params TKey[] id)
+            => await _context.Set<TEntity>().FindAsync(id, cancellationToken);
+
+        public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            _context.Set<TEntity>().Update(entity);
+            await SaveChanges(cancellationToken);
         }
 
-        public Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
+        protected async Task SaveChanges(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
-        }
-
-        public Task<TEntity?> GetByIdsAsync(CancellationToken cancellationToken = default, params TKey[] id)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        private async Task SaveChanges()
-        {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

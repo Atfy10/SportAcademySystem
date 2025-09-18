@@ -15,18 +15,6 @@ namespace SportAcademy.Application.Validators.TraineeValidators
                 .NotEmpty().WithMessage("Last name is required.")
                 .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters.");
 
-            RuleFor(t => t.Email)
-                .NotEmpty().WithMessage("Email is required.")
-                .EmailAddress().WithMessage("Invalid email format.");
-
-            RuleFor(t => t.UserName)
-                .NotEmpty().WithMessage("Username is required.")
-                .MaximumLength(50).WithMessage("Username cannot exceed 50 characters.");
-
-            RuleFor(t => t.PhoneNumber)
-                .NotEmpty().WithMessage("Phone number is required.")
-                .Length(8).WithMessage("Phone number must be exactly 8 characters.");
-
             RuleFor(t => t.GuardianName)
                 .MaximumLength(50).WithMessage("Guardian name cannot exceed 50 characters.")
                 .When(t => !string.IsNullOrEmpty(t.GuardianName));

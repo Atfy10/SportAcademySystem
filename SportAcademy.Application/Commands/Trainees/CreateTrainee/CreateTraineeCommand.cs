@@ -10,28 +10,18 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
-    public record CreateTraineeCommand(
-        int Id,
-        string FirstName,
-        string LastName,
-        string SSN,
-        string? ParentNumber,
-        string? GuardianName,
-        DateOnly BirthDate,
-        Gender Gender,
-        string? AppUserId,
-        int BranchId,
-        HashSet<SportDto> Sports) : IRequest<Result<int>>;
-    //{
-    //    public int Id { get; set; }
-    //    public required string FirstName { get; set; }
-    //    public required string LastName { get; set; }
-    //    public required string SSN { get; set; }
-    //    public string? ParentNumber { get; set; }
-    //    public string? GuardianName { get; set; }
-    //    public DateOnly BirthDate { get; set; }
-    //    public Gender Gender { get; set; }
-    //    public required string AppUserId { get; set; }
-    //    public HashSet<SportName> Sports { get; set; } = [];
-    //}
+    public record CreateTraineeCommand : IRequest<Result<int>>
+    {
+        public int Id { get; init; }
+        public required string FirstName { get; init; }
+        public required string LastName { get; init; }
+        public required string SSN { get; init; }
+        public string? ParentNumber { get; init; }
+        public string? GuardianName { get; init; }
+        public DateOnly BirthDate { get; init; }
+        public Gender Gender { get; init; }
+        public string? AppUserId { get; init; }
+        public int BranchId { get; init; }
+        public HashSet<SportDto> Sports { get; init; } = [];
+    }
 }

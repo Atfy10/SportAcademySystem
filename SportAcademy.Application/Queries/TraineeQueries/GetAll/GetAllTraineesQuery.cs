@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SportAcademy.Application.DTOs.SportDtos
+namespace SportAcademy.Application.Queries.TraineeQueries.GetAll
 {
-    public record SportDto(
-        int Id,
-        string Name
-    );
+    public record GetAllTraineesQuery
+    {
+    }
 }

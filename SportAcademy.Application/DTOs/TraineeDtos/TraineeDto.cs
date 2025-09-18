@@ -1,4 +1,6 @@
-﻿using SportAcademy.Domain.Enums;
+﻿using SportAcademy.Application.DTOs.EnrollmentDtos;
+using SportAcademy.Application.DTOs.SportDtos;
+using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,19 +9,18 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.DTOs.TraineeDtos
 {
-    public class TraineeDto
+    public record TraineeDto
     {
-        public int Id { get; set; }
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public required string SSN { get; set; }
-        public string? ParentNumber { get; set; }
-        public string? GuardianName { get; set; }
-        public DateOnly BirthDate { get; set; }
-        public string? AppUserId { get; set; }
-        public int BranchId { get; set; }
-        public HashSet<SportName> Sports { get; set; } = [];
-        public List<int> Enrollments { get; set; } = [];
-
+        public int Id { get; init; }
+        public string FirstName { get; init; } = string.Empty;
+        public string LastName { get; init; } = string.Empty;
+        public string SSN { get; init; } = string.Empty;
+        public string? ParentNumber { get; init; }
+        public string? GuardianName { get; init; }
+        public DateOnly BirthDate { get; init; }
+        public string? AppUserId { get; init; }
+        public int BranchId { get; init; }
+        public HashSet<SportDto> Sports { get; init; } = [];
+        public List<EnrollmentDto> Enrollments { get; init; } = [];
     }
 }

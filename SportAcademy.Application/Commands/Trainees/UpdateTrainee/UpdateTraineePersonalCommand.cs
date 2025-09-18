@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
 using System;
@@ -9,15 +10,13 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 {
-    public class UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>
+    public record UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>
     {
-        public int Id { get; set; }
-        public string FirstName { get; set; } = null!;
-        public string LastName { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public string UserName { get; set; } = null!;
-        public string PhoneNumber { get; set; } = null!;
-        public string? GuardianName { get; set; }
-        public string? ParentNumber { get; set; }
+        public int Id { get; init; }
+        public required string FirstName { get; init; }
+        public required string LastName { get; init; }
+        public string? GuardianName { get; init; }
+        public string? ParentNumber { get; init; }
+        public AppUserDto? AppUser { get; init; }
     }
 }

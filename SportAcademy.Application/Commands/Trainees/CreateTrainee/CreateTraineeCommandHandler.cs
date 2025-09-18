@@ -20,6 +20,8 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         private readonly IMapper _mapper;
         private readonly ITraineeService _traineeService;
         private readonly ITraineeRepository _traineeRepository;
+        private readonly string _operationType = OperationType.Add.ToString();
+
 
         public CreateTraineeCommandHandler(ITraineeService traineeService,
             IMapper mapper,
@@ -32,7 +34,8 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
         public async Task<Result<int>> Handle(CreateTraineeCommand request, CancellationToken cancellationToken)
         {
-            var trainee = _mapper.Map<Trainee>(request);
+            var trainee = _mapper.Map<Trainee>(request)
+                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
             if (!_traineeService.IsSSNValid(trainee.SSN, trainee.BirthDate))
                 throw new SSNSyntaxErrorException();
@@ -45,23 +48,16 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             trainee.Id = _traineeService.CreateTraineeCode(trainee, request.BranchId);
 
             bool isAdult = _traineeService.IsAdult(trainee.BirthDate);
-            bool isNull = (string.IsNullOrEmpty(trainee.ParentNumber)
+            bool isGuardianInfoMissing = (string.IsNullOrEmpty(trainee.ParentNumber)
                 || string.IsNullOrEmpty(trainee.GuardianName));
             
-            if (!isAdult && isNull)
+            if (!isAdult && isGuardianInfoMissing)
                 throw new GuardianInfoMissingException();
-
-
-            //if (isAdult && isNull)
-            //{
-            //    trainee.ParentNumber = null;
-            //    trainee.GuardianName = null;
-            //}
 
             trainee.IsSubscribed = false;
 
             await _traineeRepository.AddAsync(trainee, cancellationToken);
-            return Result<int>.Success(trainee.Id, OperationType.Add.ToString());
+            return Result<int>.Success(trainee.Id, _operationType);
         }
     }
 }

@@ -18,8 +18,8 @@ namespace SportAcademy.Application.Services
         }
 
         public static Result<EType> Success(EType data, string operation,
-            string message = "Operation done successfully")
-            => new(true, data, operation, message);
+            string message = "{Operation} operation done successfully")
+            => new(true, data, operation, message.Replace("{Operation}", operation));
     }
 
     public class Result : ResultBase

@@ -6,6 +6,8 @@ using SportAcademy.Application.Services;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +21,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         private readonly ITraineeService _traineeService;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IMapper _mapper;
+        private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateTraineePersonalCommandHandler(ITraineeService traineeService,
             ITraineeRepository traineeRepository,
@@ -32,17 +35,14 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         public async Task<Result<UpdateTraineePersonalCommand>> Handle(UpdateTraineePersonalCommand request, CancellationToken cancellationToken)
         {
             var trainee = await _traineeRepository.GetFullTrainee(request.Id, cancellationToken)
-                ?? throw new KeyNotFoundException("Trainee not found");
+                ?? throw new IdNotFoundException(EntityTypes.Trainee.DisplayName(),
+                                request.Id.ToString());
 
             _mapper.Map(request, trainee);
 
-            trainee.AppUser.Email = request.Email;
-            trainee.AppUser.UserName = request.UserName;
-            trainee.AppUser.PhoneNumber = request.PhoneNumber;
-
             await _traineeRepository.UpdateAsync(trainee, cancellationToken);
 
-            return Result<UpdateTraineePersonalCommand>.Success(request, OperationType.Update.ToString());
+            return Result<UpdateTraineePersonalCommand>.Success(request, _operationType);
         }
     }
 }
