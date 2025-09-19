@@ -35,7 +35,6 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 {
                     SportId = s.Id
                 }).ToList()));
-
         }
     }
 }

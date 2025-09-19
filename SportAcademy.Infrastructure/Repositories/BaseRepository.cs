@@ -20,7 +20,7 @@ namespace SportAcademy.Infrastructure.Repositories
         {
             _context = context;
         }
-
+         
         public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             await _context.Set<TEntity>().AddAsync(entity, cancellationToken);

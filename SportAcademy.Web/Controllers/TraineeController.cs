@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
 using System.Threading.Tasks;
 
@@ -19,17 +20,11 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet]
-        public IActionResult GetHello()
-        {
-            return Ok(new { Message = "Hello from Swagger!" });
-        }
-
         [HttpGet("get-all")]
         public async Task<ActionResult> IndexAsync()
         {
-            //await _mediator.Send();
-            return Ok();
+            var trainees = await _mediator.Send(new GetAllTraineesQuery());
+            return Ok(trainees);
         }
 
         [HttpGet("get/{id}")]
@@ -46,14 +41,14 @@ namespace SportAcademy.Web.Controllers
             return Ok(trainee);
         }
 
-        [HttpPut]
+        [HttpPut("update")]
         public async Task<ActionResult> EditAsync(UpdateTraineePersonalCommand command)
         {
             var trainee = await _mediator.Send(command);
             return Ok(trainee);
         }
 
-        [HttpDelete]
+        [HttpDelete("delete")]
         public ActionResult Delete(int id)
         {
             return NoContent();
