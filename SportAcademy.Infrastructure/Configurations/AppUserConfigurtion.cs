@@ -33,6 +33,12 @@ namespace SportAcademy.Infrastructure.Configurations
                 .WithOne(p => p.User)
                 .HasForeignKey<Profile>(p => p.AppUserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            //  1:M NotificationRecipients
+            builder.HasMany(au => au.Notifications)
+                .WithOne(n => n.User)
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
