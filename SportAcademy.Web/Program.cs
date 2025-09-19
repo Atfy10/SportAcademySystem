@@ -65,6 +65,8 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddUserSeeder();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -82,6 +84,8 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+//app.MapHub<>("/");
 
 app.MapControllers();
 
