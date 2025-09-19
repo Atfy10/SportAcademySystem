@@ -26,7 +26,6 @@
 
 	<ItemGroup>
 		<Folder Include="Implementations\" />
-		<Folder Include="Repositories\" />
 	</ItemGroup>
 
 </Project>
