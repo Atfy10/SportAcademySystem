@@ -32,5 +32,7 @@ namespace SportAcademy.Infrastructure.DBContext
         public DbSet<SubscriptionDetails> SubscriptionDetails { get; set; }
         public DbSet<SubscriptionType> SubscriptionTypes { get; set; }
         public DbSet<Trainee> Trainees { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
     }
 }
