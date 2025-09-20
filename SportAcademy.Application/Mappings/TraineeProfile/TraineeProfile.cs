@@ -24,7 +24,11 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForAllMembers(opts =>
                     opts.Condition((src, dest, srcMember) => srcMember != null));
 
-            CreateMap<Trainee, UpdateTraineePersonalCommand>().ReverseMap();
+            CreateMap<Trainee, UpdateTraineePersonalCommand>();
+
+            CreateMap<UpdateTraineePersonalCommand, Trainee>()
+                .ForAllMembers(opts =>
+                    opts.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<Trainee, TraineeDto>()
                 .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportDto(st.Sport.Id,

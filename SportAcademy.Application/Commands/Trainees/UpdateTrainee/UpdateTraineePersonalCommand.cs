@@ -13,8 +13,8 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
     public record UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>
     {
         public int Id { get; init; }
-        public required string FirstName { get; init; }
-        public required string LastName { get; init; }
+        public string? FirstName { get; init; }
+        public string? LastName { get; init; }
         public string? GuardianName { get; init; }
         public string? ParentNumber { get; init; }
         public AppUserDto? AppUser { get; init; }

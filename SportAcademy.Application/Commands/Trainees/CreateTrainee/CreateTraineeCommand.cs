@@ -12,7 +12,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
     public record CreateTraineeCommand : IRequest<Result<int>>
     {
-        public int Id { get; init; }
         public required string FirstName { get; init; }
         public required string LastName { get; init; }
         public required string SSN { get; init; }
