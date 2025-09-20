@@ -14,15 +14,12 @@ namespace SportAcademy.Infrastructure.Implementations
     public class NotificationService : INotificationService
     {
         private readonly IHubContext<NotificationHub, INotificationClient> _hubContext;
-        private readonly INotificationService _notificationService;
         private readonly INotificationRepository _notificationRepository;
 
         public NotificationService(IHubContext<NotificationHub, INotificationClient> hubContext,
-            INotificationService notificationService,
             INotificationRepository notificationRepository)
         {
             _hubContext = hubContext;
-            _notificationService = notificationService;
             _notificationRepository = notificationRepository;
         }
 
