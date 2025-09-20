@@ -12,6 +12,8 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.DBContext;
+using SportAcademy.Infrastructure.Implementations;
+using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Repositories;
 using SportAcademy.Web;
 using System;
@@ -47,6 +49,12 @@ builder.Services.AddScoped(typeof(IBaseRepository<,>), typeof(BaseRepository<,>)
 
 builder.Services.AddScoped<ITraineeRepository, TraineeRepository>();
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -65,6 +73,8 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddUserSeeder();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -82,6 +92,8 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.MapHub<NotificationHub>("/hubs/notification");
 
 app.MapControllers();
 

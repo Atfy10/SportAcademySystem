@@ -57,7 +57,7 @@ namespace SportAcademy.Infrastructure.Repositories
             await SaveChanges(cancellationToken);
         }
 
-        protected async Task SaveChanges(CancellationToken cancellationToken)
+        protected async Task SaveChanges(CancellationToken cancellationToken = default)
         {
             await _context.SaveChangesAsync(cancellationToken);
         }
