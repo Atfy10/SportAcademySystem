@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Extensions;
 using SportAcademy.Infrastructure.DBContext;
 using System;
 using System.Collections.Generic;
@@ -22,6 +25,34 @@ namespace SportAcademy.Infrastructure.Repositories
             _userManager = userManager;
             _context = context;
         }
+
+        public override async Task AddAsync(AppUser user, CancellationToken cancellationToken = default)
+        {
+            await _userManager.CreateAsync(user, $"{user.UserName}1234");
+        }
+
+        public override async Task UpdateAsync(AppUser entity, CancellationToken cancellationToken = default)
+        {
+            await _userManager.UpdateAsync(entity);
+        }
+
+        public override async Task DeleteAsync(AppUser entity, CancellationToken cancellationToken = default)
+        {
+            await _userManager.DeleteAsync(entity);
+        }
+
+        public override async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        {
+            await _userManager.DeleteAsync(await GetByIdAsync(id, cancellationToken)
+                ?? throw new IdNotFoundException(EntityTypes.User.DisplayName(), id.ToString()));
+        }
+
+        public override async Task<AppUser?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+            => await _userManager.FindByIdAsync(id);
+
+        public override async Task<List<AppUser>> GetAllAsync(CancellationToken cancellationToken = default)
+            => await _userManager.Users.ToListAsync(cancellationToken);
+
         public async Task<AppUser?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
             => await _userManager.FindByEmailAsync(email);
 
