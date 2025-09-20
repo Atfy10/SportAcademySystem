@@ -20,6 +20,10 @@ namespace SportAcademy.Infrastructure.Configurations
             builder.Property(x => x.Message)
                 .IsRequired();
 
+            builder.Property(x => x.GroupName)
+                .IsRequired(false)
+                .HasMaxLength(30);
+
             builder.Property(x => x.CreatedAt)
                 .IsRequired()
                 .HasDefaultValueSql("GETDATE()")
