@@ -11,6 +11,7 @@ namespace SportAcademy.Domain.Entities
         public int Id { get; set; }
         public required string Message { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? GroupName { get; set; }
 
         // Navigation Property
         public virtual ICollection<NotificationRecipient> Recipients { get; set; } = [];
