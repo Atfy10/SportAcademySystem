@@ -21,13 +21,13 @@ namespace SportAcademy.Infrastructure.Repositories
             _context = context;
         }
          
-        public async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
+        public virtual async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             await _context.Set<TEntity>().AddAsync(entity, cancellationToken);
             await SaveChanges(cancellationToken);
         }
 
-        public async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
+        public virtual async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
         {
             var entity = await GetByIdAsync(id, cancellationToken)
                 ?? throw new IdNotFoundException(typeof(TEntity).Name, id.ToString());
@@ -36,22 +36,22 @@ namespace SportAcademy.Infrastructure.Repositories
             await SaveChanges(cancellationToken);
         }
 
-        public async Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
+        public virtual async Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             _context.Set<TEntity>().Remove(entity);
             await SaveChanges(cancellationToken);
         }
 
-        public async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+        public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().ToListAsync(cancellationToken);
 
-        public async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
+        public virtual async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().FindAsync(id, cancellationToken);
 
-        public async Task<TEntity?> GetByIdsAsync(CancellationToken cancellationToken = default, params TKey[] id)
+        public virtual async Task<TEntity?> GetByIdsAsync(CancellationToken cancellationToken = default, params TKey[] id)
             => await _context.Set<TEntity>().FindAsync(id, cancellationToken);
 
-        public async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
+        public virtual async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             _context.Set<TEntity>().Update(entity);
             await SaveChanges(cancellationToken);

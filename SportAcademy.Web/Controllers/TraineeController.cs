@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Web.Controllers
 {
+    //[Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class TraineeController : Controller
@@ -21,7 +23,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("get-all")]
-        public async Task<ActionResult> IndexAsync()
+        public async Task<ActionResult> Index()
         {
             var trainees = await _mediator.Send(new GetAllTraineesQuery());
             return Ok(trainees);

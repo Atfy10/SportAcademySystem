@@ -56,7 +56,12 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             trainee.IsSubscribed = false;
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             await _traineeRepository.AddAsync(trainee, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
             return Result<int>.Success(trainee.Id, _operationType);
         }
     }

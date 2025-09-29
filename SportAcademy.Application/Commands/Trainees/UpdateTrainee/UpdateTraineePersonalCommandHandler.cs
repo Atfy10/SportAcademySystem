@@ -40,7 +40,11 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 
             _mapper.Map(request, trainee);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             await _traineeRepository.UpdateAsync(trainee, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return Result<UpdateTraineePersonalCommand>.Success(request, _operationType);
         }
