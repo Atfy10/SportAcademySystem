@@ -17,8 +17,4 @@
 	  <ProjectReference Include="..\SportAcademy.Domain\SportAcademy.Domain.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Queries\UserQueries\GetAll\" />
-	</ItemGroup>
-
 </Project>

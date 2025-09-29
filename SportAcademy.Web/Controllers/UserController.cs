@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.UserCommands.UserDelete;
 using SportAcademy.Application.Commands.UserCommands.UserUpdate;
+using SportAcademy.Application.Queries.TraineeQueries.GetAll;
+using SportAcademy.Application.Queries.UserQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
@@ -23,7 +25,7 @@ namespace SportAcademy.Web.Controllers
         [HttpGet("get-all")]
         public async Task<IActionResult> Index()
         {
-            var users = await _mediator.Send(new object());
+            var users = await _mediator.Send(new GetAllUsersQuery());
             return Ok(users);
         }
 
