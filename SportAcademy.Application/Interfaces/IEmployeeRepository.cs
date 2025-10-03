@@ -10,7 +10,7 @@ namespace SportAcademy.Application.Interfaces
     public interface IEmployeeRepository : IBaseRepository<Employee, int>
     {
         Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default);
-        Task<Trainee?> GetFullEmployee(int id, CancellationToken cancellationToken = default);
+        Task<Employee?> GetFullEmployee(int id, CancellationToken cancellationToken = default);
 
     }
 }

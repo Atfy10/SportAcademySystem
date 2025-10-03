@@ -3,7 +3,7 @@ using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 
 namespace SportAcademy.Application.Validators.TraineeValidators
 {
-    public class UpdateTraineePersonalValidator : AbstractValidator<UpdateTraineePersonalCommand>
+    public class UpdateTraineePersonalValidator : AbstractValidator<UpdateEmployeePersonalCommand>
     {
         public UpdateTraineePersonalValidator()
         {
