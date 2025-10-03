@@ -10,6 +10,7 @@ namespace SportAcademy.Domain.Entities
         public required string SSN { get; set; }
         public decimal Salary { get; set; }
         public Gender Gender { get; set; }
+        public DateOnly BirthDate { get; set; }
         public DateTime HireDate { get; set; }
         public required string Address { get; set; }
         public required string PhoneNumber { get; set; }

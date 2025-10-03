@@ -46,6 +46,10 @@ namespace SportAcademy.Infrastructure.Configurations
             builder.Property(e => e.Position)
                 .HasConversion<string>();
 
+            builder.Property(e => e.BirthDate)
+                .HasColumnType("date")
+                .IsRequired();
+
             builder.Property(e => e.Salary)
                 .HasPrecision(18, 2);
             //  .HasColumnType("decimal(18,2)");
