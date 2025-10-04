@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,15 +39,7 @@ namespace SportAcademy.Domain.Services
 
         public bool IsSSNValid(string ssn, DateOnly birthDate)
         {
-            // 3 04 03 03
-            var year = birthDate.Year > 1999 ? 3 : 2;
-            var sixNumbersOfBirth = birthDate.ToString("yyMMdd");
-
-            if (!ssn.StartsWith($"{year}{sixNumbersOfBirth}"))
-                return false;
-
-            return true;
-
+            return PersonValidationHelper.IsValidSSN(ssn, birthDate);
         }
     }
 }
