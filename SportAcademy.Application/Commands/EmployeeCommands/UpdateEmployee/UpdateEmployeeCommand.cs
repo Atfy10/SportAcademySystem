@@ -12,6 +12,8 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
 {
     public record UpdateEmployeeCommand(
         int Id,
+        string FirstName,
+        string LastName,
         decimal Salary,
         string Address,
         string PhoneNumber,

@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 {
-    public class UpdateTraineePersonalCommandHandler : IRequestHandler<UpdateEmployeePersonalCommand, Result<UpdateEmployeePersonalCommand>>
+    public class UpdateTraineePersonalCommandHandler : IRequestHandler<UpdateTraineePersonalCommand, Result<UpdateTraineePersonalCommand>>
     {
         private readonly ITraineeService _traineeService;
         private readonly ITraineeRepository _traineeRepository;
@@ -32,7 +32,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
             _mapper = mapper;
         }
 
-        public async Task<Result<UpdateEmployeePersonalCommand>> Handle(UpdateEmployeePersonalCommand request, CancellationToken cancellationToken)
+        public async Task<Result<UpdateTraineePersonalCommand>> Handle(UpdateTraineePersonalCommand request, CancellationToken cancellationToken)
         {
             var trainee = await _traineeRepository.GetFullTrainee(request.Id, cancellationToken)
                 ?? throw new IdNotFoundException(EntityTypes.Trainee.DisplayName(),
@@ -46,7 +46,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            return Result<UpdateEmployeePersonalCommand>.Success(request, _operationType);
+            return Result<UpdateTraineePersonalCommand>.Success(request, _operationType);
         }
     }
 }

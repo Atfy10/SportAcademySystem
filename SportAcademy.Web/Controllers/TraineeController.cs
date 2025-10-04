@@ -44,7 +44,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPut("update")]
-        public async Task<ActionResult> EditAsync(UpdateEmployeePersonalCommand command)
+        public async Task<ActionResult> EditAsync(UpdateTraineePersonalCommand command)
         {
             var trainee = await _mediator.Send(command);
             return Ok(trainee);

@@ -3,12 +3,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee;
+using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
+using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
+using System.Threading.Tasks;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -27,35 +30,36 @@ namespace SportAcademy.Web.Controllers
         [HttpGet("get-all")]
         public async Task<ActionResult> Index()
         {
-            var employees = await _mediator.Send(new GetAllEmployeesQuery());
-            return Ok(employees);
+            var result = await _mediator.Send(new GetAllEmployeesQuery());
+            return Ok(result);
         }
 
         [HttpGet("get/{id}")]
         public async Task<ActionResult> Details(int id)
         {
-            var trainee = await _mediator.Send(new GetEmployeeByIdQuery(id));
-            return Ok(trainee);
+            var result = await _mediator.Send(new GetEmployeeByIdQuery(id));
+            return Ok(result);
         }
 
         [HttpPost("create")]
         public async Task<ActionResult> CreateAsync(CreateEmployeeCommand command)
         {
-            var trainee = await _mediator.Send(command);
-            return Ok(trainee);
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
         [HttpPut("update")]
-        public async Task<ActionResult> EditAsync(UpdateEmployeePersonalCommand command)
+        public async Task<ActionResult> EditAsync(UpdateEmployeeCommand command)
         {
-            var employee = await _mediator.Send(command);
-            return Ok(employee);
+            var result = await _mediator.Send(command);
+            return Ok(result);
         }
 
         [HttpDelete("delete")]
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            return NoContent();
+            var result = await _mediator.Send(new DeleteEmployeeCommand(id));
+            return Ok(result);
         }
     }
 }

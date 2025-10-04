@@ -15,6 +15,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         string SSN,
         decimal Salary,
         Gender Gender,
+        DateOnly BirthDate,
         string Address,
         string PhoneNumber,
         string? SecondNumber,

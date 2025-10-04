@@ -20,15 +20,18 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         private readonly IMapper _mapper;
         private readonly IEmployeeService _employeeService;
         private readonly string _operationType = OperationType.Add.ToString();
+        private readonly IUserRepository _userRepository;
 
         public CreateEmployeeCommandHandler(
             IEmployeeService employeeService,
             IMapper mapper,
-            IEmployeeRepository employeeRepository)
+            IEmployeeRepository employeeRepository,
+            IUserRepository userRepository)
         {
             _mapper = mapper;
             _employeeService = employeeService;
             _employeeRepository = employeeRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<Result<int>> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
@@ -48,6 +51,10 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
                 throw new SSNNotUniqueException();
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            var users = await _userRepository.GetAllAsync();
+
+            employee.AppUserId = users[Random.Shared.Next(0, 50)].Id;
 
             await _employeeRepository.AddAsync(employee, cancellationToken);
 

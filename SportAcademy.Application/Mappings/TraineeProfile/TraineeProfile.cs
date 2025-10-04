@@ -24,9 +24,9 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForAllMembers(opts =>
                     opts.Condition((src, dest, srcMember) => srcMember != null));
 
-            CreateMap<Trainee, UpdateEmployeePersonalCommand>();
+            CreateMap<Trainee, UpdateTraineePersonalCommand>();
 
-            CreateMap<UpdateEmployeePersonalCommand, Trainee>()
+            CreateMap<UpdateTraineePersonalCommand, Trainee>()
                 .ForAllMembers(opts =>
                     opts.Condition((src, dest, srcMember) => srcMember != null));
 

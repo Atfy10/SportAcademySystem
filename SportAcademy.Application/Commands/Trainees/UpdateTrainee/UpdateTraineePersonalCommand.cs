@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 {
-    public record UpdateEmployeePersonalCommand : IRequest<Result<UpdateEmployeePersonalCommand>>
+    public record UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>
     {
         public int Id { get; init; }
         public string? FirstName { get; init; }
