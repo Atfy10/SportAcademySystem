@@ -17,4 +17,11 @@
 	  <ProjectReference Include="..\SportAcademy.Domain\SportAcademy.Domain.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Commands\AttendanceCommands\DeleteAttendance\" />
+	  <Folder Include="Commands\AttendanceCommands\UpdateAttendance\" />
+	  <Folder Include="Queries\AttendanceQueries\GetAll\" />
+	  <Folder Include="Queries\AttendanceQueries\GetById\" />
+	</ItemGroup>
+
 </Project>
