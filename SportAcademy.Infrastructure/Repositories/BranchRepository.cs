@@ -29,5 +29,11 @@ namespace SportAcademy.Infrastructure.Repositories
 			return await _context.Branchs
 				.AnyAsync(b => b.Email == email, cancellationToken);
 		}
+
+		public async Task<bool> IsPhoneNumberExistAsync(string phoneNumber, CancellationToken cancellationToken)
+		{
+			return await _context.Branchs
+				.AnyAsync(b => b.PhoneNumber == phoneNumber, cancellationToken);
+		}
 	}
 }

@@ -28,13 +28,17 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 		{
 			var branch = _mapper.Map<Branch>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
-			var exists = await _branchRepository.IsEmailExistAsync(branch.Email, cancellationToken);
-			if (exists)
+			var emailExists = await _branchRepository.IsEmailExistAsync(branch.Email, cancellationToken);
+			if (emailExists)
 				throw new EmailExistException();
 			
 			var isCoordinatesUsed = await _branchRepository.IsCoordinatesExistAsync(branch.CoX, branch.CoY, cancellationToken);
 			if (isCoordinatesUsed)
 				throw new CoordinateExistException();
+
+			var phoneExists = await _branchRepository.IsPhoneNumberExistAsync(branch.PhoneNumber, cancellationToken);
+			if (phoneExists)
+				throw new PhoneExistException();
 
 			branch.IsActive = true;
 			cancellationToken.ThrowIfCancellationRequested();

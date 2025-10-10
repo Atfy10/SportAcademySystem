@@ -11,5 +11,6 @@ namespace SportAcademy.Application.Interfaces
 	{
 		Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken);
 		Task<bool> IsCoordinatesExistAsync(string coX, string coY, CancellationToken cancellationToken);
+		Task<bool> IsPhoneNumberExistAsync(string phoneNumber, CancellationToken cancellationToken);
 	}
 }

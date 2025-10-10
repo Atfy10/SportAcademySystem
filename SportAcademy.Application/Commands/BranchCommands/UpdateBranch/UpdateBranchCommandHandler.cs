@@ -46,6 +46,13 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 					throw new CoordinateExistException();
 			}
 
+			if (!string.IsNullOrEmpty(request.PhoneNumber) && request.PhoneNumber != branch.PhoneNumber)
+			{
+				var phoneExists = await _branchRepository.IsPhoneNumberExistAsync(request.PhoneNumber, cancellationToken);
+				if (phoneExists)
+					throw new PhoneExistException();
+			}
+
 			_mapper.Map(request, branch);
 
 			cancellationToken.ThrowIfCancellationRequested();
