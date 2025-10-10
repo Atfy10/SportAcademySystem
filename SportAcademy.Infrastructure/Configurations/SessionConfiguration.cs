@@ -24,6 +24,11 @@ namespace SportAcademy.Infrastructure.Configurations
                 .HasConversion<string>()
                 .IsRequired();
 
+            builder.Property(s => s.Day)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(9);
+
             builder.Property(s => s.Gender)
                 .IsRequired()
                 .HasConversion<string>();
