@@ -57,6 +57,6 @@ namespace SportAcademy.Web.Controllers
 			var result = await _mediator.Send(new DeleteBranchCommand(id));
 			return Ok(result);
 		}
-
+		 
 	}
 }
