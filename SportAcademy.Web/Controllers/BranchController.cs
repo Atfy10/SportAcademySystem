@@ -6,6 +6,7 @@ using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.BranchQueries;
 using SportAcademy.Application.Queries.BranchQueries.GetById;
 using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
+using SportAcademy.Application.Commands.BranchCommands.DeleteBranch;
 
 
 namespace SportAcademy.Web.Controllers
@@ -47,6 +48,13 @@ namespace SportAcademy.Web.Controllers
 		public async Task<IActionResult> Update([FromBody] UpdateBranchCommand command, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(command, cancellationToken);
+			return Ok(result);
+		}
+
+		[HttpDelete("delete")]
+		public async Task<IActionResult> Delete(int id)
+		{
+			var result = await _mediator.Send(new DeleteBranchCommand(id));
 			return Ok(result);
 		}
 
