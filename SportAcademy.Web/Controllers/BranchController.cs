@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
+using SportAcademy.Application.Queries.BranchQueries.GetAll;
+using SportAcademy.Application.Queries.BranchQueries;
+
 
 namespace SportAcademy.Web.Controllers
 {
@@ -22,5 +25,13 @@ namespace SportAcademy.Web.Controllers
 			var result = await _mediator.Send(command, cancellationToken);
 			return Ok(result);
 		}
+
+		[HttpGet("get-all")]
+		public async Task<IActionResult> GetAll()
+		{
+			var result = await _mediator.Send(new GetAllBranchsQuery());
+			return Ok(result);
+		}
+
 	}
 }

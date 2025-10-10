@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
+using SportAcademy.Application.DTOs.BranchDtos;
 using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Mappings.BranchProfile
@@ -14,6 +15,7 @@ namespace SportAcademy.Application.Mappings.BranchProfile
 		public BranchProfile()
 		{
 			CreateMap<Branch, CreateBranchCommand>().ReverseMap();
+			CreateMap<Branch, BranchDto>().ReverseMap();
 		}
 
 	}
