@@ -5,6 +5,7 @@ using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.BranchQueries;
 using SportAcademy.Application.Queries.BranchQueries.GetById;
+using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
 
 
 namespace SportAcademy.Web.Controllers
@@ -38,6 +39,14 @@ namespace SportAcademy.Web.Controllers
 		public async Task<IActionResult> GetById(int id)
 		{
 			var result = await _mediator.Send(new GetBranchByIdQuery(id));
+			return Ok(result);
+		}
+
+		[HttpPut("update")]
+
+		public async Task<IActionResult> Update([FromBody] UpdateBranchCommand command, CancellationToken cancellationToken)
+		{
+			var result = await _mediator.Send(command, cancellationToken);
 			return Ok(result);
 		}
 
