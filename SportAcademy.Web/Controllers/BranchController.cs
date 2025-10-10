@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.BranchQueries;
+using SportAcademy.Application.Queries.BranchQueries.GetById;
 
 
 namespace SportAcademy.Web.Controllers
@@ -30,6 +31,13 @@ namespace SportAcademy.Web.Controllers
 		public async Task<IActionResult> GetAll()
 		{
 			var result = await _mediator.Send(new GetAllBranchsQuery());
+			return Ok(result);
+		}
+
+		[HttpGet("get-by-id/{id}")]
+		public async Task<IActionResult> GetById(int id)
+		{
+			var result = await _mediator.Send(new GetBranchByIdQuery(id));
 			return Ok(result);
 		}
 
