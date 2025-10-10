@@ -553,9 +553,6 @@ namespace SportAcademy.Infrastructure.Migrations
                         .HasMaxLength(9)
                         .HasColumnType("nvarchar(9)");
 
-                    b.Property<int>("Day")
-                        .HasColumnType("int");
-
                     b.Property<int>("DurationInMinutes")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
