@@ -19,6 +19,10 @@ namespace SportAcademy.Infrastructure.Configurations
                 .IsRequired()
                 .HasMaxLength(50);
 
+            builder.HasIndex(b => b.Name)
+                .IsUnique()
+                .HasDatabaseName("IX_Branch_Name");
+
             builder.Property(b => b.City)
                 .IsRequired()
                 .HasMaxLength(50);
