@@ -38,7 +38,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 					throw new EmailExistException();
 			}
 
-			bool coordinatesChanged = (request.CoX != branch.CoX) || (request.CoY != branch.CoY);
+			var coordinatesChanged = (request.CoX != branch.CoX) || (request.CoY != branch.CoY);
 			if (coordinatesChanged)
 			{
 				var coordinatesExist = await _branchRepository.IsCoordinatesExistAsync(request.CoX!, request.CoY!, cancellationToken);
@@ -46,7 +46,9 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 					throw new CoordinateExistException();
 			}
 
-			if (!string.IsNullOrEmpty(request.PhoneNumber) && request.PhoneNumber != branch.PhoneNumber)
+			var isPhoneChanged = !string.IsNullOrEmpty(request.PhoneNumber) 
+				&& request.PhoneNumber != branch.PhoneNumber;
+            if (isPhoneChanged)
 			{
 				var phoneExists = await _branchRepository.IsPhoneNumberExistAsync(request.PhoneNumber, cancellationToken);
 				if (phoneExists)
@@ -56,6 +58,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 			_mapper.Map(request, branch);
 
 			cancellationToken.ThrowIfCancellationRequested();
+
 			await _branchRepository.UpdateAsync(branch, cancellationToken);
 
 			var branchDto = _mapper.Map<BranchDto>(branch)

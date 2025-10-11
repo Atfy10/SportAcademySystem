@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.DTOs.BranchDtos
 {
-	public class BranchDto
+	public record BranchDto
 	{
-		public int Id { get; set; }
-		public string Name { get; set; } = null!;
-		public string City { get; set; } = null!;
-		public string Country { get; set; } = null!;
-		public string PhoneNumber { get; set; } = null!;
-		public string? Email { get; set; }
-		public string CoX { get; set; } = null!;
-		public string CoY { get; set; } = null!;
-		public bool IsActive { get; set; }
+		public int Id { get; init; }
+		public string Name { get; init; } = null!;
+		public string City { get; init; } = null!;
+		public string Country { get; init; } = null!;
+		public string PhoneNumber { get; init; } = null!;
+		public string? Email { get;	init; }
+		public string CoX { get; init; } = null!;
+		public string CoY { get; init; } = null!;
+		public bool IsActive { get; init; }
 	}
 
 }

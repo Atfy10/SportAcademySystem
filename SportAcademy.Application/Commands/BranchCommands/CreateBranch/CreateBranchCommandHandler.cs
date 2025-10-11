@@ -28,6 +28,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 		{
 			var branch = _mapper.Map<Branch>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
+
 			var emailExists = await _branchRepository.IsEmailExistAsync(branch.Email, cancellationToken);
 			if (emailExists)
 				throw new EmailExistException();
@@ -41,7 +42,9 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 				throw new PhoneExistException();
 
 			branch.IsActive = true;
+
 			cancellationToken.ThrowIfCancellationRequested();
+
 			await _branchRepository.AddAsync(branch, cancellationToken);
 			return Result<int>.Success(branch.Id, _operationType);
 		}
