@@ -12,6 +12,6 @@ namespace SportAcademy.Domain.Entities
         // Navigation Properties
         public virtual Employee Employee { get; set; } = null!;
         public virtual Sport Sport { get; set; } = null!;
-        public virtual ICollection<Session> Sessions { get; set; } = [];
+        public virtual ICollection<TraineeGroup> TraineeGroups { get; set; } = [];
     }
 }

@@ -34,10 +34,10 @@ namespace SportAcademy.Infrastructure.Configurations
                    .HasForeignKey(e => e.TraineeId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M Session
-            builder.HasOne(e => e.Session)
+            // 1:M TraineeGroup
+            builder.HasOne(e => e.TraineeGroup)
                    .WithMany(s => s.Enrollments)
-                   .HasForeignKey(e => e.SessionId)
+                   .HasForeignKey(e => e.TraineeGroupId)
                    .OnDelete(DeleteBehavior.Restrict);
 
             // 1:M Attendances
