@@ -19,7 +19,7 @@ namespace SportAcademy.Domain.Entities
         public bool IsActive { get; set; }
 
         // Navigation properties
-        public virtual ICollection<Session> Sessions { get; set; } = [];
+        public virtual ICollection<TraineeGroup> TraineeGroups { get; set; } = [];
         public virtual ICollection<Employee> Employees { get; set; } = [];
         public virtual ICollection<SportBranch> Sports { get; set; } = [];
         public virtual ICollection<SportPrice> SportPrices { get; set; } = [];

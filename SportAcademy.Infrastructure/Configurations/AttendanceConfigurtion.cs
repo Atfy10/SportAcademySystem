@@ -36,11 +36,16 @@ namespace SportAcademy.Infrastructure.Configurations
 
             //  Relationship
             //  1:M Enrollment
-
             builder.HasOne(a => a.Enrollment)
                 .WithMany(e => e.Attendances)
                 .HasForeignKey(a => a.EnrollmentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            //  1:M SessionOccurrence
+            builder.HasOne(a => a.SessionOccurrence)
+                .WithMany(so => so.Attendances)
+                .HasForeignKey(a => a.SessionOccurrenceId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

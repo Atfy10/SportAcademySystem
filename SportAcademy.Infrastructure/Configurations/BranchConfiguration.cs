@@ -57,8 +57,8 @@ namespace SportAcademy.Infrastructure.Configurations
                 .HasDefaultValue(true);
 
             //  Relationships:
-            //  1:M Sessions
-            builder.HasMany(b => b.Sessions)
+            //  1:M TraineeGroups
+            builder.HasMany(b => b.TraineeGroups)
                 .WithOne(s => s.Branch)
                 .HasForeignKey(s => s.BranchId)
                 .OnDelete(DeleteBehavior.Restrict);

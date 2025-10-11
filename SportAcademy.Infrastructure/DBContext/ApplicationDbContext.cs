@@ -23,7 +23,9 @@ namespace SportAcademy.Infrastructure.DBContext
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<Profile> Profiles { get; set; }
         public DbSet<Payment> Payments { get; set; }
-        public DbSet<Session> Sessions { get; set; }
+        public DbSet<TraineeGroup> TraineeGroups { get; set; }
+        public DbSet<GroupSchedule> GroupSchedules { get; set; }
+        public DbSet<SessionOccurrence> SessionOccurrences { get; set; }
         public DbSet<Sport> Sports { get; set; }
         public DbSet<SportBranch> SportBranchs { get; set; }
         public DbSet<SportPrice> SportPrices { get; set; }
