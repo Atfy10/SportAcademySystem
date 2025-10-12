@@ -1,12 +1,13 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.BranchCommands.AddSportToBranch;
 using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
-using SportAcademy.Application.Queries.BranchQueries.GetAll;
-using SportAcademy.Application.Queries.BranchQueries;
-using SportAcademy.Application.Queries.BranchQueries.GetById;
-using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
 using SportAcademy.Application.Commands.BranchCommands.DeleteBranch;
+using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
+using SportAcademy.Application.Queries.BranchQueries;
+using SportAcademy.Application.Queries.BranchQueries.GetAll;
+using SportAcademy.Application.Queries.BranchQueries.GetById;
 
 
 namespace SportAcademy.Web.Controllers
@@ -57,6 +58,12 @@ namespace SportAcademy.Web.Controllers
 			var result = await _mediator.Send(new DeleteBranchCommand(id));
 			return Ok(result);
 		}
-		 
-	}
+        [HttpPost("link-sport-branch")]
+        public async Task<IActionResult> AddSportToBranch([FromBody] AddSportToBranchCommand command, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+
+    }
 }

@@ -60,7 +60,8 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
-
+builder.Services.AddScoped<ISportRepository, SportRepository>();
+builder.Services.AddScoped<ISportBranchRepository, SportBranchRepository>();
 
 builder.Services.AddControllers();
 
