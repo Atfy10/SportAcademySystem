@@ -24,5 +24,12 @@ namespace SportAcademy.Infrastructure.Repositories
 		public Task<SportPrice> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
 			=> _context.SportPrices
 			.FirstOrDefaultAsync(sp => sp.BranchId == branchId && sp.SportId == sportId && sp.SubsTypeId == subsTypeId, cancellationToken);
+
+		public Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken)
+			=> _context.SportPrices
+			.Include(sp => sp.Branch)
+			.Include(sp => sp.Sport)
+			.Include(sp => sp.SubscriptionType)
+			.ToListAsync(cancellationToken);
 	}
 }

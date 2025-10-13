@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice;
 using SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice;
 using SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice;
+using SportAcademy.Application.Queries.SportPriceQueries.GetAll;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -37,6 +38,12 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
+		[HttpGet("get-all")]
+		public async Task<IActionResult> GetAllSportPrices(CancellationToken cancellationToken)
+		{
+			var result = await _mediator.Send(new GetAllSportPricesQuery(), cancellationToken);
+			return Ok(result);
+		}
 
 	}
 }
