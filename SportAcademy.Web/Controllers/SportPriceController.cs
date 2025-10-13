@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice;
+using SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -16,6 +17,13 @@ namespace SportAcademy.Web.Controllers
 		}
 		[HttpPost("create")]
 		public async Task<IActionResult> CreateSportPrice([FromBody] CreateSportPriceCommand command, CancellationToken cancellationToken)
+		{
+			var result = await _mediator.Send(command, cancellationToken);
+			return Ok(result);
+		}
+
+		[HttpPut("update")]
+		public async Task<IActionResult> UpdateSportPrice([FromBody] UpdateSportPriceCommand command, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(command, cancellationToken);
 			return Ok(result);

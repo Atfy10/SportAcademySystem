@@ -20,5 +20,9 @@ namespace SportAcademy.Infrastructure.Repositories
 		public Task<bool> CheckIfKeyExists(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
 		=> _context.SportPrices
 			.AnyAsync(sp => sp.BranchId == branchId && sp.SportId == sportId && sp.SubsTypeId == subsTypeId, cancellationToken);
+
+		public Task<SportPrice> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
+			=> _context.SportPrices
+			.FirstOrDefaultAsync(sp => sp.BranchId == branchId && sp.SportId == sportId && sp.SubsTypeId == subsTypeId, cancellationToken);
 	}
 }
