@@ -36,7 +36,7 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
-		[HttpGet("get-by-id/{id}")]
+		[HttpGet("get/{id}")]
 		public async Task<IActionResult> GetById(int id)
 		{
 			var result = await _mediator.Send(new GetBranchByIdQuery(id));
