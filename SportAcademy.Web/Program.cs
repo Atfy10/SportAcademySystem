@@ -61,6 +61,11 @@ builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 
+builder.Services.AddScoped<ISportRepository, SportRepository>();
+builder.Services.AddScoped<ISportPriceRepository, SportPriceRepository>();
+builder.Services.AddScoped<ISubscriptionTypeRepository, SubscriptionTypeRepository>();
+
+
 
 builder.Services.AddControllers();
 
