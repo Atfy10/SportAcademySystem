@@ -12,6 +12,7 @@ namespace SportAcademy.Application.Interfaces
 		Task<bool> CheckIfKeyExists(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken);
 		Task<SportPrice> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken);
 		Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken);
+		Task<SportPrice> GetByKeyWithIncludesAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken);
 	}
 
 }
