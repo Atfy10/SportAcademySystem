@@ -21,5 +21,8 @@ namespace SportAcademy.Infrastructure.Repositories
 		public async Task<bool> CheckIfKeyExists(int sportId, int traineeId, CancellationToken cancellationToken)
 		=> await _context.SportTrainees.AnyAsync(st => st.SportId == sportId && st.TraineeId == traineeId, cancellationToken);
 
+		public async Task<SportTrainee?> GetByIdAsync(int sportId, int traineeId, CancellationToken cancellationToken)
+			=> await _context.SportTrainees.FirstOrDefaultAsync(st => st.SportId == sportId && st.TraineeId == traineeId, cancellationToken);
+
 	}
 }

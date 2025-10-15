@@ -10,5 +10,6 @@ namespace SportAcademy.Application.Interfaces
 	public interface ISportTraineeRepository : IBaseRepository<SportTrainee,int>
 	{
 		Task<bool> CheckIfKeyExists(int sportId, int traineeId, CancellationToken cancellationToken);
+		Task<SportTrainee?> GetByIdAsync(int sportId, int traineeId, CancellationToken cancellationToken);
 	}
 }
