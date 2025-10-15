@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrainee;
+using SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrainee;
 using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Mappings.SportTraineeProfile
@@ -13,7 +14,7 @@ namespace SportAcademy.Application.Mappings.SportTraineeProfile
 		public SportTraineeProfile()
 		{
 			CreateMap<CreateSportTraineeCommand, SportTrainee>().ReverseMap();
-			//CreateMap<Commands.SportTraineeCommands.UpdateSportTrainee.UpdateSportTraineeCommand, Domain.Entities.SportTrainee>();
+			CreateMap<UpdateSportTraineeCommand, SportTrainee>();
 		}
 	}
 }
