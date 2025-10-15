@@ -11,6 +11,6 @@ namespace SportAcademy.Application.Interfaces
 	{
         Task<bool> IsExistByIdAsync(int id, CancellationToken cancellationToken);
         Task<IEnumerable<Sport>> GetAvailableSportsForBranch(int branchId, CancellationToken cancellationToken);
-        Task<bool> CheckIfSportExists(int sportId, CancellationToken cancellationToken);
+        Task<bool> IsSportExistAsync(int sportId, CancellationToken cancellationToken);
 	}
 }

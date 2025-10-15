@@ -23,9 +23,8 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice
 
 		public async Task<Result<bool>> Handle(DeleteSportPriceCommand request, CancellationToken cancellationToken)
 		{
-			var keyExists = await _sportPriceRepository
-				.CheckIfKeyExists(request.BranchId, request.SportId, request.SubsTypeId, cancellationToken);
-
+			var keyExists = await _sportPriceRepository.IsKeyExistAsync(request.BranchId, 
+				request.SportId, request.SubsTypeId, cancellationToken);
 			if (!keyExists)
 				throw new SportPriceNotFoundException();
 

@@ -19,7 +19,7 @@ namespace SportAcademy.Infrastructure.Repositories
 			_context = context;
 		}
 
-		public Task<bool> CheckIfSubscriptionTypeExists(int subsTypeId, CancellationToken cancellationToken)
+		public Task<bool> IsSubscriptionTypeExistAsync(int subsTypeId, CancellationToken cancellationToken)
 		=> _context.SubscriptionTypes
 				.AnyAsync(st => st.Id == subsTypeId, cancellationToken);
 	}

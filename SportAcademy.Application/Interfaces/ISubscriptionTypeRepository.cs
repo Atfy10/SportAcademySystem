@@ -9,6 +9,6 @@ namespace SportAcademy.Application.Interfaces
 {
 	public interface ISubscriptionTypeRepository : IBaseRepository<SubscriptionType, int>
 	{
-		Task<bool> CheckIfSubscriptionTypeExists(int subsTypeId, CancellationToken cancellationToken);
+		Task<bool> IsSubscriptionTypeExistAsync(int subsTypeId, CancellationToken cancellationToken);
 	}
 }

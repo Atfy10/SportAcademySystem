@@ -20,7 +20,6 @@ namespace SportAcademy.Application.Queries.SportPriceQueries.GetById
 		private readonly IMapper _mapper;
 		private readonly string _operationType = OperationType.Get.ToString();
 
-
 		public GetSportPriceByKeyQueryHandler(ISportPriceRepository sportPriceRepository, IMapper mapper)
 		{
 			_sportPriceRepository = sportPriceRepository;
@@ -29,8 +28,8 @@ namespace SportAcademy.Application.Queries.SportPriceQueries.GetById
 
 		public async Task<Result<SportPriceDto>> Handle(GetSportPriceByKeyQuery request, CancellationToken cancellationToken)
 		{
-			var sportPrice = await _sportPriceRepository
-				.GetByKeyWithIncludesAsync(request.BranchId, request.SportId, request.SubsTypeId, cancellationToken);
+			var sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(request.BranchId,
+				request.SportId, request.SubsTypeId, cancellationToken);
 
 			if (sportPrice is null)
 				throw new SportPriceNotFoundException();
