@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrainee;
+using SportAcademy.Domain.Entities;
+
+namespace SportAcademy.Application.Mappings.SportTraineeProfile
+{
+	public class SportTraineeProfile : AutoMapper.Profile
+	{
+		public SportTraineeProfile()
+		{
+			CreateMap<CreateSportTraineeCommand, SportTrainee>().ReverseMap();
+			//CreateMap<Commands.SportTraineeCommands.UpdateSportTrainee.UpdateSportTraineeCommand, Domain.Entities.SportTrainee>();
+		}
+	}
+}

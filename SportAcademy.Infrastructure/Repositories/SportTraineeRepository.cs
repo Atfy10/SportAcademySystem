@@ -1,0 +1,25 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Entities;
+using SportAcademy.Infrastructure.DBContext;
+
+namespace SportAcademy.Infrastructure.Repositories
+{
+	public class SportTraineeRepository : BaseRepository<SportTrainee, int>, ISportTraineeRepository
+	{
+		private readonly ApplicationDbContext _context;
+
+		public SportTraineeRepository(ApplicationDbContext context) : base(context)
+		{
+			_context = context;
+		}
+		public async Task<bool> CheckIfKeyExists(int sportId, int traineeId, CancellationToken cancellationToken)
+		=> await _context.SportTrainees.AnyAsync(st => st.SportId == sportId && st.TraineeId == traineeId, cancellationToken);
+
+	}
+}
