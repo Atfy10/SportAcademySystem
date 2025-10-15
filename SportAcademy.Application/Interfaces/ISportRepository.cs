@@ -1,14 +1,16 @@
-﻿using System;
+﻿using SportAcademy.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Interfaces
 {
 	public interface ISportRepository : IBaseRepository<Sport, int>
 	{
-		Task<bool> CheckIfSportExists(int sportId, CancellationToken cancellationToken);
+        Task<bool> IsExistByIdAsync(int id, CancellationToken cancellationToken);
+        Task<IEnumerable<Sport>> GetAvailableSportsForBranch(int branchId, CancellationToken cancellationToken);
+        Task<bool> CheckIfSportExists(int sportId, CancellationToken cancellationToken);
 	}
 }

@@ -31,7 +31,7 @@ namespace SportAcademy.Infrastructure.Repositories
             => await _context.Branchs
                 .AnyAsync(b => b.PhoneNumber == phoneNumber, cancellationToken);
 
-        public async Task<bool> CheckIfBranchExists(int branchId, CancellationToken cancellationToken)
+        public async Task<bool> IsBranchExistAsync(int branchId, CancellationToken cancellationToken)
             => await _context.Branchs
                 .AnyAsync(b => b.Id == branchId, cancellationToken);
 

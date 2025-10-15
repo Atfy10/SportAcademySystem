@@ -42,7 +42,7 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice
 			if (!keyExists)
 				throw new SportPriceNotFoundException();
 
-			var branchExists = await _branchRepository.CheckIfBranchExists(request.BranchId, cancellationToken);
+			var branchExists = await _branchRepository.IsBranchExistAsync(request.BranchId, cancellationToken);
 			if (!branchExists)
 				throw new BranchNotFoundException();
 

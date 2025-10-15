@@ -43,7 +43,7 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 			if (keyExists)
 				throw new SportPriceExistsException();
 
-			var branchExists = await _branchRepository.CheckIfBranchExists(request.BranchId, cancellationToken);
+			var branchExists = await _branchRepository.IsBranchExistAsync(request.BranchId, cancellationToken);
 			if (!branchExists)
 				throw new BranchNotFoundException();
 
@@ -65,10 +65,7 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 
 			await _sportPriceRepository.AddAsync(sportPrice, cancellationToken);
 
-			return Result<decimal
-				>.Success(sportPrice.Price, _operationType);
-
-
+			return Result<decimal>.Success(sportPrice.Price, _operationType);
 		}
 	}
 }
