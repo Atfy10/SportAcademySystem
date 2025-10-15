@@ -39,7 +39,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.AddSportToBranch
 
             var exists = await _sportBranchRepository.ExistsAsync(request.SportId, request.BranchId, cancellationToken);
             if (exists)
-                throw new ConflictException("This sport is already assigned to this branch.");
+                throw new ConflictException(nameof(Sport), nameof(Branch));
 
             var sportBranch = new SportBranch
             {

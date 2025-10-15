@@ -8,17 +8,17 @@ namespace SportAcademy.Domain.Exceptions
 {
     public class ConflictException : Exception
     {
-        public ConflictException()
+        private static readonly string _message = "Entity {Entity1} is already assigned to {Entity2} entity.";
+
+        public ConflictException(string firstEntity, string secondEntity)
+            : base(_message.Replace("{Entity1}", firstEntity)
+                  .Replace("{Entity2}", secondEntity))
         {
         }
 
-        public ConflictException(string message)
-            : base(message)
-        {
-        }
-
-        public ConflictException(string message, Exception innerException)
-            : base(message, innerException)
+        public ConflictException(string firstEntity, string secondEntity, Exception innerException)
+            : base(_message.Replace("{Entity1}", firstEntity)
+                  .Replace("{Entity2}", secondEntity), innerException)
         {
         }
     }

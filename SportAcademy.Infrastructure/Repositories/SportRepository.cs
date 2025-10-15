@@ -19,10 +19,14 @@ namespace SportAcademy.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<IEnumerable<Sport>> GetAvailableSportsForBranch(int branchId, CancellationToken cancellationToken)
+            => await _context.Sports
+                .Where(s => !s.Branches.Any(sb => sb.SportId == s.Id && sb.BranchId == branchId))
+                .ToListAsync(cancellationToken);
+
         public async Task<bool> IsExistByIdAsync(int id, CancellationToken cancellationToken)
-        {
-            return await _context.Sports
+            => await _context.Sports
                 .AnyAsync(s => s.Id == id, cancellationToken);
-        }
+
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Queries.SportQueries.GetAll;
+using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -20,6 +21,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAll()
         {
             var result = await _mediator.Send(new GetAllSportsQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("get-available-for-branch/{branchId}")]
+        public async Task<IActionResult> GetAvailableForBranch(int branchId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAvailableSportsForBranchQuery(branchId), cancellationToken);
             return Ok(result);
         }
     }

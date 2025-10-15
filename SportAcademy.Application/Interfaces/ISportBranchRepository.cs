@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Interfaces
 {
-    public interface ISportBranchRepository
+    public interface ISportBranchRepository : IBaseRepository<SportBranch, int>
     {
         Task<bool> ExistsAsync(int sportId, int branchId, CancellationToken cancellationToken);
-        Task AddAsync(SportBranch entity, CancellationToken cancellationToken);
     }
 }
