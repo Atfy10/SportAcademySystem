@@ -11,5 +11,7 @@ namespace SportAcademy.Application.Interfaces
 	{
 		Task<bool> CheckIfKeyExists(int sportId, int traineeId, CancellationToken cancellationToken);
 		Task<SportTrainee?> GetByIdAsync(int sportId, int traineeId, CancellationToken cancellationToken);
+		Task<List<SportTrainee>> GetAllAsyncWithIncludeAsync(CancellationToken cancellationToken);
+		Task<SportTrainee?> GetByIdWithIncludesAsync(int sportId, int traineeId, CancellationToken cancellationToken);	
 	}
 }

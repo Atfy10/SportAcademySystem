@@ -5,6 +5,8 @@ using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
 using SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrainee;
 using SportAcademy.Application.Commands.SportTraineeCommands.DeleteSportTrainee;
 using SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrainee;
+using SportAcademy.Application.Queries.SportTraineeQueries.GetAll;
+using SportAcademy.Application.Queries.SportTraineeQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -38,5 +40,20 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 
 		}
-}
+
+		[HttpGet("get-all")]
+		public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+		{
+			var result = await _mediator.Send(new GetAllSportTraineesQuery(), cancellationToken);
+			return Ok(result);
+		}
+
+		//get by id 
+		[HttpGet("get/{sportId}/{traineeId}")]
+		public async Task<IActionResult> GetById(int sportId, int traineeId, CancellationToken cancellationToken)
+		{
+			var result = await _mediator.Send(new GetSportTraineeByKeyQuery(sportId, traineeId), cancellationToken);
+			return Ok(result);
+		}
+	}
 }

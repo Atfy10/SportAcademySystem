@@ -24,5 +24,17 @@ namespace SportAcademy.Infrastructure.Repositories
 		public async Task<SportTrainee?> GetByIdAsync(int sportId, int traineeId, CancellationToken cancellationToken)
 			=> await _context.SportTrainees.FirstOrDefaultAsync(st => st.SportId == sportId && st.TraineeId == traineeId, cancellationToken);
 
+		public async Task<List<SportTrainee>> GetAllAsyncWithIncludeAsync(CancellationToken cancellationToken)
+			=> await _context.SportTrainees
+				.Include(st => st.Sport)
+				.Include(st => st.Trainee)
+				.ToListAsync(cancellationToken);
+
+		public async Task<SportTrainee?> GetByIdWithIncludesAsync(int sportId, int traineeId, CancellationToken cancellationToken)
+			=> await _context.SportTrainees
+				.Include(st => st.Sport)
+				.Include(st => st.Trainee)
+				.FirstOrDefaultAsync(st => st.SportId == sportId && st.TraineeId == traineeId, cancellationToken);
+
 	}
 }
