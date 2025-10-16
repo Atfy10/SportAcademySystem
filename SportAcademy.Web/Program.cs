@@ -63,6 +63,8 @@ builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 
 builder.Services.AddScoped<ISportRepository, SportRepository>();
 
+builder.Services.AddScoped<ISportBranchRepository, SportBranchRepository>();
+
 builder.Services.AddScoped<ISportPriceRepository, SportPriceRepository>();
 
 builder.Services.AddScoped<ISubscriptionTypeRepository, SubscriptionTypeRepository>();
