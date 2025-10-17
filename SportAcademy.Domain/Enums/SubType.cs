@@ -14,6 +14,6 @@ namespace SportAcademy.Domain.Enums
         Gold,
         Platinum,
         Silver,
-        Normal
+        Basic
     }
 }

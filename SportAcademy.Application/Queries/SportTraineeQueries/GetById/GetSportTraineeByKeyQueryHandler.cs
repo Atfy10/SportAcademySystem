@@ -14,7 +14,7 @@ using SportAcademy.Domain.Exceptions;
 namespace SportAcademy.Application.Queries.SportTraineeQueries.GetById
 {
 	public class GetSportTraineeByKeyQueryHandler : IRequestHandler<GetSportTraineeByKeyQuery, Result<SportTraineeDto>>
-	{
+	{	
 		private readonly ISportTraineeRepository _sportTraineeRepository;
 		private readonly IMapper _mapper;
 		private readonly string _operationType = OperationType.Get.ToString();
@@ -28,13 +28,14 @@ namespace SportAcademy.Application.Queries.SportTraineeQueries.GetById
 
 		public async Task<Result<SportTraineeDto>> Handle(GetSportTraineeByKeyQuery request, CancellationToken cancellationToken)
 		{
-			var entity = await _sportTraineeRepository.GetByIdWithIncludesAsync(request.SportId,
-				request.TraineeId, cancellationToken);
-			if (entity is null)
-				throw new SportTraineeNotFoundException();
+			var entity = await _sportTraineeRepository
+				.GetByIdWithIncludesAsync(request.SportId, request.TraineeId, cancellationToken)
+				?? throw new SportTraineeNotFoundException($"{request.SportId}, {request.TraineeId}");
 
-			var dto = _mapper.Map<SportTraineeDto>(entity);
-			return Result<SportTraineeDto>.Success(dto, _operationType);
+            var dto = _mapper.Map<SportTraineeDto>(entity)
+				?? throw new AutoMapperMappingException("Error occurred while mapping.");
+
+            return Result<SportTraineeDto>.Success(dto, _operationType);
 		}
 	}
 }

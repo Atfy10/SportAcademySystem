@@ -26,13 +26,13 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice
 			var keyExists = await _sportPriceRepository.IsKeyExistAsync(request.BranchId, 
 				request.SportId, request.SubsTypeId, cancellationToken);
 			if (!keyExists)
-				throw new SportPriceNotFoundException();
+				throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
 			var sportPrice = await _sportPriceRepository
 				.GetByKeyAsync(request.BranchId, request.SportId, request.SubsTypeId, cancellationToken)
-				?? throw new SportPriceNotFoundException();
+				?? throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}");
 
 			await _sportPriceRepository.DeleteAsync(sportPrice, cancellationToken);
 

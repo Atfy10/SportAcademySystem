@@ -28,7 +28,8 @@ namespace SportAcademy.Application.Queries.BranchQueries.GetById
 		public async Task<Result<BranchDto>> Handle(GetBranchByIdQuery request, CancellationToken cancellationToken)
 		{
 			var branch = await _branchRepository.GetByIdAsync(request.Id, cancellationToken)
-				?? throw new BranchNotFoundException();
+				?? throw new BranchNotFoundException($"{request.Id}");
+
 			var branchDto = _mapper.Map<BranchDto>(branch)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 			return Result<BranchDto>.Success(branchDto, _operationType);

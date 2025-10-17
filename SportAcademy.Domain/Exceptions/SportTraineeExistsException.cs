@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SportAcademy.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Exceptions
 {
-	public class SportTraineeExistsException : Exception
+	public class SportTraineeExistsException : IdNotFoundException
 	{
-		static readonly string _message = "A record for this sport and trainee already exists.";
+		static readonly string _entity = nameof(SportTrainee);
 
-		public SportTraineeExistsException() : base(_message)
+		public SportTraineeExistsException(string id) : base(_entity, id)
 		{
 
 		}
-		public SportTraineeExistsException(Exception innerException) : base(_message, innerException)
+		public SportTraineeExistsException(string id, Exception innerException) : base(_entity, id, innerException)
 		{
 
 		}

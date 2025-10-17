@@ -29,7 +29,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 		public async Task<Result<BranchDto>> Handle(UpdateBranchCommand request, CancellationToken cancellationToken)
 		{
 			var branch = await _branchRepository.GetByIdAsync(request.Id, cancellationToken)
-				?? throw new BranchNotFoundException();
+				?? throw new BranchNotFoundException($"{request.Id}");
 
 			if (!string.IsNullOrEmpty(request.Email) && request.Email != branch.Email)
 			{

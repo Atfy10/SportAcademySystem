@@ -1,19 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.DTOs.SportTraineeDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrainee
 {
-	public class UpdateSportTraineeCommandHandler : IRequestHandler<UpdateSportTraineeCommand, Result<string>>
+	public class UpdateSportTraineeCommandHandler : IRequestHandler<UpdateSportTraineeCommand, Result<SportTraineeDto>>
 	{
 		private readonly ISportTraineeRepository _sportTraineeRepository;
 		private readonly IMapper _mapper;
@@ -27,13 +28,13 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrai
 			_mapper = mapper;
 		}
 
-		public async Task<Result<string>> Handle(UpdateSportTraineeCommand request, CancellationToken cancellationToken)
+		public async Task<Result<SportTraineeDto>> Handle(UpdateSportTraineeCommand request, CancellationToken cancellationToken)
 		{
-			var exists = await _sportTraineeRepository.CheckIfKeyExists(request.SportId, request.TraineeId, cancellationToken);
+			var exists = await _sportTraineeRepository.IsKeyExist(request.SportId, request.TraineeId, cancellationToken);
 			if (!exists)
-				throw new SportTraineeNotFoundException();
+				throw new SportTraineeNotFoundException($"{request.SportId}, {request.TraineeId}");
 
-			if (!Enum.IsDefined(typeof(SkillLevel), request.SkillLevel))
+            if (!Enum.IsDefined(typeof(SkillLevel), request.SkillLevel))
 				throw new InvalidSkillLevelException();
 
 			cancellationToken.ThrowIfCancellationRequested();
@@ -41,9 +42,12 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrai
 			var sportTrainee = _mapper.Map<SportTrainee>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-			await _sportTraineeRepository.UpdateAsync(sportTrainee, cancellationToken);
+			var dto = _mapper.Map<SportTraineeDto>(sportTrainee)
+				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-			return Result<string>.Success("SportTrainee updated successfully", _operationType);
+            await _sportTraineeRepository.UpdateAsync(sportTrainee, cancellationToken);
+
+			return Result<SportTraineeDto>.Success(dto, _operationType);
 		}
 	}
 }

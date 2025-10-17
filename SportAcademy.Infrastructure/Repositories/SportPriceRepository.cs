@@ -10,40 +10,38 @@ using SportAcademy.Infrastructure.DBContext;
 
 namespace SportAcademy.Infrastructure.Repositories
 {
-	public class SportPriceRepository : BaseRepository<SportPrice, int>, ISportPriceRepository
-	{
-		private readonly ApplicationDbContext _context;
-		public SportPriceRepository(ApplicationDbContext context) : base(context)
-		{
-			_context = context;
-		}
-		public async Task<bool> IsKeyExistAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
-			=> await _context.SportPrices.AnyAsync(
-				sp => sp.BranchId == branchId 
-					&& sp.SportId == sportId 
-					&& sp.SubsTypeId == subsTypeId, cancellationToken);
+    public class SportPriceRepository : BaseRepository<SportPrice, int>, ISportPriceRepository
+    {
+        private readonly ApplicationDbContext _context;
+        public SportPriceRepository(ApplicationDbContext context) : base(context)
+        {
+            _context = context;
+        }
+        public async Task<bool> IsKeyExistAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
+            => await _context.SportPrices.AnyAsync(
+                sp => sp.BranchId == branchId
+                    && sp.SportId == sportId
+                    && sp.SubsTypeId == subsTypeId, cancellationToken);
 
-		public async Task<SportPrice?> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
-			=> await _context.SportPrices.FirstOrDefaultAsync(
-				sp => sp.BranchId == branchId 
-					&& sp.SportId == sportId 
-					&& sp.SubsTypeId == subsTypeId, cancellationToken);
+        public async Task<SportPrice?> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
+            => await _context.SportPrices.FirstOrDefaultAsync(
+                sp => IsKeyExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
+                cancellationToken);
 
-		public async Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken)
-			=> await _context.SportPrices
-					.Include(sp => sp.Branch)
-					.Include(sp => sp.Sport)
-					.Include(sp => sp.SubscriptionType)
-					.ToListAsync(cancellationToken);
+        public async Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken = default)
+            => await _context.SportPrices
+                    .Include(sp => sp.Branch)
+                    .Include(sp => sp.Sport)
+                    .Include(sp => sp.SubscriptionType)
+                    .ToListAsync(cancellationToken);
 
-		public async Task<SportPrice?> GetByKeyWithIncludesAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
-			=> await _context.SportPrices
-					.Include(sp => sp.Branch)
-					.Include(sp => sp.Sport)
-					.Include(sp => sp.SubscriptionType)
-					.FirstOrDefaultAsync(
-						sp => sp.BranchId == branchId 
-							&& sp.SportId == sportId 
-							&& sp.SubsTypeId == subsTypeId, cancellationToken);
-	}
+        public async Task<SportPrice?> GetByKeyWithIncludesAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
+            => await _context.SportPrices
+                    .Include(sp => sp.Branch)
+                    .Include(sp => sp.Sport)
+                    .Include(sp => sp.SubscriptionType)
+                    .FirstOrDefaultAsync(
+                        sp => IsKeyExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
+                        cancellationToken);
+    }
 }

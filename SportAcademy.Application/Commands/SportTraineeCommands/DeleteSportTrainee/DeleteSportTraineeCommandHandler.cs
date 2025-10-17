@@ -24,12 +24,9 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.DeleteSportTrai
 
 		public async Task<Result<string>> Handle(DeleteSportTraineeCommand request, CancellationToken cancellationToken)
 		{
-			var exists = await _sportTraineeRepository.CheckIfKeyExists(request.SportId, request.TraineeId, cancellationToken);
-			if (!exists)
-				throw new SportTraineeNotFoundException();
-
-			var entity = _sportTraineeRepository.GetByIdAsync(request.SportId, request.TraineeId, cancellationToken).Result
-				?? throw new SportTraineeNotFoundException();
+			var entity = await _sportTraineeRepository
+				.GetByIdsAsync(cancellationToken, request.SportId, request.TraineeId)
+				?? throw new SportTraineeNotFoundException($"{request.SportId}, {request.TraineeId}");
 
 			await _sportTraineeRepository.DeleteAsync(entity, cancellationToken);
 

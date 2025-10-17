@@ -27,9 +27,13 @@ namespace SportAcademy.Application.Queries.SportTraineeQueries.GetAll
 
 		public async Task<Result<List<SportTraineeDto>>> Handle(GetAllSportTraineesQuery request, CancellationToken cancellationToken)
 		{
-			var entities = await _sportTraineeRepository.GetAllAsyncWithIncludeAsync(cancellationToken);
-			var dtos = _mapper.Map<List<SportTraineeDto>>(entities);
-			return Result<List<SportTraineeDto>>.Success(dtos, _operationType);
+			var entities = await _sportTraineeRepository.GetAllAsyncWithIncludeAsync(cancellationToken)
+				?? [];
+
+			var dtos = _mapper.Map<List<SportTraineeDto>>(entities)
+				?? throw new AutoMapperMappingException("Error occurred while mapping.");
+
+            return Result<List<SportTraineeDto>>.Success(dtos, _operationType);
 		}
 	}
 }

@@ -15,10 +15,12 @@ namespace SportAcademy.Web.Controllers
 	public class SportTraineeController : ControllerBase
 	{
 		private readonly IMediator _mediator;
+
 		public SportTraineeController(IMediator mediator)
 		{
 			_mediator = mediator;
 		}
+
 		[HttpPost("create")]
 		public async Task<IActionResult> CreateSportTrainee(CreateSportTraineeCommand command, CancellationToken cancellationToken)
 		{
