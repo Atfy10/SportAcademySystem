@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SportAcademy.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,15 +7,13 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Exceptions
 {
-	public class BranchNotFoundException : Exception
+	public class BranchNotFoundException : IdNotFoundException
 	{
-		static readonly string _message = "We couldn’t find a matching branch. Please check your details and try again.";
+		static readonly string _entity = nameof(Branch);
 
-		public BranchNotFoundException() : base(_message)
-		{
-		}
-		public BranchNotFoundException(Exception innerException) : base(_message, innerException)
-		{
-		}
+		public BranchNotFoundException(string id) : base(_entity, id) { }
+
+		public BranchNotFoundException(string id, Exception innerException)
+			: base(_entity, id, innerException) { }
 	}
 }

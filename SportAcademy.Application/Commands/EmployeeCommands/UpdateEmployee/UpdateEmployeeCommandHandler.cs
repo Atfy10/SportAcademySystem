@@ -30,7 +30,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
         public async Task<Result<EmployeeDto>> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
         {
             var employee = await _employeeRepository.GetByIdAsync(request.Id, cancellationToken)
-                ?? throw new EmployeeNotFoundException();
+                ?? throw new EmployeeNotFoundException($"{request.Id}");
 
             _mapper.Map(request, employee);
 

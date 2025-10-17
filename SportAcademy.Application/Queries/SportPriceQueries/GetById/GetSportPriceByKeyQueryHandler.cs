@@ -29,10 +29,8 @@ namespace SportAcademy.Application.Queries.SportPriceQueries.GetById
 		public async Task<Result<SportPriceDto>> Handle(GetSportPriceByKeyQuery request, CancellationToken cancellationToken)
 		{
 			var sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(request.BranchId,
-				request.SportId, request.SubsTypeId, cancellationToken);
-
-			if (sportPrice is null)
-				throw new SportPriceNotFoundException();
+				request.SportId, request.SubsTypeId, cancellationToken)
+				?? throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}");
 
 			var dto = _mapper.Map<SportPriceDto>(sportPrice);
 			return Result<SportPriceDto>.Success(dto, _operationType);

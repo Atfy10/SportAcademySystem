@@ -24,7 +24,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee
         public async Task<Result<bool>> Handle(DeleteEmployeeCommand request, CancellationToken cancellationToken)
         {
             var employee = await _employeeRepository.GetByIdAsync(request.Id, cancellationToken)
-                ?? throw new EmployeeNotFoundException();
+                ?? throw new EmployeeNotFoundException($"{request.Id}");
 
             cancellationToken.ThrowIfCancellationRequested();
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SportAcademy.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Exceptions
 {
-	public class SportNotFoundException : Exception
+	public class SportNotFoundException : IdNotFoundException
 	{
-		static readonly string _message = "We couldn’t find a Sport with that id. Please check and try again.";
+		static readonly string _entity = nameof(Sport);
 
-		public SportNotFoundException() : base(_message)
+		public SportNotFoundException(string id) : base(_entity, id)
 		{
 
 		}
-		public SportNotFoundException(Exception innerException) : base(_message, innerException)
+		public SportNotFoundException(string id, Exception innerException) : base(_entity, id, innerException)
 		{
 
 		}

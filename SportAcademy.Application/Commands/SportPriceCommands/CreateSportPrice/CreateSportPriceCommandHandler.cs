@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.DTOs.SportPriceDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
@@ -14,7 +15,7 @@ using SportAcademy.Domain.Exceptions;
 
 namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 {
-	public class CreateSportPriceCommandHandler : IRequestHandler<CreateSportPriceCommand, Result<decimal>>
+	public class CreateSportPriceCommandHandler : IRequestHandler<CreateSportPriceCommand, Result<SportPriceBranchDto>>
 	{
 		private readonly ISportPriceRepository _sportPriceRepository;
 		private readonly ISportRepository _sportRepository;
@@ -36,7 +37,7 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 			_subscriptionTypeRepository = subscriptionTypeRepository;
 			_mapper = mapper;
 		}
-		public async Task<Result<decimal>> Handle(CreateSportPriceCommand request, CancellationToken cancellationToken)
+		public async Task<Result<SportPriceBranchDto>> Handle(CreateSportPriceCommand request, CancellationToken cancellationToken)
 		{
 			var keyExists = await _sportPriceRepository.IsKeyExistAsync(request.BranchId, 
 				request.SportId, request.SubsTypeId, cancellationToken);
@@ -46,17 +47,17 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 			var branchExists = await _branchRepository.IsBranchExistAsync(request.BranchId,
 				cancellationToken);
 			if (!branchExists)
-				throw new BranchNotFoundException();
+				throw new BranchNotFoundException($"{request.BranchId}");
 
 			var sportExists = await _sportRepository.IsSportExistAsync(request.SportId,
 				cancellationToken);
 			if (!sportExists)
-				throw new SportNotFoundException();
+				throw new SportNotFoundException($"{request.SportId}");
 
 			var subsTypeExists = await _subscriptionTypeRepository.IsSubscriptionTypeExistAsync(
 				request.SubsTypeId, cancellationToken);
 			if (!subsTypeExists)
-				throw new SubscriptionTypeNotFoundException();
+				throw new SubscriptionTypeNotFoundException($"{request.SubsTypeId}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
@@ -66,9 +67,16 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 			var sportPrice = _mapper.Map<SportPrice>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-			await _sportPriceRepository.AddAsync(sportPrice, cancellationToken);
+            await _sportPriceRepository.AddAsync(sportPrice, cancellationToken);
 
-			return Result<decimal>.Success(sportPrice.Price, _operationType);
+			cancellationToken.ThrowIfCancellationRequested();
+
+			sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(request.BranchId, request.SportId, request.SubsTypeId);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var dto = _mapper.Map<SportPriceBranchDto>(sportPrice);
+            return Result<SportPriceBranchDto>.Success(dto, _operationType);
 		}
 	}
 }

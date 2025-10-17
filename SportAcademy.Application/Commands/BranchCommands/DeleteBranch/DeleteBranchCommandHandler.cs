@@ -23,7 +23,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.DeleteBranch
 		public async Task<Result<bool>> Handle(DeleteBranchCommand request, CancellationToken cancellationToken)
 		{
 			var branch = await _branchRepository.GetByIdAsync(request.Id, cancellationToken)
-				?? throw new BranchNotFoundException();
+				?? throw new BranchNotFoundException($"{request.Id}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 

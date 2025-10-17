@@ -8,10 +8,7 @@ namespace SportAcademy.Domain.Exceptions
 {
     public class IdNotFoundException : Exception
     {
-        private const string _message = "{entity} with ID {id} not found.";
-        public IdNotFoundException()
-        {
-        }
+        private const string _message = "{entity} with ID: {id} not found.";
         public IdNotFoundException(string entity, string id)
             : base($"{FormatMessage(entity, id)}")
         {

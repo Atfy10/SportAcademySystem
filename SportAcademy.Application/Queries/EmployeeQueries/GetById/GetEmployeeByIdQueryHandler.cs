@@ -30,7 +30,7 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetById
         public async Task<Result<EmployeeDto>> Handle(GetEmployeeByIdQuery request, CancellationToken cancellationToken)
         {
             var employee = await _employeeRepository.GetByIdAsync(request.Id, cancellationToken)
-                ?? throw new EmployeeNotFoundException();
+                ?? throw new EmployeeNotFoundException($"{request.Id}");
 
             var employeeDto = _mapper.Map<EmployeeDto>(employee)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
