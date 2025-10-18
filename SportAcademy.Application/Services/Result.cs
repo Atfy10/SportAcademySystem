@@ -20,14 +20,19 @@ namespace SportAcademy.Application.Services
         public static Result<EType> Success(EType data, string operation,
             string message = "{Operation} operation done successfully")
             => new(true, data, operation, message.Replace("{Operation}", operation));
+
+        public static Result<EType> Failure(string operation, string message, int statusCode = 500)
+            => new(false, default!, operation, message)
+            {
+                StatusCode = statusCode
+            };
+
     }
 
     public class Result : ResultBase
     {
         private Result(bool isSuccess, string operationType, string message)
-        : base(isSuccess, operationType, message)
-        {
-        }
+        : base(isSuccess, operationType, message) { }
 
         public static Result Failure(string operation, string message, int statusCode = 500)
         => new(false, operation, message)
