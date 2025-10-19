@@ -12,19 +12,19 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Behaviors
 {
-    public class ExceptionHandlingBehavior<IRequest, TResponse> : IPipelineBehavior<IRequest, TResponse>
-        where IRequest : notnull, IRequest<TResponse>
+    public class ExceptionHandlingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : notnull
         where TResponse : ResultBase
     {
-        private readonly ILogger<ExceptionHandlingBehavior<IRequest, TResponse>> _logger;
+        private readonly ILogger<ExceptionHandlingBehavior<TRequest, TResponse>> _logger;
 
         public ExceptionHandlingBehavior(
-            ILogger<ExceptionHandlingBehavior<IRequest, TResponse>> logger)
+            ILogger<ExceptionHandlingBehavior<TRequest, TResponse>> logger)
         {
             _logger = logger;
         }
 
-        public async Task<TResponse> Handle(IRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Handling {RequestType}", request.GetType().Name);
             try
