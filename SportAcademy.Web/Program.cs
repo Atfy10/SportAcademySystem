@@ -77,6 +77,10 @@ builder.Services.AddScoped<ISportTraineeRepository, SportTraineeRepository>();
 
 builder.Services.AddScoped<ISportBranchRepository, SportBranchRepository>();
 
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
+builder.Services.AddScoped<ISubscriptionDetailsRepository, SubscriptionDetailsRepository>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
