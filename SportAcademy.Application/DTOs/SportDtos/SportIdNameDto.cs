@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.DTOs.SportDtos
 {
-	public record SportDto(
-		 int Id,
-		 string Name,
-		 string? Description,
-		 string Category,
-		 bool IsRequireHealthTest
-	 );
+	public record SportIdNameDto
+	(
+		int Id,
+		string Name
+		);
+
 
 }

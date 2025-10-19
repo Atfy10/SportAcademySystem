@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.SportCommands.CreateSport;
 using SportAcademy.Application.Queries.SportQueries.GetAll;
 using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
 
@@ -17,7 +18,14 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("get-all")]
+        [HttpPost("create")]
+        public async Task<IActionResult> Create(CreateSportCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+		}
+
+		[HttpGet("get-all")]
         public async Task<IActionResult> GetAll()
         {
             var result = await _mediator.Send(new GetAllSportsQuery());

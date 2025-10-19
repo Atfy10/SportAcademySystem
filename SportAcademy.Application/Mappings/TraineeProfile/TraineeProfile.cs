@@ -13,7 +13,7 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
         public TraineeProfile()
         {
             CreateMap<Trainee, CreateTraineeCommand>()
-                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportDto(st.SportId,
+                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.SportId,
                     st.Sport.Name
                 )).ToHashSet()))
                 .ReverseMap()
@@ -31,7 +31,7 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                     opts.Condition((src, dest, srcMember) => srcMember != null));
 
             CreateMap<Trainee, TraineeDto>()
-                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportDto(st.Sport.Id,
+                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.Sport.Id,
                     st.Sport.Name
                 )).ToHashSet()))
                 .ReverseMap()
