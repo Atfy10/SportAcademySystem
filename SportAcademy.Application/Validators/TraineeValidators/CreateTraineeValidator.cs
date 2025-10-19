@@ -21,7 +21,8 @@ namespace SportAcademy.Application.Validators.TraineeValidators
                 .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters.");
 
             RuleFor(t => t.SSN)
-                .NotEmpty().WithMessage("SSN is required.");
+                .NotEmpty().WithMessage("SSN is required.")
+                .Length(12).WithMessage("SSN length must be 12.");
 
             RuleFor(t => t.BirthDate)
                 .LessThan(DateOnly.FromDateTime(DateTime.Now))
