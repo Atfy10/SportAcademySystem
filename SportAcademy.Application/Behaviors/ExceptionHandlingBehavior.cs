@@ -35,24 +35,24 @@ namespace SportAcademy.Application.Behaviors
             {
                 _logger.LogError("{Message}, Inner Exception: {inner}"
                     , ex.Message, ex.InnerException);
-            }
-            var responseType = typeof(TResponse);
-            if (responseType == typeof(Result))
-            {
-                var failureInstance = Result.Failure(request.GetType().Name, "An unexpected error occurred.", 500);
-                return (TResponse)(object)failureInstance;
-            }
-
-            if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
-            {
-                var genericArguments = responseType.GetGenericArguments()[0];
-                var resultGenericType = typeof(Result<>).MakeGenericType(genericArguments);
-                var failureMethod = responseType.GetMethod("Failure",
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (failureMethod != null)
+                var responseType = typeof(TResponse);
+                if (responseType == typeof(Result))
                 {
-                    var failureInstance = failureMethod?.Invoke(null, new object[] { genericArguments.Name, "An unexpected error occurred.", 500 });
-                    return (TResponse)failureInstance!;
+                    var failureInstance = Result.Failure(request.GetType().Name, "An unexpected error occurred.", 500);
+                    return (TResponse)(object)failureInstance;
+                }
+
+                if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
+                {
+                    var genericArguments = responseType.GetGenericArguments()[0];
+                    var resultGenericType = typeof(Result<>).MakeGenericType(genericArguments);
+                    var failureMethod = responseType.GetMethod("Failure",
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    if (failureMethod != null)
+                    {
+                        var failureInstance = failureMethod?.Invoke(null, new object[] { genericArguments.Name, ex.Message, 500 });
+                        return (TResponse)failureInstance!;
+                    }
                 }
             }
 
