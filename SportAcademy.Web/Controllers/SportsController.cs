@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportCommands.CreateSport;
+using SportAcademy.Application.Commands.SportCommands.DeleteSport;
 using SportAcademy.Application.Commands.SportCommands.UpdateSport;
 using SportAcademy.Application.Queries.SportQueries.GetAll;
 using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
@@ -30,6 +31,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> Update(UpdateSportCommand command)
         {
             var result = await _mediator.Send(command);
+            return Ok(result);
+		}
+
+        [HttpDelete("delete")]
+        public async Task<IActionResult> Delete(int sportId)
+        {
+            var result = await _mediator.Send(new DeleteSportCommand(sportId));
             return Ok(result);
 		}
 
