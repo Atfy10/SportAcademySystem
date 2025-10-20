@@ -29,7 +29,7 @@ namespace SportAcademy.Application.Commands.SportCommands.CreateSport
 
 		public async Task<Result<SportDto>> Handle(CreateSportCommand request, CancellationToken cancellationToken)
 		{
-			var exists = await _sportRepository.CheckIfNameExists(request.Name, null, cancellationToken);
+			var exists = await _sportRepository.CheckIfNameExists(request.Name, cancellationToken);
 			if (exists)
 				throw new SportExistsException();
 

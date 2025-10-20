@@ -32,10 +32,9 @@ namespace SportAcademy.Infrastructure.Repositories
             => await _context.Sports
                 .AnyAsync(s => s.Id == sportId, cancellationToken);
 
-        public async Task<bool> CheckIfNameExists(string name, int? excludeId = null, CancellationToken cancellationToken = default)
-            => await _context.Sports
-                .AnyAsync(s => s.Name == name && (!excludeId.HasValue || s.Id != excludeId.Value), cancellationToken);
-	
+        public async Task<bool> CheckIfNameExists(string name, CancellationToken cancellationToken = default)
+           => await _context.Sports
+               .AnyAsync(s => s.Name == name, cancellationToken);
 
 
 	}

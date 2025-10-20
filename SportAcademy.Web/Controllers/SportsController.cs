@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportCommands.CreateSport;
+using SportAcademy.Application.Commands.SportCommands.UpdateSport;
 using SportAcademy.Application.Queries.SportQueries.GetAll;
 using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
 
@@ -20,6 +21,13 @@ namespace SportAcademy.Web.Controllers
 
         [HttpPost("create")]
         public async Task<IActionResult> Create(CreateSportCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+		}
+
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateSportCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);

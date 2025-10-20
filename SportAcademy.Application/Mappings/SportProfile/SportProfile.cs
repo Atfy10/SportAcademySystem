@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SportAcademy.Application.Commands.SportCommands.CreateSport;
+using SportAcademy.Application.Commands.SportCommands.UpdateSport;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -27,6 +28,12 @@ namespace SportAcademy.Application.Mappings.SportProfile
 			.ForMember(dest => dest.Branches, opt => opt.Ignore())
 			.ForMember(dest => dest.Trainees, opt => opt.Ignore())
 			.ForMember(dest => dest.Prices, opt => opt.Ignore());
+
+
+			CreateMap<UpdateSportCommand, Sport>()
+				.ForMember(dest => dest.Category, opt => opt.Condition(src => !string.IsNullOrWhiteSpace(src.Category)))
+				.ForMember(dest => dest.Category, opt => opt.MapFrom(src => Enum.Parse<SportCategory>(src.Category, true)));
+
 		}
-    }
+	}
 }
