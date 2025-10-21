@@ -19,7 +19,8 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
         private readonly IMapper _mapper;
         private readonly string _operation = OperationType.Add.ToString();
 
-        public CreateAttendanceCommandHandler(IAttendanceRepository attendanceRepository,
+        public CreateAttendanceCommandHandler(
+            IAttendanceRepository attendanceRepository,
             IMapper mapper)
         {
             _attendanceRepository = attendanceRepository;
