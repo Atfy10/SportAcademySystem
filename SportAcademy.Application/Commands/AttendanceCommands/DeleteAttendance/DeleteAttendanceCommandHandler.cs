@@ -23,7 +23,11 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance
             var attendance = await _attendanceRepository.GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new AttendanceNotFoundException(request.Id.ToString());
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             await _attendanceRepository.DeleteAsync(attendance, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return Result<bool>.Success(true, _operation);
         }

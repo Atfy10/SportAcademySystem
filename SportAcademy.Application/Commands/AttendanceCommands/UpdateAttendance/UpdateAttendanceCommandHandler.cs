@@ -34,7 +34,11 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance
 
             _mapper.Map(request, attendance);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             await _attendanceRepository.UpdateAsync(attendance, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var attendanceDto = _mapper.Map<AttendanceDto>(attendance)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping Attendance to DTO.");

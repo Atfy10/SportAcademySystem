@@ -32,7 +32,11 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
             var attendanceEntity = _mapper.Map<Attendance>(request)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             await _attendanceRepository.AddAsync(attendanceEntity, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return Result<int>.Success(attendanceEntity.Id, _operation);
         }

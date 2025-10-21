@@ -3,12 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
-using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
-using SportAcademy.Application.Commands.BranchCommands.DeleteBranch;
-using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
-using SportAcademy.Application.Queries.BranchQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {

@@ -31,6 +31,8 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetAll
             var attendanceEntities = await _attendanceRepository.GetAllAsync(cancellationToken)
                 ?? [];
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var attendances = _mapper.Map<List<AttendanceDto>>(attendanceEntities)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 

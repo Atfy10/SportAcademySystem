@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetById
 {
-    public class GetAttendanceQueryHandler : IRequestHandler<GetAttendanceQuery, Result<AttendanceDto>>
+    public class GetAttendanceQueryHandler : IRequestHandler<GetAttendanceByIdQuery, Result<AttendanceDto>>
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IMapper _mapper;
@@ -27,10 +27,12 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetById
             _mapper = mapper;
         }
 
-        public async Task<Result<AttendanceDto>> Handle(GetAttendanceQuery request, CancellationToken cancellationToken)
+        public async Task<Result<AttendanceDto>> Handle(GetAttendanceByIdQuery request, CancellationToken cancellationToken)
         {
             var attendance = await _attendanceRepository.GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new AttendanceNotFoundException(request.Id.ToString());
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var attendanceDto = _mapper.Map<AttendanceDto>(attendance)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
