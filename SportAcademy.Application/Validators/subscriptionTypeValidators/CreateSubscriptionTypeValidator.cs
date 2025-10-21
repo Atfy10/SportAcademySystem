@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
-using SportAcademy.Application.Commands.SubscriptionType.CreateSubscriptionType;
+using SportAcademy.Application.Commands.SubscriptionTypeCommands.CreateSubscriptionType;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +14,28 @@ namespace SportAcademy.Application.Validators.subscriptionTypeValidators
         public CreateSubscriptionTypeValidator()
         {
             RuleFor(x => x.Name)
+                .Cascade(CascadeMode.Stop)
                 .IsInEnum()
-                .WithMessage("Invalid subscription type name. Must be one of the defined SubType values.");
+                .WithMessage("Please select a valid subscription type from the list.");
+
             RuleFor(x => x.DaysPerMonth)
-               .GreaterThan(0)
-               .WithMessage("Days per month must be greater than zero.");
+                .Cascade(CascadeMode.Stop)
+                .GreaterThan(0)
+                .WithMessage("Days per month must be greater than zero.")
+                .LessThanOrEqualTo(12)
+                .WithMessage("Days per month cannot exceed 12.");
+
+            RuleFor(x => x.IsActive)
+                .Cascade(CascadeMode.Stop)
+                .NotNull()
+                .WithMessage("Please specify whether the subscription is active.");
+
+            RuleFor(x => x)
+                .Cascade(CascadeMode.Stop)
+                .Must(x => !(!x.IsActive && x.IsOffer))
+                .WithMessage("An offer cannot be inactive.")
+                .NotNull()
+                .WithMessage("Please specify if this is a special offer.");
         }
     }
 }

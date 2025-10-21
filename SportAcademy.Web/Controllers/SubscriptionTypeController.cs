@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SportAcademy.Application.Commands.SubscriptionType.CreateSubscriptionType;
+using SportAcademy.Application.Commands.SubscriptionTypeCommands.CreateSubscriptionType;
 
 namespace SportAcademy.Web.Controllers
 {

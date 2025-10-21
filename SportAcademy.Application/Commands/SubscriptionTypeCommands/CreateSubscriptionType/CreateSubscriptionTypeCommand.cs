@@ -7,14 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SportAcademy.Application.Commands.SubscriptionType.CreateSubscriptionType
+namespace SportAcademy.Application.Commands.SubscriptionTypeCommands.CreateSubscriptionType
 {
     public record CreateSubscriptionTypeCommand(
-        SubType Name ,
-        int DaysPerMonth ,
-        bool IsActive ,
-        bool IsOffer 
-      
-        ): IRequest<Result<int>>;
+        SubType Name,
+        int DaysPerMonth,
+        bool IsActive,
+        bool IsOffer
+        ) : IRequest<Result<int>>;
 
 }
