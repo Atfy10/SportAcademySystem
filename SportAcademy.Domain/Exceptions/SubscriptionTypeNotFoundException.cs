@@ -11,13 +11,8 @@ namespace SportAcademy.Domain.Exceptions
 	{
 		static readonly string _entity = nameof(SubscriptionType);
 
-		public SubscriptionTypeNotFoundException(string id) : base(_entity, id)
-		{
-
-		}
-		public SubscriptionTypeNotFoundException(string id, Exception innerException) : base(_entity, id, innerException)
-		{
-
-		}
+		public SubscriptionTypeNotFoundException(string id) : base(_entity, id) { }
+		public SubscriptionTypeNotFoundException(string id, Exception innerException) 
+			: base(_entity, id, innerException) { }
 	}
 }

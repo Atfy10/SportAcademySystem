@@ -8,6 +8,6 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface IPaymentRepository : IBaseRepository<Domain.Entities.Payment, string>
     {
-        Task<bool> IsExistByPaymentAsync(string PaymentNumber, CancellationToken cancellationToken);
+        Task<bool> IsExistByPaymentAsync(string paymentNumber, CancellationToken cancellationToken = default);
     }
 }

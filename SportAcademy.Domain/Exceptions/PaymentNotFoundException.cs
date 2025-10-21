@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SportAcademy.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,17 +7,13 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Exceptions
 {
-    public class PaymentNotFoundException :Exception
+    public class PaymentNotFoundException : IdNotFoundException
     {
-        static readonly string _message = "We couldn’t find an Payment with that Number. Please check and try again.";
+        static readonly string _entity = nameof(Payment);
 
-        public PaymentNotFoundException() : base(_message)
-        {
+        public PaymentNotFoundException(string id) : base(_entity, id) { }
 
-        }
-        public PaymentNotFoundException(Exception innerException) : base(_message, innerException)
-        {
-
-        }
+        public PaymentNotFoundException(string id, Exception innerException)
+            : base(_entity, id, innerException) { }
     }
 }

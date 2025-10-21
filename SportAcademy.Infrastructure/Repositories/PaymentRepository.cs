@@ -18,8 +18,8 @@ namespace SportAcademy.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<bool> IsExistByPaymentAsync(string PaymentNumber, CancellationToken cancellationToken)
-         => await _context.Payments
-                .AnyAsync(b => b.PaymentNumber == PaymentNumber, cancellationToken);
+        public async Task<bool> IsExistByPaymentAsync(string paymentNumber, CancellationToken cancellationToken)
+             => await _context.Payments
+                .AnyAsync(b => b.PaymentNumber == paymentNumber, cancellationToken);
     }
 }

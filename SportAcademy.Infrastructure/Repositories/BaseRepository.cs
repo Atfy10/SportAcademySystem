@@ -20,7 +20,7 @@ namespace SportAcademy.Infrastructure.Repositories
         {
             _context = context;
         }
-         
+
         public virtual async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             await _context.Set<TEntity>().AddAsync(entity, cancellationToken);
@@ -50,6 +50,9 @@ namespace SportAcademy.Infrastructure.Repositories
 
         public virtual async Task<TEntity?> GetByIdsAsync(CancellationToken cancellationToken = default, params TKey[] id)
             => await _context.Set<TEntity>().FindAsync(id, cancellationToken);
+
+        public async Task<bool> IsExistAsync(TKey id, CancellationToken cancellationToken = default)
+            => await GetByIdAsync(id, cancellationToken) != null;
 
         public virtual async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {

@@ -13,9 +13,11 @@ namespace SportAcademy.Application.Validators.BranchValidators
         public AddSportToBranchCommandValidator()
         {
             RuleFor(x => x.SportId)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(0).WithMessage("SportId must be greater than 0.");
 
             RuleFor(x => x.BranchId)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(0).WithMessage("BranchId must be greater than 0.");
         }
     }

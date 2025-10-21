@@ -16,44 +16,55 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
     public class CreateSubscriptionDetailsCommandHandler : IRequestHandler<CreateSubscriptionDetailsCommand, Result<int>>
     {
         private readonly string _operationType = OperationType.Add.ToString();
-       
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IPaymentRepository _paymentRepository;
-        private readonly  ISubscriptionTypeRepository _subscriptionTypeRepository;
-        
-        public CreateSubscriptionDetailsCommandHandler( ISubscriptionDetailsRepository subscriptionDetailsRepository,ITraineeRepository traineeRepository ,IPaymentRepository paymentRepository,ISubscriptionTypeRepository subscriptionTypeRepository)
-        { 
-          
+        private readonly ISubscriptionTypeRepository _subscriptionTypeRepository;
+        private readonly IMapper _mapper;
+
+        public CreateSubscriptionDetailsCommandHandler(
+            ISubscriptionDetailsRepository subscriptionDetailsRepository,
+            ITraineeRepository traineeRepository,
+            IPaymentRepository paymentRepository,
+            ISubscriptionTypeRepository subscriptionTypeRepository,
+            IMapper mapper)
+        {
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
             _traineeRepository = traineeRepository;
             _paymentRepository = paymentRepository;
-            _subscriptionTypeRepository= subscriptionTypeRepository;
-
+            _subscriptionTypeRepository = subscriptionTypeRepository;
+            _mapper = mapper;
         }
+
         public async Task<Result<int>> Handle(CreateSubscriptionDetailsCommand request, CancellationToken cancellationToken)
         {
-            var subscriptionDetails = new SubscriptionDetails
-            {
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                PaymentNumber = request.PaymentNumber,
-                TraineeId = request.TraineeId,
-                SubscriptionTypeId = request.SubscriptionTypeId
-            };
-           var trainee = await _traineeRepository.GetByIdAsync(request.TraineeId, cancellationToken);
-            if (trainee == null)
-            {
-              throw new IdNotFoundException(nameof(trainee), request.TraineeId.ToString());
-            }
-            var isPaymentNumberExists = await _paymentRepository.IsExistByPaymentAsync(request.PaymentNumber, cancellationToken);
-            if (!isPaymentNumberExists)
-                throw new PaymentNotFoundException();
+            var subscriptionDetails = _mapper.Map<SubscriptionDetails>(request);
 
-            var IsSubscriptionTypeExists= await _subscriptionTypeRepository.IsSubscriptionTypeExistAsync(request.SubscriptionTypeId, cancellationToken);
-            if (!IsSubscriptionTypeExists)
+            var isTraineeExists = await _traineeRepository.IsExistAsync(request.TraineeId,
+                cancellationToken);
+            if (!isTraineeExists)
+                throw new TraineeNotFoundException(request.TraineeId.ToString());
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var isPaymentNumberExists = await _paymentRepository.IsExistAsync(request.PaymentNumber,
+                cancellationToken);
+            if (!isPaymentNumberExists)
+                throw new PaymentNotFoundException(request.PaymentNumber.ToString());
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var isSubscriptionTypeExists = await _subscriptionTypeRepository.IsExistAsync(
+                request.SubscriptionTypeId, cancellationToken);
+            if (!isSubscriptionTypeExists)
                 throw new SubscriptionTypeNotFoundException(request.SubscriptionTypeId.ToString());
+
+            cancellationToken.ThrowIfCancellationRequested();
+
             await _subscriptionDetailsRepository.AddAsync(subscriptionDetails, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
             return Result<int>.Success(subscriptionDetails.Id, _operationType);
         }
     }

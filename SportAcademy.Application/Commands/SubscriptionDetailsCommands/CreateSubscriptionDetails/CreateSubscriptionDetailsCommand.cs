@@ -15,7 +15,6 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         DateOnly EndDate,
         bool IsActive,
         string PaymentNumber
-      
         ) : IRequest<Result<int>>;
   
 }

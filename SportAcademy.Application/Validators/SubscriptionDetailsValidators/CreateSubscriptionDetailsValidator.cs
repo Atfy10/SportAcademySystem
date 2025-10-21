@@ -13,20 +13,27 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
         public CreateSubscriptionDetailsValidator()
         {
             RuleFor(x => x.StartDate)
-                .NotEmpty().WithMessage("Start date is required.");
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty().WithMessage("Please select a start date.")
+                .WithMessage("Start date cannot be in the past.");
 
             RuleFor(x => x.EndDate)
+                .Cascade(CascadeMode.Stop)
                 .GreaterThan(x => x.StartDate)
-                .WithMessage("End date must be after start date.");
+                .WithMessage("End date should be after the start date.");
 
             RuleFor(x => x.PaymentNumber)
-                .NotEmpty().WithMessage("Payment number is required.");
+                .Cascade(CascadeMode.Stop)
+                .NotEmpty().WithMessage("Please enter the payment number.")
+                .MaximumLength(20).WithMessage("");
 
             RuleFor(x => x.TraineeId)
-                .GreaterThan(0).WithMessage("Invalid trainee ID.");
+                .Cascade(CascadeMode.Stop)
+                .GreaterThan(0).WithMessage("Please choose a valid trainee.");
 
             RuleFor(x => x.SubscriptionTypeId)
-                .GreaterThan(0).WithMessage("Invalid subscription type ID.");
+                .Cascade(CascadeMode.Stop)
+                .GreaterThan(0).WithMessage("Please select a valid subscription type.");
         }
     }
 }
