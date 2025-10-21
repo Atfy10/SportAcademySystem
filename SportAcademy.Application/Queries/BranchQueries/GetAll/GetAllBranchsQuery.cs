@@ -9,6 +9,6 @@ using SportAcademy.Application.Services;
 
 namespace SportAcademy.Application.Queries.BranchQueries.GetAll
 {
-	public record GetAllBranchsQuery () : IRequest<Result<List<BranchDto>>>;
+	public record GetAllAttendancesQuery () : IRequest<Result<List<BranchDto>>>;
 
 }

@@ -33,7 +33,7 @@ namespace SportAcademy.Web.Controllers
 		[HttpGet("get-all")]
 		public async Task<IActionResult> GetAll()
 		{
-			var result = await _mediator.Send(new GetAllBranchsQuery());
+			var result = await _mediator.Send(new GetAllAttendancesQuery());
 			return Ok(result);
 		}
 

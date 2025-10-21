@@ -11,15 +11,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance
+namespace SportAcademy.Application.Queries.AttendanceQueries.GetById
 {
-    public class UpdateAttendanceCommandHandler : IRequestHandler<UpdateAttendanceCommand, Result<AttendanceDto>>
+    public class GetAttendanceQueryHandler : IRequestHandler<GetAttendanceQuery, Result<AttendanceDto>>
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IMapper _mapper;
-        private readonly string _operation = OperationType.Update.ToString();
+        private readonly string _operation = OperationType.Get.ToString();
 
-        public UpdateAttendanceCommandHandler(
+        public GetAttendanceQueryHandler(
             IAttendanceRepository attendanceRepository,
             IMapper mapper)
         {
@@ -27,17 +27,13 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance
             _mapper = mapper;
         }
 
-        public async Task<Result<AttendanceDto>> Handle(UpdateAttendanceCommand request, CancellationToken cancellationToken)
+        public async Task<Result<AttendanceDto>> Handle(GetAttendanceQuery request, CancellationToken cancellationToken)
         {
             var attendance = await _attendanceRepository.GetByIdAsync(request.Id, cancellationToken)
-                ?? throw new AttendanceNotFoundException($"{request.Id}");
-
-            _mapper.Map(request, attendance);
-
-            await _attendanceRepository.UpdateAsync(attendance, cancellationToken);
+                ?? throw new AttendanceNotFoundException(request.Id.ToString());
 
             var attendanceDto = _mapper.Map<AttendanceDto>(attendance)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping Attendance to DTO.");
+                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
             return Result<AttendanceDto>.Success(attendanceDto, _operation);
         }
