@@ -1,4 +1,6 @@
 ﻿using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
+using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
+using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -12,9 +14,15 @@ namespace SportAcademy.Application.Mappings.AttendanceProfile
     {
         public AttendanceProfile()
         {
+            CreateMap<Attendance, AttendanceDto>()
+                .ReverseMap();
+
             CreateMap<Attendance, CreateAttendanceCommand>()
                 .ReverseMap()
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
+
+            CreateMap<Attendance, UpdateAttendanceCommand>()
+                .ReverseMap();
         }
     }
 }
