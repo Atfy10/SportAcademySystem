@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+﻿    using FluentValidation;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using System;
 using System.Collections.Generic;
