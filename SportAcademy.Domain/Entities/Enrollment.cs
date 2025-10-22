@@ -15,5 +15,6 @@
         public virtual Trainee Trainee { get; set; } = null!;
         public virtual TraineeGroup TraineeGroup { get; set; } = null!;
         public virtual ICollection<Attendance> Attendances { get; set; } = [];
+        public virtual SubscriptionDetails SubscriptionDetails { get; set; } = null!;
     }
 }
