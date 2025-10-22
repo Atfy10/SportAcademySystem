@@ -12,7 +12,7 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance
     public record UpdateAttendanceCommand(
         int Id,
         string? CoachNote,
-        int SessionOccurrenceId,
-        int EnrollmentId
+        int? SessionOccurrenceId,
+        int? EnrollmentId
         ) : IRequest<Result<AttendanceDto>>;
 }
