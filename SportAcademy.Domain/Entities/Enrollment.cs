@@ -10,6 +10,7 @@
         public bool IsActive { get; set; }
         public int TraineeId { get; set; }
         public int TraineeGroupId { get; set; }
+        public int SubscriptionDetailsId { get; set; }
 
         // Navigation Properties
         public virtual Trainee Trainee { get; set; } = null!;
