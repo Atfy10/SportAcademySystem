@@ -7,10 +7,13 @@ using System.Threading.Tasks;
 namespace SportAcademy.Application.DTOs.EnrollmentDtos
 {
     public record EnrollmentDto(
-        int Id,
-        DateTime EnrollmentDate,
-        DateTime ExpiryDate,
-        int TraineeId,
-        int SessionId
-    );
+            int Id,
+            DateTime EnrollmentDate,
+            DateTime ExpiryDate,
+            int SessionAllowed,
+            int SessionRemaining,
+            bool IsActive,
+            int TraineeId,
+            int TraineeGroupId
+        );
 }
