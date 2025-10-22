@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
+using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Domain.Entities;
 
