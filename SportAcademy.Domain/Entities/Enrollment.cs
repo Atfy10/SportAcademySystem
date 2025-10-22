@@ -10,10 +10,12 @@
         public bool IsActive { get; set; }
         public int TraineeId { get; set; }
         public int TraineeGroupId { get; set; }
+        public int SubscriptionDetailsId { get; set; }
 
         // Navigation Properties
         public virtual Trainee Trainee { get; set; } = null!;
         public virtual TraineeGroup TraineeGroup { get; set; } = null!;
         public virtual ICollection<Attendance> Attendances { get; set; } = [];
+        public virtual SubscriptionDetails SubscriptionDetails { get; set; } = null!;
     }
 }

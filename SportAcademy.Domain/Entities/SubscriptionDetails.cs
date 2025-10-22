@@ -14,5 +14,6 @@
         public virtual Payment Payment { get; set; } = null!;
         public virtual Trainee Trainee { get; set; } = null!;
         public virtual SubscriptionType SubscriptionType { get; set; } = null!;
+        public virtual Enrollment Enrollment { get; set; } = null!;
     }
 }
