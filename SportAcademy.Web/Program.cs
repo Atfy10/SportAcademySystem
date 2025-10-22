@@ -80,6 +80,8 @@ builder.Services.AddScoped<ISportBranchRepository, SportBranchRepository>();
 
 builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 
+builder.Services.AddScoped<ITraineeGroupRepository, TraineeGroupRepository>();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
