@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Services;
+using SportAcademy.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
         DateTime ExpiryDate,
         int? SessionAllowed,
         int TraineeId,
-        int TraineeGroupId
+        int TraineeGroupId,
+        int SubscriptionDetailsId
     ) : IRequest<Result<int>>;
 }
