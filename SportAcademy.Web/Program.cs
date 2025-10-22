@@ -19,6 +19,7 @@ using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Repositories;
 using SportAcademy.Web;
 using System;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,7 +78,13 @@ builder.Services.AddScoped<ISportTraineeRepository, SportTraineeRepository>();
 
 builder.Services.AddScoped<ISportBranchRepository, SportBranchRepository>();
 
-builder.Services.AddControllers();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 
