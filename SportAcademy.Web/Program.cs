@@ -82,6 +82,8 @@ builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
 
 builder.Services.AddScoped<ISessionOccurrenceRepository, SessionOccurrenceRepository>();
 
+builder.Services.AddScoped<ITraineeGroupRepository, TraineeGroupRepository>();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
