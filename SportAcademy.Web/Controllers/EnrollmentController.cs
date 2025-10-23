@@ -1,14 +1,8 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
-using SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance;
-using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
 using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
-using SportAcademy.Application.Queries.AttendanceQueries.GetById;
-using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAll;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetById;
 
