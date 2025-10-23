@@ -1,4 +1,6 @@
-﻿using SportAcademy.Application.DTOs.EnrollmentDtos;
+﻿using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
+using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
+using SportAcademy.Application.DTOs.EnrollmentDtos;
 using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Mappings.EnrollmentProfile
