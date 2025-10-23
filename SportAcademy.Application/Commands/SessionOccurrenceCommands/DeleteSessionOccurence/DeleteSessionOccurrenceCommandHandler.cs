@@ -2,7 +2,7 @@
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 
 namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.DeleteSessionOccurence
 {

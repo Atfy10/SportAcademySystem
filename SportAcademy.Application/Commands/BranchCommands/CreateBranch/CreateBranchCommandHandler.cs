@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Exceptions.BranchExceptions;
+using SportAcademy.Domain.Exceptions.UserExceptions;
 
 namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 {

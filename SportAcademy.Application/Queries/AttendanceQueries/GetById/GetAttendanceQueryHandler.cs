@@ -4,12 +4,7 @@ using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.AttendanceExceptions;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetById
 {

@@ -1,18 +1,10 @@
 ﻿using AutoMapper;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Contract;
-using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
-using SportAcademy.Domain.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.TraineeExceptions;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 {
@@ -35,8 +27,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         public async Task<Result<UpdateTraineePersonalCommand>> Handle(UpdateTraineePersonalCommand request, CancellationToken cancellationToken)
         {
             var trainee = await _traineeRepository.GetFullTrainee(request.Id, cancellationToken)
-                ?? throw new IdNotFoundException(EntityTypes.Trainee.DisplayName(),
-                                request.Id.ToString());
+                ?? throw new TraineeNotFoundException(request.Id.ToString());
 
             _mapper.Map(request, trainee);
 

@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.DTOs.SportPriceDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Exceptions.BranchExceptions;
+using SportAcademy.Domain.Exceptions.SharedExceptions;
+using SportAcademy.Domain.Exceptions.SportExceptions;
+using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
 
 namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 {

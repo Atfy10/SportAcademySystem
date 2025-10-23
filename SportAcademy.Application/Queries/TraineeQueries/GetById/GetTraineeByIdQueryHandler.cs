@@ -4,13 +4,7 @@ using SportAcademy.Application.DTOs.TraineeDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
-using SportAcademy.Domain.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.TraineeExceptions;
 
 namespace SportAcademy.Application.Queries.TraineeQueries.GetById
 {
@@ -34,7 +28,7 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetById
             cancellationToken.ThrowIfCancellationRequested();
 
             var trainee = await _traineeRepository.GetByIdAsync(request.Id, cancellationToken)
-                ?? throw new IdNotFoundException(EntityTypes.Trainee.DisplayName(), request.Id.ToString());
+                ?? throw new TraineeNotFoundException(request.Id.ToString());
 
             cancellationToken.ThrowIfCancellationRequested();
 

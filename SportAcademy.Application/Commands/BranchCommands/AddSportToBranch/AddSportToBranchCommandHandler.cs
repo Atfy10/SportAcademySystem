@@ -3,12 +3,9 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.BranchExceptions;
+using SportAcademy.Domain.Exceptions.SharedExceptions;
+using SportAcademy.Domain.Exceptions.SportExceptions;
 
 namespace SportAcademy.Application.Commands.BranchCommands.AddSportToBranch
 {
@@ -32,10 +29,10 @@ namespace SportAcademy.Application.Commands.BranchCommands.AddSportToBranch
         public async Task<Result<string>> Handle(AddSportToBranchCommand request, CancellationToken cancellationToken)
         {
             var branch = await _branchRepository.GetByIdAsync(request.BranchId, cancellationToken)
-                ?? throw new IdNotFoundException(nameof(Branch), request.BranchId.ToString());
+                ?? throw new BranchNotFoundException(request.BranchId.ToString());
 
             var sport = await _sportRepository.GetByIdAsync(request.SportId, cancellationToken)
-                ?? throw new IdNotFoundException(nameof(Sport), request.SportId.ToString());
+                ?? throw new SportNotFoundException(request.SportId.ToString());
 
             var exists = await _sportBranchRepository.IsExistAsync(request.SportId, request.BranchId, cancellationToken);
             if (exists)

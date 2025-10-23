@@ -3,9 +3,8 @@ using MediatR;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
-using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Exceptions.SportExceptions;
 
 namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
 {

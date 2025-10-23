@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.DTOs.BranchDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Exceptions.BranchExceptions;
 
 namespace SportAcademy.Application.Queries.BranchQueries.GetById
 {
