@@ -4,12 +4,7 @@ using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
 
 namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup
 {

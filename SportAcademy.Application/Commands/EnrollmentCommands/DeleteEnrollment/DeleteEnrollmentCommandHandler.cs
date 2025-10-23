@@ -2,12 +2,7 @@
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 
 namespace SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment
 {

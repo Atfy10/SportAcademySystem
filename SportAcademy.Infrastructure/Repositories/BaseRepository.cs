@@ -1,12 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Infrastructure.DBContext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Infrastructure.Repositories
 {

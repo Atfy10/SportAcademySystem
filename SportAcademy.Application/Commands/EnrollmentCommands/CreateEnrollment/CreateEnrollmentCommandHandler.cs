@@ -4,7 +4,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
 using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
