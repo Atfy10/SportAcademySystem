@@ -234,14 +234,18 @@ namespace SportAcademy.Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("AttendanceDate")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("AttendanceStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<TimeOnly>("CheckInTime")
-                        .HasColumnType("time");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("time")
+                        .HasDefaultValueSql("CONVERT(TIME, GETUTCDATE())");
 
                     b.Property<string>("CoachNote")
                         .IsRequired()
@@ -444,6 +448,9 @@ namespace SportAcademy.Infrastructure.Migrations
                     b.Property<int>("SessionRemaining")
                         .HasColumnType("int");
 
+                    b.Property<int>("SubscriptionDetailsId")
+                        .HasColumnType("int");
+
                     b.Property<int>("TraineeGroupId")
                         .HasColumnType("int");
 
@@ -451,6 +458,9 @@ namespace SportAcademy.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionDetailsId")
+                        .IsUnique();
 
                     b.HasIndex("TraineeGroupId");
 
@@ -724,10 +734,16 @@ namespace SportAcademy.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("SportSubscriptionTypeSportId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SportSubscriptionTypeSubscriptionTypeId")
+                        .HasColumnType("int");
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
-                    b.Property<int>("SubscriptionTypeId")
+                    b.Property<int?>("SubscriptionTypeId")
                         .HasColumnType("int");
 
                     b.Property<int>("TraineeId")
@@ -741,6 +757,8 @@ namespace SportAcademy.Infrastructure.Migrations
                     b.HasIndex("SubscriptionTypeId");
 
                     b.HasIndex("TraineeId");
+
+                    b.HasIndex("SportSubscriptionTypeSportId", "SportSubscriptionTypeSubscriptionTypeId");
 
                     b.ToTable("SubscriptionDetails", (string)null);
                 });
@@ -976,6 +994,12 @@ namespace SportAcademy.Infrastructure.Migrations
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.Enrollment", b =>
                 {
+                    b.HasOne("SportAcademy.Domain.Entities.SubscriptionDetails", "SubscriptionDetails")
+                        .WithOne("Enrollment")
+                        .HasForeignKey("SportAcademy.Domain.Entities.Enrollment", "SubscriptionDetailsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("SportAcademy.Domain.Entities.TraineeGroup", "TraineeGroup")
                         .WithMany("Enrollments")
                         .HasForeignKey("TraineeGroupId")
@@ -987,6 +1011,8 @@ namespace SportAcademy.Infrastructure.Migrations
                         .HasForeignKey("TraineeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("SubscriptionDetails");
 
                     b.Navigation("Trainee");
 
@@ -1148,11 +1174,9 @@ namespace SportAcademy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SportAcademy.Domain.Entities.SubscriptionType", "SubscriptionType")
+                    b.HasOne("SportAcademy.Domain.Entities.SubscriptionType", null)
                         .WithMany("SubscriptionDetails")
-                        .HasForeignKey("SubscriptionTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SubscriptionTypeId");
 
                     b.HasOne("SportAcademy.Domain.Entities.Trainee", "Trainee")
                         .WithMany("SubscriptionDetails")
@@ -1160,9 +1184,15 @@ namespace SportAcademy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SportAcademy.Domain.Entities.SportSubscriptionType", "SportSubscriptionType")
+                        .WithMany("SubscriptionsDetails")
+                        .HasForeignKey("SportSubscriptionTypeSportId", "SportSubscriptionTypeSubscriptionTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Payment");
 
-                    b.Navigation("SubscriptionType");
+                    b.Navigation("SportSubscriptionType");
 
                     b.Navigation("Trainee");
                 });
@@ -1271,6 +1301,17 @@ namespace SportAcademy.Infrastructure.Migrations
                     b.Navigation("SubscriptionTypes");
 
                     b.Navigation("Trainees");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.SportSubscriptionType", b =>
+                {
+                    b.Navigation("SubscriptionsDetails");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.SubscriptionDetails", b =>
+                {
+                    b.Navigation("Enrollment")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.SubscriptionType", b =>

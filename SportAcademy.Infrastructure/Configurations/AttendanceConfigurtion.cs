@@ -21,6 +21,8 @@ namespace SportAcademy.Infrastructure.Configurations
 
             //  props
             builder.Property(a => a.AttendanceDate)
+                .HasDefaultValueSql("GETUTCDATE()")
+                .ValueGeneratedOnAdd()
                 .IsRequired();
 
             builder.Property(a => a.AttendanceStatus)
@@ -28,6 +30,7 @@ namespace SportAcademy.Infrastructure.Configurations
                 .HasConversion<string>();
 
             builder.Property(a => a.CheckInTime)
+                .HasDefaultValueSql("CONVERT(TIME, GETUTCDATE())")
                 .IsRequired();
 
             builder.Property(a => a.CoachNote)

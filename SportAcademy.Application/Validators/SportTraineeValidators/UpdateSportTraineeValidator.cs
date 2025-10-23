@@ -1,0 +1,31 @@
+﻿using FluentValidation;
+using SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrainee;
+using SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrainee;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SportAcademy.Application.Validators.SportTraineeValidators
+{
+    public class UpdateSportTraineeValidator : AbstractValidator<UpdateSportTraineeCommand>
+    {
+        public UpdateSportTraineeValidator()
+        {
+            ClassLevelCascadeMode = CascadeMode.Stop;
+
+            RuleFor(x => x.SportId)
+                .GreaterThan(0)
+                .WithMessage("Please select a valid sport.");
+
+            RuleFor(x => x.TraineeId)
+                .GreaterThan(0)
+                .WithMessage("Please select a valid trainee.");
+
+            RuleFor(x => x.SkillLevel)
+                .IsInEnum()
+                .WithMessage("Invalid skill level. Please choose from the available options.");
+        }
+    }
+}

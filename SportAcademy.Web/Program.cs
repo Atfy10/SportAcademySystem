@@ -19,6 +19,7 @@ using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Repositories;
 using SportAcademy.Web;
 using System;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
