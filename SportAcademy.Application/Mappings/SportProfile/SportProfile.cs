@@ -1,10 +1,13 @@
-﻿using SportAcademy.Application.DTOs.SportDtos;
-using SportAcademy.Domain.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SportAcademy.Application.Commands.SportCommands.CreateSport;
+using SportAcademy.Application.Commands.SportCommands.UpdateSport;
+using SportAcademy.Application.DTOs.SportDtos;
+using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Mappings.SportProfile
 {
@@ -12,11 +15,23 @@ namespace SportAcademy.Application.Mappings.SportProfile
     {
         public SportProfile()
         {
-            CreateMap<Sport, SportDto>().ReverseMap();
+            CreateMap<Sport, SportDto>()
+                .ReverseMap()
+				.ForMember(dest => dest.Coaches, opt => opt.Ignore())
+                .ForMember(dest => dest.SubscriptionTypes, opt => opt.Ignore())
+                .ForMember(dest => dest.Branches, opt => opt.Ignore())
+                .ForMember(dest => dest.Trainees, opt => opt.Ignore())
+                .ForMember(dest => dest.Prices, opt => opt.Ignore());
 
-            //CreateMap<Domain.Entities.Sport, DTOs.SportDtos.CreateSportDto>().ReverseMap();
+			CreateMap<CreateSportCommand, Sport>()
+			    .ForMember(dest => dest.Coaches, opt => opt.Ignore())
+			    .ForMember(dest => dest.SubscriptionTypes, opt => opt.Ignore())
+			    .ForMember(dest => dest.Branches, opt => opt.Ignore())
+			    .ForMember(dest => dest.Trainees, opt => opt.Ignore())
+			    .ForMember(dest => dest.Prices, opt => opt.Ignore());
 
-            //CreateMap<Domain.Entities.Sport, DTOs.SportDtos.UpdateSportDto>().ReverseMap();
-        }
-    }
+            CreateMap<UpdateSportCommand, Sport>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
+		}
+	}
 }

@@ -16,5 +16,13 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<SportBranch> Branches { get; set; } = [];
         public virtual ICollection<SportTrainee> Trainees { get; set; } = [];
         public virtual ICollection<SportPrice> Prices { get; set; } = [];
-    }
+
+		public void Update(string? name, string? description, string? category, bool? isRequireHealthTest)
+		{
+			if (name != null) Name = name;
+			if (description != null) Description = description;
+			if (category != null) Category = Enum.Parse<SportCategory>(category);
+			if (isRequireHealthTest.HasValue) IsRequireHealthTest = isRequireHealthTest.Value;
+		}
+	}
 }

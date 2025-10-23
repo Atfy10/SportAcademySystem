@@ -1,8 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.SportCommands.CreateSport;
+using SportAcademy.Application.Commands.SportCommands.DeleteSport;
+using SportAcademy.Application.Commands.SportCommands.UpdateSport;
 using SportAcademy.Application.Queries.SportQueries.GetAll;
 using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
+using SportAcademy.Application.Queries.SportQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -17,7 +21,35 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("get-all")]
+        [HttpPost("create")]
+        public async Task<IActionResult> Create(CreateSportCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+		}
+
+        [HttpPut("update")]
+        public async Task<IActionResult> Update(UpdateSportCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+		}
+
+        [HttpDelete("delete")]
+        public async Task<IActionResult> Delete(int sportId)
+        {
+            var result = await _mediator.Send(new DeleteSportCommand(sportId));
+            return Ok(result);
+		}
+
+        [HttpGet("get/{Id}")]
+        public async Task<IActionResult> GetById(int Id)
+        {
+            var result = await _mediator.Send(new GetSportByIdQuery(Id));
+            return Ok(result);
+		}
+
+		[HttpGet("get-all")]
         public async Task<IActionResult> GetAll()
         {
             var result = await _mediator.Send(new GetAllSportsQuery());
