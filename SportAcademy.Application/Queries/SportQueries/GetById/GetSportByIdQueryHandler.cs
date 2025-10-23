@@ -17,7 +17,7 @@ namespace SportAcademy.Application.Queries.SportQueries.GetById
     {
         private readonly ISportRepository _sportRepository;
         private readonly IMapper _mapper;
-        private readonly string _operationType = OperationType.GetById.ToString();
+        private readonly string _operationType = OperationType.Get.ToString();
 
         public GetSportByIdQueryHandler(
             ISportRepository sportRepository,

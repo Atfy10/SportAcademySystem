@@ -15,20 +15,25 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBra
     public class GetAvailableSportsForBranchQueryHandler : IRequestHandler<GetAvailableSportsForBranchQuery, Result<List<SportDto>>>
     {
         private readonly ISportRepository _sportRepository;
+        private readonly IBranchRepository _brancRepository;
         private readonly IMapper _mapper;
         private readonly string _operation = OperationType.Get.ToString();
 
-        public GetAvailableSportsForBranchQueryHandler(ISportRepository sportRepository,
+        public GetAvailableSportsForBranchQueryHandler(
+            ISportRepository sportRepository,
+            IBranchRepository branchRepository,
             IMapper mapper)
         {
             _sportRepository = sportRepository;
             _mapper = mapper;
+            _brancRepository = branchRepository;
         }
         public async Task<Result<List<SportDto>>> Handle(GetAvailableSportsForBranchQuery request, CancellationToken cancellationToken)
         {
             if (request.branchId <= 0)
                 throw new ArgumentException("Branch ID must be greater than zero.", nameof(request.branchId));
             
+            //_brancRepository.IsE
             var sports = await _sportRepository
                 .GetAvailableSportsForBranch(request.branchId, cancellationToken) ?? [];
 
