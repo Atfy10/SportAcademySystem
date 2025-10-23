@@ -12,7 +12,7 @@ namespace SportAcademy.Application.Interfaces
         Task<bool> IsExistByIdAsync(int id, CancellationToken cancellationToken);
         Task<IEnumerable<Sport>> GetAvailableSportsForBranch(int branchId, CancellationToken cancellationToken);
         Task<bool> IsSportExistAsync(int sportId, CancellationToken cancellationToken);
-		Task<bool> CheckIfNameExists(string name, CancellationToken cancellationToken = default);
+		Task<bool> IsExistByNameAsync(string name, CancellationToken cancellationToken = default);
 
 	}
 }

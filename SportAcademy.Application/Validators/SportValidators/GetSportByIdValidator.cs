@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
-using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
-using SportAcademy.Application.Commands.SportCommands.DeleteSport;
+using SportAcademy.Application.Queries.SportQueries.GetById;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Validators.SportValidators
 {
-    public class DeleteSportValidator : AbstractValidator<DeleteSportCommand>
+    public class GetSportByIdValidator : AbstractValidator<GetSportByIdQuery>
     {
-        public DeleteSportValidator()
+        public GetSportByIdValidator()
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 

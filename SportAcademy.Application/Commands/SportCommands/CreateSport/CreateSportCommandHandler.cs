@@ -14,40 +14,36 @@ using SportAcademy.Domain.Exceptions;
 
 namespace SportAcademy.Application.Commands.SportCommands.CreateSport
 {
-	public class CreateSportCommandHandler : IRequestHandler<CreateSportCommand, Result<SportDto>>
-	{
-		private readonly ISportRepository _sportRepository;
-		private readonly IMapper _mapper;
-		private readonly string _operationType = OperationType.Add.ToString();
+    public class CreateSportCommandHandler : IRequestHandler<CreateSportCommand, Result<int>>
+    {
+        private readonly ISportRepository _sportRepository;
+        private readonly IMapper _mapper;
+        private readonly string _operationType = OperationType.Add.ToString();
 
+        public CreateSportCommandHandler(
+            ISportRepository sportRepository,
+            IMapper mapper)
+        {
+            _sportRepository = sportRepository;
+            _mapper = mapper;
+        }
 
-		public CreateSportCommandHandler(ISportRepository sportRepository, IMapper mapper)
-		{
-			_sportRepository = sportRepository;
-			_mapper = mapper;
-		}
+        public async Task<Result<int>> Handle(CreateSportCommand request, CancellationToken cancellationToken)
+        {
+            var sport = _mapper.Map<Sport>(request)
+                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-		public async Task<Result<SportDto>> Handle(CreateSportCommand request, CancellationToken cancellationToken)
-		{
-			var exists = await _sportRepository.CheckIfNameExists(request.Name, cancellationToken);
-			if (exists)
-				throw new SportExistsException();
+            var nameExists = await _sportRepository.IsExistByNameAsync(sport.Name, cancellationToken);
+            if (nameExists)
+                throw new SportExistsException();
 
-			if (!Enum.IsDefined(typeof(SportCategory), request.Category))
-				throw new InvalidCategoryException();
+            cancellationToken.ThrowIfCancellationRequested();
 
-			var sport = _mapper.Map<Sport>(request)
-				?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            await _sportRepository.AddAsync(sport, cancellationToken);
 
-			cancellationToken.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
-			await _sportRepository.AddAsync(sport, cancellationToken);
-
-			var sportDto = _mapper.Map<SportDto>(sport)
-				?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-			return Result<SportDto>.Success(sportDto, _operationType);
-		}
-
-	}
+            return Result<int>.Success(sport.Id, _operationType);
+        }
+    }
 }

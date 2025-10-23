@@ -9,37 +9,45 @@ using SportAcademy.Domain.Exceptions;
 
 namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
 {
-	public class UpdateSportCommandHandler : IRequestHandler<UpdateSportCommand, Result<SportDto>>
-	{
-		private readonly ISportRepository _sportRepository;
-		private readonly IMapper _mapper;
-		private readonly string _operationType = OperationType.Update.ToString();
+    public class UpdateSportCommandHandler : IRequestHandler<UpdateSportCommand, Result<SportDto>>
+    {
+        private readonly IMapper _mapper;
+        private readonly ISportRepository _sportRepository;
+        private readonly string _operationType = OperationType.Update.ToString();
 
-		public UpdateSportCommandHandler(ISportRepository sportRepository, IMapper mapper)
-		{
-			_sportRepository = sportRepository;
-			_mapper = mapper;
-		}
+        public UpdateSportCommandHandler(
+            IMapper mapper,
+            ISportRepository sportRepository)
+        {
+            _mapper = mapper;
+            _sportRepository = sportRepository;
+        }
 
-		public async Task<Result<SportDto>> Handle(UpdateSportCommand request, CancellationToken cancellationToken)
-		{
-			var sport = await _sportRepository.GetByIdAsync(request.Id, cancellationToken)
-				?? throw new SportNotFoundException($"{request.Id}");
+        public async Task<Result<SportDto>> Handle(UpdateSportCommand request, CancellationToken cancellationToken)
+        {
+            var sport = await _sportRepository.GetByIdAsync(request.Id, cancellationToken)
+                ?? throw new SportNotFoundException($"{request.Id}");
 
-			if (!string.IsNullOrWhiteSpace(request.Name))
-			{
-				var exists = await _sportRepository.CheckIfNameExists(request.Name, cancellationToken);
-				if (exists && !sport.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
-					throw new SportExistsException();
-			}
+            if (!sport.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                var nameExists = await _sportRepository.IsExistByNameAsync(request.Name, cancellationToken);
+                if (nameExists)
+                    throw new SportExistsException();
+            }
 
-			sport.Update(request.Name, request.Description, request.Category, request.IsRequireHealthTest);
+            _mapper.Map(request, sport);
 
+            cancellationToken.ThrowIfCancellationRequested();
 
-			await _sportRepository.UpdateAsync(sport, cancellationToken);
+            await _sportRepository.UpdateAsync(sport, cancellationToken);
 
-			var sportDto = _mapper.Map<SportDto>(sport);
-			return Result<SportDto>.Success(sportDto, _operationType);
-		}
-	}
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var sportDto = _mapper.Map<SportDto>(sport)
+                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+
+            return Result<SportDto>.Success(sportDto, _operationType);
+        }
+    }
+
 }

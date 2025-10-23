@@ -13,26 +13,29 @@ using SportAcademy.Domain.Exceptions;
 
 namespace SportAcademy.Application.Queries.SportQueries.GetById
 {
-	public class GetSportByIdQueryHandler : IRequestHandler<GetSportByIdQuery, Result<SportDto>>
-	{
-		private readonly ISportRepository _sportRepository;
-		private readonly IMapper _mapper;
-		private readonly string _operationType = OperationType.Get.ToString();
+    public class GetSportByIdQueryHandler : IRequestHandler<GetSportByIdQuery, Result<SportDto>>
+    {
+        private readonly ISportRepository _sportRepository;
+        private readonly IMapper _mapper;
+        private readonly string _operationType = OperationType.GetById.ToString();
 
-		public GetSportByIdQueryHandler(ISportRepository sportRepository, IMapper mapper)
-		{
-			_sportRepository = sportRepository;
-			_mapper = mapper;
-		}
+        public GetSportByIdQueryHandler(
+            ISportRepository sportRepository,
+            IMapper mapper)
+        {
+            _sportRepository = sportRepository;
+            _mapper = mapper;
+        }
 
-		public async Task<Result<SportDto>> Handle(GetSportByIdQuery request, CancellationToken cancellationToken)
-		{
-			var sport = await _sportRepository.GetByIdAsync(request.Id, cancellationToken)??
-				throw new SportNotFoundException($"{request.Id}");
+        public async Task<Result<SportDto>> Handle(GetSportByIdQuery request, CancellationToken cancellationToken)
+        {
+            var sport = await _sportRepository.GetByIdAsync(request.Id, cancellationToken)
+                ?? throw new SportNotFoundException($"{request.Id}");
 
-			var dto = _mapper.Map<SportDto>(sport);
-			return Result<SportDto>.Success(dto, _operationType);
-		}
-	}
+            var sportDto = _mapper.Map<SportDto>(sport)
+                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
+            return Result<SportDto>.Success(sportDto, _operationType);
+        }
+    }
 }

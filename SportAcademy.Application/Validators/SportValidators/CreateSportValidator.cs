@@ -8,27 +8,23 @@ using SportAcademy.Application.Commands.SportCommands.CreateSport;
 
 namespace SportAcademy.Application.Validators.SportValidators
 {
-	public class CreateSportValidator : AbstractValidator<CreateSportCommand>
-	{
-		public CreateSportValidator()
-		{
-			RuleFor(x => x.Name)
-				.NotEmpty().WithMessage("Sport name is required.")
-				.MaximumLength(50).WithMessage("Sport name must not exceed 50 characters.");
+    public class CreateSportValidator : AbstractValidator<CreateSportCommand>
+    {
+        public CreateSportValidator()
+        {
+            ClassLevelCascadeMode = CascadeMode.Stop;
 
-			RuleFor(x => x.Description)
-				.MaximumLength(500).WithMessage("Description must not exceed 500 characters.")
-				.When(x => !string.IsNullOrWhiteSpace(x.Description));
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Please provide a sport name.")
+                .MaximumLength(100).WithMessage("Sport name can't exceed 100 characters.");
 
-			RuleFor(x => x.Category)
-				.NotEmpty().WithMessage("Category is required.")
-				.Must(category => Enum.IsDefined(typeof(Domain.Enums.SportCategory), category))
-				.WithMessage("Invalid category specified.");
+            RuleFor(x => x.Description)
+                .MaximumLength(500).WithMessage("Description can't exceed 500 characters.")
+                .When(x => !string.IsNullOrEmpty(x.Description));
 
-			RuleFor(x => x.IsRequireHealthTest)
-				.NotNull().WithMessage("IsRequireHealthTest must be specified.");
-		}
-
-
-	}
+            RuleFor(x => x.Category)
+                .NotEmpty().WithMessage("Please select a sport category.")
+                .IsInEnum().WithMessage("Please select a valid sport category.");
+        }
+    }
 }

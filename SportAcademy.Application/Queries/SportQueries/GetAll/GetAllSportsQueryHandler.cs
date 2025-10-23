@@ -17,9 +17,11 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAll
     {
         private readonly ISportRepository _sportRepository;
         private readonly IMapper _mapper;
-        private readonly string _operation = OperationType.GetAll.ToString();
+        private readonly string _operationType = OperationType.GetAll.ToString();
 
-        public GetAllSportsQueryHandler(ISportRepository sportRepository, IMapper mapper)
+        public GetAllSportsQueryHandler(
+            ISportRepository sportRepository,
+            IMapper mapper)
         {
             _sportRepository = sportRepository;
             _mapper = mapper;
@@ -27,13 +29,11 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAll
 
         public async Task<Result<List<SportDto>>> Handle(GetAllSportsQuery request, CancellationToken cancellationToken)
         {
-            var sports = await _sportRepository.GetAllAsync(cancellationToken)
-                ?? [];
+            var sports = await _sportRepository.GetAllAsync(cancellationToken) ?? [];
 
-            var sportsDto = _mapper.Map<List<SportDto>>(sports) ?? 
-                throw new AutoMapperMappingException();
+            var sportsDto = _mapper.Map<List<SportDto>>(sports) ?? [];
 
-            return Result<List<SportDto>>.Success(sportsDto, _operation);
+            return Result<List<SportDto>>.Success(sportsDto, _operationType);
         }
     }
 }

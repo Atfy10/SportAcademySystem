@@ -10,5 +10,5 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.SportQueries.GetAll
 {
-    public class GetAllSportsQuery : IRequest<Result<List<SportDto>>> { }
+    public record GetAllSportsQuery() : IRequest<Result<List<SportDto>>>;
 }

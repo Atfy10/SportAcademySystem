@@ -10,11 +10,10 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SportCommands.CreateSport
 {
-	public record CreateSportCommand(
-		string Name,
-		string? Description,
-		string Category,
-		bool IsRequireHealthTest
-	) : IRequest<Result<SportDto>>;
-
+    public record CreateSportCommand(
+        string Name,
+        string? Description,
+        SportCategory Category,
+        bool IsRequireHealthTest
+    ) : IRequest<Result<int>>;
 }

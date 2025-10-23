@@ -9,6 +9,5 @@ using SportAcademy.Application.Services;
 
 namespace SportAcademy.Application.Queries.SportQueries.GetById
 {
-	public record GetSportByIdQuery(int Id) : IRequest<Result<SportDto>>;
-
+    public record GetSportByIdQuery(int Id) : IRequest<Result<SportDto>>;
 }
