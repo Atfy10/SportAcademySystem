@@ -30,6 +30,16 @@ namespace SportAcademy.Infrastructure.Configurations
                 .WithMany(s => s.Sports)
                 .HasForeignKey(sp => sp.SubscriptionTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // 1:M SubscriptionDetails
+            builder.HasMany(sst => sst.SubscriptionsDetails)
+                .WithOne(sd => sd.SportSubscriptionType)
+                .HasForeignKey(sd => new
+                {
+                    sd.SportSubscriptionTypeSportId,
+                    sd.SportSubscriptionTypeSubscriptionTypeId,
+                })
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
