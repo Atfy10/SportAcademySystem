@@ -5,6 +5,7 @@ using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Exceptions.BranchExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
+using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 {
@@ -25,11 +26,13 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 			var branch = _mapper.Map<Branch>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-			var emailExists = await _branchRepository.IsEmailExistAsync(branch.Email, cancellationToken);
+			branch.Coordinate = Coordinate.Create(request.CoX, request.CoY);
+
+            var emailExists = await _branchRepository.IsEmailExistAsync(branch.Email, cancellationToken);
 			if (emailExists)
 				throw new EmailExistException();
 			
-			var isCoordinatesUsed = await _branchRepository.IsCoordinatesExistAsync(branch.CoX, branch.CoY, cancellationToken);
+			var isCoordinatesUsed = await _branchRepository.IsCoordinatesExistAsync(branch.Coordinate, cancellationToken);
 			if (isCoordinatesUsed)
 				throw new CoordinateExistException();
 
