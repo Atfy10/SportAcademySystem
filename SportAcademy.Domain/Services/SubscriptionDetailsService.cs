@@ -10,6 +10,6 @@ namespace SportAcademy.Domain.Services
     public class SubscriptionDetailsService
     {
         public static int CalculateAllowedSessions(SubscriptionDetails subscriptionDetails)
-            => subscriptionDetails.SubscriptionType.DaysPerMonth;
+            => subscriptionDetails.SportSubscriptionType.SubscriptionType.DaysPerMonth;
     }
 }
