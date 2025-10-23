@@ -43,21 +43,16 @@ namespace SportAcademy.Infrastructure.Configurations
                 .HasDatabaseName("IX_Branch_Email")
                 .HasFilter("[Email] IS NOT NULL");
 
-            builder.OwnsOne(b => b.Coordinate, coord =>
-            {
-                coord.Property(c => c.CoX)
-                    .IsRequired()
-                    .HasColumnName("Latitude")
-                    .HasMaxLength(50);
+            builder.Property(b => b.CoX)
+                .IsRequired()
+                .HasMaxLength(50);
 
-                coord.Property(c => c.CoY)
-                    .IsRequired()
-                    .HasColumnName("Longitude")
-                    .HasMaxLength(50);
-            });
+            builder.Property(b => b.CoY)
+                .IsRequired()
+                .HasMaxLength(50);
 
             //  The index will be useful for serching with (CoX) or (CoX, CoY)
-            builder.HasIndex(b => b.Coordinate)
+            builder.HasIndex(b => new { b.CoX, b.CoY })
                 .IsUnique()
                 .HasDatabaseName("IX_Branch_Coordinates");
 

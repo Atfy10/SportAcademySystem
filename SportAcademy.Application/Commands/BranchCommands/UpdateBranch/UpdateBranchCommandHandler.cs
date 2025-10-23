@@ -6,7 +6,6 @@ using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BranchExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
-using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 {
@@ -34,11 +33,11 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 				if (emailExists)
 					throw new EmailExistException();
 			}
-			var requestCoordinate = Coordinate.Create(request.CoX, request.CoY);
-            var coordinatesChanged = !requestCoordinate.Equals(branch.Coordinate);
+
+			var coordinatesChanged = (request.CoX != branch.CoX) || (request.CoY != branch.CoY);
 			if (coordinatesChanged)
 			{
-				var coordinatesExist = await _branchRepository.IsCoordinatesExistAsync(requestCoordinate, cancellationToken);
+				var coordinatesExist = await _branchRepository.IsCoordinatesExistAsync(request.CoX!, request.CoY!, cancellationToken);
 				if (coordinatesExist)
 					throw new CoordinateExistException();
 			}

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Domain.ValueObjects;
 using SportAcademy.Infrastructure.DBContext;
 
 namespace SportAcademy.Infrastructure.Repositories
@@ -19,11 +18,11 @@ namespace SportAcademy.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<bool> IsCoordinatesExistAsync(Coordinate coordinate, CancellationToken cancellationToken)
+        public async Task<bool> IsCoordinatesExistAsync(string coX, string coY, CancellationToken cancellationToken)
             => await _context.Branchs
-                .AnyAsync(b => b.Coordinate.CoX == coordinate.CoX && b.Coordinate.CoY == coordinate.CoY, cancellationToken);
+                .AnyAsync(b => b.CoX == coX && b.CoY == coY, cancellationToken);
 
-        public async Task<bool> IsEmailExistAsync(string? email, CancellationToken cancellationToken)
+        public async Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken)
             => await _context.Branchs
                 .AnyAsync(b => b.Email == email, cancellationToken);
 

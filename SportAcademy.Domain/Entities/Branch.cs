@@ -1,5 +1,4 @@
-﻿using SportAcademy.Domain.ValueObjects;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +14,8 @@ namespace SportAcademy.Domain.Entities
         public required string Country { get; set; }
         public required string PhoneNumber { get; set; }
         public string? Email { get; set; }
-        public required Coordinate Coordinate { get; set; }
+        public required string CoX { get; set; }
+        public required string CoY { get; set; }
         public bool IsActive { get; set; }
 
         // Navigation properties
