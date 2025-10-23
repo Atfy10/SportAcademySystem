@@ -37,7 +37,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.AddSportToBranch
             var sport = await _sportRepository.GetByIdAsync(request.SportId, cancellationToken)
                 ?? throw new IdNotFoundException(nameof(Sport), request.SportId.ToString());
 
-            var exists = await _sportBranchRepository.ExistsAsync(request.SportId, request.BranchId, cancellationToken);
+            var exists = await _sportBranchRepository.IsExistAsync(request.SportId, request.BranchId, cancellationToken);
             if (exists)
                 throw new ConflictException(nameof(Sport), nameof(Branch));
 

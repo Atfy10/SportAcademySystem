@@ -30,7 +30,7 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrai
 
 		public async Task<Result<SportTraineeDto>> Handle(UpdateSportTraineeCommand request, CancellationToken cancellationToken)
 		{
-			var exists = await _sportTraineeRepository.IsKeyExist(request.SportId, request.TraineeId, cancellationToken);
+			var exists = await _sportTraineeRepository.IsExistAsync(request.SportId, request.TraineeId, cancellationToken);
 			if (!exists)
 				throw new SportTraineeNotFoundException($"{request.SportId}, {request.TraineeId}");
 

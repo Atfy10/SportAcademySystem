@@ -27,10 +27,5 @@ namespace SportAcademy.Infrastructure.Repositories
 
         public async Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default)
             => await _context.Trainees.AnyAsync(t => t.SSN == ssn, cancellationToken);
-
-        public async Task<bool> IsTraineeExistAsync(int traineeId, CancellationToken cancellationToken)
-            => await _context.Trainees.AnyAsync(t => t.Id == traineeId, cancellationToken);
-
-
 	}
 }

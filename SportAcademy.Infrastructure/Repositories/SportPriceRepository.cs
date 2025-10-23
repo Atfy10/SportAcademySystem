@@ -17,7 +17,7 @@ namespace SportAcademy.Infrastructure.Repositories
         {
             _context = context;
         }
-        public async Task<bool> IsKeyExistAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
+        public async Task<bool> IsExistAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
             => await _context.SportPrices.AnyAsync(
                 sp => sp.BranchId == branchId
                     && sp.SportId == sportId
@@ -25,7 +25,7 @@ namespace SportAcademy.Infrastructure.Repositories
 
         public async Task<SportPrice?> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
             => await _context.SportPrices.FirstOrDefaultAsync(
-                sp => IsKeyExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
+                sp => IsExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
                 cancellationToken);
 
         public async Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken = default)
@@ -41,7 +41,7 @@ namespace SportAcademy.Infrastructure.Repositories
                     .Include(sp => sp.Sport)
                     .Include(sp => sp.SubscriptionType)
                     .FirstOrDefaultAsync(
-                        sp => IsKeyExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
+                        sp => IsExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
                         cancellationToken);
     }
 }

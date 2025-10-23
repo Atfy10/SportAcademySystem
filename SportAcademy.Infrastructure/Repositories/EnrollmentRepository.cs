@@ -13,11 +13,5 @@ namespace SportAcademy.Infrastructure.Repositories
         {
             _context = context;
         }
-
-        public async Task<int> GetTotalSessionsAllowed(int enrollmentId, CancellationToken cancellationToken)
-            => await _context.Enrollments
-                .Where(e => e.Id == enrollmentId)
-                .Select(e => e.SubscriptionDetails.SubscriptionType.DaysPerMonth)
-                .SingleOrDefaultAsync(cancellationToken);
     }
 }

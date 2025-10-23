@@ -24,14 +24,6 @@ namespace SportAcademy.Infrastructure.Repositories
                 .Where(s => !s.Branches.Any(sb => sb.SportId == s.Id && sb.BranchId == branchId))
                 .ToListAsync(cancellationToken);
 
-        public async Task<bool> IsExistByIdAsync(int id, CancellationToken cancellationToken)
-            => await _context.Sports
-                .AnyAsync(s => s.Id == id, cancellationToken);
-
-        public async Task<bool> IsSportExistAsync(int sportId, CancellationToken cancellationToken)
-            => await _context.Sports
-                .AnyAsync(s => s.Id == sportId, cancellationToken);
-
         public async Task<bool> IsExistByNameAsync(string name, CancellationToken cancellationToken = default)
            => await _context.Sports
                .AnyAsync(s => s.Name == name, cancellationToken);
