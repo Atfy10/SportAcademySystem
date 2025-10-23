@@ -10,6 +10,7 @@ namespace SportAcademy.Application.Interfaces
         where TEntity : class
         where TKey : notnull
     {
+        Task<bool> IsExistAsync(TKey id, CancellationToken cancellationToken = default);
         Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default);
         Task<TEntity?> GetByIdsAsync(CancellationToken cancellationToken = default,
             params TKey[] id);

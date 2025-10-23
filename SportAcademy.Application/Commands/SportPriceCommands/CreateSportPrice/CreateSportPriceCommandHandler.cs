@@ -39,22 +39,22 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 		}
 		public async Task<Result<SportPriceBranchDto>> Handle(CreateSportPriceCommand request, CancellationToken cancellationToken)
 		{
-			var keyExists = await _sportPriceRepository.IsKeyExistAsync(request.BranchId, 
+			var keyExists = await _sportPriceRepository.IsExistAsync(request.BranchId, 
 				request.SportId, request.SubsTypeId, cancellationToken);
 			if (keyExists)
 				throw new SportPriceExistsException();
 
-			var branchExists = await _branchRepository.IsBranchExistAsync(request.BranchId,
+			var branchExists = await _branchRepository.IsExistAsync(request.BranchId,
 				cancellationToken);
 			if (!branchExists)
 				throw new BranchNotFoundException($"{request.BranchId}");
 
-			var sportExists = await _sportRepository.IsSportExistAsync(request.SportId,
+			var sportExists = await _sportRepository.IsExistAsync(request.SportId,
 				cancellationToken);
 			if (!sportExists)
 				throw new SportNotFoundException($"{request.SportId}");
 
-			var subsTypeExists = await _subscriptionTypeRepository.IsSubscriptionTypeExistAsync(
+			var subsTypeExists = await _subscriptionTypeRepository.IsExistAsync(
 				request.SubsTypeId, cancellationToken);
 			if (!subsTypeExists)
 				throw new SubscriptionTypeNotFoundException($"{request.SubsTypeId}");

@@ -19,7 +19,7 @@ namespace SportAcademy.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<bool> ExistsAsync(int sportId, int branchId, CancellationToken cancellationToken)
+        public async Task<bool> IsExistAsync(int sportId, int branchId, CancellationToken cancellationToken)
             => await _context.SportBranchs
                 .AnyAsync(sb => sb.SportId == sportId && sb.BranchId == branchId, cancellationToken);
     }

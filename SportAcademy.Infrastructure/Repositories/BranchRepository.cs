@@ -30,10 +30,5 @@ namespace SportAcademy.Infrastructure.Repositories
         public async Task<bool> IsPhoneNumberExistAsync(string phoneNumber, CancellationToken cancellationToken)
             => await _context.Branchs
                 .AnyAsync(b => b.PhoneNumber == phoneNumber, cancellationToken);
-
-        public async Task<bool> IsBranchExistAsync(int branchId, CancellationToken cancellationToken)
-            => await _context.Branchs
-                .AnyAsync(b => b.Id == branchId, cancellationToken);
-
 	}
 }

@@ -9,7 +9,7 @@ namespace SportAcademy.Application.Interfaces
 {
 	public interface ISportPriceRepository : IBaseRepository<SportPrice, int>
 	{
-		Task<bool> IsKeyExistAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default);
+		Task<bool> IsExistAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default);
 		Task<SportPrice?> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default);
 		Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken = default);
 		Task<SportPrice?> GetByKeyWithIncludesAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default);

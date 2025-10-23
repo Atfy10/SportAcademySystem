@@ -16,13 +16,13 @@ namespace SportAcademy.Infrastructure.Repositories
 
         public async Task<SubscriptionDetails?> GetSubscriptionDetailsWithSubTypeAsync(int subscriptionId, CancellationToken cancellationToken = default)
             => await _context.SubscriptionDetails
-                .Include(sd => sd.SubscriptionType)
+                .Include(sd => sd.SportSubscriptionType.SubscriptionType)
                 .SingleOrDefaultAsync(sd => sd.Id == subscriptionId, cancellationToken);
 
         public async Task<int> GetTotalSessionsAllowed(int subDetailsId, CancellationToken cancellationToken)
             => await _context.SubscriptionDetails
                 .Where(sd => sd.Id == subDetailsId)
-                .Select(sd => sd.SubscriptionType.DaysPerMonth)
+                .Select(sd => sd.SportSubscriptionType.SubscriptionType.DaysPerMonth)
                 .SingleOrDefaultAsync(cancellationToken);
     }
 }

@@ -9,9 +9,7 @@ namespace SportAcademy.Application.Interfaces
 {
 	public interface ISportRepository : IBaseRepository<Sport, int>
 	{
-        Task<bool> IsExistByIdAsync(int id, CancellationToken cancellationToken);
         Task<IEnumerable<Sport>> GetAvailableSportsForBranch(int branchId, CancellationToken cancellationToken);
-        Task<bool> IsSportExistAsync(int sportId, CancellationToken cancellationToken);
 		Task<bool> IsExistByNameAsync(string name, CancellationToken cancellationToken = default);
 
 	}

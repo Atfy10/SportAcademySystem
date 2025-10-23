@@ -9,6 +9,6 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface ISportBranchRepository : IBaseRepository<SportBranch, int>
     {
-        Task<bool> ExistsAsync(int sportId, int branchId, CancellationToken cancellationToken);
+        Task<bool> IsExistAsync(int sportId, int branchId, CancellationToken cancellationToken);
     }
 }

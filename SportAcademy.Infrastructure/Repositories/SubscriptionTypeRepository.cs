@@ -18,9 +18,5 @@ namespace SportAcademy.Infrastructure.Repositories
 		{
 			_context = context;
 		}
-
-		public Task<bool> IsSubscriptionTypeExistAsync(int subsTypeId, CancellationToken cancellationToken)
-		=> _context.SubscriptionTypes
-				.AnyAsync(st => st.Id == subsTypeId, cancellationToken);
 	}
 }
