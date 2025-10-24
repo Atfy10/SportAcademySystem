@@ -11,8 +11,6 @@ namespace SportAcademy.Domain.Entities
         public bool IsOffer { get; set; } = false;
 
         // Navigation properties
-        public virtual ICollection<SubscriptionDetails> SubscriptionDetails { get; set; } = [];
         public virtual ICollection<SportSubscriptionType> Sports { get; set; } = [];
-        public virtual ICollection<SportPrice> SportPrices { get; set; } = [];
     }
 }

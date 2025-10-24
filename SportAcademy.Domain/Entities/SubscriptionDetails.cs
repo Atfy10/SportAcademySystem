@@ -8,13 +8,14 @@
         public bool IsActive { get; } = true;
         public required string PaymentNumber { get; set; }
         public int TraineeId { get; set; }
-        public int SportSubscriptionTypeSubscriptionTypeId { get; set; }
-        public int SportSubscriptionTypeSportId { get; set; }
+        public int SubscriptionTypeId { get; set; }
+        public int SportId { get; set; }
+        public int BranchId { get; set; }
 
         // Navigation Property
         public virtual Payment Payment { get; set; } = null!;
         public virtual Trainee Trainee { get; set; } = null!;
-        public virtual SportSubscriptionType SportSubscriptionType { get; set; } = null!;
+        public virtual SportPrice SportPrice { get; set; } = null!;
         public virtual Enrollment Enrollment { get; set; } = null!;
     }
 }
