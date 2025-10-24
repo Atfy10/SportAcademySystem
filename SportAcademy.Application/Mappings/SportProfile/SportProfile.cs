@@ -20,15 +20,13 @@ namespace SportAcademy.Application.Mappings.SportProfile
 				.ForMember(dest => dest.Coaches, opt => opt.Ignore())
                 .ForMember(dest => dest.SubscriptionTypes, opt => opt.Ignore())
                 .ForMember(dest => dest.Branches, opt => opt.Ignore())
-                .ForMember(dest => dest.Trainees, opt => opt.Ignore())
-                .ForMember(dest => dest.Prices, opt => opt.Ignore());
+                .ForMember(dest => dest.Trainees, opt => opt.Ignore());
 
 			CreateMap<CreateSportCommand, Sport>()
 			    .ForMember(dest => dest.Coaches, opt => opt.Ignore())
 			    .ForMember(dest => dest.SubscriptionTypes, opt => opt.Ignore())
 			    .ForMember(dest => dest.Branches, opt => opt.Ignore())
-			    .ForMember(dest => dest.Trainees, opt => opt.Ignore())
-			    .ForMember(dest => dest.Prices, opt => opt.Ignore());
+			    .ForMember(dest => dest.Trainees, opt => opt.Ignore());
 
             CreateMap<UpdateSportCommand, Sport>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore());

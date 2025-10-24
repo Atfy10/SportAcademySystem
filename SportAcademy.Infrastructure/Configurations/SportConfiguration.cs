@@ -54,12 +54,6 @@ namespace SportAcademy.Infrastructure.Configurations
                 .WithOne(st => st.Sport)
                 .HasForeignKey(st => st.SportId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            //  1:M  SportPrice
-            builder.HasMany(s => s.Prices)
-                .WithOne(sp => sp.Sport)
-                .HasForeignKey(sp => sp.SportId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

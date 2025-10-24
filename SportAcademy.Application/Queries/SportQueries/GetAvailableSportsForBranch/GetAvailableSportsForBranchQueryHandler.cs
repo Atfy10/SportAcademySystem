@@ -4,6 +4,7 @@ using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.BranchExceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,8 +33,11 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBra
         {
             if (request.branchId <= 0)
                 throw new ArgumentException("Branch ID must be greater than zero.", nameof(request.branchId));
-            
-            //_brancRepository.IsE
+
+            var isBranchExist = await _brancRepository.IsExistAsync(request.branchId,
+                cancellationToken);
+            if (!isBranchExist)
+                throw new BranchNotFoundException(request.branchId.ToString());
             var sports = await _sportRepository
                 .GetAvailableSportsForBranch(request.branchId, cancellationToken) ?? [];
 

@@ -10,7 +10,7 @@ namespace SportAcademy.Application.DTOs.SportDtos
 	(
 		int Id,
 		string Name
-		);
+	);
 
 
 }

@@ -23,26 +23,33 @@ namespace SportAcademy.Infrastructure.Configurations
             builder.Property(sp => sp.Price)
                 .HasPrecision(10, 2)
                 .IsRequired();
-            //    .HasColumnType("decimal(10,2)")
 
             // Relationships
-            // 1:M  Sport
-            builder.HasOne(sp => sp.Sport)
-                .WithMany(s => s.Prices)
-                .HasForeignKey(sp => sp.SportId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             // 1:M  Branch
             builder.HasOne(sp => sp.Branch)
                 .WithMany(s => s.SportPrices)
                 .HasForeignKey(sp => sp.BranchId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M  SubscriptionType
-            builder.HasOne(sp => sp.SubscriptionType)
-                .WithMany(st => st.SportPrices)
-                .HasForeignKey(sp => sp.SubsTypeId)
-                .OnDelete(DeleteBehavior.Cascade);
+                // 1:M  SportSubscriptionType
+                builder.HasOne(sp => sp.SportSubscriptionType)
+                    .WithMany(st => st.SportPrices)
+                    .HasForeignKey(sp => new
+                    {
+                        sp.SportId,
+                        sp.SubsTypeId
+                    }).OnDelete(DeleteBehavior.Cascade);
+
+                // 1:M  SubscriptionDetails
+                builder.HasMany(sp => sp.SubscriptionsDetails)
+                    .WithOne(sd => sd.SportPrice)
+                    .HasForeignKey(sd => new
+                    {
+                        sd.SportId,
+                        sd.BranchId,
+                        sd.SubscriptionTypeId,
+                    })
+                    .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
