@@ -31,15 +31,15 @@ namespace SportAcademy.Infrastructure.Repositories
         public async Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken = default)
             => await _context.SportPrices
                     .Include(sp => sp.Branch)
-                    .Include(sp => sp.Sport)
-                    .Include(sp => sp.SubscriptionType)
+                    .Include(sp => sp.SportSubscriptionType.Sport)
+                    .Include(sp => sp.SportSubscriptionType.SubscriptionType)
                     .ToListAsync(cancellationToken);
 
         public async Task<SportPrice?> GetByKeyWithIncludesAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
             => await _context.SportPrices
                     .Include(sp => sp.Branch)
-                    .Include(sp => sp.Sport)
-                    .Include(sp => sp.SubscriptionType)
+                    .Include(sp => sp.SportSubscriptionType.Sport)
+                    .Include(sp => sp.SportSubscriptionType.SubscriptionType)
                     .FirstOrDefaultAsync(
                         sp => IsExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
                         cancellationToken);

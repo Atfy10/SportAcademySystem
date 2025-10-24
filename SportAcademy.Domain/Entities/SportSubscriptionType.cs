@@ -8,6 +8,6 @@
         // Navigation Property
         public virtual Sport Sport { get; set; } = null!;
         public virtual SubscriptionType SubscriptionType { get; set; } = null!;
-        public virtual ICollection<SubscriptionDetails> SubscriptionsDetails { get; set; } = null!;
+        public virtual ICollection<SportPrice> SportPrices { get; set; } = null!;
     }
 }
