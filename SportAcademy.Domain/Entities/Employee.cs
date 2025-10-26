@@ -2,19 +2,11 @@
 
 namespace SportAcademy.Domain.Entities
 {
-    public class Employee
+    public class Employee : Person
     {
         public int Id { get; set; }
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public required string SSN { get; set; }
         public decimal Salary { get; set; }
-        public Gender Gender { get; set; }
-        public DateOnly BirthDate { get; set; }
         public DateTime HireDate { get; set; }
-        public required string Address { get; set; }
-        public required string PhoneNumber { get; set; }
-        public string? SecondPhoneNumber { get; set; }
         public Position Position { get; set; }
         public int BranchId { get; set; }
         public required string AppUserId { get; set; }
