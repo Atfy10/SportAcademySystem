@@ -1,0 +1,32 @@
+﻿namespace SportAcademy.Domain.Enums
+{
+    public enum Nationality
+    {
+        American,
+        Canadian,
+        British,
+        Australian,
+        Chinese,
+        Korean,
+        Japanese,
+        Indian,
+        Russian,
+        SouthAfrican,
+        Egyptian,
+        Turkish,
+        Kuwaiti,
+        Saudi,
+        Emirati,
+        Moroccan,
+        Algerian,
+        Omanian,
+        Qatari,
+        Jordanian,
+        Syrian,
+        Lebanese,
+        Pakistani,
+        Philippine,
+        Palaestinian,
+        Other
+    }
+}

@@ -1,18 +1,11 @@
-﻿using SportAcademy.Domain.Enums;
-
-namespace SportAcademy.Domain.Entities
+﻿namespace SportAcademy.Domain.Entities
 {
-    public class Trainee
+    public class Trainee : Person
     {
         public int Id { get; set; }
-        public required string FirstName { get; set; }
-        public required string LastName { get; set; }
-        public required string SSN { get; set; }
         public bool IsSubscribed { get; set; }
         public string? ParentNumber { get; set; }
         public string? GuardianName { get; set; }
-        public DateOnly BirthDate { get; set; }
-        public Gender Gender { get; set; }
         public string? AppUserId { get; set; }
 
         // Navigation Properties
