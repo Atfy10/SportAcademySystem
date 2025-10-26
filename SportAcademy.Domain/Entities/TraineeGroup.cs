@@ -1,8 +1,9 @@
-﻿using SportAcademy.Domain.Enums;
+﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class TraineeGroup
+    public class TraineeGroup : IAuditableEntity
     {
         public int Id { get; set; }
         public SkillLevel SkillLevel { get; set; }
@@ -11,6 +12,10 @@ namespace SportAcademy.Domain.Entities
         public Gender Gender { get; set; }
         public int BranchId { get; set; }
         public int CoachId { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string? CreatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string? UpdatedBy { get; set; }
 
         // Navigation Property
         public virtual Branch Branch { get; set; } = null!;

@@ -1,11 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Infrastructure.Configurations
 {
@@ -20,39 +15,41 @@ namespace SportAcademy.Infrastructure.Configurations
             builder.HasKey(e => e.Id);
 
             // Props
-            builder.Property(e => e.FirstName)
+            #region Person Properties
+            builder.OwnsOne(e => e.Address, ab =>
+            {
+                ab.Property(a => a.Street)
+                .HasColumnName("Street")
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(70);
 
-            builder.Property(e => e.LastName)
-                .IsRequired()
-                .HasMaxLength(50);
+                ab.Property(a => a.City)
+                  .HasColumnName("City")
+                  .IsRequired()
+                  .HasMaxLength(50);
 
-            builder.Property(e => e.SSN)
-                .IsRequired()
-                .HasMaxLength(14);
+                ab.WithOwner();
+            });
 
-            builder.Property(e => e.Address)
-                .IsRequired()
-                .HasMaxLength(200);
+            builder.OwnsOne(e => e.Email, emailBuilder =>
+            {
+                emailBuilder.Property(e => e.Value)
+                    .HasColumnName("Email")
+                    .HasMaxLength(200)
+                    .IsRequired();
 
-            builder.Property(e => e.PhoneNumber)
-                .IsRequired()
-                .HasMaxLength(13);
-
-            builder.Property(e => e.SecondPhoneNumber)
-                .HasMaxLength(13);
+                emailBuilder.WithOwner();
+            });
+            #endregion
 
             builder.Property(e => e.Position)
                 .HasConversion<string>();
 
-            builder.Property(e => e.BirthDate)
-                .HasColumnType("date")
-                .IsRequired();
-
             builder.Property(e => e.Salary)
                 .HasPrecision(18, 2);
-            //  .HasColumnType("decimal(18,2)");
+
+            builder.Property(e => e.HireDate)
+                .IsRequired();
 
             builder.Property(e => e.AppUserId)
                 .IsRequired();

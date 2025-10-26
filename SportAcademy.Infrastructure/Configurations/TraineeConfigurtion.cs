@@ -1,11 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection.Emit;
 
 namespace SportAcademy.Infrastructure.Configurations
 {
@@ -23,17 +20,30 @@ namespace SportAcademy.Infrastructure.Configurations
                 .ValueGeneratedNever();
 
             // Props
-            builder.Property(t => t.FirstName)
-                .IsRequired()
-                .HasMaxLength(50);
+            #region Person Properties
+            builder.OwnsOne(t => t.Address, eb =>
+                {
+                    eb.Property(a => a.Street)
+                    .HasColumnName("Street")
+                    .IsRequired()
+                    .HasMaxLength(70);
 
-            builder.Property(t => t.LastName)
-                .IsRequired()
-                .HasMaxLength(50);
+                    eb.Property(a => a.City)
+                        .HasColumnName("City")
+                        .IsRequired()
+                        .HasMaxLength(50);
+                });
 
-            builder.Property(t => t.SSN)
-                .IsRequired()
-                .HasMaxLength(14);
+            builder.OwnsOne(t => t.Email, emailBuilder =>
+                {
+                    emailBuilder.Property(e => e.Value)
+                        .HasColumnName("Email")
+                        .HasMaxLength(200)
+                        .IsRequired();
+
+                    emailBuilder.WithOwner();
+                });
+            #endregion
 
             builder.Property(t => t.IsSubscribed)
                    .IsRequired();
@@ -44,15 +54,7 @@ namespace SportAcademy.Infrastructure.Configurations
             builder.Property(t => t.GuardianName)
                 .HasMaxLength(50);
 
-            builder.Property(t => t.BirthDate)
-                .IsRequired();
-
-            builder.Property(t => t.Gender)
-                .HasConversion<string>() 
-                .IsRequired();
-
             // Relationships
-
             // 1:1  AppUser
             builder.HasOne(t => t.AppUser)
                 .WithOne(u => u.Trainee)

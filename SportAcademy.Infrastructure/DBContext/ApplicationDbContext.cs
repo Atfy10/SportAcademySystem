@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.ValueObjects;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace SportAcademy.Infrastructure.DBContext
@@ -9,11 +13,6 @@ namespace SportAcademy.Infrastructure.DBContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options) { }
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-            base.OnModelCreating(modelBuilder);
-        }
 
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
@@ -36,5 +35,159 @@ namespace SportAcademy.Infrastructure.DBContext
         public DbSet<Trainee> Trainees { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(IAuditableEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<DateTime>("CreatedAt")
+                        .IsRequired();
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string?>("CreatedBy")
+                        .IsRequired(false);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<DateTime?>("UpdatedAt")
+                        .IsRequired(false);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string?>("UpdatedBy")
+                        .IsRequired(false);
+                }
+
+                if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+                {
+                    var parameter = Expression.Parameter(entityType.ClrType, "e");
+
+                    var filter = Expression.Lambda(
+                        Expression.Equal(
+                            Expression.Property(
+                                parameter,
+                                "IsDeleted"
+                            ),
+                            Expression.Constant(false)
+                        ),
+                        parameter
+                    );
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<bool>("IsDeleted")
+                        .HasDefaultValue(false)
+                        .IsRequired();
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<DateTime?>("DeletedAt")
+                        .IsRequired(false);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string?>("DeletedBy")
+                        .IsRequired(false);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .HasQueryFilter(filter);
+                }
+
+                if (typeof(Person).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(50);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(50);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string>("SSN")
+                        .IsRequired()
+                        .HasMaxLength(14);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<DateOnly>("BirthDate")
+                        .IsRequired();
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<Gender>("Gender")
+                        .HasConversion<string>()
+                        .IsRequired();
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<Nationality>("Nationality")
+                        .HasConversion<string>()
+                        .IsRequired();
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(12);
+
+                    modelBuilder
+                        .Entity(entityType.ClrType)
+                        .Property<string?>("SecondPhoneNumber")
+                        .HasMaxLength(12);
+                }
+            }
+
+            base.OnModelCreating(modelBuilder);
+        }
+
+        public override int SaveChanges()
+        {
+            ApplyAuditInformation();
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            ApplyAuditInformation();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void ApplyAuditInformation()
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.Entity is IAuditableEntity
+                        && (e.State == EntityState.Added
+                        || e.State == EntityState.Modified));
+
+            var currentTime = DateTime.UtcNow;
+            foreach (var entry in entries)
+            {
+                var auditableEntity = (IAuditableEntity)entry.Entity;
+                if (entry.State == EntityState.Added)
+                {
+                    auditableEntity.CreatedAt = currentTime;
+                    // auditableEntity.CreatedBy = GetCurrentUserId(); // Implement this method to get the current user ID
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    auditableEntity.UpdatedAt = currentTime;
+                    // auditableEntity.UpdatedBy = GetCurrentUserId(); // Implement this method to get the current user ID
+                }
+            }
+        }
     }
 }
