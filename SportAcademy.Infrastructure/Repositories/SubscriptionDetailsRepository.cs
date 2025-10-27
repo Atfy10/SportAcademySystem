@@ -24,5 +24,15 @@ namespace SportAcademy.Infrastructure.Repositories
                 .Where(sd => sd.Id == subDetailsId)
                 .Select(sd => sd.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth)
                 .SingleOrDefaultAsync(cancellationToken);
+
+        public async Task<List<SubscriptionDetails>?> GetSubscriptionDetailsForTraineeAsync(int traineeId, CancellationToken cancellationToken = default)
+            => await _context.SubscriptionDetails
+                .Where(sd => sd.TraineeId == traineeId)
+                .ToListAsync(cancellationToken);
+
+        public async Task<List<SubscriptionDetails>?> GetActiveSubscriptionDetailsForTraineeAsync(int traineeId, CancellationToken cancellationToken = default)
+            => await _context.SubscriptionDetails
+                .Where(sd => sd.TraineeId == traineeId && sd.IsActive)
+                .ToListAsync(cancellationToken);
     }
 }

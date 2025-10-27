@@ -9,6 +9,7 @@ using SportAcademy.Application.Behaviors;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.TraineeProfile;
+using SportAcademy.Application.Services;
 using SportAcademy.Application.Validators.TraineeValidators;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
@@ -87,6 +88,10 @@ builder.Services.AddScoped<ITraineeGroupRepository, TraineeGroupRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 
 builder.Services.AddScoped<ISubscriptionDetailsRepository, SubscriptionDetailsRepository>();
+
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
+builder.Services.AddScoped<SubDetailsManagementService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
