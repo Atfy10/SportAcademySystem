@@ -3,14 +3,16 @@ using MediatR;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
 using SportAcademy.Domain.Services;
+using System.Buffers;
 
 namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSubscriptionDetails
 {
     public class UpdateSubscriptionDetailsCommandHandler : IRequestHandler<UpdateSubscriptionDetailsCommand, Result<SubscriptionDetailsDto>>
     {
-        private readonly string _operation = "Update";
+        private readonly string _operation = OperationType.Update.ToString();
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
         private readonly IMapper _mapper;
         private readonly SubDetailsManagementService _subscriptionDetailsMangeService;
