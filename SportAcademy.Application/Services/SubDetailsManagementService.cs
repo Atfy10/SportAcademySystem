@@ -24,8 +24,11 @@ namespace SportAcademy.Application.Services
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
         }
 
-        public async Task ValidatePaymentAsync(string paymentNumber, CancellationToken ct)
+        public async Task ValidatePaymentAsync(string? paymentNumber, CancellationToken ct)
         {
+            if(string.IsNullOrWhiteSpace(paymentNumber))
+                throw new PaymentNotFoundException(nameof(paymentNumber));
+
             var isPaymentExist = await _paymentRepository.IsExistAsync(paymentNumber,
                     ct);
             if (!isPaymentExist)

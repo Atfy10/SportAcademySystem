@@ -1,15 +1,9 @@
 ﻿using SportAcademy.Application.DTOs.PaymentDtos;
-using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.DTOs.TraineeDtos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
 {
-    public class SubscriptionDetailsDto
+    public record SubscriptionDetailsDto
     {
         public TraineeSubDetailsDto Trainee { get; set; } = null!;
         public string SportName { get; set; } = null!;

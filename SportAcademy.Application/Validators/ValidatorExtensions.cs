@@ -15,8 +15,20 @@ namespace SportAcademy.Application.Validators
         {
             return ruleBuilder
                 .Cascade(CascadeMode.Stop)
+                .NotEmpty().WithMessage($"Please choose a {entityName}.")
                 .GreaterThan(0)
-                .WithMessage($"Please provide a valid {entityName} ID (must be greater than zero).");
+                .WithMessage($"Selected {entityName} is not valid.");
+        }
+
+        public static IRuleBuilderOptions<T, int?> ApplyOptionalIdRuleFor<T>(
+            this IRuleBuilderInitial<T, int?> ruleBuilder,
+            string entityName)
+        {
+            return ruleBuilder
+                .Cascade(CascadeMode.Stop)
+                .GreaterThan(0)
+                .WithMessage($"Selected {entityName} is not valid.")
+                .When((x, value) => value != null);
         }
     }
 }

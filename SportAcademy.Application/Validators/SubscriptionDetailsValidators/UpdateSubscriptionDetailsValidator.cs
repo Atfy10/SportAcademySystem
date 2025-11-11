@@ -1,14 +1,16 @@
 ﻿using FluentValidation;
-using SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscriptionDetails;
+using SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSubscriptionDetails;
 
 namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
 {
-
-    public class CreateSubscriptionDetailsValidator : AbstractValidator<CreateSubscriptionDetailsCommand>
+    public class UpdateSubscriptionDetailsValidator : AbstractValidator<UpdateSubscriptionDetailsCommand>
     {
-        public CreateSubscriptionDetailsValidator()
+        public UpdateSubscriptionDetailsValidator() 
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
+
+            RuleFor(x => x.Id)
+                .ApplyIdRuleFor("Subscription Details");
 
             RuleFor(x => x.StartDate)
                 .NotEmpty().WithMessage("Please select a start date.")
@@ -26,16 +28,16 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
                 .WithMessage("Payment number can’t be longer than 50 characters.");
 
             RuleFor(x => x.TraineeId)
-                .ApplyIdRuleFor("Trainee");
+                .ApplyOptionalIdRuleFor("Trainee");
 
             RuleFor(x => x.SubscriptionTypeId)
-                .ApplyIdRuleFor("Subscription Type");
+                .ApplyOptionalIdRuleFor("Subscription Type");
 
             RuleFor(x => x.SportId)
-                .ApplyIdRuleFor("Sport");
+                .ApplyOptionalIdRuleFor("Sport");
 
             RuleFor(x => x.BranchId)
-                .ApplyIdRuleFor("Branch");
+                .ApplyOptionalIdRuleFor("Branch");
         }
     }
 }

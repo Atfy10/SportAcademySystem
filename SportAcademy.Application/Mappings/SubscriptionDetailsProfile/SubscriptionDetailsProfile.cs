@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscriptionDetails;
+using SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSubscriptionDetails;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Domain.Entities;
 using System;
@@ -45,9 +46,18 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 .ForMember(
                     dest => dest.Payment.BranchName,
                     opt => opt.MapFrom(src => src.Payment.Branch.Name)
+                )
+                .ReverseMap()
+                .ForAllMembers(
+                    opt => opt.Condition((src, dest, srcMember) => srcMember != null)
                 );
 
             CreateMap<CreateSubscriptionDetailsCommand, SubscriptionDetails>();
+
+            CreateMap<UpdateSubscriptionDetailsCommand, SubscriptionDetails>()
+                .ForAllMembers(
+                    opt => opt.Condition((src, dest, srcMember) => srcMember != null)
+                );
         }
     }
 }
