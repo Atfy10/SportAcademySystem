@@ -13,7 +13,7 @@ namespace SportAcademy.Web.Controllers
     //[Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class TraineeController : Controller
+    public class TraineeController : ControllerBase
     {
         private readonly IMediator _mediator;
 
