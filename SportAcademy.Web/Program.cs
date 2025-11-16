@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using SportAcademy.Application.Behaviors;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
@@ -35,19 +36,23 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// Add services to the container.
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-    options.AddInterceptors(
-        new SoftDeleteInterceptor(),
-        new AuditingInterceptor()
-    );
-});
-
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IUserContextService, UserContextService>();
+
+builder.Services.AddScoped<AuditingInterceptor>();
+
+builder.Services.AddScoped<SoftDeleteInterceptor>();
+
+// Add services to the container.
+builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    var auditingInterceptor = sp.GetRequiredService<AuditingInterceptor>();
+    var softDeleteInterceptor = sp.GetRequiredService<SoftDeleteInterceptor>();
+
+    options.AddInterceptors(auditingInterceptor, softDeleteInterceptor);
+});
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateTraineeCommand).Assembly));
 
