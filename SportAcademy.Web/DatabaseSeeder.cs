@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
-using SportAcademy.Infrastructure.DBContext;
+using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.Seeders
 {

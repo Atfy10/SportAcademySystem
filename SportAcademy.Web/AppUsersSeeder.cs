@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Infrastructure.DBContext;
+using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Web
 {
