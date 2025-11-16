@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,15 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
 {
     public class AuditingInterceptor : SaveChangesInterceptor
     {
+        private readonly IUserContextService _contextService;
+        private readonly string _defaultUser;
+
+        public AuditingInterceptor(IUserContextService contextService)
+        {
+            _contextService = contextService;
+            _defaultUser = _contextService.UserId ?? "Admin";
+        }
+
         override public InterceptionResult<int> SavingChanges(
             DbContextEventData eventData,
             InterceptionResult<int> result)
@@ -46,12 +56,12 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
                     if (entry.State == EntityState.Added)
                     {
                         auditableEntity.CreatedAt = currentTime;
-                        // auditableEntity.CreatedBy = GetCurrentUserId(); // Implement this method to get the current user ID
+                        auditableEntity.CreatedBy = _defaultUser;
                     }
                     else if (entry.State == EntityState.Modified)
                     {
                         auditableEntity.UpdatedAt = currentTime;
-                        // auditableEntity.UpdatedBy = GetCurrentUserId(); // Implement this method to get the current user ID
+                        auditableEntity.UpdatedBy = _defaultUser;
                     }
                 }
             }

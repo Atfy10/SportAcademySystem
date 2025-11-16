@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,15 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
 {
     public class SoftDeleteInterceptor : SaveChangesInterceptor
     {
+        private readonly IUserContextService _contextService;
+        private readonly string _defaultUser;
+
+        public SoftDeleteInterceptor(IUserContextService contextService)
+        {
+            _contextService = contextService;
+            _defaultUser = _contextService.UserId ?? "Admin";
+        }
+
         public override InterceptionResult<int> SavingChanges(
             DbContextEventData eventData,
             InterceptionResult<int> result)
@@ -25,7 +35,7 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
                     entry.State = EntityState.Modified;
                     entity.IsDeleted = true;
                     entity.DeletedAt = DateTime.UtcNow;
-                    entity.DeletedBy = "Admin";
+                    entity.DeletedBy = _defaultUser;
                 }
             }
 
@@ -47,7 +57,7 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
                     entry.State = EntityState.Modified;
                     entity.IsDeleted = true;
                     entity.DeletedAt = DateTime.UtcNow;
-                    entity.DeletedBy = "Admin";
+                    entity.DeletedBy = _defaultUser;
                 }
             }
 

@@ -1,7 +1,5 @@
-using AutoMapper;
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -21,6 +19,7 @@ using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Persistence.Repositories;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Web;
+using SportAcademy.Web.Services;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,6 +44,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         new AuditingInterceptor()
     );
 });
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<IUserContextService, UserContextService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateTraineeCommand).Assembly));
 
