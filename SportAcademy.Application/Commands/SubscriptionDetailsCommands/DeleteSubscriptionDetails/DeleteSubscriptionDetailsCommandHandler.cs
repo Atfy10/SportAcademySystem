@@ -36,11 +36,11 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.DeleteSu
             var subDetails = await  _subscriptionDetailsRepository.GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new SubscriptionTypeNotFoundException(request.Id.ToString());
 
-            subDetails.MarkAsDeleted();
+            //  subDetails.MarkAsDeleted();
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await _subscriptionDetailsRepository.UpdateAsync(subDetails, cancellationToken);
+            await _subscriptionDetailsRepository.DeleteAsync(subDetails, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 

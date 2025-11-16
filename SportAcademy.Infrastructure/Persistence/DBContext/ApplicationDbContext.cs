@@ -153,41 +153,5 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
 
             base.OnModelCreating(modelBuilder);
         }
-
-        public override int SaveChanges()
-        {
-            ApplyAuditInformation();
-            return base.SaveChanges();
-        }
-
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            ApplyAuditInformation();
-            return base.SaveChangesAsync(cancellationToken);
-        }
-
-        private void ApplyAuditInformation()
-        {
-            var entries = ChangeTracker.Entries()
-                .Where(e => e.Entity is IAuditableEntity
-                        && (e.State == EntityState.Added
-                        || e.State == EntityState.Modified));
-
-            var currentTime = DateTime.UtcNow;
-            foreach (var entry in entries)
-            {
-                var auditableEntity = (IAuditableEntity)entry.Entity;
-                if (entry.State == EntityState.Added)
-                {
-                    auditableEntity.CreatedAt = currentTime;
-                    // auditableEntity.CreatedBy = GetCurrentUserId(); // Implement this method to get the current user ID
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    auditableEntity.UpdatedAt = currentTime;
-                    // auditableEntity.UpdatedBy = GetCurrentUserId(); // Implement this method to get the current user ID
-                }
-            }
-        }
     }
 }

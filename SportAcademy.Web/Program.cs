@@ -17,10 +17,10 @@ using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.Implementations;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Persistence.Repositories;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Web;
-using System;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,7 +38,13 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.AddInterceptors(
+        new SoftDeleteInterceptor(),
+        new AuditingInterceptor()
+    );
+});
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateTraineeCommand).Assembly));
 

@@ -28,7 +28,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public virtual async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
         {
             var entity = await GetByIdAsync(id, cancellationToken)
-                ?? throw new IdNotFoundException(typeof(TEntity).Name, id.ToString());
+                ?? throw new IdNotFoundException(typeof(TEntity).Name, id.ToString()!);
 
             _context.Set<TEntity>().Remove(entity);
             await SaveChanges(cancellationToken);
