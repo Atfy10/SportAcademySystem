@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.DTOs.TraineeDtos
 {
-    public class TraineeSubDetailsDto
+    public record TraineeSubDetailsDto
     {
-        public int Id { get; set; }
-        public string FullName { get; set; } = null!;
-        public string PhoneNumber { get; set; } = null!;
+        public int Id { get; init; }
+        public string FullName { get; init; } = null!;
+        public string PhoneNumber { get; init; } = null!;
     }
 }

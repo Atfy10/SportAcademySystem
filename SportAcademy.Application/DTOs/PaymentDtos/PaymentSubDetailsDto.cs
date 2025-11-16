@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.DTOs.PaymentDtos
 {
-    public record PaymentSubDetailsDto(
-        string PaymentNumber,
-        DateTime PaidDate,
-        string BranchName,
-        PaymentMethod PaymentMethod
-    );
+    public record PaymentSubDetailsDto
+    {
+        public string PaymentNumber { get; init; } = null!;
+        public DateTime PaidDate { get; init; }
+        public string BranchName { get; init; } = null!;
+        public PaymentMethod PaymentMethod { get; init; }
+    }
 }

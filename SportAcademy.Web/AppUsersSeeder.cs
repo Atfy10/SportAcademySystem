@@ -23,21 +23,21 @@ namespace SportAcademy.Web
 
                 // Check if users already exist to avoid duplicates
                 var existingUsersCount = _userManager.Users.Count();
-                if (existingUsersCount >= 50)
+                if (existingUsersCount >= 100)
                 {
                     _logger.LogInformation($"Users already seeded. Current count: {existingUsersCount}");
                     return;
                 }
 
                 var random = new Random();
-                var usersToCreate = 50 - existingUsersCount;
+                var usersToCreate = 100 - existingUsersCount;
 
                 for (int i = 1; i <= usersToCreate; i++)
                 {
                     var user = new AppUser
                     {
-                        UserName = $"user{i:D3}@example.com",
-                        Email = $"user{i:D3}@example.com",
+                        UserName = $"user{(i + 50):D3}@example.com",
+                        Email = $"user{(i + 50):D3}@example.com",
                         EmailConfirmed = true,
                         PhoneNumberConfirmed = true,
                         TwoFactorEnabled = false,
@@ -76,7 +76,7 @@ namespace SportAcademy.Web
                 _logger.LogInformation("Starting realistic user seeding process...");
 
                 var existingUsersCount = _userManager.Users.Count();
-                if (existingUsersCount >= 50)
+                if (existingUsersCount >= 100)
                 {
                     _logger.LogInformation($"Users already seeded. Current count: {existingUsersCount}");
                     return;
@@ -105,7 +105,7 @@ namespace SportAcademy.Web
             };
 
                 var random = new Random();
-                var usersToCreate = 50 - existingUsersCount;
+                var usersToCreate = 100 - existingUsersCount;
 
                 for (int i = 0; i < usersToCreate; i++)
                 {

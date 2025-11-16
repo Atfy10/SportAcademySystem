@@ -18,6 +18,7 @@ using SportAcademy.Infrastructure.DBContext;
 using SportAcademy.Infrastructure.Implementations;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Repositories;
+using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Web;
 using System;
 using System.Text.Json.Serialization;
@@ -128,7 +129,12 @@ if (app.Environment.IsDevelopment())
 
 using (var scope = app.Services.CreateScope())
 {
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
     await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
+
+    await DatabaseSeeder.SeedDatabase(dbContext, logger);
 }
 
 app.UseHttpsRedirection();

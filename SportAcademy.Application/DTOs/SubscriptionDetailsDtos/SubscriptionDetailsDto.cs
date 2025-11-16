@@ -10,8 +10,8 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
         public string BranchName { get; set; } = null!;
         public string SubscriptionTypeName { get; set; } = null!;
         public decimal Price { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateOnly StartDate { get; set; }
+        public DateOnly EndDate { get; set; }
         public string EmployeeName { get; set; } = null!;
         public PaymentSubDetailsDto Payment { get; set; } = null!;
     }

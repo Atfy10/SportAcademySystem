@@ -15,13 +15,33 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
         public SubscriptionDetailsProfile()
         {
             CreateMap<SubscriptionDetails, SubscriptionDetailsDto>()
-                .ForMember(
-                    dest => dest.Trainee.FullName,
-                    opt => opt.MapFrom(src => $"{src.Enrollment.Trainee.FirstName} {src.Enrollment.Trainee.LastName}")
+                .ForPath(
+                    dest => dest.Trainee.Id,
+                    opt => opt.MapFrom(src => src.Trainee.Id)
                 )
-                .ForMember(
+                .ForPath(
+                    dest => dest.Trainee.FullName,
+                    opt => opt.MapFrom(src => $"{src.Trainee.FirstName} {src.Trainee.LastName}")
+                )
+                .ForPath(
                     dest => dest.Trainee.PhoneNumber,
-                    opt => opt.MapFrom(src => src.Enrollment.Trainee.PhoneNumber)
+                    opt => opt.MapFrom(src => src.Trainee.PhoneNumber)
+                )
+                .ForPath(
+                    dest => dest.Payment.BranchName,
+                    opt => opt.MapFrom(src => src.Payment.Branch.Name)
+                )
+                .ForPath(
+                    dest => dest.Payment.PaymentNumber,
+                    opt => opt.MapFrom(src => src.Payment.PaymentNumber)
+                )
+                .ForPath(
+                    dest => dest.Payment.PaymentMethod,
+                    opt => opt.MapFrom(src => src.Payment.Method)
+                )
+                .ForPath(
+                    dest => dest.Payment.PaidDate,
+                    opt => opt.MapFrom(src => src.Payment.PaidDate)
                 )
                 .ForMember(
                     dest => dest.SportName,
@@ -38,14 +58,6 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 .ForMember(
                     dest => dest.Price,
                     opt => opt.MapFrom(src => src.SportPrice.Price)
-                )
-                .ForMember(
-                    dest => dest.Payment,
-                    opt => opt.MapFrom(src => src.Payment)
-                )
-                .ForMember(
-                    dest => dest.Payment.BranchName,
-                    opt => opt.MapFrom(src => src.Payment.Branch.Name)
                 )
                 .ReverseMap()
                 .ForAllMembers(
