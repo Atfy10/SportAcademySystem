@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
@@ -14,6 +15,7 @@ using SportAcademy.Application.Queries.TraineeGroupQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class TraineeGroupController : ControllerBase

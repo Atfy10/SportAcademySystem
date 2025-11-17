@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice;
@@ -9,7 +10,8 @@ using SportAcademy.Application.Queries.SportPriceQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
-	[Route("api/[controller]")]
+    [Authorize]
+    [Route("api/[controller]")]
 	[ApiController]
 	public class SportPriceController : ControllerBase
 	{

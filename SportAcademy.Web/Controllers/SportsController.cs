@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportCommands.CreateSport;
 using SportAcademy.Application.Commands.SportCommands.DeleteSport;
@@ -10,6 +10,7 @@ using SportAcademy.Application.Queries.SportQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class SportsController : ControllerBase

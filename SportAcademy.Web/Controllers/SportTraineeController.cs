@@ -1,7 +1,6 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
 using SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrainee;
 using SportAcademy.Application.Commands.SportTraineeCommands.DeleteSportTrainee;
 using SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrainee;
@@ -10,7 +9,8 @@ using SportAcademy.Application.Queries.SportTraineeQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
-	[Route("api/[controller]")]
+    [Authorize]
+    [Route("api/[controller]")]
 	[ApiController]
 	public class SportTraineeController : ControllerBase
 	{

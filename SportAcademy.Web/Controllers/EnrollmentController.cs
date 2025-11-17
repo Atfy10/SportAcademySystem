@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
@@ -8,6 +9,7 @@ using SportAcademy.Application.Queries.EnrollmentQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class EnrollmentController : ControllerBase

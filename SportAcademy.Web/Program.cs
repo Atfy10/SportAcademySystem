@@ -1,8 +1,10 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SportAcademy.Application.Behaviors;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
@@ -21,6 +23,7 @@ using SportAcademy.Infrastructure.Persistence.Repositories;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Web;
 using SportAcademy.Web.Services;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -48,11 +51,69 @@ builder.Services.AddScoped<SoftDeleteInterceptor>();
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+
     var auditingInterceptor = sp.GetRequiredService<AuditingInterceptor>();
     var softDeleteInterceptor = sp.GetRequiredService<SoftDeleteInterceptor>();
-
     options.AddInterceptors(auditingInterceptor, softDeleteInterceptor);
 });
+
+var jwtKey = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(jwtKey),
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            //var accessToken = context.Request.Query["access_token"];
+            //var path = context.HttpContext.Request.Path;
+            //if (!string.IsNullOrEmpty(accessToken) &&
+            //    (path.StartsWithSegments("/hubs/notification")))
+            //{
+            //    context.Token = accessToken;
+            //    return Task.CompletedTask;
+            //}
+            if (context.Request.Cookies.ContainsKey("jwt"))
+            {
+                context.Token = context.Request.Cookies["jwt"];
+            }
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("https://localhost:8080")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateTraineeCommand).Assembly));
 
@@ -120,9 +181,36 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "My API",
+        Title = "SportAcademy API",
         Version = "v1",
-        Description = "Sample API with Swagger + OpenAPI"
+        Description = "Manage Sport Academy System",
+        Contact = new OpenApiContact
+        {
+            Name = "Sport Academy Team",
+            Email = "abdulrahmannalatfy@gmail.com"
+        }
+    });
+
+    var jwtSecurityScheme = new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Scheme = "bearer",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT token as: **Bearer [your_token]**",
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+
+    c.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        { jwtSecurityScheme, Array.Empty<string>() }
     });
 });
 
@@ -153,6 +241,10 @@ using (var scope = app.Services.CreateScope())
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowFrontend");
+
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapHub<NotificationHub>("/hubs/notification");
@@ -160,3 +252,4 @@ app.MapHub<NotificationHub>("/hubs/notification");
 app.MapControllers();
 
 app.Run();
+

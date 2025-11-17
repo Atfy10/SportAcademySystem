@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance;
@@ -8,6 +9,7 @@ using SportAcademy.Application.Queries.BranchQueries.GetAll;
 
 namespace SportAcademy.Web.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AttendanceController : ControllerBase
