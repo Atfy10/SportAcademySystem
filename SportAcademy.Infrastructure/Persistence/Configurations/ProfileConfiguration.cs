@@ -1,12 +1,6 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
 {
@@ -32,7 +26,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             // 1:1 AppUser
             builder.HasOne(p => p.User)
                    .WithOne(u => u.Profile)
-                   .HasForeignKey<Domain.Entities.Profile>(p => p.AppUserId)
+                   .HasForeignKey<Profile>(p => p.AppUserId)
                    .OnDelete(DeleteBehavior.Cascade);
         }
     }

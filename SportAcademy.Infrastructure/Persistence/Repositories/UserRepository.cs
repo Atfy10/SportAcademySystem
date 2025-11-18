@@ -21,9 +21,39 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
+        public async Task<IdentityResult> Register(AppUser user, string password)
+        {
+            var registerResult = await _userManager.CreateAsync(user, password);
+            if (!registerResult.Succeeded)
+                return registerResult;
+
+            var assignToRoleResult = await _userManager.AddToRoleAsync(user, "User");
+            return assignToRoleResult;
+        }
+
+        public async Task<AppUser?> GetByUsernameOrEmailAsync(string usernameOrEmail, CancellationToken ct = default)
+        {
+            var user = await _userManager.FindByNameAsync(usernameOrEmail);
+
+            if (user != null)
+                return user;
+
+            user = await _userManager.FindByEmailAsync(usernameOrEmail);
+            return user;
+        }
+
+        public async Task<bool> CheckPasswordAsync(AppUser user, string password)
+            => await _userManager.CheckPasswordAsync(user, password);
+
         public override async Task AddAsync(AppUser user, CancellationToken cancellationToken = default)
         {
             await _userManager.CreateAsync(user, $"{user.UserName}1234");
+        }
+
+        public async Task<IdentityResult> AssignToRole(AppUser user, string role)
+        {
+            var result = await _userManager.AddToRoleAsync(user, role);
+            return result;
         }
 
         public override async Task UpdateAsync(AppUser entity, CancellationToken cancellationToken = default)

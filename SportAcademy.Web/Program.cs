@@ -169,6 +169,8 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 builder.Services.AddScoped<SubDetailsManagementService>();
 
+builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {

@@ -1,17 +1,19 @@
 ﻿using FluentValidation;
-using SportAcademy.Application.Commands.UserCommands.UserCreate;
+using SportAcademy.Application.Commands.AuthCommands.Register;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SportAcademy.Application.Validators.UserValidators
+namespace SportAcademy.Application.Validators.AuthValidators
 {
-    public class CreateUserValidator : AbstractValidator<CreateUserCommand>
+    public class RegisterValidator : AbstractValidator<RegisterCommand>
     {
-        public CreateUserValidator()
+        public RegisterValidator()
         {
+            ClassLevelCascadeMode = CascadeMode.Stop;
+
             RuleFor(x => x.UserName)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("Please enter a username.")
@@ -21,9 +23,15 @@ namespace SportAcademy.Application.Validators.UserValidators
                 .WithMessage("Username can only contain letters, numbers, and underscores.");
 
             RuleFor(x => x.Email)
-                .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("Please enter your email address.")
                 .EmailAddress().WithMessage("Please enter a valid email address.");
+
+            RuleFor(x => x.Password)
+                .NotEmpty().WithMessage("Password is required.")
+                .Matches(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+={}\[\]:;""'<>,.?/-]).{8,}$")
+                .WithMessage("Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.")
+                .MinimumLength(8).WithMessage("Password must be at least 6 characters long.")
+                .MaximumLength(100).WithMessage("Password must not exceed 100 characters.");
 
             RuleFor(x => x.PhoneNumber)
                 .Cascade(CascadeMode.Stop)
