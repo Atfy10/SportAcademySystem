@@ -17,4 +17,10 @@
 	  <ProjectReference Include="..\SportAcademy.Domain\SportAcademy.Domain.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Commands\CoachCommands\CreateCoach\" />
+	  <Folder Include="Commands\CoachCommands\DeleteCoach\" />
+	  <Folder Include="Commands\CoachCommands\UpdateCoach\" />
+	</ItemGroup>
+
 </Project>
