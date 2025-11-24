@@ -171,6 +171,8 @@ builder.Services.AddScoped<SubDetailsManagementService>();
 
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {

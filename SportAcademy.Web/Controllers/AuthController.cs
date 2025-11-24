@@ -16,16 +16,16 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost("sign-up")]
-        public IActionResult SignUp(RegisterCommand command)
+        public async Task<IActionResult> SignUp(RegisterCommand command, CancellationToken ct)
         {
-            var result = _mediator.Send(command);
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
         [HttpPost("login")]
-        public IActionResult Login(LoginCommand command)
+        public async Task<IActionResult> Login(LoginCommand command, CancellationToken ct)
         {
-            var result = _mediator.Send(command);
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
     }

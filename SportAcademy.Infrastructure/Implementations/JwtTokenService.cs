@@ -35,7 +35,7 @@ namespace SportAcademy.Infrastructure.Implementations
 
             var key = _configuration["Jwt:Key"];
             var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!));
-            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha512);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -45,7 +45,6 @@ namespace SportAcademy.Infrastructure.Implementations
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],
                 IssuedAt = DateTime.UtcNow,
-
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();

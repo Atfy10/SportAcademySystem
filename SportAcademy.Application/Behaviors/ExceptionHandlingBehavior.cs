@@ -7,6 +7,7 @@ using SportAcademy.Domain.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -35,6 +36,7 @@ namespace SportAcademy.Application.Behaviors
             {
                 _logger.LogError("{Message}, Inner Exception: {inner}"
                     , ex.Message, ex.InnerException);
+
                 var responseType = typeof(TResponse);
                 if (responseType == typeof(Result))
                 {
@@ -46,11 +48,11 @@ namespace SportAcademy.Application.Behaviors
                 {
                     var genericArguments = responseType.GetGenericArguments()[0];
                     var resultGenericType = typeof(Result<>).MakeGenericType(genericArguments);
-                    var failureMethod = responseType.GetMethod("Failure",
-                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                    var failureMethod = resultGenericType.GetMethod("Failure",
+                        BindingFlags.Public | BindingFlags.Static);
                     if (failureMethod != null)
                     {
-                        var failureInstance = failureMethod?.Invoke(null, new object[] { genericArguments.Name, ex.Message, 500 });
+                        var failureInstance = failureMethod?.Invoke(null, new object[] { typeof(TRequest).Name, ex.Message, 500 });
                         return (TResponse)failureInstance!;
                     }
                 }
