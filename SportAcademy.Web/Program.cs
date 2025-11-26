@@ -133,7 +133,7 @@ builder.Services.AddScoped<ITraineeRepository, TraineeRepository>();
 
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 
-builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IPersonService, PersonService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -172,6 +172,8 @@ builder.Services.AddScoped<SubDetailsManagementService>();
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+
+builder.Services.AddScoped<ICoachRepository, CoachRepository>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

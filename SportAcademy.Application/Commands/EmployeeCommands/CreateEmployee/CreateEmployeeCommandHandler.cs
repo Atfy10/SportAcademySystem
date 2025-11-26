@@ -13,12 +13,12 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
-        private readonly IEmployeeService _employeeService;
+        private readonly IPersonService _employeeService;
         private readonly string _operationType = OperationType.Add.ToString();
         private readonly IUserRepository _userRepository;
 
         public CreateEmployeeCommandHandler(
-            IEmployeeService employeeService,
+            IPersonService employeeService,
             IMapper mapper,
             IEmployeeRepository employeeRepository,
             IUserRepository userRepository)
@@ -47,7 +47,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var users = await _userRepository.GetAllAsync();
+            var users = await _userRepository.GetAllAsync(cancellationToken);
 
             employee.AppUserId = users[Random.Shared.Next(0, 50)].Id;
 

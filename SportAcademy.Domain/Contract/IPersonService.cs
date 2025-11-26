@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Contract
 {
-    public interface IEmployeeService
+    public interface IPersonService
     {
         bool IsSSNValid(string ssn, DateOnly birthDate);
         int CalculateAge(DateOnly birthDate);

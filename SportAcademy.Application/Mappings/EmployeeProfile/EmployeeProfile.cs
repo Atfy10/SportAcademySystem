@@ -18,6 +18,8 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
 
             CreateMap<CreateEmployeeCommand, Employee>();
 
+            CreateMap<CreateEmployeeDto, Employee>();
+
             CreateMap<UpdateEmployeeCommand, Employee>();
         }
     }

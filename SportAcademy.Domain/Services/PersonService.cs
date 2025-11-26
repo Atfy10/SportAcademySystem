@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Services
 {
-    public class EmployeeService : IEmployeeService
+    public class PersonService : IPersonService
     {
         public int CalculateAge(DateOnly birthDate)
         {
