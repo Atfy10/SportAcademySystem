@@ -178,9 +178,9 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
-//builder.Services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
+builder.Services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
 
-//builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
+builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

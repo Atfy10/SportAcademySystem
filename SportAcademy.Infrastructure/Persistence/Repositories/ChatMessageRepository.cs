@@ -4,16 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using SportAcademy.Application.interfaces;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
     public class ChatMessageRepository : IChatMessageRepository
     {
-        private readonly SportAcademyDbContext _context;
+        private readonly ApplicationDbContext _context;
 
-        public ChatMessageRepository(SportAcademyDbContext context)
+        public ChatMessageRepository(ApplicationDbContext context)
         {
             _context = context;
         }
