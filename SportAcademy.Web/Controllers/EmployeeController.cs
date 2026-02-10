@@ -7,6 +7,8 @@ using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches;
+using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
@@ -61,5 +63,26 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new DeleteEmployeeCommand(id));
             return Ok(result);
         }
+
+        [HttpGet("get-active")]
+        public async Task<IActionResult> GetActive(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetActiveEmployeesQuery(),
+                cancellationToken);
+
+            return Ok(result);
+        }
+        [HttpGet("get-active-coaches")]
+        public async Task<IActionResult> GetActiveCoaches(
+    CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetActiveCoachesQuery(),
+                cancellationToken);
+
+            return Ok(result);
+        }
     }
+
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
+using SportAcademy.Application.Queries.AttendanceQueries.GetAttendanceRate;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 
@@ -56,6 +57,21 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new DeleteAttendanceCommand(id));
             return Ok(result);
         }
+        [HttpGet("attendance-rate")]
+        public async Task<IActionResult> GetAttendanceRate(
+        int traineeId,
+        DateOnly? fromDate,
+        DateOnly? toDate,
+        CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetAttendanceRateQuery(
+                    traineeId,
+                    fromDate,
+                    toDate),
+                cancellationToken);
 
+            return Ok(result);
+        }
     }
 }
