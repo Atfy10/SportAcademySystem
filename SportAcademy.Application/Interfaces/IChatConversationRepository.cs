@@ -1,6 +1,6 @@
 ﻿using SportAcademy.Domain.Entities;
 
-namespace SportAcademy.Application.Contract;
+namespace SportAcademy.Application.Interfaces;
 
 public interface IChatConversationRepository
 {

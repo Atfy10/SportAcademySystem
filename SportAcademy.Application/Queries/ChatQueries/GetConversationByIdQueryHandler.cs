@@ -1,4 +1,4 @@
-﻿using SportAcademy.Application.Contract;
+﻿using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.DTOs.ChatDtos;
 using SportAcademy.Application.Services;
 using System;
@@ -8,10 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
-using SportAcademy.Application.Contract;
-using SportAcademy.Application.DTOs.ChatDtos;
 using SportAcademy.Domain.Exceptions;
-using SportAcademy.Shared.Result;
+
 namespace SportAcademy.Application.Queries.ChatQueries
 {
     public class GetConversationByIdQueryHandler
@@ -42,3 +40,4 @@ namespace SportAcademy.Application.Queries.ChatQueries
             return Result<ChatConversationDto>.Success(dto, _operation);
         }
     }
+}

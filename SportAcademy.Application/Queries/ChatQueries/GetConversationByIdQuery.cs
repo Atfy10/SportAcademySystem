@@ -6,8 +6,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
-using SportAcademy.Application.DTOs.ChatDots;
-using SportAcademy.Shared.Result;
 
 namespace SportAcademy.Application.Queries.ChatQueries
 {

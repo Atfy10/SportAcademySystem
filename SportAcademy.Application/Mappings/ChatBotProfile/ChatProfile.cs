@@ -10,7 +10,7 @@ using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Mappings.ChatBotProfile
 {
-    public class ChatProfile : Profile
+    public class ChatProfile : AutoMapper.Profile
     {
         public ChatProfile()
         {

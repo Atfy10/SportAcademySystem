@@ -1,5 +1,4 @@
-﻿using SportAcademy.Application.Contract;
-using SportAcademy.Application.DTOs.ChatDtos;
+﻿using SportAcademy.Application.DTOs.ChatDtos;
 using SportAcademy.Application.Services;
 using System;
 using System.Collections.Generic;
@@ -8,10 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
-using SportAcademy.Application.Contract;
-using SportAcademy.Application.DTOs.ChatCommands;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Shared.Result;
+
 namespace SportAcademy.Application.Commands.ChatCommands.CreateConversation
 {
     public class CreateConversationCommandHandler
