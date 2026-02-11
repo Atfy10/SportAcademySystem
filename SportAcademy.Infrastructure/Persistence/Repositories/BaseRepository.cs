@@ -41,7 +41,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
-            => await _context.Set<TEntity>().ToListAsync(cancellationToken);
+            => await _context.Set<TEntity>().AsNoTracking().ToListAsync(cancellationToken);
 
         public virtual async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().FindAsync(id, cancellationToken);
