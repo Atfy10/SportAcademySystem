@@ -8,10 +8,11 @@ using SportAcademy.Application.Commands.UserCommands.UserUpdate;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetById;
+using SportAcademy.Application.Queries.UserQueries.GetUnlinkedUsers;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UserController : ControllerBase
@@ -27,6 +28,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var users = await _mediator.Send(new GetAllUsersQuery());
+            return Ok(users);
+        }
+
+        [HttpGet("get-unlinked")]
+        public async Task<IActionResult> GetUnlinked()
+        {
+            var users = await _mediator.Send(new GetUnlinkedUsersQuery());
             return Ok(users);
         }
 

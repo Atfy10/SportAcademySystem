@@ -89,5 +89,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<bool> IsUsernameExistAsync(string username, CancellationToken cancellationToken = default)
             => await _context.AppUsers.AnyAsync(u => u.UserName == username, cancellationToken);
+
+        public async Task<List<AppUser>> GetUnlinkedUsers(CancellationToken cancellationToken = default)
+            => await _context.AppUsers
+                .Where(u => u.Employee == null && u.Trainee == null)
+                .ToListAsync(cancellationToken);
     }
 }

@@ -27,9 +27,11 @@ namespace SportAcademy.Application.Queries.UserQueries.GetAll
 
         public async Task<Result<List<AppUserDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var users = await _userRepository.GetAllAsync(cancellationToken);
+            var users = await _userRepository.GetAllAsync(cancellationToken) 
+                ?? [];
 
-            var usersDto = _mapper.Map<List<AppUserDto>>(users);
+            var usersDto = _mapper.Map<List<AppUserDto>>(users)
+                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
             return Result<List<AppUserDto>>.Success(usersDto, _operation);
         }

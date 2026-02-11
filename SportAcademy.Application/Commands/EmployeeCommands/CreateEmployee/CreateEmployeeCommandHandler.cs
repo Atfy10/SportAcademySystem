@@ -6,6 +6,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
+using SportAcademy.Domain.Exceptions.UserExceptions;
 
 namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
 {
@@ -52,9 +53,10 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var users = await _userRepository.GetAllAsync(cancellationToken);
+            var user = await _userRepository.GetByUsernameAsync(request.UserName)
+                ?? throw new UserNotFoundException();
 
-            employee.AppUserId = users[Random.Shared.Next(0, 50)].Id;
+            employee.AppUserId = user.Id;
 
             await _employeeRepository.AddAsync(employee, cancellationToken);
 

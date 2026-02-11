@@ -18,5 +18,6 @@ namespace SportAcademy.Application.Interfaces
         Task<bool> IsUsernameExistAsync(string username, CancellationToken cancellationToken = default);
         Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken = default);
         Task<IdentityResult> AssignToRole(AppUser user, string role);
+        Task<List<AppUser>> GetUnlinkedUsers(CancellationToken cancellationToken = default);
     }
 }
