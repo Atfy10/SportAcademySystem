@@ -23,54 +23,46 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> Create([FromBody] CreateAttendanceCommand command, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromBody] CreateAttendanceCommand command, CancellationToken ct)
         {
-            var result = await _mediator.Send(command, cancellationToken);
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
         [HttpGet("get-all")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllAttendancesQuery());
+            var result = await _mediator.Send(new GetAllAttendancesQuery(),ct);
             return Ok(result);
         }
 
         [HttpGet("get/{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAttendanceByIdQuery(id));
+            var result = await _mediator.Send(new GetAttendanceByIdQuery(id), ct);
             return Ok(result);
         }
 
         [HttpPut("update")]
         public async Task<IActionResult> Update([FromBody] UpdateAttendanceCommand command,
-            CancellationToken cancellationToken)
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(command, cancellationToken);
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
         [HttpDelete("delete")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
-            var result = await _mediator.Send(new DeleteAttendanceCommand(id));
+            var result = await _mediator.Send(new DeleteAttendanceCommand(id), ct);
             return Ok(result);
         }
-        [HttpGet("attendance-rate")]
-        public async Task<IActionResult> GetAttendanceRate(
-        int traineeId,
-        DateOnly? fromDate,
-        DateOnly? toDate,
-        CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(
-                new GetAttendanceRateQuery(
-                    traineeId,
-                    fromDate,
-                    toDate),
-                cancellationToken);
 
+        [HttpGet("attendance-rate")]
+        public async Task<IActionResult> GetAttendanceRate(GetAttendanceRateQuery query,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(query, ct);
             return Ok(result);
         }
     }

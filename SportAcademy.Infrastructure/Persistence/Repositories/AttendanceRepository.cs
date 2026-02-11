@@ -19,8 +19,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
-        public async Task<(int TotalSessions, int AttendedSessions)>
-       GetAttendanceSummaryAsync(
+
+        public async Task<(int TotalSessions, int AttendedSessions)> GetAttendanceSummaryAsync(
            int traineeId,
            DateOnly? fromDate,
            DateOnly? toDate,
@@ -32,10 +32,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(a => a.Enrollment.TraineeId == traineeId);
 
             if (fromDate.HasValue)
-                query = query.Where(a => DateOnly.FromDateTime(a.SessionOccurrence.StartDateTime) >= fromDate.Value);
+                query = query.Where(a => 
+                    DateOnly.FromDateTime(a.SessionOccurrence.StartDateTime) >= fromDate.Value);
 
             if (toDate.HasValue)
-                query = query.Where(a => DateOnly.FromDateTime(a.SessionOccurrence.StartDateTime) <= toDate.Value);
+                query = query.Where(a => 
+                    DateOnly.FromDateTime(a.SessionOccurrence.StartDateTime) <= toDate.Value);
 
             var total = await query.CountAsync(cancellationToken);
             var attended = await query

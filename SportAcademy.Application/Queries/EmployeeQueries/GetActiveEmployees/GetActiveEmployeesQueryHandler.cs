@@ -12,8 +12,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees
 {
-    public class GetActiveEmployeesQueryHandler
-    : IRequestHandler<GetActiveEmployeesQuery, Result<List<EmployeeDto>>>
+    public class GetActiveEmployeesQueryHandler : IRequestHandler<GetActiveEmployeesQuery, Result<List<EmployeeDto>>>
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;

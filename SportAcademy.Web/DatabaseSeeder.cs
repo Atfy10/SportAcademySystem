@@ -439,8 +439,7 @@ namespace SportAcademy.Infrastructure.Seeders
             var faker = new Faker<Coach>()
                 .RuleFor(c => c.SkillLevel, f => f.PickRandom<SkillLevel>())
                 .RuleFor(c => c.EmployeeId, f => coachEmployees[++i].Id)
-                .RuleFor(c => c.SportId, f => f.PickRandom(sports).Id)
-                .RuleFor(c => c.BirthDate, f => DateOnly.FromDateTime(f.Date.Past(25, DateTime.Now.AddYears(-22))));
+                .RuleFor(c => c.SportId, f => f.PickRandom(sports).Id);
 
             return faker.Generate(coachEmployees.Count - 1);
         }

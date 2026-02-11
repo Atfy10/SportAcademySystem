@@ -24,9 +24,6 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasConversion<string>();
 
-            builder.Property(c => c.BirthDate)
-                .IsRequired();
-
             // Relationships
             // 1:1  Employee
             builder.HasOne(c => c.Employee)

@@ -12,8 +12,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches
 {
-    public class GetActiveCoachesQueryHandler
-    : IRequestHandler<GetActiveCoachesQuery, Result<List<EmployeeDto>>>
+    public class GetActiveCoachesQueryHandler : IRequestHandler<GetActiveCoachesQuery, Result<List<EmployeeDto>>>
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
@@ -32,7 +31,7 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches
             CancellationToken cancellationToken)
         {
             var coaches = await _employeeRepository
-                .GetActiveCoachesAsync(cancellationToken);
+                .GetActiveCoachesAsync(cancellationToken) ?? [];
 
             var coachesDto = _mapper.Map<List<EmployeeDto>>(coaches)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");

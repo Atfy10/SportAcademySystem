@@ -11,8 +11,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetAttendanceRate
 {
-    public class GetAttendanceRateQueryHandler
-    : IRequestHandler<GetAttendanceRateQuery, Result<AttendanceRateDto>>
+    public class GetAttendanceRateQueryHandler : IRequestHandler<GetAttendanceRateQuery, Result<AttendanceRateDto>>
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly string _operationType = OperationType.Get.ToString();
@@ -36,7 +35,7 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetAttendanceRate
 
             double rate = total == 0
                 ? 0
-                : Math.Round((double)attended / total * 100, 2);
+                : Math.Round((double)(attended / total * 100), 2);
 
             var dto = new AttendanceRateDto(
                 request.TraineeId,

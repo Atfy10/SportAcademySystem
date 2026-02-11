@@ -10,6 +10,5 @@ using System.Threading.Tasks;
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees
 {
 
-    public record GetActiveEmployeesQuery()
-        : IRequest<Result<List<EmployeeDto>>>;
+    public record GetActiveEmployeesQuery() : IRequest<Result<List<EmployeeDto>>>;
 }

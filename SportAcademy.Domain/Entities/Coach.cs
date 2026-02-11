@@ -8,7 +8,6 @@ namespace SportAcademy.Domain.Entities
         public SkillLevel SkillLevel { get; set; }
         public int EmployeeId { get; set; }
         public int SportId { get; set; }
-        public DateOnly BirthDate { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
         public string? DeletedBy { get; set; }

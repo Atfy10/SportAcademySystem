@@ -10,7 +10,6 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches
     using SportAcademy.Application.DTOs.EmployeeDtos;
     using SportAcademy.Application.Services;
 
-    public record GetActiveCoachesQuery()
-        : IRequest<Result<List<EmployeeDto>>>;
+    public record GetActiveCoachesQuery() : IRequest<Result<List<EmployeeDto>>>;
 
 }
