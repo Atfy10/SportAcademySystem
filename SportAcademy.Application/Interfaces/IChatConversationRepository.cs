@@ -2,8 +2,6 @@
 
 namespace SportAcademy.Application.Interfaces;
 
-public interface IChatConversationRepository
+public interface IChatConversationRepository : IBaseRepository<ChatConversation, Guid>
 {
-    Task<ChatConversation?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
-    Task AddAsync(ChatConversation conversation, CancellationToken cancellationToken);
 }

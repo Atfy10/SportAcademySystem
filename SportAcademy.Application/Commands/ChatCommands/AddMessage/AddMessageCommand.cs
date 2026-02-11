@@ -11,8 +11,8 @@ using SportAcademy.Domain.Enums;
 namespace SportAcademy.Application.Commands.ChatCommands.AddMessage
 {
     public record AddMessageCommand(
-    Guid ConversationId,
-    ChatRole Role,
-    string Content
-) : IRequest<Result<ChatMessageDto>>;
+        Guid ConversationId,
+        ChatRole Role,
+        string Content
+    ) : IRequest<Result<ChatMessageDto>>;
 }

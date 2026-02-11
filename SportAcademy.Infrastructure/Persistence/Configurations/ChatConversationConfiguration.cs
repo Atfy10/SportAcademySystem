@@ -10,8 +10,7 @@ using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
 {
-    public class ChatConversationConfiguration
-     : IEntityTypeConfiguration<ChatConversation>
+    public class ChatConversationConfiguration : IEntityTypeConfiguration<ChatConversation>
     {
         public void Configure(EntityTypeBuilder<ChatConversation> builder)
         {

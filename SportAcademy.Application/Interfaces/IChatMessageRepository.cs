@@ -2,10 +2,8 @@
 
 namespace SportAcademy.Application.Interfaces;
 
-public interface IChatMessageRepository
+public interface IChatMessageRepository : IBaseRepository<ChatMessage, Guid>
 {
-    Task AddAsync(ChatMessage message, CancellationToken cancellationToken);
-
     Task<IReadOnlyList<ChatMessage>> GetByConversationIdAsync(
         Guid conversationId,
         CancellationToken cancellationToken);

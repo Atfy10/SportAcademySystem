@@ -4,6 +4,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.TraineeExceptions;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
@@ -30,6 +31,11 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
                 ?? throw new TraineeNotFoundException(request.Id.ToString());
 
             _mapper.Map(request, trainee);
+
+            var isPhoneNumberExist = await _traineeRepository
+                .IsPhoneNumberExistAsync(trainee.PhoneNumber, cancellationToken);
+            if (isPhoneNumberExist)
+                throw new PhoneNumberNotUniqueException();
 
             cancellationToken.ThrowIfCancellationRequested();
 

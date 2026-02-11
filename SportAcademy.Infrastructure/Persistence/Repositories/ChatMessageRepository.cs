@@ -9,21 +9,13 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
-    public class ChatMessageRepository : IChatMessageRepository
+    public class ChatMessageRepository : BaseRepository<ChatMessage, Guid>, IChatMessageRepository
     {
         private readonly ApplicationDbContext _context;
 
-        public ChatMessageRepository(ApplicationDbContext context)
+        public ChatMessageRepository(ApplicationDbContext context) : base(context)
         {
             _context = context;
-        }
-
-        public async Task AddAsync(
-            ChatMessage message,
-            CancellationToken cancellationToken)
-        {
-            await _context.ChatMessages.AddAsync(message, cancellationToken);
-            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<IReadOnlyList<ChatMessage>> GetByConversationIdAsync(

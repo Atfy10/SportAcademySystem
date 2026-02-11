@@ -8,11 +8,10 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.DTOs.ChatDtos
 {
-
     public record ChatMessageDto(
-    Guid Id,
-    ChatRole Role,
-    string Content,
-    DateTime CreatedAt
-);
+        Guid Id,
+        ChatRole Role,
+        string Content,
+        DateTime CreatedAt
+    );
 }

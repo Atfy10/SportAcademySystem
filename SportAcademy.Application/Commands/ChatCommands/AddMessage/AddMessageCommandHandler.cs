@@ -10,6 +10,7 @@ using AutoMapper;
 using MediatR;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Exceptions;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.ChatCommands.AddMessage
 {
@@ -19,7 +20,7 @@ namespace SportAcademy.Application.Commands.ChatCommands.AddMessage
         private readonly IChatConversationRepository _conversationRepository;
         private readonly IChatMessageRepository _messageRepository;
         private readonly IMapper _mapper;
-        private readonly string _operation = "AddMessage";
+        private readonly string _operation = OperationType.Add.ToString();
 
         public AddMessageCommandHandler(
             IChatConversationRepository conversationRepository,

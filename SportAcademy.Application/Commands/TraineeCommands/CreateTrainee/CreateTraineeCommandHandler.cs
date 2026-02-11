@@ -40,6 +40,11 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             if (isSSNExist)
                 throw new SSNNotUniqueException();
 
+            var isPhoneNumberExist = await _traineeRepository
+                .IsPhoneNumberExistAsync(trainee.PhoneNumber, cancellationToken);
+            if (isPhoneNumberExist)
+                throw new PhoneNumberNotUniqueException();
+
             trainee.Id = _traineeService.CreateTraineeCode(trainee, request.BranchId);
 
             bool isAdult = _traineeService.IsAdult(trainee.BirthDate);

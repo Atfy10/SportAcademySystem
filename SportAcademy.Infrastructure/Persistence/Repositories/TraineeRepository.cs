@@ -25,6 +25,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(t => t.AppUser)
                 .SingleOrDefaultAsync(cancellationToken);
 
+        public async Task<bool> IsPhoneNumberExistAsync(string phoneNumber, CancellationToken cancellationToken = default)
+            => await _context.Trainees
+                .AnyAsync(t => t.PhoneNumber == phoneNumber, cancellationToken);
+
         public async Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default)
             => await _context.Trainees.AnyAsync(t => t.SSN == ssn, cancellationToken);
 	}

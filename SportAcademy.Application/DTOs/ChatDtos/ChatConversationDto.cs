@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 namespace SportAcademy.Application.DTOs.ChatDtos
 {
     public record ChatConversationDto(
-    Guid Id,
-    string? Title,
-    DateTime CreatedAt,
-    IReadOnlyCollection<ChatMessageDto> Messages
-);
+        Guid Id,
+        string? Title,
+        DateTime CreatedAt,
+        IReadOnlyCollection<ChatMessageDto> Messages
+    );
 }

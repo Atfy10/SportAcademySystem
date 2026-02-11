@@ -9,6 +9,7 @@ using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.ChatCommands.CreateConversation
 {
@@ -17,7 +18,7 @@ namespace SportAcademy.Application.Commands.ChatCommands.CreateConversation
     {
         private readonly IChatConversationRepository _conversationRepository;
         private readonly IMapper _mapper;
-        private readonly string _operation = "Create";
+        private readonly string _operation = OperationType.Add.ToString();
 
         public CreateConversationCommandHandler(
             IChatConversationRepository conversationRepository,
