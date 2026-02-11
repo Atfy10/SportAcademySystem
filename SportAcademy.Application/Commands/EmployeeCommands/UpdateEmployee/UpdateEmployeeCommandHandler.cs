@@ -5,6 +5,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
+using SportAcademy.Domain.Exceptions.SharedExceptions;
 
 namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
 {
@@ -26,6 +27,11 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
         {
             var employee = await _employeeRepository.GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new EmployeeNotFoundException($"{request.Id}");
+
+            var isPhoneNumberExist = await _employeeRepository
+                .IsPhoneNumberExistAsync(employee.PhoneNumber, cancellationToken);
+            if (isPhoneNumberExist)
+                throw new PhoneNumberNotUniqueException();
 
             _mapper.Map(request, employee);
 

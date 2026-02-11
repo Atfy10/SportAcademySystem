@@ -42,6 +42,11 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
             var isSSNExist = await _employeeRepository
                 .IsSSNExistAsync(employee.SSN, cancellationToken);
 
+            var isPhoneNumberExist = await _employeeRepository
+                .IsPhoneNumberExistAsync(employee.PhoneNumber, cancellationToken);
+             if (isPhoneNumberExist)
+                throw new PhoneNumberNotUniqueException();
+
             if (isSSNExist)
                 throw new SSNNotUniqueException();
 

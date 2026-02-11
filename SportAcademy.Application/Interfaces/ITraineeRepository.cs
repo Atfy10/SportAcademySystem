@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Interfaces
 {
-    public interface ITraineeRepository : IBaseRepository<Trainee, int>
+    public interface ITraineeRepository : IBaseRepository<Trainee, int>, IPersonRepository
     {
-        Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default);
         Task<Trainee?> GetFullTrainee(int id, CancellationToken cancellationToken = default);
 	}
 }

@@ -106,7 +106,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://localhost:8080")
+        policy.WithOrigins(
+            "https://localhost:8080",
+            "http://localhost:8080",
+            "https://localhost:8081",
+            "http://localhost:8081"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -174,6 +179,10 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
 builder.Services.AddScoped<ICoachRepository, CoachRepository>();
+
+builder.Services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
+
+builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
