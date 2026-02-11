@@ -48,6 +48,9 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(e => e.Salary)
                 .HasPrecision(18, 2);
 
+            builder.Property(e => e.IsWork)
+                .HasDefaultValue(true);
+
             builder.Property(e => e.HireDate)
                 .IsRequired();
 
