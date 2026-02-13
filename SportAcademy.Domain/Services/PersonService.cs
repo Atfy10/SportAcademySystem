@@ -11,18 +11,16 @@ namespace SportAcademy.Domain.Services
     public class PersonService : IPersonService
     {
         public int CalculateAge(DateOnly birthDate)
-        {
-            throw new NotImplementedException();
-        }
+            => DateOnly.FromDateTime(DateTime.Now).Year - birthDate.Year - 
+               (DateOnly.FromDateTime(DateTime.Now) < birthDate.AddYears(DateOnly.FromDateTime(DateTime.Now).Year - birthDate.Year) ? 1 : 0);
 
-        public static string GenerateUserName(string firstName, string lastName)
+        public string GenerateUserName(string firstName, string lastName)
         {
-            Random random = new Random();
             var userName = $"{firstName.ToLower()}{lastName.ToLower()[..2]}_{Random.Shared.Next(0, 50):D2}";
             return userName;
         }
 
-        public static string GeneratePassword()
+        public string GeneratePassword()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
             var password = new string(Enumerable.Repeat(chars, 12)
