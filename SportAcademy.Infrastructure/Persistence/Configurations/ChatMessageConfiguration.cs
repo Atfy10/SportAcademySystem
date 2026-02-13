@@ -9,9 +9,9 @@ using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
 {
-    public class ChatMessageConfiguration : IEntityTypeConfiguration<ChatMessage>
+    public class ChatMessageConfiguration : IEntityTypeConfiguration<OpenAiMessage>
     {
-        public void Configure(EntityTypeBuilder<ChatMessage> builder)
+        public void Configure(EntityTypeBuilder<OpenAiMessage> builder)
         {
             builder.ToTable("ChatMessages");
 

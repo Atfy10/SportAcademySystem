@@ -28,7 +28,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Sport> Sports { get; set; }
         public DbSet<SportBranch> SportBranchs { get; set; }
         public DbSet<ChatConversation> ChatConversations { get; set; }
-        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<OpenAiMessage> ChatMessages { get; set; }
         public DbSet<SportPrice> SportPrices { get; set; }
         public DbSet<SportSubscriptionType> SportSubscriptionTypes { get; set; }
         public DbSet<SportTrainee> SportTrainees { get; set; }

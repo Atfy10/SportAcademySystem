@@ -2,7 +2,7 @@
 
 namespace SportAcademy.Domain.Entities;
 
-public class ChatMessage
+public class OpenAiMessage
 {
     public Guid Id { get; set; }
 

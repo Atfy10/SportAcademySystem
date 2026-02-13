@@ -2,9 +2,9 @@
 
 namespace SportAcademy.Application.Interfaces;
 
-public interface IChatMessageRepository : IBaseRepository<ChatMessage, Guid>
+public interface IChatMessageRepository : IBaseRepository<OpenAiMessage, Guid>
 {
-    Task<IReadOnlyList<ChatMessage>> GetByConversationIdAsync(
+    Task<IReadOnlyList<OpenAiMessage>> GetByConversationIdAsync(
         Guid conversationId,
         CancellationToken cancellationToken);
 }
