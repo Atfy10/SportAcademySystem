@@ -9,5 +9,11 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface IAttendanceRepository : IBaseRepository<Attendance, int>
     {
+        Task<(int TotalSessions, int AttendedSessions)> GetAttendanceSummaryAsync(
+            int traineeId,
+            DateOnly? fromDate,
+            DateOnly? toDate,
+            CancellationToken cancellationToken
+        );
     }
 }

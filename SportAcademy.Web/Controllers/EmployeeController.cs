@@ -7,6 +7,8 @@ using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches;
+using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
@@ -28,38 +30,53 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("get-all")]
-        public async Task<ActionResult> Index()
+        public async Task<ActionResult> Index(CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllEmployeesQuery());
+            var result = await _mediator.Send(new GetAllEmployeesQuery(), ct);
             return Ok(result);
         }
 
         [HttpGet("get/{id}")]
-        public async Task<ActionResult> Details(int id)
+        public async Task<ActionResult> Details(int id, CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetEmployeeByIdQuery(id));
+            var result = await _mediator.Send(new GetEmployeeByIdQuery(id), ct);
             return Ok(result);
         }
 
         [HttpPost("create")]
-        public async Task<ActionResult> CreateAsync(CreateEmployeeCommand command)
+        public async Task<ActionResult> CreateAsync(CreateEmployeeCommand command, CancellationToken ct)
         {
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
         [HttpPut("update")]
-        public async Task<ActionResult> EditAsync(UpdateEmployeeCommand command)
+        public async Task<ActionResult> EditAsync(UpdateEmployeeCommand command, CancellationToken ct)
         {
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
         [HttpDelete("delete")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(int id, CancellationToken ct)
         {
-            var result = await _mediator.Send(new DeleteEmployeeCommand(id));
+            var result = await _mediator.Send(new DeleteEmployeeCommand(id), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("get-active")]
+        public async Task<IActionResult> GetActive(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetActiveEmployeesQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("get-active-coaches")]
+        public async Task<IActionResult> GetActiveCoaches(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetActiveCoachesQuery(), ct);
             return Ok(result);
         }
     }
+
 }
