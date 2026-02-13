@@ -10,5 +10,7 @@ namespace SportAcademy.Domain.Contract
     {
         bool IsSSNValid(string ssn, DateOnly birthDate);
         int CalculateAge(DateOnly birthDate);
+        string GenerateUserName(string firstName, string lastName);
+        string GeneratePassword();
     }
 }

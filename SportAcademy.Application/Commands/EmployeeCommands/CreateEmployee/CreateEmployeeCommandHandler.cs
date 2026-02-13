@@ -54,8 +54,8 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var userName = EmployeeService.GenerateUserName(employee.FirstName, employee.LastName);
-            var password = EmployeeService.GeneratePassword();
+            var userName = _employeeService.GenerateUserName(employee.FirstName, employee.LastName);
+            var password = _employeeService.GeneratePassword();
             var user = await _userRepository.Register(new AppUser() { UserName = userName}, password);
 
             if(!user.Succeeded)
