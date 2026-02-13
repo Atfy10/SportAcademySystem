@@ -6,6 +6,7 @@ namespace SportAcademy.Domain.Entities
     public class Coach : ISoftDeletable
     {
         public SkillLevel SkillLevel { get; set; }
+        public int Rate { get; set; }
         public int EmployeeId { get; set; }
         public int SportId { get; set; }
         public bool IsDeleted { get; set; }

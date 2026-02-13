@@ -20,6 +20,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.HasKey(c => c.EmployeeId);
 
             // Props
+            builder.Property(c => c.Rate)
+                .IsRequired()
+                .HasDefaultValue(2);
+
             builder.Property(c => c.SkillLevel)
                 .IsRequired()
                 .HasConversion<string>();
