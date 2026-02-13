@@ -36,7 +36,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasMaxLength(13);
 
             builder.Property(b => b.Email)
-                .HasMaxLength(50);
+                .HasMaxLength(100);
 
             builder.HasIndex(b => b.Email)
                 .IsUnique()

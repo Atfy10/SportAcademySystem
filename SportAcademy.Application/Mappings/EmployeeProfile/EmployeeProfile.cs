@@ -34,7 +34,21 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
 
             CreateMap<CreateEmployeeDto, Employee>();
 
-            CreateMap<UpdateEmployeeCommand, Employee>();
+            CreateMap<UpdateEmployeeCommand, Employee>()
+                .ForMember(dest => dest.Address,
+                    opt => opt.MapFrom(src => ParseAddress(src.Address)));
+        }
+
+        private static Address ParseAddress(string address)
+        {
+            var lastCommaIndex = address.LastIndexOf(',');
+            if (lastCommaIndex > 0)
+            {
+                var street = address.Substring(0, lastCommaIndex).Trim();
+                var city = address.Substring(lastCommaIndex + 1).Trim();
+                return Address.Create(street, city);
+            }
+            return Address.Create(address, "Unknown");
         }
     }
 }

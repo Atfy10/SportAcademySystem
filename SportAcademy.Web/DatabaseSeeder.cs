@@ -180,7 +180,7 @@ namespace SportAcademy.Infrastructure.Seeders
 
         private static List<Branch> GenerateBranches()
         {
-            var faker = new Faker<Branch>()
+          var faker = new Faker<Branch>()
                 .RuleFor(b => b.City, f => f.PickRandom(KuwaitiAreas))
                 .RuleFor(b => b.Name, (f, b) => $"{b.City} Sports Academy")
                 .RuleFor(b => b.Country, _ => "Kuwait")

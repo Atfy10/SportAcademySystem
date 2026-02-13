@@ -23,6 +23,5 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         string PhoneNumber,
         string? SecondNumber,
         Position Position,
-        int BranchId,
-        string UserName) : IRequest<Result<int>>;
+        int BranchId) : IRequest<Result<int>>;
 }

@@ -35,6 +35,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Employees
                 .AnyAsync(e => e.PhoneNumber == phoneNumber, cancellationToken);
 
+        public async Task<bool> IsPhoneNumberExistAsync(string phoneNumber, int excludeEmployeeId, CancellationToken cancellationToken = default)
+            => await _context.Employees
+                .Where(e => e.Id != excludeEmployeeId)
+                .AnyAsync(e => e.PhoneNumber == phoneNumber, cancellationToken);
+
         public async Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default)
             => await _context.Employees.AnyAsync(e => e.SSN == ssn, cancellationToken);
 

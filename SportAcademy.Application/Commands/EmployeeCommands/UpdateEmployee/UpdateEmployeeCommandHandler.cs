@@ -29,7 +29,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
                 ?? throw new EmployeeNotFoundException($"{request.Id}");
 
             var isPhoneNumberExist = await _employeeRepository
-                .IsPhoneNumberExistAsync(employee.PhoneNumber, cancellationToken);
+                .IsPhoneNumberExistAsync(request.PhoneNumber, request.Id, cancellationToken);
             if (isPhoneNumberExist)
                 throw new PhoneNumberNotUniqueException();
 
