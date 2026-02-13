@@ -17,7 +17,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             //  Props
             builder.Property(b => b.Name)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(100);
 
             builder.HasIndex(b => b.Name)
                 .IsUnique()
