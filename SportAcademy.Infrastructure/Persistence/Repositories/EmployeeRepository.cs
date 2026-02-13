@@ -36,9 +36,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .AnyAsync(e => e.PhoneNumber == phoneNumber, cancellationToken);
 
         public async Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default)
-            => await _context.Employees
-                .Where(e => e.SSN == ssn)
-                .FirstOrDefaultAsync(cancellationToken) is not null;
+            => await _context.Employees.AnyAsync(e => e.SSN == ssn, cancellationToken);
 
         public async Task<List<Employee>> GetActiveCoachesAsync(CancellationToken cancellationToken = default)
             => await _context.Employees
@@ -46,7 +44,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(e => e.IsWork && e.Coach != null)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
-            => await _context.Employees.AnyAsync(e => e.SSN == ssn, cancellationToken);
         
     }
 }
