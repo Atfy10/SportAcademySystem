@@ -13,7 +13,7 @@ namespace SportAcademy.Domain.Entities
         public required string AppUserId { get; set; }
 
         // Navigation Property
-        public virtual AppUser AppUser { get; set; } = null!;
+        public virtual AppUser? AppUser { get; set; } = null!;
         public virtual Branch Branch { get; set; } = null!;
         public virtual Coach Coach { get; set; } = null!;
     }
