@@ -9,5 +9,5 @@ public class ChatConversation
     public DateTime CreatedAt { get; set; }
 
     // Navigation Property
-    public ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
+    public ICollection<OpenAiMessage> Messages { get; set; } = new List<OpenAiMessage>();
 }

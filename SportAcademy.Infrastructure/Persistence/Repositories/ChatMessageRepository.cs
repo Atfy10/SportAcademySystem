@@ -9,7 +9,7 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
-    public class ChatMessageRepository : BaseRepository<ChatMessage, Guid>, IChatMessageRepository
+    public class ChatMessageRepository : BaseRepository<OpenAiMessage, Guid>, IChatMessageRepository
     {
         private readonly ApplicationDbContext _context;
 
@@ -18,7 +18,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<IReadOnlyList<ChatMessage>> GetByConversationIdAsync(
+        public async Task<IReadOnlyList<OpenAiMessage>> GetByConversationIdAsync(
             Guid conversationId,
             CancellationToken cancellationToken)
         {

@@ -14,7 +14,7 @@ namespace SportAcademy.Application.Mappings.ChatBotProfile
     {
         public ChatProfile()
         {
-            CreateMap<ChatMessage, ChatMessageDto>();
+            CreateMap<OpenAiMessage, ChatMessageDto>();
 
             CreateMap<ChatConversation, ChatConversationDto>()
                 .ForMember(dest => dest.Messages,

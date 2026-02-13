@@ -40,7 +40,7 @@ namespace SportAcademy.Application.Commands.ChatCommands.AddMessage
                 .GetByIdAsync(request.ConversationId, cancellationToken)
                 ?? throw new ChatConversationNotFoundException(request.ConversationId.ToString());
 
-            var message = new ChatMessage
+            var message = new OpenAiMessage
             {
                 Id = Guid.NewGuid(),
                 ChatConversationId = conversation.Id,
