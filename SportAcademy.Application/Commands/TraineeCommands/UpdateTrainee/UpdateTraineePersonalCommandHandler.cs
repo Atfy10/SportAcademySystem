@@ -33,7 +33,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
             _mapper.Map(request, trainee);
 
             var isPhoneNumberExist = await _traineeRepository
-                .IsPhoneNumberExistAsync(trainee.PhoneNumber, cancellationToken);
+                .IsPhoneNumberExistAsync(trainee.PhoneNumber, trainee.Id, cancellationToken);
             if (isPhoneNumberExist)
                 throw new PhoneNumberNotUniqueException();
 

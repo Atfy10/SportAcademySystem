@@ -34,7 +34,11 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
 
             CreateMap<CreateEmployeeDto, Employee>();
 
-            CreateMap<UpdateEmployeeCommand, Employee>();
+            CreateMap<UpdateEmployeeCommand, Employee>()
+                .ForMember(dest => dest.Address,
+                    opt => opt.MapFrom(src =>
+                    Address.Create(src.Street, src.City)))
+;
         }
     }
 }

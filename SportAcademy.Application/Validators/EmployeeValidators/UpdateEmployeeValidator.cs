@@ -30,9 +30,13 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
                 .GreaterThan(0).WithMessage("Salary must be greater than zero.")
                 .LessThanOrEqualTo(100000).WithMessage("Salary seems unusually high, please double-check.");
 
-            RuleFor(x => x.Address)
-                .NotEmpty().WithMessage("Address is required.")
-                .MaximumLength(200).WithMessage("Address can't exceed 200 characters.");
+            RuleFor(x => x.Street)
+                .NotEmpty().WithMessage("Street is required.")
+                .MaximumLength(100).WithMessage("Street can't exceed 100 characters.");
+
+            RuleFor(x => x.City)
+                .NotEmpty().WithMessage("City is required.")
+                .MaximumLength(50).WithMessage("City can't exceed 50 characters.");
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Phone number is required.")

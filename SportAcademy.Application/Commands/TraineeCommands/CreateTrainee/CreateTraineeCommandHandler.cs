@@ -41,7 +41,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
                 throw new SSNNotUniqueException();
 
             var isPhoneNumberExist = await _traineeRepository
-                .IsPhoneNumberExistAsync(trainee.PhoneNumber, cancellationToken);
+                .IsPhoneNumberExistAsync(trainee.PhoneNumber, cancellationToken: cancellationToken);
             if (isPhoneNumberExist)
                 throw new PhoneNumberNotUniqueException();
 
