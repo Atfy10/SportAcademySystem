@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 using SportAcademy.Application.Commands.ChatCommands.AddMessage;
 using SportAcademy.Application.Commands.ChatCommands.CreateConversation;
 using SportAcademy.Application.Commands.ChatCommands.SendMessageToBot;
