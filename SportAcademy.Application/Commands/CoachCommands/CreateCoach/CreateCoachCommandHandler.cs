@@ -32,29 +32,21 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
 
         public async Task<Result<int>> Handle(CreateCoachCommand request, CancellationToken ct)
         {
-            var coach = _mapper.Map<Coach>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var employee = await _employeeRepository.GetByIdAsync(request.EmployeeId, ct)
+                ?? throw new IdNotFoundException(nameof(Employee), request.EmployeeId.ToString());
 
             ct.ThrowIfCancellationRequested();
 
-            var employee = await _employeeRepository.GetByIdAsync(coach.EmployeeId, ct)
-                ?? throw new IdNotFoundException(nameof(Employee), coach.EmployeeId.ToString());
-
-            var isValid = _personService.IsSSNValid(coach.Employee.SSN, coach.Employee.BirthDate);
-            if (!isValid)
-                throw new SSNSyntaxErrorException();
-
-            ct.ThrowIfCancellationRequested();
-
-            var isSSNExist = await _employeeRepository.IsSSNExistAsync(employee.SSN, ct);
-            if (isSSNExist)
-                throw new SSNNotUniqueException();
+            var coach = new Coach
+            {
+                EmployeeId = request.EmployeeId,
+                SportId = request.SportId,
+                SkillLevel = request.SkillLevel
+            };
 
             ct.ThrowIfCancellationRequested();
 
             await _coachRepository.AddAsync(coach, ct);
-
-            ct.ThrowIfCancellationRequested();
 
             return Result<int>.Success(employee.Id, _operationType);
         }

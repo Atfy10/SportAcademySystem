@@ -41,10 +41,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<List<Employee>> GetActiveCoachesAsync(CancellationToken cancellationToken = default)
             => await _context.Employees
-                .Include(e => e.Coach)
                 .Where(e => e.IsWork && e.Coach != null)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
+        public async Task<List<Employee>> GetCoachEmployeesWithoutCoachRecordAsync(CancellationToken cancellationToken = default)
+            => await _context.Employees
+                .Where(e => e.IsWork && e.Position == Domain.Enums.Position.Coach)
+                .Where(e => !_context.Coachs.Any(c => c.EmployeeId == e.Id))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
     }
 }

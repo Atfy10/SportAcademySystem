@@ -12,6 +12,6 @@ namespace SportAcademy.Application.Interfaces
         Task<Employee?> GetFullEmployee(int id, CancellationToken cancellationToken = default);
         Task<List<Employee>> GetActiveAsync(CancellationToken cancellationToken = default);
         Task<List<Employee>> GetActiveCoachesAsync(CancellationToken cancellationToken = default);
-
+        Task<List<Employee>> GetCoachEmployeesWithoutCoachRecordAsync(CancellationToken cancellationToken = default);
     }
 }

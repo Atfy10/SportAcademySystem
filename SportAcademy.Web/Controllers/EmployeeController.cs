@@ -11,6 +11,7 @@ using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
+using SportAcademy.Application.Queries.EmployeeQueries.GetCoachEmployeesWithoutCoachRecord;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
 using System.Threading.Tasks;
@@ -77,6 +78,12 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new GetActiveCoachesQuery(), ct);
             return Ok(result);
         }
-    }
 
+        [HttpGet("get-coach-employees")]
+        public async Task<IActionResult> GetCoachEmployeesWithoutCoachRecord(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetCoachEmployeesWithoutCoachRecordQuery(), ct);
+            return Ok(result);
+        }
+    }
 }
