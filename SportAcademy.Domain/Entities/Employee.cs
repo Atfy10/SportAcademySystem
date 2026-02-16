@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Entities
         public decimal Salary { get; set; }
         public DateTime HireDate { get; set; }
         public Position Position { get; set; }
-        public bool IsWork { get; set; }
+        public bool IsWork { get; set; } = true;
         public int BranchId { get; set; }
         public required string AppUserId { get; set; }
 
