@@ -6,6 +6,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 
 namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
@@ -15,8 +16,6 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
         private readonly string _operationType = OperationType.Add.ToString();
         private readonly ICoachRepository _coachRepository;
         private readonly IEmployeeRepository _employeeRepository;
-        private readonly IPersonService _personService;
-        private readonly IMapper _mapper;
 
         public CreateCoachCommandHandler(
             IEmployeeRepository employeeRepository,
@@ -26,14 +25,12 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
         {
             _employeeRepository = employeeRepository;
             _coachRepository = coachRepository;
-            _personService = personService;
-            _mapper = mapper;
         }
 
         public async Task<Result<int>> Handle(CreateCoachCommand request, CancellationToken ct)
         {
             var employee = await _employeeRepository.GetByIdAsync(request.EmployeeId, ct)
-                ?? throw new IdNotFoundException(nameof(Employee), request.EmployeeId.ToString());
+                ?? throw new EmployeeNotFoundException(request.EmployeeId.ToString());
 
             ct.ThrowIfCancellationRequested();
 

@@ -24,11 +24,10 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee
         public async Task<Result<bool>> Handle(DeleteEmployeeCommand request, CancellationToken cancellationToken)
         {
             var employee = await _employeeRepository.GetByIdAsync(request.Id, cancellationToken)
-                ?? throw new EmployeeNotFoundException($"{request.Id}");
+                ?? throw new EmployeeNotFoundException(request.Id.ToString());
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Soft delete instead of hard delete
             employee.MarkAsDeleted(_userContextService.UserId ?? "System");
             await _employeeRepository.UpdateAsync(employee, cancellationToken);
 
