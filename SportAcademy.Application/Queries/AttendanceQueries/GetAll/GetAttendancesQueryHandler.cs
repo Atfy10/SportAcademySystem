@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Application.Interfaces;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetAll
 {
-    public class GetAttendancesQueryHandler : IRequestHandler<GetAttendancesQuery, Result<List<AttendanceDto>>>
+    public class GetAttendancesQueryHandler : IRequestHandler<GetAttendancesQuery, Result<PagedData<AttendanceDto>>>
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IMapper _mapper;
@@ -26,17 +27,13 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetAll
             _mapper = mapper;
         }
 
-        public async Task<Result<List<AttendanceDto>>> Handle(GetAttendancesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<AttendanceDto>>> Handle(GetAttendancesQuery request, CancellationToken cancellationToken)
         {
-            var attendanceEntities = await _attendanceRepository.GetAllAsync(cancellationToken)
-                ?? [];
+            var attendancesDto = await _attendanceRepository.GetAllAsync(request.Page, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var attendances = _mapper.Map<List<AttendanceDto>>(attendanceEntities)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-            return Result<List<AttendanceDto>>.Success(attendances, _operation);
+            return Result<PagedData<AttendanceDto>>.Success(attendancesDto, _operation);
         }
     }
 }

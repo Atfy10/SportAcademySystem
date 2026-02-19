@@ -8,17 +8,32 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.AttendanceDtos;
+using AutoMapper.QueryableExtensions;
+using AutoMapper;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
     public class AttendanceRepository : BaseRepository<Attendance, int>, IAttendanceRepository
     {
         private readonly ApplicationDbContext _context;
+        IMapper _mapper;
 
-        public AttendanceRepository(ApplicationDbContext context) : base(context)
+        public AttendanceRepository(ApplicationDbContext context, IMapper mapper)
+            : base(context, mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
+
+        public async Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
+            => await _context.Attendances
+                .Include(a => a.Enrollment)
+                .Include(a => a.SessionOccurrence)
+                .ProjectTo<AttendanceDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, cancellationToken);
 
         public async Task<(int TotalSessions, int AttendedSessions)> GetAttendanceSummaryAsync(
            int traineeId,

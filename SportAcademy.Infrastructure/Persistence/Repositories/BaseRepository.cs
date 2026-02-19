@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -12,10 +14,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         where TKey : notnull
     {
         private readonly ApplicationDbContext _context;
+        IMapper _mapper;
 
-        public BaseRepository(ApplicationDbContext context)
+        public BaseRepository(ApplicationDbContext context, IMapper mapper = default!)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<bool> IsExistAsync(TKey id, CancellationToken cancellationToken = default)
@@ -45,8 +49,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().AsNoTracking().ToListAsync(cancellationToken);
 
-        public virtual async Task<PagedData<TEntity>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
-            => await _context.Set<TEntity>().AsNoTracking().ToPagedDataAsync(page, cancellationToken);
+        public virtual async Task<PagedData<TEntityDto>> GetAllAsync<TEntityDto>(PageRequest page, CancellationToken cancellationToken = default)
+                where TEntityDto : class
+            => await _context.Set<TEntity>()
+                .AsNoTracking()
+                .ProjectTo<TEntityDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, cancellationToken);
 
         public virtual async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().FindAsync(id, cancellationToken);

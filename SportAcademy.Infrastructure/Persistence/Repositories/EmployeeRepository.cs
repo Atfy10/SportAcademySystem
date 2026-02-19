@@ -16,13 +16,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly IMapper _mapper;
 
         public EmployeeRepository(ApplicationDbContext context, IMapper mapper) 
-            : base(context)
+            : base(context, mapper)
         {
             _context = context;
             _mapper = mapper;
         }
 
-        public new Task<PagedData<EmployeeDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
+        public Task<PagedData<EmployeeDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
             => _context.Employees
                 .AsNoTracking()
                 .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
