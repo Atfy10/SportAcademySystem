@@ -11,14 +11,9 @@ using System.Threading.Tasks;
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees
 {
 
-    public record GetActiveEmployeesQuery
+    public record GetActiveEmployeesQuery(PageRequest Page)
         : IRequest<Result<PagedData<EmployeeDto>>>, IPaginatedRequest
     {
-        public PageRequest Page { get; set; }
-
-        public GetActiveEmployeesQuery(PageRequest page)
-        {
-            Page = page;
-        }
+        public PageRequest Page { get; set; }= Page;
     }
 }

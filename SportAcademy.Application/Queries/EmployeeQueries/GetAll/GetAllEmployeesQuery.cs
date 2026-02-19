@@ -5,14 +5,9 @@ using SportAcademy.Application.DTOs.EmployeeDtos;
 
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetAll
 {
-    public record GetAllEmployeesQuery
+    public record GetAllEmployeesQuery(PageRequest Page)
         : IRequest<Result<PagedData<EmployeeDto>>>, IPaginatedRequest
     {
-        public PageRequest Page { get; set; }
-
-        public GetAllEmployeesQuery(PageRequest page)
-        {
-            Page = page;
-        }
+        public PageRequest Page { get; set; } = Page;
     }
 }
