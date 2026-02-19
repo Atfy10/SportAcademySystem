@@ -7,6 +7,7 @@ using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
@@ -31,9 +32,13 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("get-all")]
-        public async Task<ActionResult> Index(CancellationToken ct)
+        public async Task<ActionResult> Index(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllEmployeesQuery(), ct);
+            var result = await _mediator.Send(new GetAllEmployeesQuery(
+                                                PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
 
@@ -66,23 +71,35 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("get-active")]
-        public async Task<IActionResult> GetActive(CancellationToken ct)
+        public async Task<IActionResult> GetActive(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetActiveEmployeesQuery(), ct);
+            var result = await _mediator.Send(new GetActiveEmployeesQuery(
+                                        PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
 
         [HttpGet("get-active-coaches")]
-        public async Task<IActionResult> GetActiveCoaches(CancellationToken ct)
+        public async Task<IActionResult> GetActiveCoaches(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetActiveCoachesQuery(), ct);
+            var result = await _mediator.Send(new GetActiveCoachesQuery(
+                                        PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
 
         [HttpGet("get-coach-employees")]
-        public async Task<IActionResult> GetCoachEmployeesWithoutCoachRecord(CancellationToken ct)
+        public async Task<IActionResult> GetCoachEmployeesWithoutCoachRecord(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetCoachEmployeesWithoutCoachRecordQuery(), ct);
+            var result = await _mediator.Send(new GetCoachEmployeesWithoutCoachRecordQuery(
+                                        PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
     }

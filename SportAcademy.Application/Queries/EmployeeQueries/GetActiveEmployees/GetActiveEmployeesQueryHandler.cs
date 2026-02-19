@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Application.Interfaces;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees
 {
-    public class GetActiveEmployeesQueryHandler : IRequestHandler<GetActiveEmployeesQuery, Result<List<EmployeeDto>>>
+    public class GetActiveEmployeesQueryHandler : IRequestHandler<GetActiveEmployeesQuery, Result<PagedData<EmployeeDto>>>
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
@@ -26,17 +27,14 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees
             _mapper = mapper;
         }
 
-        public async Task<Result<List<EmployeeDto>>> Handle(
+        public async Task<Result<PagedData<EmployeeDto>>> Handle(
             GetActiveEmployeesQuery request,
             CancellationToken cancellationToken)
         {
-            var employees = await _employeeRepository
-                .GetActiveAsync(cancellationToken);
+            var employeesDto = await _employeeRepository
+                .GetActiveAsync(request.Page, cancellationToken);
 
-            var employeesDto = _mapper.Map<List<EmployeeDto>>(employees)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-            return Result<List<EmployeeDto>>.Success(employeesDto, _operationType);
+            return Result<PagedData<EmployeeDto>>.Success(employeesDto, _operationType);
         }
     }
 

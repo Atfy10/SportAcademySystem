@@ -129,6 +129,8 @@ builder.Services.AddValidatorsFromAssembly(typeof(CreateTraineeValidator).Assemb
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PaginationNormalizationBehavior<,>));
+
 builder.Services.AddAutoMapper(typeof(TraineeProfile).Assembly);
 
 builder.Services.AddScoped<ITraineeService, TraineeService>();

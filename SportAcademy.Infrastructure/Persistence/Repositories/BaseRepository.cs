@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -42,6 +44,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().AsNoTracking().ToListAsync(cancellationToken);
+
+        public virtual async Task<PagedData<TEntity>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
+            => await _context.Set<TEntity>().AsNoTracking().ToPagedDataAsync(page, cancellationToken);
 
         public virtual async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().FindAsync(id, cancellationToken);

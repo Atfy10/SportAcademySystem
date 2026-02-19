@@ -1,29 +1,39 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
     public class EmployeeRepository : BaseRepository<Employee, int>, IEmployeeRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public EmployeeRepository(ApplicationDbContext context) : base(context)
+        public EmployeeRepository(ApplicationDbContext context, IMapper mapper) 
+            : base(context)
         {
             _context = context;
+            _mapper = mapper;
         }
 
-        public async Task<List<Employee>> GetActiveAsync(CancellationToken cancellationToken = default)
+        public new Task<PagedData<EmployeeDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
+            => _context.Employees
+                .AsNoTracking()
+                .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, cancellationToken);
+
+        public async Task<PagedData<EmployeeDto>> GetActiveAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Employees
                 .Where(e => e.IsWork)
                 .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, cancellationToken);
 
         public async Task<Employee?> GetFullEmployee(int id, CancellationToken cancellationToken = default)
             => await _context.Employees
@@ -39,17 +49,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default)
             => await _context.Employees.AnyAsync(e => e.SSN == ssn, cancellationToken);
 
-        public async Task<List<Employee>> GetActiveCoachesAsync(CancellationToken cancellationToken = default)
+        public async Task<PagedData<EmployeeDto>> GetActiveCoachesAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Employees
                 .Where(e => e.IsWork && e.Coach != null)
                 .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, cancellationToken);
 
-        public async Task<List<Employee>> GetCoachEmployeesWithoutCoachRecordAsync(CancellationToken cancellationToken = default)
+        public async Task<PagedData<EmployeeDto>> GetCoachEmployeesWithoutCoachRecordAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Employees
                 .Where(e => e.IsWork && e.Position == Domain.Enums.Position.Coach)
                 .Where(e => !_context.Coachs.Any(c => c.EmployeeId == e.Id))
+                .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
                 .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                .ToPagedDataAsync(page, cancellationToken);
     }
 }

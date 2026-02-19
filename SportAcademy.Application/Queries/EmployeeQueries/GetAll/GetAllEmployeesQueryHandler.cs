@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Application.Interfaces;
@@ -7,7 +8,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetAll
 {
-    public class GetAllEmployeesQueryHandler : IRequestHandler<GetAllEmployeesQuery, Result<List<EmployeeDto>>>
+    public class GetAllEmployeesQueryHandler : IRequestHandler<GetAllEmployeesQuery, Result<PagedData<EmployeeDto>>>
     {
         private readonly IMapper _mapper;
         private readonly IEmployeeRepository _employeeRepository;
@@ -21,12 +22,11 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetAll
             _employeeRepository = employeeRepository;
         }
 
-        public async Task<Result<List<EmployeeDto>>> Handle(GetAllEmployeesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<EmployeeDto>>> Handle(GetAllEmployeesQuery request, CancellationToken cancellationToken)
         {
-            var employees = await _employeeRepository.GetAllAsync(cancellationToken) ?? [];
+            var employeesDto = await _employeeRepository.GetAllAsync(request.Page, cancellationToken);
 
-            var employeesDto = _mapper.Map<List<EmployeeDto>>(employees) ?? [];
-            return Result<List<EmployeeDto>>.Success(employeesDto, _operationType);
+            return Result<PagedData<EmployeeDto>>.Success(employeesDto, _operationType);
         }
     }
 }
