@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -20,7 +22,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<List<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(DateTime day, CancellationToken cancellationToken = default)
+        public async Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
                 .AsNoTracking()
                 .Where(tg => tg.GroupSchedules.Any(gs => gs.Day == day.DayOfWeek))
@@ -33,7 +35,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     tg.Enrollments.Count,
                     tg.GroupSchedules.FirstOrDefault().StartTime 
                 ))
-                .ToListAsync(cancellationToken);
+                .ToPagedDataAsync(page, cancellationToken);
     }
 }
 

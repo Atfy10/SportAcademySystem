@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum Gender
     {
-        Male,
+        Male = 1,
         Female
     }
 }

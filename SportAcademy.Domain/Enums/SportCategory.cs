@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum SportCategory
     {
-        Individual,
+        Individual = 1,
         Team
     }
 }

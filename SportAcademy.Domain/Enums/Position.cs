@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum Position
     {
-        Coach,
+        Coach = 1,
         Manager,
         HR,
         Accountant,

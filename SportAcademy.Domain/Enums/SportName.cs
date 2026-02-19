@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum SportName
     {
-        Football,
+        Football = 1,
         Basketball,
         Swimming,
         Volleyball,

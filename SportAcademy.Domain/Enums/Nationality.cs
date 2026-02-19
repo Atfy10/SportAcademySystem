@@ -2,7 +2,7 @@
 {
     public enum Nationality
     {
-        American,
+        American = 1,
         Canadian,
         British,
         Australian,

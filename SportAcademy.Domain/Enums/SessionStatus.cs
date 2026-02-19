@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum SessionStatus
     {
-        Scheduled,
+        Scheduled = 1,
         Completed,
         Canceled
     }

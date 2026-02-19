@@ -22,6 +22,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _mapper = mapper;
         }
 
+        public async Task<int> GetActiveEmployeesCountAsync(CancellationToken ct = default)
+            => await _context.Employees
+                .Where(e => e.IsWork)
+                .CountAsync(ct);
+
+        public async Task<int> GetActiveCoachesCountAsync(CancellationToken ct = default)
+            => await _context.Employees
+                .Where(e => e.IsWork && e.Coach != null)
+                .CountAsync(ct);
+
         public Task<PagedData<EmployeeDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
             => _context.Employees
                 .AsNoTracking()

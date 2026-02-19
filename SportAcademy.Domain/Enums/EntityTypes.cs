@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum EntityTypes
     {
-        Trainee,
+        Trainee = 1,
         Branch,
         User,
         Enrollment,

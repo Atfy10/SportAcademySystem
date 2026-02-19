@@ -12,7 +12,7 @@ namespace SportAcademy.Application.Interfaces
     public interface IAttendanceRepository : IBaseRepository<Attendance, int>
     {
         Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default);
-
+        Task<int> GetGlobalAttendanceRate(CancellationToken ct = default);
         Task<(int TotalSessions, int AttendedSessions)> GetAttendanceSummaryAsync(
             int traineeId,
             DateOnly? fromDate,

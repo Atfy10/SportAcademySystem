@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum PaymentMethod
     {
-        Cash,
+        Cash = 1,
         Online
     }
 }

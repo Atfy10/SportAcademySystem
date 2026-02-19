@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum OperationType
     {
-        Add,
+        Add = 1,
         Update,
         Delete,
         Get,

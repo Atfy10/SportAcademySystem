@@ -8,6 +8,7 @@ using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
 using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.DeleteTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAll;
@@ -64,11 +65,17 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-            [HttpGet("get-all-for-specific-day")]
-            public async Task<IActionResult> GetAllForDay(DateTime date, CancellationToken ct)
-            {
-                var result = await _mediator.Send(new GetAllSessionsOfSpecificDayQuery(date), ct);
-                return Ok(result);
-            }
+        [HttpGet("get-all-for-specific-day")]
+        public async Task<IActionResult> GetAllForDay(
+            [FromQuery] DateTime date,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetAllSessionsOfSpecificDayQuery(
+                                            date,
+                                            PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
     }
 }

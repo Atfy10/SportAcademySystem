@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum SubType
     {
-        Monthly,
+        Monthly = 1,
         Quarterly,
         Yearly,
         Gold,

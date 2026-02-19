@@ -9,17 +9,18 @@ using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches;
+using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoachesCount;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees;
+using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployeesCount;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 using SportAcademy.Application.Queries.EmployeeQueries.GetCoachEmployeesWithoutCoachRecord;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Web.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class EmplopyeeController : ControllerBase
@@ -70,14 +71,21 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-active")]
-        public async Task<IActionResult> GetActive(
+        [HttpGet("get-active-employees")]
+        public async Task<IActionResult> GetActiveEmployees(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetActiveEmployeesQuery(
                                         PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("get-active-employees-count")]
+        public async Task<IActionResult> GetActiveEmployeesCount(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetActiveEmployeesCountQuery(), ct);
             return Ok(result);
         }
 
@@ -89,6 +97,13 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(new GetActiveCoachesQuery(
                                         PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("get-active-coaches-count")]
+        public async Task<IActionResult> GetActiveCoachesCount(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetActiveCoachesCountQuery(), ct);
             return Ok(result);
         }
 

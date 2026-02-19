@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum AttendanceStatus
     {
-        Present,
+        Present = 1,
         Absent,
         Excused
     }

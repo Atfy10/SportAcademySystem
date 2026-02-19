@@ -1,10 +1,11 @@
-﻿using SportAcademy.Application.DTOs.TraineeGroupDtos;
+﻿using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Interfaces
 {
     public interface ITraineeGroupRepository : IBaseRepository<TraineeGroup, int>
     {
-        Task<List<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(DateTime day, CancellationToken cancellationToken = default);
+        Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default);
     }
 }

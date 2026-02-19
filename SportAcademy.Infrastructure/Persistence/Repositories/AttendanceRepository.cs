@@ -28,6 +28,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _mapper = mapper;
         }
 
+        public async Task<int> GetGlobalAttendanceRate(CancellationToken ct = default)
+            => await _context.Attendances
+                .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct) * 100 /
+                await _context.Attendances.CountAsync(ct);
+
+
         public async Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Attendances
                 .Include(a => a.Enrollment)

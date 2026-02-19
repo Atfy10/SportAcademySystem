@@ -25,6 +25,7 @@ using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Web;
 using SportAcademy.Web.Services;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -194,7 +195,7 @@ builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
     });
 
 builder.Services.AddEndpointsApiExplorer();
