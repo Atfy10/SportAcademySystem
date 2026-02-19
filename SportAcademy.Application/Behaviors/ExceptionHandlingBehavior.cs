@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SportAcademy.Application.Services;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions;
 using System;

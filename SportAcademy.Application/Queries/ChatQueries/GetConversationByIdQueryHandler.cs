@@ -1,6 +1,5 @@
 ﻿using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.DTOs.ChatDtos;
-using SportAcademy.Application.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
 using SportAcademy.Domain.Exceptions;
+using SportAcademy.Application.Common.Result;
 
 namespace SportAcademy.Application.Queries.ChatQueries
 {

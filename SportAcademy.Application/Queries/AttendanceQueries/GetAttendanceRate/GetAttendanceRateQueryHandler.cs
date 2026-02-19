@@ -1,7 +1,7 @@
 ﻿using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;

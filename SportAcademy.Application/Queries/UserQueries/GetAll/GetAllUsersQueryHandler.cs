@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;

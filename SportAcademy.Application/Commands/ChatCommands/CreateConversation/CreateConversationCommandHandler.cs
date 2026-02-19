@@ -1,5 +1,4 @@
 ﻿using SportAcademy.Application.DTOs.ChatDtos;
-using SportAcademy.Application.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +9,7 @@ using MediatR;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Application.Common.Result;
 
 namespace SportAcademy.Application.Commands.ChatCommands.CreateConversation
 {

@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EmployeeDtos;
-using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach

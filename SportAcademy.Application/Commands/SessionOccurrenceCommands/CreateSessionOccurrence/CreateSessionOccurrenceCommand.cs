@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using SportAcademy.Application.Services;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.CreateSessionOccurrence

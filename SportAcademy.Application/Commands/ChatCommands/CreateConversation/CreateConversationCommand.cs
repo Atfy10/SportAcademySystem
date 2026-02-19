@@ -1,6 +1,6 @@
 ﻿using SportAcademy.Application.DTOs.ChatDtos;
-using SportAcademy.Application.Services;
 using MediatR;
+using SportAcademy.Application.Common.Result;
 
 namespace SportAcademy.Application.Commands.ChatCommands.CreateConversation
 {

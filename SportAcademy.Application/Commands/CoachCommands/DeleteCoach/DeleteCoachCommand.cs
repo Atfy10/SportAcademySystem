@@ -1,5 +1,5 @@
 using MediatR;
-using SportAcademy.Application.Services;
+using SportAcademy.Application.Common.Result;
 
 namespace SportAcademy.Application.Commands.CoachCommands.DeleteCoach
 {

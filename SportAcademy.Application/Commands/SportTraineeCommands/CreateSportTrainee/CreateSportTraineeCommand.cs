@@ -1,6 +1,6 @@
 ﻿using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportTraineeDtos;
-using SportAcademy.Application.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

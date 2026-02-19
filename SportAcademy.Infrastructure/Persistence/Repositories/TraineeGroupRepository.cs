@@ -1,4 +1,8 @@
-﻿using SportAcademy.Application.Interfaces;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.DTOs.TraineeGroupDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
@@ -7,10 +11,29 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     public class TraineeGroupRepository : BaseRepository<TraineeGroup, int>, ITraineeGroupRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public TraineeGroupRepository(ApplicationDbContext context) : base(context)
+        public TraineeGroupRepository(ApplicationDbContext context, IMapper mapper)
+            : base(context)
         {
+            _mapper = mapper;
             _context = context;
         }
+
+        public async Task<List<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(DateTime day, CancellationToken cancellationToken = default)
+            => await _context.TraineeGroups
+                .AsNoTracking()
+                .Where(tg => tg.GroupSchedules.Any(gs => gs.Day == day.DayOfWeek))
+                .Select(tg => new ListTraineeGroupDto(
+                    tg.Id,
+                    tg.Coach.Sport.Name,
+                    tg.Coach.Employee.FirstName,
+                    tg.Branch.Name,
+                    tg.DurationInMinutes,
+                    tg.Enrollments.Count,
+                    tg.GroupSchedules.FirstOrDefault().StartTime 
+                ))
+                .ToListAsync(cancellationToken);
     }
 }
+

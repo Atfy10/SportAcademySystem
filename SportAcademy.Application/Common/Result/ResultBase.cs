@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SportAcademy.Application.Services
+namespace SportAcademy.Application.Common.Result
 {
     public abstract class ResultBase
     {

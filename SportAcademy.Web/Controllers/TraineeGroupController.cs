@@ -11,6 +11,7 @@ using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAll;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
@@ -63,5 +64,11 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+            [HttpGet("get-all-for-specific-day")]
+            public async Task<IActionResult> GetAllForDay(DateTime date, CancellationToken ct)
+            {
+                var result = await _mediator.Send(new GetAllSessionsOfSpecificDayQuery(date), ct);
+                return Ok(result);
+            }
     }
 }

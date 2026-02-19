@@ -5,10 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.BranchDtos;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.BranchQueries.GetAll

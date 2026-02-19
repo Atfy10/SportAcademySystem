@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportPriceDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SportExceptions;
 

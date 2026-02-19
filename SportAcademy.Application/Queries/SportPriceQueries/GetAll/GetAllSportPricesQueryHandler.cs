@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportPriceDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.SportPriceQueries.GetAll

@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using SportAcademy.Application.Services;
+using SportAcademy.Application.Common.Result;
 using System;
 using System.Collections.Generic;
 using System.Linq;

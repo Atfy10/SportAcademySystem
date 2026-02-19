@@ -1,6 +1,6 @@
 ﻿using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
-using SportAcademy.Application.Services;
 
 namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
 {

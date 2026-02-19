@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAll;
