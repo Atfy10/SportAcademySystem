@@ -50,12 +50,6 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasDefaultValueSql("GETDATE()")
                 .IsRequired();
 
-            builder.Property(t => t.SkillLevel)
-                .HasConversion<string>()
-                .HasMaxLength(20)
-                .HasDefaultValue(SkillLevel.NotSpecified)
-                .IsRequired();
-
             builder.Property(t => t.IsSubscribed)
                 .IsRequired();
 
