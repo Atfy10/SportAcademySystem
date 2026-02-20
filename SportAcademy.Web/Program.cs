@@ -274,10 +274,11 @@ app.MapHub<NotificationHub>("/hubs/notification");
 
 app.MapControllers();
 
-app.MapGet("/health", () => Results.Ok("API Running"));
-
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsProduction())
 {
+    app.MapGet("/health", () => Results.Ok("API Running"));
+
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
 }
