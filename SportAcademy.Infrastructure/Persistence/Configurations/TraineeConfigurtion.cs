@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using System.Reflection.Emit;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
@@ -45,11 +46,21 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 });
             #endregion
 
+            builder.Property(t => t.JoinDate)
+                .HasDefaultValueSql("GETDATE()")
+                .IsRequired();
+
+            builder.Property(t => t.SkillLevel)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(SkillLevel.NotSpecified)
+                .IsRequired();
+
             builder.Property(t => t.IsSubscribed)
-                   .IsRequired();
+                .IsRequired();
 
             builder.Property(t => t.ParentNumber)
-                   .HasMaxLength(13);
+                .HasMaxLength(13);
 
             builder.Property(t => t.GuardianName)
                 .HasMaxLength(50);

@@ -1,8 +1,12 @@
-﻿namespace SportAcademy.Domain.Entities
+﻿using SportAcademy.Domain.Enums;
+
+namespace SportAcademy.Domain.Entities
 {
     public class Trainee : Person
     {
         public int Id { get; set; }
+        public DateOnly JoinDate { get; set; }
+        public SkillLevel SkillLevel { get; set; }
         public bool IsSubscribed { get; set; }
         public string? ParentNumber { get; set; }
         public string? GuardianName { get; set; }
