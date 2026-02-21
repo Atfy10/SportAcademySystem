@@ -6,7 +6,11 @@ using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAll;
+using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForAllSports;
+using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForSport;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetById;
+using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSport;
+using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSports;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -58,35 +62,56 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-all-for-sports")]
-        public async Task<IActionResult> GetAllEnrollmentsForSports(
+        [HttpGet("sports/enrollments")]
+        public async Task<IActionResult> GetAllEnrollmentsForAllSports(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to,
             CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new GetAllEnrollmentsForSportsQuery(PageRequest.Create(page, pageSize)),
+            var result = await _mediator.Send(new
+                GetAllEnrollmentsForAllSportsQuery(from, to, PageRequest.Create(page, pageSize)),
+                cancellationToken);
+
+            return Ok(result);
+        }
+
+        [HttpGet("sports/enrollments/count")]
+        public async Task<IActionResult> GetAllEnrollmentsCountForSports(
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetEnrollmentsCountForSportsQuery(from, to), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("sports/{sportId}/enrollments")]
+        public async Task<IActionResult> GetAllEnrollmentsForSport(
+            [FromRoute] int sportId,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetAllEnrollmentsForSportQuery(sportId, from, to, PageRequest.Create(page, pageSize)),
                 cancellationToken);
             return Ok(result);
         }
 
-        [HttpGet("get-all-count-for-sports")]
-        public async Task<IActionResult> GetAllEnrollmentsCountForSports(CancellationToken ct)
+        [HttpGet("sports/{sportId}/enrollments/count")]
+        public async Task<IActionResult> GetAllEnrollmentsCountForSport(
+            [FromRoute] int sportId,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to,
+            CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new GetAllEnrollmentsCountForSportsQuery(), ct);
-            return Ok(result);
-        }
-
-        [HttpGet("get-all-for-sport")]
-        public async Task<IActionResult> GetAllEnrollmentsForSport([FromQuery] int sportId, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new GetAllEnrollmentsForSportQuery(sportId), cancellationToken);
-            return Ok(result);
-        }
-
-        [HttpGet("get-all-count-for-sport")]
-        public async Task<IActionResult> GetAllEnrollmentsCountForSport([FromQuery] int sportId, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new GetAllEnrollmentsCountForSportQuery(sportId), cancellationToken);
+            var result = await _mediator.Send(
+                new GetEnrollmentsCountForSportQuery(sportId, from, to),
+                cancellationToken);
             return Ok(result);
         }
     }

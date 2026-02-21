@@ -83,7 +83,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         ))
                         .ToList()
                 ))
-                .ToPagedDataAsync(page);
+                .ToPagedData(page);
 
             return result;
         }
