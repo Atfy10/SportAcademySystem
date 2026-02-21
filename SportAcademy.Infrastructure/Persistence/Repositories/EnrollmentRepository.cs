@@ -26,7 +26,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var baseQuery = _context.Enrollments
                 .Where(e => e.TraineeGroup.Coach.SportId == sportId)
-                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddDays(-7))
+                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddDays(-30))
                          && e.EnrollmentDate < (to ?? DateTime.UtcNow));
 
             var totalCount = await baseQuery.CountAsync(ct);
@@ -68,7 +68,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             CancellationToken ct = default)
             => await _context.Enrollments
                 .Where(e => e.TraineeGroup.Coach.SportId == sportId)
-                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddDays(-7))
+                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddDays(-30))
                     && e.EnrollmentDate < (to ?? DateTime.UtcNow))
                 .CountAsync(ct);
 
@@ -77,7 +77,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             DateTime? to,
             CancellationToken ct = default)
             => await _context.Enrollments
-                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddDays(-7))
+                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddDays(-30))
                     && e.EnrollmentDate < (to ?? DateTime.UtcNow))
                 .CountAsync(ct);
 
@@ -87,7 +87,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             DateTime? to,
             CancellationToken ct)
         {
-            from ??= DateTime.UtcNow.AddDays(-7);
+            from ??= DateTime.UtcNow.AddDays(-30);
             to ??= DateTime.UtcNow;
 
             var sportsPage = await _context.Enrollments

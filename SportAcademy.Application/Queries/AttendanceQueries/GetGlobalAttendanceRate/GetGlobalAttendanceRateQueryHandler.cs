@@ -15,7 +15,7 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetGlobalAttendance
 
         public async Task<Result<int>> Handle(GetGlobalAttendanceRateQuery request, CancellationToken ct)
         {
-            var attendanceRate = await _attendanceRepository.GetGlobalAttendanceRate(ct);
+            var attendanceRate = await _attendanceRepository.GetGlobalAttendanceRate(request.Month, ct);
             
             return Result<int>.Success(attendanceRate, nameof(GetGlobalAttendanceRateQuery));
         }

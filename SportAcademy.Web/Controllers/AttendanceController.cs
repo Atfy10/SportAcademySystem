@@ -8,6 +8,7 @@ using SportAcademy.Application.Queries.AttendanceQueries.GetAttendanceRate;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.AttendanceQueries.GetGlobalAttendanceRate;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -68,9 +69,11 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("get-global-attendance-rate")]
-        public async Task<IActionResult> GetAttendanceRate(CancellationToken ct)
+        public async Task<IActionResult> GetAttendanceRate(
+            [FromQuery] Month month,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetGlobalAttendanceRateQuery(), ct);
+            var result = await _mediator.Send(new GetGlobalAttendanceRateQuery(month), ct);
             return Ok(result);
         }
     }
