@@ -11,5 +11,5 @@ public record TraineeOfSpecificDayDto(
     DateOnly? JoinDate,
     bool IsSubscribed,
     int AttendanceRate,
-    TraineeSportDto TraineeSports
+    IReadOnlyList<TraineeSportDto> TraineeSports
 );

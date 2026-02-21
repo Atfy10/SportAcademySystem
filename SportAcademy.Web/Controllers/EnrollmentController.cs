@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAll;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetById;
 
@@ -57,5 +58,36 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [HttpGet("get-all-for-sports")]
+        public async Task<IActionResult> GetAllEnrollmentsForSports(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAllEnrollmentsForSportsQuery(PageRequest.Create(page, pageSize)),
+                cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("get-all-count-for-sports")]
+        public async Task<IActionResult> GetAllEnrollmentsCountForSports(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetAllEnrollmentsCountForSportsQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("get-all-for-sport")]
+        public async Task<IActionResult> GetAllEnrollmentsForSport([FromQuery] int sportId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAllEnrollmentsForSportQuery(sportId), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("get-all-count-for-sport")]
+        public async Task<IActionResult> GetAllEnrollmentsCountForSport([FromQuery] int sportId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAllEnrollmentsCountForSportQuery(sportId), cancellationToken);
+            return Ok(result);
+        }
     }
 }

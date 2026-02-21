@@ -26,5 +26,25 @@ internal static class PaginationExtensions
             PageSize = page.PageSize
         };
     }
+
+    public static PagedData<T> ToPagedDataAsync<T>(
+        this IEnumerable<T> enumerable,
+        PageRequest page)
+    {
+        var total = enumerable.ToList().Count;
+
+        var items = enumerable
+            .Skip((page.Page - 1) * page.PageSize)
+            .Take(page.PageSize)
+            .ToList();
+
+        return new PagedData<T>
+        {
+            Items = items,
+            TotalCount = total,
+            Page = page.Page,
+            PageSize = page.PageSize
+        };
+    }
 }
 

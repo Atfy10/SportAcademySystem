@@ -18,17 +18,18 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetAllTraineesOfSpecif
         private readonly IMapper _mapper;
 
         public GetAllTraineesOfSpecificDayQueryHandler(
-            ITraineeRepository traineeRepository, 
+            ITraineeRepository traineeRepository,
             IMapper mapper)
         {
             _mapper = mapper;
             _traineeRepository = traineeRepository;
         }
 
-        public Task<Result<PagedData<TraineeOfSpecificDayDto>>> Handle(GetAllTraineesOfSpecificDayQuery request, CancellationToken ct)
+        public async Task<Result<PagedData<TraineeOfSpecificDayDto>>> Handle(GetAllTraineesOfSpecificDayQuery request, CancellationToken ct)
         {
-            var trainees = _traineeRepository.GetAllTraineesOfSpecificDayAsync(request.Date, request.Page, ct);
-            throw new NotImplementedException();
+            var trainees = await _traineeRepository.GetAllTraineesOfSpecificDayAsync(request.Date, request.Page, ct);
+
+            return Result<PagedData<TraineeOfSpecificDayDto>>.Success(trainees, nameof(GetAllTraineesOfSpecificDayQuery));
         }
     }
 }

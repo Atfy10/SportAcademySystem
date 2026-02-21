@@ -5,5 +5,5 @@ namespace SportAcademy.Application.DTOs.TraineeDtos;
 public record TraineeSportDto(
     string SportName,
     SkillLevel SkillLevel,
-    string BranchName
+    IReadOnlyList<string> Branchs
 );
