@@ -1,18 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SportAcademy.Application.Common.Pagination;
-using SportAcademy.Application.DTOs.AttendanceDtos;
-using AutoMapper.QueryableExtensions;
-using AutoMapper;
-using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -28,7 +29,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _mapper = mapper;
         }
 
-        public async Task<int> GetGlobalAttendanceRate(Month month, CancellationToken ct = default)
+        public async Task<int> GetGlobalAttendanceRate(CancellationToken ct = default)
+            => await _context.Attendances
+                .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct) * 100 /
+                await _context.Attendances.CountAsync(ct);
+
+        public async Task<int> GetMonthlyAttendanceRate(Month month, CancellationToken ct = default)
             => await _context.Attendances
                 .Where(a => a.AttendanceDate.Month == (int)month)
                 .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct) * 100 /

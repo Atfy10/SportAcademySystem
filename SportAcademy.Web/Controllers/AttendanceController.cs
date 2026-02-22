@@ -60,17 +60,22 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-attendance-rate")]
-        public async Task<IActionResult> GetAttendanceRate(GetAttendanceRateQuery query,
+        [HttpGet("trainee/{traineeId}/rate")]
+        public async Task<IActionResult> GetAttendanceRate(
+            [FromRoute] int traineeId,
+            [FromQuery] DateOnly? from,
+            [FromQuery] DateOnly? to,
             CancellationToken ct)
         {
-            var result = await _mediator.Send(query, ct);
+            var result = await _mediator.Send(new GetAttendanceRateQuery(
+                    traineeId, from, to
+                ), ct);
             return Ok(result);
         }
 
-        [HttpGet("get-global-attendance-rate")]
+        [HttpGet("rate")]
         public async Task<IActionResult> GetAttendanceRate(
-            [FromQuery] Month month,
+            [FromQuery] Month? month,
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetGlobalAttendanceRateQuery(month), ct);

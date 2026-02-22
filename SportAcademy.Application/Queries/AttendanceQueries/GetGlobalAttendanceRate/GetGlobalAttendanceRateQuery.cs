@@ -4,4 +4,4 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetGlobalAttendanceRate;
 
-public record GetGlobalAttendanceRateQuery(Month Month) : IRequest<Result<int>>;
+public record GetGlobalAttendanceRateQuery(Month? Month) : IRequest<Result<int>>;
