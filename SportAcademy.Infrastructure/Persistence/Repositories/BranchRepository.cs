@@ -18,6 +18,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
+        public async Task<int> GetBranchesCountAsync(CancellationToken cancellationToken)
+            => await _context.Branchs.CountAsync(cancellationToken);
+
         public async Task<bool> IsCoordinatesExistAsync(string coX, string coY, CancellationToken cancellationToken)
             => await _context.Branchs
                 .AnyAsync(b => b.CoX == coX && b.CoY == coY, cancellationToken);

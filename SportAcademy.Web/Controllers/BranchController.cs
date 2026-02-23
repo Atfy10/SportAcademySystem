@@ -8,6 +8,7 @@ using SportAcademy.Application.Commands.BranchCommands.DeleteBranch;
 using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
 using SportAcademy.Application.Queries.BranchQueries;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
+using SportAcademy.Application.Queries.BranchQueries.GetBranchesCount;
 using SportAcademy.Application.Queries.BranchQueries.GetById;
 
 
@@ -32,7 +33,7 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
-		[HttpGet("get-all")]
+		[HttpGet]
 		public async Task<IActionResult> GetAll()
 		{
 			var result = await _mediator.Send(new GetAllAttendancesQuery());
@@ -69,5 +70,11 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+		[HttpGet("count")]
+		public async Task<IActionResult> GetBranchesCount(CancellationToken cancellationToken)
+		{
+			var result = await _mediator.Send(new GetBranchesCountQuery(), cancellationToken);
+			return Ok(result);
+        }
     }
 }
