@@ -133,7 +133,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             );
 
             var employees = (await multi.ReadAsync<EmployeeCardDto>()).ToList();
-            var totalCount = await multi.ReadSingleAsync<int>();
 
             return employees.ToPagedData(pageReq);
         }
