@@ -97,7 +97,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     e.Email,
                     e.IsWork,
                     e.PhoneNumber,
-                    (e.City + ' - ' + e.Street) AS Address,
+                    (e.City + ', ' + e.Street) AS Address,
                     e.HireDate
                 FROM Employees e
                 INNER JOIN CONTAINSTABLE(

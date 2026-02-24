@@ -13,7 +13,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.BranchQueries.GetAll
 {
-	public class GetAllBranchsQueryHandler : IRequestHandler<GetAllAttendancesQuery, Result<List<BranchDto>>>
+	public class GetAllBranchsQueryHandler : IRequestHandler<GetAllAttendancesQuery, Result<List<BranchDropDownListDto>>>
 	{
 		private readonly IBranchRepository _branchRepository;
 		private readonly IMapper _mapper;
@@ -24,11 +24,12 @@ namespace SportAcademy.Application.Queries.BranchQueries.GetAll
 			_branchRepository = branchRepository;
 			_mapper = mapper;
 		}
-		public async Task<Result<List<BranchDto>>> Handle(GetAllAttendancesQuery request, CancellationToken cancellationToken)
+
+		public async Task<Result<List<BranchDropDownListDto>>> Handle(GetAllAttendancesQuery request, CancellationToken cancellationToken)
 		{
-			var branches = await _branchRepository.GetAllAsync(cancellationToken)??[];
-			var branchesDto = _mapper.Map<List<BranchDto>>(branches);
-			return Result<List<BranchDto>>.Success(branchesDto, _operationType);
+			var branchesDto = await _branchRepository.GetAllBranchsBase(cancellationToken)??[];
+
+			return Result<List<BranchDropDownListDto>>.Success(branchesDto, nameof(GetAllAttendancesQuery));
 		}
 	}
 }
