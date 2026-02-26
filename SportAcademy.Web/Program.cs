@@ -258,7 +258,10 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    dbContext.Database.Migrate();
 
     await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
 
@@ -280,10 +283,6 @@ app.MapControllers();
 if (app.Environment.IsProduction())
 {
     app.MapGet("/health", () => Results.Ok("API Running"));
-
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
 }
 
 app.Run();
