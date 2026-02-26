@@ -10,6 +10,7 @@ using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoachesCount;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployees;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveEmployeesCount;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
+using SportAcademy.Application.Queries.EmployeeQueries.GetAllCoachs;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 using SportAcademy.Application.Queries.EmployeeQueries.GetCoachEmployeesWithoutCoachRecord;
 using SportAcademy.Application.Queries.EmployeeQueries.GetEmployeesCount;
@@ -111,7 +112,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("coachs")]
+        [HttpGet("coaches/employee")]
         public async Task<IActionResult> GetCoachEmployeesWithoutCoachRecord(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -131,6 +132,17 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(new SearchEmployeeQuery(
                                         searchTerm, PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("coaches")]
+        public async Task<IActionResult> GetAllCoaches(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetAllCoachsQuery(
+                                        PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
     }

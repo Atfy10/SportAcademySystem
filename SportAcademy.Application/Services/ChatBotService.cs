@@ -1,12 +1,5 @@
-﻿using AutoMapper;
-using SportAcademy.Application.DTOs.ChatDtos;
-using SportAcademy.Application.Interfaces;
+﻿using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Services
 {
