@@ -6,12 +6,51 @@ namespace SportAcademy.Web
     public class AspUsersSeeder
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AspUsersSeeder> _logger;
 
-        public AspUsersSeeder(UserManager<AppUser> userManager, ILogger<AspUsersSeeder> logger)
+        public AspUsersSeeder(
+            UserManager<AppUser> userManager,
+            RoleManager<IdentityRole> roleManager,
+            ILogger<AspUsersSeeder> logger)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _logger = logger;
+        }
+
+        public async Task AddRulesAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting role seeding process...");
+                var roles = new[] { "Admin", "User", "Manager" };
+                foreach (var role in roles)
+                {
+                    if (!await _roleManager.RoleExistsAsync(role))
+                    {
+                        var result = await _roleManager.CreateAsync(new IdentityRole(role));
+                        if (result.Succeeded)
+                        {
+                            _logger.LogInformation($"Successfully created role: {role}");
+                        }
+                        else
+                        {
+                            _logger.LogError($"Failed to create role {role}. Errors: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Role already exists: {role}", role);
+                    }
+                }
+                _logger.LogInformation("Role seeding completed.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred during role seeding");
+                throw;
+            }
         }
 
         public async Task SeedUsersAsync()
@@ -181,6 +220,7 @@ namespace SportAcademy.Web
             await seeder.SeedUsersAsync(); // Simple seeding
                                            // OR
                                            // await seeder.SeedUsersWithRealisticDataAsync(); // More realistic data
+            await seeder.AddRulesAsync();
         }
     }
 }

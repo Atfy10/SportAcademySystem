@@ -180,15 +180,34 @@ namespace SportAcademy.Infrastructure.Seeders
 
         private static List<Branch> GenerateBranches()
         {
+            var selectedCities = KuwaitiAreas
+                    .OrderBy(x => Guid.NewGuid())
+                    .Take(8);
+
+            return selectedCities.Select(city =>
+                new Faker<Branch>()
+                    .RuleFor(b => b.City, _ => city)
+                    .RuleFor(b => b.Name, _ => $"{city} Sports Academy")
+                    .RuleFor(b => b.Country, _ => "Kuwait")
+                    .RuleFor(b => b.PhoneNumber, f => $"{f.Random.Number(5, 9)}{f.Random.Number(1000000, 9999999)}")
+                    .RuleFor(b => b.Email, f =>
+                        $"{city.Replace(" ", "").Replace("-", "").ToLower()}{f.Random.Number(1, 999)}@sportacademy.com.kw")
+                    .RuleFor(b => b.CoX, f => f.Address.Latitude(29.0, 30.1).ToString())
+                    .RuleFor(b => b.CoY, f => f.Address.Longitude(47.5, 48.5).ToString())
+                    .RuleFor(b => b.IsActive, f => f.Random.Bool(0.9f))
+                    .Generate()
+            ).ToList();
+
             var faker = new Faker<Branch>()
-                .RuleFor(b => b.City, f => f.PickRandom(KuwaitiAreas))
-                .RuleFor(b => b.Name, (f, b) => $"{b.City} Sports Academy")
-                .RuleFor(b => b.Country, _ => "Kuwait")
-                .RuleFor(b => b.PhoneNumber, f => $"{f.Random.Number(5, 9)}{f.Random.Number(1000000, 9999999)}")
-                .RuleFor(b => b.Email, (f, b) => $"{b.Name.Replace(" ", "").Replace("-", "").ToLower()}{f.Random.Number(1, 999)}@sportacademy.com.kw")
-                .RuleFor(b => b.CoX, f => f.Address.Latitude(29.0, 30.1).ToString())
-                .RuleFor(b => b.CoY, f => f.Address.Longitude(47.5, 48.5).ToString())
-                .RuleFor(b => b.IsActive, f => f.Random.Bool(0.9f));
+                    .RuleFor(b => b.City, f => f.PickRandom(KuwaitiAreas))
+                    .RuleFor(b => b.Name, (f, b) => $"{b.City} Sports Academy")
+                    .RuleFor(b => b.Country, _ => "Kuwait")
+                    .RuleFor(b => b.PhoneNumber, f => $"{f.Random.Number(5, 9)}{f.Random.Number(1000000, 9999999)}")
+                    .RuleFor(b => b.Email, (f, b) => 
+                        $"{b.Name.Replace(" ", "").Replace("-", "").ToLower()}{f.Random.Number(1, 999)}@sportacademy.com.kw")
+                    .RuleFor(b => b.CoX, f => f.Address.Latitude(29.0, 30.1).ToString())
+                    .RuleFor(b => b.CoY, f => f.Address.Longitude(47.5, 48.5).ToString())
+                    .RuleFor(b => b.IsActive, f => f.Random.Bool(0.9f));
 
             return faker.Generate(8);
         }
