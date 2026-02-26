@@ -6,7 +6,7 @@ using SportAcademy.Application.DTOs.EmployeeDtos;
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetAll
 {
     public record GetAllEmployeesQuery(PageRequest Page)
-        : IRequest<Result<PagedData<EmployeeDto>>>, IPaginatedRequest
+        : IRequest<Result<PagedData<EmployeeCardDto>>>, IPaginatedRequest
     {
         public PageRequest Page { get; set; } = Page;
     }

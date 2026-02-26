@@ -8,7 +8,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetAll
 {
-    public class GetAllEmployeesQueryHandler : IRequestHandler<GetAllEmployeesQuery, Result<PagedData<EmployeeDto>>>
+    public class GetAllEmployeesQueryHandler : IRequestHandler<GetAllEmployeesQuery, Result<PagedData<EmployeeCardDto>>>
     {
         private readonly IMapper _mapper;
         private readonly IEmployeeRepository _employeeRepository;
@@ -22,11 +22,11 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetAll
             _employeeRepository = employeeRepository;
         }
 
-        public async Task<Result<PagedData<EmployeeDto>>> Handle(GetAllEmployeesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<EmployeeCardDto>>> Handle(GetAllEmployeesQuery request, CancellationToken cancellationToken)
         {
             var employeesDto = await _employeeRepository.GetAllAsync(request.Page, cancellationToken);
 
-            return Result<PagedData<EmployeeDto>>.Success(employeesDto, _operationType);
+            return Result<PagedData<EmployeeCardDto>>.Success(employeesDto, _operationType);
         }
     }
 }

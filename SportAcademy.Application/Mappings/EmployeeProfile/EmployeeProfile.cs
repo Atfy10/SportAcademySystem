@@ -4,11 +4,6 @@ using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Mappings.EmployeeProfile
 {
@@ -17,6 +12,13 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
         public EmployeeMappingProfile()
         {
             CreateMap<Employee, EmployeeDto>().ReverseMap();
+
+            CreateMap<Employee, EmployeeCardDto>()
+                .ForMember(dest => dest.BranchName,
+                    opt => opt.MapFrom(src => src.Branch.Name))
+                .ForMember(dest => dest.Address,
+                    opt => opt.MapFrom(src => src.Address.ToString()))
+                .ReverseMap();
 
             CreateMap<CreateEmployeeCommand, Employee>()
                 .ForMember(dest => dest.Address,

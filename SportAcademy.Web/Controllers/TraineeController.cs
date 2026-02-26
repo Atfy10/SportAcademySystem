@@ -36,7 +36,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(trainees);
         }
 
-        [HttpGet("get/{id}")]
+        [HttpGet("{id}")]
         public async Task<ActionResult> Details(int id)
         {
             var trainee = await _mediator.Send(new GetTraineeByIdQuery(id));
