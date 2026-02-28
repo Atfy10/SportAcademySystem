@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Domain.Entities;
 using System;
@@ -11,6 +12,7 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface IEmployeeRepository : IBaseRepository<Employee, int>, IPersonRepository
     {
+        Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, CancellationToken ct = default);
         Task<PagedData<EmployeeCardDto>> SearchAsync(
             string term,
             PageRequest pageReq,

@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
@@ -24,13 +25,21 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _mapper = mapper;
         }
 
+        public async Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, CancellationToken ct = default)
+            => await _context.Coachs
+                .AsNoTracking()
+                .ProjectTo<CoachCardDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, ct);
+
         public async Task<int> GetActiveEmployeesCountAsync(CancellationToken ct = default)
             => await _context.Employees
+                .AsNoTracking()
                 .Where(e => e.IsWork)
                 .CountAsync(ct);
 
         public async Task<int> GetActiveCoachesCountAsync(CancellationToken ct = default)
             => await _context.Employees
+                .AsNoTracking()
                 .Where(e => e.IsWork && e.Coach != null)
                 .CountAsync(ct);
 

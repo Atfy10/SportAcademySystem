@@ -15,9 +15,11 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetAllCoachs
             _employeeRepository = employeeRepository;
         }
 
-        public Task<Result<PagedData<CoachCardDto>>> Handle(GetAllCoachsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<CoachCardDto>>> Handle(GetAllCoachsQuery request, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var coaches = await _employeeRepository.GetAllCoaches(request.Page, cancellationToken);
+
+            return Result<PagedData<CoachCardDto>>.Success(coaches, nameof(GetAllCoachsQuery));
         }
     }
 }
