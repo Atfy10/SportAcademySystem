@@ -89,7 +89,7 @@ namespace SportAcademy.Web.Controllers
 
 
         [HttpGet("count")]
-        public async Task<IActionResult> GetCount()
+        public async Task<IActionResult> GetAllTraineesCount()
         {
             var result = await _mediator.Send(new GetTraineesCountQuery());
             return Ok(result);

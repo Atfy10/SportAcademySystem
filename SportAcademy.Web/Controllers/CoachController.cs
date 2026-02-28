@@ -42,15 +42,15 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("average-rating")]
-        public async Task<IActionResult> GetAverageRating()
+        [HttpGet("rating-average")]
+        public async Task<IActionResult> GetAllCoachsAvgRating()
         {
             var result = await _mediator.Send(new GetAverageRatingQuery());
             return Ok(result);
         }
 
         [HttpGet("count")]
-        public async Task<IActionResult> GetCount()
+        public async Task<IActionResult> GetAllCoachsCount()
         {
             var result = await _mediator.Send(new GetCoachsCountQuery());
             return Ok(result);
