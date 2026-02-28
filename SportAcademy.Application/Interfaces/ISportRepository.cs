@@ -11,6 +11,7 @@ namespace SportAcademy.Application.Interfaces
 	{
         Task<IEnumerable<Sport>> GetAvailableSportsForBranch(int branchId, CancellationToken cancellationToken);
 		Task<bool> IsExistByNameAsync(string name, CancellationToken cancellationToken = default);
+        Task<int> CountAsync(CancellationToken cancellationToken = default);
 
-	}
+    }
 }

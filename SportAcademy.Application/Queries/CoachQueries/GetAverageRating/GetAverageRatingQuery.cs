@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.CoachQueries.GetAverageRating
 {
-    public record GetAverageRatingQuery : IRequest<Result<int>>
+    public record GetAverageRatingQuery : IRequest<Result<double>>
     {
     }
 }

@@ -14,5 +14,6 @@ namespace SportAcademy.Application.Interfaces
         Task<Trainee?> GetFullTrainee(int id, CancellationToken cancellationToken = default);
         Task<PagedData<TraineeOfSpecificDayDto>> GetAllTraineesOfSpecificDayAsync(DateTime date, PageRequest page, CancellationToken cancellationToken = default);
         Task<int> GetTraineesCountOfSpecificDayAsync(DateTime date, CancellationToken cancellationToken = default);
-	}
+        Task<int> CountAsync(CancellationToken cancellationToken = default);
+    }
 }

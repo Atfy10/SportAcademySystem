@@ -10,23 +10,22 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.CoachQueries.GetAverageRating
 {
-    public class GetAverageRatingQueryHandler : IRequestHandler<GetAverageRatingQuery, Result<int>>
+    public class GetAverageRatingQueryHandler : IRequestHandler<GetAverageRatingQuery, Result<double>>
     {
         private readonly ICoachRepository _coachRepository;
         public GetAverageRatingQueryHandler(ICoachRepository coachRepository)
         {
             _coachRepository = coachRepository;
         }
-        public async Task<Result<int>> Handle(GetAverageRatingQuery request, CancellationToken cancellationToken)
+        public async Task<Result<double>> Handle(GetAverageRatingQuery request, CancellationToken cancellationToken)
         {
-            var allCoachs = await _coachRepository.GetAllAsync(cancellationToken);
+            var average = await _coachRepository.GetAverageRatingAsync(cancellationToken);
 
-            if (!allCoachs.Any())
-                return Result<int>.Success(0, "Get Average Rating");
+            var result = average.HasValue
+                ? Math.Round(average.Value, 1)
+                : 0;
 
-            var average = allCoachs.Average(x => x.Rate);
-
-            return Result<int>.Success((int)Math.Round(average), "Get Average Rating");
+            return Result<double>.Success(result, "Get Average Rating");
         }
     }
 }

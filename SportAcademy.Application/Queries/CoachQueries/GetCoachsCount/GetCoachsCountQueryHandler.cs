@@ -19,10 +19,8 @@ namespace SportAcademy.Application.Queries.CoachQueries.GetCoachsCount
         }
         public async Task<Result<int>> Handle(GetCoachsCountQuery request, CancellationToken cancellationToken)
         {
-            var allCoachs = await _coachRepository.GetAllAsync(cancellationToken);
-            if (!allCoachs.Any())
-                return Result<int>.Success(0, "Get Coachs Count");
-            return Result<int>.Success(allCoachs.Count(), "Get Coachs Count");
+            var Count = await _coachRepository.CountAsync(cancellationToken);
+            return Result<int>.Success(Count, "Get Coachs Count");
         }
     }
 }

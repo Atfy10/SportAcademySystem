@@ -28,6 +28,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
            => await _context.Sports
                .AnyAsync(s => s.Name == name, cancellationToken);
 
+        public async Task<int> CountAsync(CancellationToken cancellationToken)
+        {
+            return await _context.Sports.CountAsync(cancellationToken);
+        }
 
-	}
+    }
 }

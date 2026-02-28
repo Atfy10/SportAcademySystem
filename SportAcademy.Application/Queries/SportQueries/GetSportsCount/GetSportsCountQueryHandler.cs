@@ -19,10 +19,8 @@ namespace SportAcademy.Application.Queries.SportQueries.GetSportsCount
         }
         public async Task<Result<int>> Handle(GetSportsCountQuery request, CancellationToken cancellationToken)
         {
-            var allSports = await _sportRepository.GetAllAsync(cancellationToken);
-            if (!allSports.Any())
-                return Result<int>.Success(0, "Get Sports Count");
-            return Result<int>.Success(allSports.Count(), "Get Sports Count");
+            var count = await _sportRepository.CountAsync(cancellationToken);
+            return Result<int>.Success(count, "Get Sports Count");
         }
     }
 }

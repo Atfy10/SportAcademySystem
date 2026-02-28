@@ -13,5 +13,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
+        public async Task<int> CountAsync(CancellationToken cancellationToken)
+        {
+            return await _context.Coachs.CountAsync(cancellationToken);
+        }
+        public async Task<double?> GetAverageRatingAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Coachs
+                .Select(x => (double?)x.Rate)
+                .AverageAsync(cancellationToken);
+        }
     }
 }
