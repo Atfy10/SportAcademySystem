@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeQueries.GetAllTraineesOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
+using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCountOfSpecificDay;
 using System.Threading.Tasks;
 
@@ -82,6 +84,14 @@ namespace SportAcademy.Web.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetTraineesCountOfSpecificDayQuery(date), ct);
+            return Ok(result);
+        }
+
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetCount()
+        {
+            var result = await _mediator.Send(new GetTraineesCountQuery());
             return Ok(result);
         }
     }

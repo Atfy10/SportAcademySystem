@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportCommands.CreateSport;
 using SportAcademy.Application.Commands.SportCommands.DeleteSport;
 using SportAcademy.Application.Commands.SportCommands.UpdateSport;
+using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.SportQueries.GetAll;
 using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
 using SportAcademy.Application.Queries.SportQueries.GetById;
+using SportAcademy.Application.Queries.SportQueries.GetSportsCount;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -61,6 +63,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAvailableForBranch(int branchId, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAvailableSportsForBranchQuery(branchId), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetCount()
+        {
+            var result = await _mediator.Send(new GetSportsCountQuery());
             return Ok(result);
         }
     }

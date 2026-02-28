@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoach;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
+using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
+using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -37,6 +39,20 @@ namespace SportAcademy.Web.Controllers
         public async Task<ActionResult> Delete(int employeeId, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteCoachCommand(employeeId), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("average-rating")]
+        public async Task<IActionResult> GetAverageRating()
+        {
+            var result = await _mediator.Send(new GetAverageRatingQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetCount()
+        {
+            var result = await _mediator.Send(new GetCoachsCountQuery());
             return Ok(result);
         }
     }
