@@ -10,8 +10,7 @@ namespace SportAcademy.Application.Mappings.CoachProfile
         public CoachProfile()
         {
             CreateMap<Coach, CoachCardDto>()
-                .ConstructUsing(src => new CoachCardDto
-                (
+                .ConstructUsing(src => new CoachCardDto(
                     src.EmployeeId,
                     src.Employee.FirstName,
                     src.Employee.LastName,

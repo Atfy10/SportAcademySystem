@@ -15,5 +15,5 @@ public record CoachCardDto(
     DateTime HireDate,
     int TotalTrainees,
     SkillLevel SkillLevel,
-    string Sport
+    string SportName
 );

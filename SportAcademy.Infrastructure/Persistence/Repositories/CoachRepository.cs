@@ -54,7 +54,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     e.HireDate,
                     ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
                     c.SkillLevel,
-                    s.Name AS Sport
+                    s.Name AS SportName
                 FROM Coaches c
                 INNER JOIN Employees e ON c.EmployeeId = e.Id
                 INNER JOIN CONTAINSTABLE(
