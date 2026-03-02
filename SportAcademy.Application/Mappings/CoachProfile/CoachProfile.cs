@@ -38,6 +38,26 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                 );
 
             CreateMap<Coach, CoachSummaryDto>().ReverseMap();
+
+            CreateMap<Coach, CoachDetailsDto>()
+                .ConstructUsing(src => new CoachDetailsDto
+                (
+                    src.EmployeeId,
+                    src.Employee.FirstName,
+                    src.Employee.LastName,
+                    src.Employee.Email.ToString(),
+                    src.Employee.PhoneNumber,
+                    src.Employee.Branch.Name,
+                    src.Sport.Name,
+                    src.SkillLevel.ToString(),
+                    null, // Certifications not implemented yet
+                    src.TraineeGroups
+                        .SelectMany(tg => tg.Enrollments)
+                        .Count(e => e.IsActive && !e.IsDeleted),
+                    src.Employee.HireDate,
+                    src.Employee.IsWork,
+                    src.Rate
+                ));
         }
     }
 }

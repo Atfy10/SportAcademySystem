@@ -9,7 +9,6 @@ using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
 using SportAcademy.Application.Queries.CoachQueries.GetById;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
-using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -26,7 +25,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult> Details(int id, CancellationToken ct)
+        public async Task<ActionResult> GetById(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetCoachByIdQuery(id), ct);
             return Ok(result);

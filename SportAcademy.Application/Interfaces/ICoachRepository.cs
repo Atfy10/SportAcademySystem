@@ -13,5 +13,6 @@ namespace SportAcademy.Application.Interfaces
             string term,
             PageRequest pageReq,
             CancellationToken cancellationToken);
+        Task<Coach?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default);
     }
 }

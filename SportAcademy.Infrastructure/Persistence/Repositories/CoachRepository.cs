@@ -115,5 +115,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return string.Join(" AND ",
                 tokens.Select(t => $"\"{t}*\""));
         }
+
+        public async Task<Coach?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Coachs
+                .Where(c => c.EmployeeId == id && !c.IsDeleted)
+                .Include(c => c.Employee)
+                    .ThenInclude(e => e.Branch)
+                .Include(c => c.Sport)
+                .Include(c => c.TraineeGroups)
+                    .ThenInclude(tg => tg.Enrollments.Where(e => e.IsActive && !e.IsDeleted))
+                .AsNoTracking()
+                .FirstOrDefaultAsync(cancellationToken);
+        }
     }
 }
