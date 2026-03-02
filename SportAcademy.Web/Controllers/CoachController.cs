@@ -6,6 +6,7 @@ using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
+using SportAcademy.Application.Queries.CoachQueries.GetById;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
