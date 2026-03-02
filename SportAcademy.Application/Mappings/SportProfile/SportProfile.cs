@@ -15,6 +15,9 @@ namespace SportAcademy.Application.Mappings.SportProfile
     {
         public SportProfile()
         {
+            CreateMap<Sport, SportDropDownListDto>()
+                .ReverseMap();
+
             CreateMap<Sport, SportDto>()
                 .ReverseMap()
 				.ForMember(dest => dest.Coaches, opt => opt.Ignore())

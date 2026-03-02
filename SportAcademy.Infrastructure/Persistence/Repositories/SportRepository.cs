@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -13,10 +16,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     public class SportRepository : BaseRepository<Sport, int>, ISportRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public SportRepository(ApplicationDbContext context) : base(context)
+        public SportRepository(ApplicationDbContext context, IMapper mapper) 
+            : base(context, mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<IEnumerable<Sport>> GetAvailableSportsForBranch(int branchId, CancellationToken cancellationToken)
@@ -33,13 +39,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return await _context.Sports.CountAsync(cancellationToken);
         }
 
-        public async Task<IReadOnlyList<string>> SearchAsync(string term, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<SportDropDownListDto>> SearchNameAsync(string term, CancellationToken cancellationToken = default)
         {
             var pattern = $"%{term}%";
 
             return await _context.Sports
-                .Select(s => s.Name)
-                .Where(s => EF.Functions.Like(s, pattern))
+                .Where(s => EF.Functions.Like(s.Name, pattern))
+                .ProjectTo<SportDropDownListDto>(_mapper.ConfigurationProvider)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
