@@ -22,7 +22,7 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                     src.Employee.PhoneNumber,
                     src.Employee.Address.ToString(),
                     src.Employee.HireDate,
-                    src.TraineeGroups.Sum(tg => tg.MaximumCapacity),
+                    //src.TraineeGroups.Sum(tg => tg.MaximumCapacity),
                     src.SkillLevel,
                     src.Sport.Name
                 ))

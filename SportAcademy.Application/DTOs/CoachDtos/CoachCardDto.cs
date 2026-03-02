@@ -13,7 +13,7 @@ public record CoachCardDto(
     string PhoneNumber,
     string Address,
     DateTime HireDate,
-    int TotalTrainees,
+    //int TotalTrainees,
     SkillLevel SkillLevel,
     string Sport
 );

@@ -42,7 +42,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             var sql = @"
                 SELECT 
-                    c.Id,
+                    c.EmployeeId AS Id,
                     e.FirstName,
                     e.LastName,
                     e.Position,
@@ -52,10 +52,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     e.PhoneNumber,
                     (e.City + ', ' + e.Street) AS Address,
                     e.HireDate,
-                    c.TotalTrainees,
                     c.SkillLevel,
                     s.Name AS Sport
-                FROM Coachs c
+                FROM Coaches c
                 INNER JOIN Employees e ON c.EmployeeId = e.Id
                 INNER JOIN CONTAINSTABLE(
                     Employees,
@@ -64,11 +63,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 ) ft ON e.Id = ft.[KEY]
                 INNER JOIN Branches b ON e.BranchId = b.Id
                 INNER JOIN Sports s ON c.SportId = s.Id
-                ORDER BY ft.RANK DESC, c.Id ASC
+                ORDER BY ft.RANK DESC, c.EmployeeId ASC
                 OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
 
                 SELECT COUNT(*)
-                FROM Coachs c
+                FROM Coaches c
                 INNER JOIN Employees e ON c.EmployeeId = e.Id
                 INNER JOIN CONTAINSTABLE(
                     Employees,
