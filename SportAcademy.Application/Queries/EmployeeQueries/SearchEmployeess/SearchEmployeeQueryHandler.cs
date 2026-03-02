@@ -33,14 +33,6 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.SearchEmployeess
                 return Result<PagedData<EmployeeCardDto>>.Failure(nameof(SearchEmployeeQuery), "Minimum 2 characters");
 
             var employees = await _employeeRepository.SearchAsync(request.SearchTerm, request.Page, cancellationToken);
-            //var employeeCardDto = _mapper.Map<List<EmployeeCardDto>>(employees.Items);
-            //var employeeCardDtoPag = new PagedData<EmployeeCardDto>
-            //{
-            //    Items = employeeCardDto,
-            //    TotalCount = employees.TotalCount,
-            //    Page = employees.Page,
-            //    PageSize = employees.PageSize,
-            //};
 
             sw.Stop();
 

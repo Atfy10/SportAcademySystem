@@ -33,5 +33,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return await _context.Sports.CountAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyList<string>> SearchAsync(string term, CancellationToken cancellationToken = default)
+        {
+            var pattern = $"%{term}%";
+
+            return await _context.Sports
+                .Select(s => s.Name)
+                .Where(s => EF.Functions.Like(s, pattern))
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
+
     }
 }

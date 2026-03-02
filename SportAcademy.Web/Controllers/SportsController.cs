@@ -9,6 +9,7 @@ using SportAcademy.Application.Queries.SportQueries.GetAll;
 using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
 using SportAcademy.Application.Queries.SportQueries.GetById;
 using SportAcademy.Application.Queries.SportQueries.GetSportsCount;
+using SportAcademy.Application.Queries.SportQueries.SearchSports;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -70,6 +71,16 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAllSportsCount()
         {
             var result = await _mediator.Send(new GetSportsCountQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchSports(
+            [FromQuery] string term,
+            CancellationToken cancellationToken
+        )
+        {
+            var result = await _mediator.Send(new SearchSportsQuery(term), cancellationToken);
             return Ok(result);
         }
     }
