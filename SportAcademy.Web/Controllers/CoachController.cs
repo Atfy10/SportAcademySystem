@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoach;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
+using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -53,6 +55,18 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAllCoachsCount()
         {
             var result = await _mediator.Send(new GetCoachsCountQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchCoaches(
+            [FromQuery] string searchTerm,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new SearchCoachQuery(
+                                        searchTerm, PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
     }

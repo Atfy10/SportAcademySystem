@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Interfaces
@@ -7,5 +9,9 @@ namespace SportAcademy.Application.Interfaces
     {
         Task<int> CountAsync(CancellationToken cancellationToken = default);
         Task<double?> GetAverageRatingAsync(CancellationToken cancellationToken);
+        Task<PagedData<CoachCardDto>> SearchAsync(
+            string term,
+            PageRequest pageReq,
+            CancellationToken cancellationToken);
     }
 }
