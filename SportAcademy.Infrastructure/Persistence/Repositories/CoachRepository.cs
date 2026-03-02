@@ -52,6 +52,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     e.PhoneNumber,
                     (e.City + ', ' + e.Street) AS Address,
                     e.HireDate,
+                    ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
                     c.SkillLevel,
                     s.Name AS Sport
                 FROM Coaches c
@@ -63,6 +64,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 ) ft ON e.Id = ft.[KEY]
                 INNER JOIN Branches b ON e.BranchId = b.Id
                 INNER JOIN Sports s ON c.SportId = s.Id
+                LEFT JOIN (
+                    SELECT 
+                        tg.CoachId,
+                        COUNT(enr.Id) AS TotalTrainees
+                    FROM TraineeGroups tg
+                    LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId 
+                        AND enr.IsActive = 1 
+                        AND enr.IsDeleted = 0
+                    GROUP BY tg.CoachId
+                ) trainee_count ON c.EmployeeId = trainee_count.CoachId
                 ORDER BY ft.RANK DESC, c.EmployeeId ASC
                 OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
 
