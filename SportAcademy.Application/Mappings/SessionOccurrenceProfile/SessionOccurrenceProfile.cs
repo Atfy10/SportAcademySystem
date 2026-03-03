@@ -9,6 +9,22 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
     {
         public SessionOccurrenceMappingProfile()
         {
+            CreateMap<SessionOccurrence, SessionOccurrenceCardDto>()
+    .ConstructUsing(src => new SessionOccurrenceCardDto(
+        src.GroupSchedule.TraineeGroup.Name,
+        src.GroupSchedule.TraineeGroup.Coach.Sport.Name,
+        src.Status,
+        src.StartDateTime.Date,
+        src.StartDateTime.TimeOfDay,
+        src.StartDateTime
+            .AddMinutes(src.GroupSchedule.TraineeGroup.DurationInMinutes)
+            .TimeOfDay,
+        src.GroupSchedule.TraineeGroup.Coach.Employee.FirstName
+            + " " +
+        src.GroupSchedule.TraineeGroup.Coach.Employee.LastName,
+        src.GroupSchedule.TraineeGroup.Branch.Name
+    ))
+    .ReverseMap();
             CreateMap<SessionOccurrence, SessionOccurrenceDto>()
                 .ReverseMap();
 

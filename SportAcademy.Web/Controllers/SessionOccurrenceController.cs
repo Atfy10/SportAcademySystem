@@ -8,10 +8,13 @@ using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.CreateSessionOccurrence;
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.DeleteSessionOccurence;
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSessionOccurrence;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.SessionOccurrenceQueries.GetAll;
+using SportAcademy.Application.Queries.SessionOccurrenceQueries.GetAllCards;
 using SportAcademy.Application.Queries.SessionOccurrenceQueries.GetById;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllCards;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -60,6 +63,12 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _mediator.Send(new DeleteSessionOccurrenceCommand(id));
+            return Ok(result);
+        }
+
+        public async Task<IActionResult> GetAllCards([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAllSessionOccurrenceCardQuery(PageRequest.Create(page, pageSize)), cancellationToken);
             return Ok(result);
         }
 
