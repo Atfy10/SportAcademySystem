@@ -1,14 +1,11 @@
 ﻿using MediatR;
-using SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee;
 using SportAcademy.Application.Common.Result;
-using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Domain.Enums;
 
-namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
-{
-    public record CreateCoachCommand(
-        int SportId,
-        SkillLevel SkillLevel,
-        int EmployeeId
-    ) : IRequest<Result<int>>;
-}
+namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach;
+
+public record CreateCoachCommand(
+    int EmployeeId,
+    int SportId,
+    SkillLevel SkillLevel
+) : IRequest<Result<int>>;
