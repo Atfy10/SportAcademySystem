@@ -129,5 +129,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return grouped.ToPagedData(page);
         }
+
+        public async Task<int> CountAsync(CancellationToken cancellationToken = default) =>
+                 await _context.Enrollments.CountAsync(cancellationToken);
     }
 }

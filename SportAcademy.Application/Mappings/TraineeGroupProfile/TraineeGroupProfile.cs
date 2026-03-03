@@ -1,5 +1,6 @@
 ﻿using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
+using SportAcademy.Application.DTOs.GroupScheduleDtos;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Domain.Entities;
 
@@ -9,6 +10,23 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
 {
     public TraineeGroupMappingProfile()
     {
+
+        CreateMap<TraineeGroup, TraineeGroupCardDto>()
+     .ConstructUsing(src => new TraineeGroupCardDto(
+         src.Name,
+         src.Coach.Employee.FirstName + " " + src.Coach.Employee.LastName,
+         src.Branch.Name,
+         src.MaximumCapacity,
+         src.Enrollments.Count,
+         src.GroupSchedules
+             .Select(gs => new GroupScheduleDto(
+                 gs.Day,
+                 gs.StartTime
+             ))
+             .ToList()
+     ))
+     .ReverseMap();
+
         CreateMap<TraineeGroup, TraineeGroupDto>().ReverseMap();
 
         CreateMap<CreateTraineeGroupCommand, TraineeGroup>();

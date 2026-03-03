@@ -9,6 +9,7 @@ using SportAcademy.Application.Queries.EnrollmentQueries.GetAll;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForAllSports;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForSport;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetById;
+using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCount;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSport;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSports;
 
@@ -112,6 +113,13 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(
                 new GetEnrollmentsCountForSportQuery(sportId, from, to),
                 cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetEnrollmentsCount(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetEnrollmentsCountQuery(), cancellationToken);
             return Ok(result);
         }
     }

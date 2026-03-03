@@ -26,5 +26,6 @@ namespace SportAcademy.Application.Interfaces
             DateTime? from,
             DateTime? to,
             CancellationToken ct = default);
+        Task<int> CountAsync(CancellationToken cancellationToken = default);
     }
 }

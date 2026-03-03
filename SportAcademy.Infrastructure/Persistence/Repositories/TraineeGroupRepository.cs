@@ -22,6 +22,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
+        public async Task<int> GetActiveTraineeGroupsCountAsync(CancellationToken cancellationToken = default) =>
+            await _context.TraineeGroups
+                .AsNoTracking()
+                .Where(tg => tg.Enrollments.Any(e => e.IsActive))
+                .CountAsync(cancellationToken);
+
+        public async Task<PagedData<TraineeGroupCardDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)=>
+           await _context.TraineeGroups
+                .AsNoTracking()
+                .ProjectTo<TraineeGroupCardDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, cancellationToken);
+  
+
         public async Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
                 .AsNoTracking()
@@ -36,6 +49,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     tg.GroupSchedules.FirstOrDefault().StartTime 
                 ))
                 .ToPagedDataAsync(page, cancellationToken);
+
+        public async Task<int> GetAllTraineeGroupsCountAsync(CancellationToken cancellationToken = default) => await _context.TraineeGroups.CountAsync(cancellationToken);
+
     }
 }
 

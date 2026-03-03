@@ -11,8 +11,11 @@ using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetActiveTraineeGroupsCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAll;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllCards;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllOfSpecificDay;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllTraineeGroupsCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
@@ -75,6 +78,26 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new GetAllSessionsOfSpecificDayQuery(
                                             date,
                                             PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetAllTraineeGroupsCount(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAllTraineeGroupsCountQuery(), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("active-count")]
+        public async Task<IActionResult> GetActiveTraineeGroupsCount(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetActiveTraineeGroupsCountQuery(), cancellationToken);
+            return Ok(result);
+        }
+        [HttpGet("get-all-cards")]
+        public async Task<IActionResult> GetAllCards([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAllTraineeGroupCardQuery(PageRequest.Create(page, pageSize)), cancellationToken);
             return Ok(result);
         }
     }
