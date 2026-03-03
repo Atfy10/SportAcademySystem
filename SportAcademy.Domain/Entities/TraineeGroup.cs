@@ -6,6 +6,7 @@ namespace SportAcademy.Domain.Entities
     public class TraineeGroup : IAuditableEntity
     {
         public int Id { get; set; }
+        public string Name { get; set; } = null!;
         public SkillLevel SkillLevel { get; set; }
         public int MaximumCapacity { get; set; } = 15;
         public int DurationInMinutes { get; set; } = 55;

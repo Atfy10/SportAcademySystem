@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup
 {
     public record CreateTraineeGroupCommand(
+        string? Name,
         SkillLevel SkillLevel,
         int? MaximumCapacity,
         int? DurationInMinutes,

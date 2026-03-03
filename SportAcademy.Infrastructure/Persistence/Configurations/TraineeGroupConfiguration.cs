@@ -17,6 +17,12 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
 
             builder.HasKey(tg => tg.Id);
 
+            builder.Property(tg => tg.Name)
+                .IsRequired()
+                .HasDefaultValue("Trainee Group")
+                .ValueGeneratedOnAdd()
+                .HasMaxLength(200);
+
             builder.Property(tg => tg.SkillLevel)
                 .IsRequired()
                 .HasConversion<string>();

@@ -179,6 +179,8 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 builder.Services.AddScoped<SubDetailsManagementService>();
 
+builder.Services.AddScoped<TraineeGroupService>();
+
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
