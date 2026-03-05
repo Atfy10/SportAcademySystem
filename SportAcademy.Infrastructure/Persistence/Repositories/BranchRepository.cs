@@ -46,5 +46,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<bool> IsPhoneNumberExistAsync(string phoneNumber, CancellationToken cancellationToken = default)
             => await _context.Branchs
                 .AnyAsync(b => b.PhoneNumber == phoneNumber, cancellationToken);
-	}
+
+        public async Task<int> GetBranchTotalCapacityAsync(int branchId, CancellationToken ct)
+            => await _context.TraineeGroups
+                .Where(g => g.BranchId == branchId)
+                .SumAsync(g => g.MaximumCapacity, ct);
+    }
 }

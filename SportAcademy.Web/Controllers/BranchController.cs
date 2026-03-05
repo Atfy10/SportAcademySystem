@@ -76,5 +76,14 @@ namespace SportAcademy.Web.Controllers
 			var result = await _mediator.Send(new GetBranchesCountQuery(), cancellationToken);
 			return Ok(result);
         }
+
+        [HttpGet("{id}/capacity")]
+        public async Task<IActionResult> GetBranchCapacity(int id,CancellationToken ct)
+        {
+            var result = await _mediator.Send(
+                new GetBranchTotalCapacityQuery(id),ct);
+
+            return Ok(result);
+        }
     }
 }
