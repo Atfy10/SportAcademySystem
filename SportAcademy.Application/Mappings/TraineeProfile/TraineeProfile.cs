@@ -15,6 +15,9 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
             CreateMap<DateOnly, DateTime>()
                 .ConvertUsing(d => d.ToDateTime(TimeOnly.MinValue));
 
+            CreateMap<SportTrainee, string>()
+                .ConvertUsing(st => st.Sport.Name);
+
             CreateMap<Trainee, TraineeCardDto>()
                 .ConstructUsing(src => new TraineeCardDto(
                     src.Id,
@@ -33,6 +36,27 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                         .FirstOrDefault()!.SportPrice.Branch.Name ?? string.Empty
                 ))
                 .ReverseMap();
+
+            CreateMap<Trainee, TraineeDetailsDto>()
+                .ConstructUsing(src => new TraineeDetailsDto(
+                    src.Id,
+                    src.FirstName,
+                    src.LastName,
+                    src.Email.ToString(),
+                    src.PhoneNumber,
+                    src.ParentNumber,
+                    src.GuardianName,
+                    src.Sports
+                        .SelectMany(s => s.Sport.Branches)
+                        .Select(sb => sb.Branch.Name)
+                        .FirstOrDefault() ?? string.Empty,
+                    src.BirthDate,
+                    src.Gender.ToString(),
+                    src.Sports.Select(s => s.Sport.Name).ToList(),
+                    src.IsSubscribed,
+                    src.Enrollments.Count,
+                    src.JoinDate.ToDateTime(TimeOnly.MinValue)
+                ));
 
             CreateMap<Trainee, CreateTraineeCommand>()
                 .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.SportId,

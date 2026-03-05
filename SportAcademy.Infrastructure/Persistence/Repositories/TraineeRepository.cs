@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Azure;
-using Bogus.DataSets;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -153,7 +151,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
                 INNER JOIN CONTAINSTABLE(
                     Trainees,
-                    (FirstName, LastName),
+                    (FirstName, LastName, Email),
                     @term
                 ) ft ON t.Id = ft.[KEY]
 
@@ -206,5 +204,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .ProjectTo<TraineeCardDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, ct);
+
+        async Task<TraineeDetailsDto> ITraineeRepository.GetByIdAsync(int id, CancellationToken cancellationToken)
+            => await _context.Trainees
+                .Where(t => t.Id == id)
+                .AsNoTracking()
+                .ProjectTo<TraineeDetailsDto>(_mapper.ConfigurationProvider)
+                .SingleOrDefaultAsync(cancellationToken)
+                ?? throw new KeyNotFoundException($"Trainee with Id {id} not found.");
     }
 }
