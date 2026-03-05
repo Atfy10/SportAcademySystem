@@ -11,7 +11,7 @@ namespace SportAcademy.Domain.Services
 
         public string GenerateUserName(string firstName, string lastName)
         {
-            var userName = $"{firstName.ToLower()}{lastName.ToLower()[..2]}_{Random.Shared.Next(0, 50):D2}";
+            var userName = $"{firstName.ToLower().Trim()}{lastName.ToLower().Trim()[..2]}_{Random.Shared.Next(0, 50):D2}";
             return userName;
         }
 
