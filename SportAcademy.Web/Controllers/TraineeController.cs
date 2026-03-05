@@ -6,6 +6,7 @@ using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
+using SportAcademy.Application.Queries.TraineeQueries.GetActiveTraineesCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeQueries.GetAllTraineesOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
@@ -27,14 +28,14 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<ActionResult> Index(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
             CancellationToken ct)
         {
             var trainees = await _mediator.Send(new GetAllTraineesQuery(
-                                        PageRequest.Create(page, pageSize)), ct);
+                        PageRequest.Create(page, pageSize)), ct);
             return Ok(trainees);
         }
 
@@ -45,7 +46,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(trainee);
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<ActionResult> CreateAsync(CreateTraineeCommand command)
         {
             var trainee = await _mediator.Send(command);
@@ -59,7 +60,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(trainee);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete("{id}")]
         public ActionResult Delete(int id)
         {
             return NoContent();
@@ -73,8 +74,8 @@ namespace SportAcademy.Web.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllTraineesOfSpecificDayQuery(
-                                            date,
-                                            PageRequest.Create(page, pageSize)), ct);
+                    date,
+                    PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
 
@@ -87,11 +88,17 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-
         [HttpGet("count")]
         public async Task<IActionResult> GetAllTraineesCount()
         {
             var result = await _mediator.Send(new GetTraineesCountQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("count-active")]
+        public async Task<IActionResult> GetActiveTraineesCount(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetActiveTraineesCountQuery(), ct);
             return Ok(result);
         }
     }

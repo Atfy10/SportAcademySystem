@@ -12,6 +12,24 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
     {
         public TraineeProfile()
         {
+            CreateMap<Trainee, TraineeCardDto>()
+             .ConstructUsing(src => new TraineeCardDto(
+                    src.Id,
+                    src.FirstName,
+                    src.LastName,
+                    GetAge(src),
+                    src.Email.ToString(),
+                    src.PhoneNumber,
+                    src.JoinDate,
+                    src.IsSubscribed,
+                    src.Sports.FirstOrDefault()!.Sport.Name ?? "string.Empty",
+                    src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.FirstName,
+                    src.Sports.FirstOrDefault()!.SkillLevel.ToString() ?? "string.Empty",
+                    src.SubscriptionDetails
+                        .FirstOrDefault()!.SportPrice.Branch.Name ?? string.Empty
+                ))
+                .ReverseMap();
+
             CreateMap<Trainee, CreateTraineeCommand>()
                 .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.SportId,
                     st.Sport.Name
@@ -39,6 +57,18 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 {
                     SportId = s.Id
                 }).ToList()));
+        }
+
+        private static int GetAge(Trainee trainee)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var birthDate = (DateOnly)trainee.BirthDate;
+            var age = today.Year - birthDate.Year;
+
+            if (birthDate > today.AddYears(-age))
+                age--;
+
+            return age;
         }
     }
 }

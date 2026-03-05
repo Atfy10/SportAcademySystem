@@ -1,11 +1,6 @@
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.TraineeDtos;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Interfaces
 {
@@ -15,5 +10,6 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<TraineeOfSpecificDayDto>> GetAllTraineesOfSpecificDayAsync(DateTime date, PageRequest page, CancellationToken cancellationToken = default);
         Task<int> GetTraineesCountOfSpecificDayAsync(DateTime date, CancellationToken cancellationToken = default);
         Task<int> CountAsync(CancellationToken cancellationToken = default);
+        Task<int> GetActiveTraineesCount(CancellationToken cancellationToken = default);
     }
 }
