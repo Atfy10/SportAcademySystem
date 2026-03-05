@@ -12,6 +12,8 @@ using SportAcademy.Application.Queries.TraineeQueries.GetAllTraineesOfSpecificDa
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
 using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCountOfSpecificDay;
+using SportAcademy.Application.Queries.TraineeQueries.SearchTrainee;
+using SportAcademy.Application.Queries.TraineeQueries.SearchTraineeById;
 using System.Threading.Tasks;
 
 namespace SportAcademy.Web.Controllers
@@ -99,6 +101,34 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetActiveTraineesCount(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetActiveTraineesCountQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search(
+            [FromQuery] string searchTerm,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken)
+        {
+            var pageRequest = PageRequest.Create(page, pageSize);
+            var result = await _mediator.Send(new SearchTraineeQuery(searchTerm, pageRequest), 
+                cancellationToken);
+
+            return Ok(result);
+        }
+
+        [HttpGet("search/{id}")]
+        public async Task<IActionResult> SearchById(
+            [FromRoute] int id,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken)
+        {
+            var pageRequest = PageRequest.Create(page, pageSize);
+            var result = await _mediator.Send(new SearchTraineeByIdQuery(id.ToString(), pageRequest), 
+                cancellationToken);
+
             return Ok(result);
         }
     }

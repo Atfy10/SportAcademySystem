@@ -7,12 +7,12 @@ public record TraineeCardDto(
     int Age,
     string Email,
     string PhoneNumber,
-    DateOnly JoinDate,
+    DateTime JoinDate,
     bool IsSubscribed,
-    string SportName,
-    string CoachName,
-    string SkillLevel,
-    string BranchName
+    string? SportName,
+    string? CoachName,
+    string? SkillLevel,
+    string? BranchName
 )
 {
     public double AttendanceRate { get; set; }

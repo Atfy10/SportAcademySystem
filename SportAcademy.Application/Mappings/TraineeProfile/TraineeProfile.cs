@@ -12,19 +12,23 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
     {
         public TraineeProfile()
         {
+            CreateMap<DateOnly, DateTime>()
+                .ConvertUsing(d => d.ToDateTime(TimeOnly.MinValue));
+
             CreateMap<Trainee, TraineeCardDto>()
-             .ConstructUsing(src => new TraineeCardDto(
+                .ConstructUsing(src => new TraineeCardDto(
                     src.Id,
                     src.FirstName,
                     src.LastName,
                     GetAge(src),
                     src.Email.ToString(),
                     src.PhoneNumber,
-                    src.JoinDate,
+                    src.JoinDate.ToDateTime(TimeOnly.MinValue),
                     src.IsSubscribed,
-                    src.Sports.FirstOrDefault()!.Sport.Name ?? "string.Empty",
-                    src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.FirstName,
-                    src.Sports.FirstOrDefault()!.SkillLevel.ToString() ?? "string.Empty",
+                    src.Sports.FirstOrDefault()!.Sport.Name ?? string.Empty,
+                    src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.FirstName +
+                    " " + src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.LastName,
+                    src.Sports.FirstOrDefault()!.SkillLevel.ToString() ?? string.Empty,
                     src.SubscriptionDetails
                         .FirstOrDefault()!.SportPrice.Branch.Name ?? string.Empty
                 ))
@@ -69,6 +73,11 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 age--;
 
             return age;
+        }
+
+        private static DateTime GetDate(Trainee trainee)
+        {
+            return new DateTime(trainee.JoinDate, new TimeOnly());
         }
     }
 }
