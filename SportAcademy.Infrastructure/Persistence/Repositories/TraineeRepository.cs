@@ -185,7 +185,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 t.IsSubscribed,
                 ce.FirstName,
                 ce.LastName,
-                st.SkillLevel,
                 b.Name,
                 ft.RANK
 
