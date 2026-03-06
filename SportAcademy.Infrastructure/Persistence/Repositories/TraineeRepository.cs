@@ -142,8 +142,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     t.IsSubscribed,
 
                     (SELECT 
-                            s.Name AS sportName,
-                            st.SkillLevel AS skillLevel
+                            s.Name AS SportName,
+                            st.SkillLevel AS SkillLevel
                         FROM SportTrainees st
                         INNER JOIN Sports s 
                             ON st.SportId = s.Id

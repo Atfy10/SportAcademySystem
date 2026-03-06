@@ -28,7 +28,7 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                     src.IsSubscribed,
                     src.Sports.Select(st => new TraineeSportSkillDto
                     {
-                        SkillLevel = st.SkillLevel.ToString(),
+                        SkillLevel = st.SkillLevel,
                         SportName = st.Sport.Name
                     }).ToList(),
                     src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.FirstName +
