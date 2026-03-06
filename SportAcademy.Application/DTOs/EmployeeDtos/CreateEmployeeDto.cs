@@ -21,6 +21,6 @@ namespace SportAcademy.Application.DTOs.EmployeeDtos
         public string? SecondNumber { get; init; }
         public Position Position { get; init; }
         public int BranchId { get; init; }
-        public string AppUserId { get; init; } = null!;
+        public string? AppUserId { get; init; }
     }
 }

@@ -55,16 +55,18 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             builder.Property(e => e.AppUserId)
-                .IsRequired();
+                .IsRequired(false);
 
             builder.HasIndex(e => e.AppUserId)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("[AppUserId] IS NOT NULL");
 
             // Relationships
             // 1:1   AppUser
             builder.HasOne(e => e.AppUser)
                 .WithOne(u => u.Employee)
                 .HasForeignKey<Employee>(e => e.AppUserId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // 1:1   Branch

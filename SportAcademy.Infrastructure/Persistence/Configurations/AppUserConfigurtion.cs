@@ -15,10 +15,11 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasDefaultValue(false);
 
             //  Relations
-            //  1:1  Emp
+            //  1:1  Emp (Optional)
             builder.HasOne(u => u.Employee)
                 .WithOne(e => e.AppUser)
                 .HasForeignKey<Employee>(e => e.AppUserId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             //  1:1  Trainee
