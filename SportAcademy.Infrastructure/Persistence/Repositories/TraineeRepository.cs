@@ -1,4 +1,5 @@
-﻿using Azure;
+﻿using AutoMapper;
+using Azure;
 using Bogus.DataSets;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -15,10 +16,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     public class TraineeRepository : BaseRepository<Trainee, int>, ITraineeRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public TraineeRepository(ApplicationDbContext context) : base(context)
+        public TraineeRepository(ApplicationDbContext context, IMapper mapper) 
+            : base(context, mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<PagedData<TraineeOfSpecificDayDto>> GetAllTraineesOfSpecificDayAsync(
@@ -111,5 +115,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             return await _context.Trainees.CountAsync(cancellationToken);
         }
+
+        public async Task<int> GetActiveTraineesCount(CancellationToken cancellationToken = default)
+            => await _context.Trainees.CountAsync(t => t.IsSubscribed, cancellationToken);
     }
 }
