@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
+using SportAcademy.Application.Commands.Trainees.DeleteTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
@@ -55,7 +56,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(trainee);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<ActionResult> EditAsync(UpdateTraineePersonalCommand command)
         {
             var trainee = await _mediator.Send(command);
@@ -63,9 +64,10 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete("{id}")]
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            return NoContent();
+            var result = await _mediator.Send(new DeleteTraineeCommand(id), cancellationToken);
+            return Ok(result);
         }
 
         [HttpGet("get-all-for-specific-day")]

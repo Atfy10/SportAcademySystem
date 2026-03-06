@@ -59,7 +59,17 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(t => t.GuardianName)
                 .HasMaxLength(50);
 
+            builder.Property(t => t.BranchId)
+                .IsRequired(false);
+
             // Relationships
+            // M:1  Branch
+            builder.HasOne(t => t.Branch)
+                .WithMany(b => b.Trainees)
+                .HasForeignKey(t => t.BranchId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // 1:1  AppUser
             builder.HasOne(t => t.AppUser)
                 .WithOne(u => u.Trainee)

@@ -11,14 +11,16 @@ namespace SportAcademy.Tests.Application.Handlers;
 public class GetAllTraineesQueryHandlerTests
 {
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IAttendanceRepository> _attendanceRepoMock = new();
     private readonly Mock<ITraineeRepository> _traineeRepoMock = new();
     private readonly GetAllTraineesQueryHandler _handler;
 
     public GetAllTraineesQueryHandlerTests()
     {
         _handler = new GetAllTraineesQueryHandler(
-            _traineeRepoMock.Object,
-            _mapperMock.Object);
+            _attendanceRepoMock.Object,
+            _traineeRepoMock.Object
+        );
     }
 
     [Fact]

@@ -6,6 +6,9 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface ITraineeRepository : IBaseRepository<Trainee, int>, IPersonRepository
     {
+        Task UpdateSports(Trainee trainee, IEnumerable<int> sportIds);
+        Task<List<int>> GetSportIdsByTraineeId(int id, CancellationToken cancellationToken = default);
+        Task<bool> IsLinkedToSport(int sportId, CancellationToken cancellationToken = default);
         Task<TraineeDetailsDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<Trainee?> GetFullTrainee(int id, CancellationToken cancellationToken = default);
         Task<PagedData<TraineeOfSpecificDayDto>> GetAllTraineesOfSpecificDayAsync(DateTime date, PageRequest page, CancellationToken cancellationToken = default);

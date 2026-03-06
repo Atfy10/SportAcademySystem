@@ -9,9 +9,8 @@ public record TraineeCardDto(
     string PhoneNumber,
     DateTime JoinDate,
     bool IsSubscribed,
-    string? SportName,
+    IReadOnlyList<TraineeSportSkillDto> SportSkills,
     string? CoachName,
-    string? SkillLevel,
     string? BranchName
 )
 {

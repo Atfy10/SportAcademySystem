@@ -10,8 +10,10 @@ namespace SportAcademy.Domain.Entities
         public string? ParentNumber { get; set; }
         public string? GuardianName { get; set; }
         public string? AppUserId { get; set; }
+        public int? BranchId { get; set; }
 
         // Navigation Properties
+        public virtual Branch? Branch { get; set; }
         public virtual AppUser? AppUser { get; set; }
         public virtual ICollection<SportTrainee> Sports { get; set; } = [];
         public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
