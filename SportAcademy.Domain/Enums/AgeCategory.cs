@@ -17,13 +17,14 @@ namespace SportAcademy.Domain.Enums
     {
         public static char ToChar(this AgeCategory age)
             => (char)age;
-    
-        public static AgeCategory ToAgeCategory(this char value)
-        {
-            if (!Enum.IsDefined(typeof(AgeCategory), (int)value))
-                throw new ArgumentException($"Invalid age category: {value}");
 
-            return (AgeCategory)value;
-        }
+        public static AgeCategory ToAgeCategory(this char value)
+            => value switch
+            {
+                'A' => AgeCategory.Adult,
+                'Y' => AgeCategory.Youth,
+                'C' => AgeCategory.Child,
+                _ => throw new ArgumentException($"Invalid age category: {value}")
+            };
     }
 }

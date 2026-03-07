@@ -65,6 +65,21 @@ namespace SportAcademy.Domain.ValueObjects
                 memberNumber);
         }
 
+        public TraineeCode Update(
+            AgeCategory? age = null,
+            int? familyCode = null,
+            int? branchId = null,
+            string? nationalityCode = null,
+            int? memberNumber = null)
+        {
+            return Create(
+                age ?? Age,
+                familyCode ?? FamilyCode,
+                branchId ?? BranchId,
+                nationalityCode ?? NationalityCode,
+                memberNumber ?? MemberNumber);
+        }
+
         public static TraineeCode FromString(string value)
         {
             if (string.IsNullOrWhiteSpace(value))

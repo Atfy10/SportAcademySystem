@@ -195,6 +195,8 @@ builder.Services.AddScoped<IChatBotService, ChatBotService>();
 
 builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
 
+builder.Services.AddScoped<ITraineeCodeGenerator, SqlTraineeCodeGenerator>();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
