@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.TraineeExceptions;
 
 namespace SportAcademy.Domain.ValueObjects
 {
@@ -28,22 +29,6 @@ namespace SportAcademy.Domain.ValueObjects
             Value = $"{(char)age}-{familyCode}-{branchId}-{nationalityCode}-{memberNumber:D4}";
         }
 
-        private TraineeCode(
-            string value,
-            AgeCategory age,
-            int familyCode,
-            int branchId,
-            string nationalityCode,
-            int memberNumber)
-        {
-            Value = value;
-            Age = age;
-            FamilyCode = familyCode;
-            BranchId = branchId;
-            NationalityCode = nationalityCode;
-            MemberNumber = memberNumber;
-        }
-
         public static TraineeCode Create(
             AgeCategory age,
             int familyCode,
@@ -52,10 +37,10 @@ namespace SportAcademy.Domain.ValueObjects
             int memberNumber)
         {
             if (branchId < 0 || branchId > 999)
-                throw new ArgumentOutOfRangeException(nameof(branchId));
+                throw new InvalidBranchIdException(branchId);
 
             if (memberNumber < 0 || memberNumber > 9999)
-                throw new ArgumentOutOfRangeException(nameof(memberNumber));
+                throw new InvalidFamilyMemberNumberException(memberNumber);
 
             return new TraineeCode(
                 age,
@@ -83,7 +68,7 @@ namespace SportAcademy.Domain.ValueObjects
         public static TraineeCode FromString(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                throw new ArgumentException("Invalid trainee code");
+                throw new InvalidTraineeCodeException(value);
 
             ReadOnlySpan<char> span = value.AsSpan();
 
@@ -104,8 +89,7 @@ namespace SportAcademy.Domain.ValueObjects
 
             int memberNumber = int.Parse(span.Slice(fourthDash + 1));
 
-            return new TraineeCode(
-                value,
+            return Create(
                 age,
                 familyCode,
                 branchId,

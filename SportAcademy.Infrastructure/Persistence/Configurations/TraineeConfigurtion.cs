@@ -33,6 +33,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasFilter("[TraineeCode] IS NOT NULL");
 
             // Props
+            builder.Ignore(t => t.AgeCategory);
+
             #region Person Properties
             builder.OwnsOne(t => t.Address, eb =>
                 {

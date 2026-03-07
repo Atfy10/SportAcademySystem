@@ -25,5 +25,32 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<SportTrainee> Sports { get; set; } = [];
         public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
         public virtual ICollection<SubscriptionDetails> SubscriptionDetails { get; set; } = [];
+
+        public AgeCategory AgeCategory
+        {
+            get
+            {
+                return GetAgeCategory();
+            }
+        }
+
+        private AgeCategory GetAgeCategory()
+        {
+            var age = GetAge();
+
+            if (age < 12) return AgeCategory.Kid;
+            if (age < 18) return AgeCategory.Youth;
+            return AgeCategory.Adult;
+        }
+
+        public int GetAge()
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = today.Year - BirthDate.Year;
+
+            if (BirthDate > today.AddYears(-age))
+                age--;
+            return age;
+        }
     }
 }

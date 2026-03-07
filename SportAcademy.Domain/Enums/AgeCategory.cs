@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SportAcademy.Domain.Exceptions.TraineeExceptions;
 
 namespace SportAcademy.Domain.Enums
 {
@@ -24,7 +20,7 @@ namespace SportAcademy.Domain.Enums
                 'A' => AgeCategory.Adult,
                 'Y' => AgeCategory.Youth,
                 'C' => AgeCategory.Kid,
-                _ => throw new ArgumentException($"Invalid age category: {value}")
+                _ => throw new InvalidTraineeCodeException(value.ToString())
             };
     }
 }

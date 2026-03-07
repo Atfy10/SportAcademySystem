@@ -14,11 +14,10 @@ public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
     }
 
     public async Task<string> GenerateAsync(
-        int traineeId,
+        int familyId,
         int branchId,
         int nationalityCategoryId,
         AgeCategory ageCategory,
-        int familyId,
         CancellationToken cancellationToken)
     {
         var ageChar = ageCategory.ToChar();
@@ -34,7 +33,6 @@ public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
 
         await _context.Database.ExecuteSqlRawAsync(
             "EXEC usp_GenerateTraineeCode @FamilyId, @BranchId, @NationalityCategoryId, @AgeCode, @TraineeCode OUTPUT",
-            new SqlParameter("@TraineeId", traineeId),
             new SqlParameter("@FamilyId", familyId),
             new SqlParameter("@BranchId", branchId),
             new SqlParameter("@NationalityCategoryId", nationalityCategoryId),

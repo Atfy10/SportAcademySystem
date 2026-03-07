@@ -5,11 +5,10 @@ namespace SportAcademy.Application.Interfaces
     public interface ITraineeCodeGenerator
     {
         Task<string> GenerateAsync(
-            int traineeId,
+            int familyId,
             int branchId,
             int nationalityCategoryId,
             AgeCategory ageCategory,
-            int familyId,
             CancellationToken cancellationToken);
     }
 }
