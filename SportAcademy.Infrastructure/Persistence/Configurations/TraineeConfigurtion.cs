@@ -20,7 +20,9 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
 
             builder.Property(t => t.Id)
                 .ValueGeneratedNever();
+
             builder.Property(t => t.TraineeCode)
+                .IsRequired()
                 .HasConversion(
                     v => v.Value,
                     v => TraineeCode.FromString(v))
@@ -69,9 +71,6 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(t => t.GuardianName)
                 .HasMaxLength(50);
 
-            builder.Property(t => t.BranchId)
-                .IsRequired(false);
-
             builder.HasIndex(t => t.AppUserId)
                 .IsUnique()
                 .HasFilter("[AppUserId] IS NOT NULL");
@@ -90,21 +89,18 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.HasOne(t => t.Family)
                 .WithMany(f => f.Members)
                 .HasForeignKey(t => t.FamilyId)
-                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // 1:M  NationalityCategory
             builder.HasOne(t => t.NationalityCategory)
                 .WithMany(nc => nc.Trainees)
                 .HasForeignKey(t => t.NationalityCategoryId)
-                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // M:1  Branch
             builder.HasOne(t => t.Branch)
                 .WithMany(b => b.Trainees)
                 .HasForeignKey(t => t.BranchId)
-                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // 1:1  AppUser

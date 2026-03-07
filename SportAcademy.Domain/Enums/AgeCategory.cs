@@ -10,7 +10,7 @@ namespace SportAcademy.Domain.Enums
     {
         Adult = 'A',
         Youth = 'Y',
-        Child = 'C'
+        Kid = 'K'
     }
 
     public static class AgeCategoryExtensions
@@ -23,7 +23,7 @@ namespace SportAcademy.Domain.Enums
             {
                 'A' => AgeCategory.Adult,
                 'Y' => AgeCategory.Youth,
-                'C' => AgeCategory.Child,
+                'C' => AgeCategory.Kid,
                 _ => throw new ArgumentException($"Invalid age category: {value}")
             };
     }
