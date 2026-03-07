@@ -46,6 +46,13 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
+            modelBuilder.HasSequence<int>("FamilyCodeSequence")
+                .StartsAt(1)
+                .IncrementsBy(1)
+                .HasMin(1)
+                .HasMax(int.MaxValue)
+                .IsCyclic(false);
+
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 if (typeof(IAuditableEntity).IsAssignableFrom(entityType.ClrType))

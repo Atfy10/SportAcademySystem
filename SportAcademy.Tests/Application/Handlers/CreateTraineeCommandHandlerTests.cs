@@ -12,6 +12,7 @@ namespace SportAcademy.Tests.Application.Handlers;
 public class CreateTraineeCommandHandlerTests
 {
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<ITraineeCodeGenerator> _traineeCodeGenerator = new();
     private readonly Mock<ITraineeService> _traineeServiceMock = new();
     private readonly Mock<ITraineeRepository> _traineeRepoMock = new();
     private readonly CreateTraineeCommandHandler _handler;
@@ -19,6 +20,7 @@ public class CreateTraineeCommandHandlerTests
     public CreateTraineeCommandHandlerTests()
     {
         _handler = new CreateTraineeCommandHandler(
+            _traineeCodeGenerator.Object,
             _traineeServiceMock.Object,
             _mapperMock.Object,
             _traineeRepoMock.Object);
