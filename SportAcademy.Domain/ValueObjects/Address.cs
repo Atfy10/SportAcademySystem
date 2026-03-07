@@ -2,7 +2,7 @@
 
 namespace SportAcademy.Domain.ValueObjects
 {
-    public sealed class Address : IEquatable<Address>
+    public sealed class Address : ValueObject
     {
         public string Street { get; private init; }
         public string City { get; private init; }
@@ -26,18 +26,13 @@ namespace SportAcademy.Domain.ValueObjects
                 throw new InvalidAddressException();
         }
 
-        public bool Equals(Address? other)
-            => other is not null
-                && Street == other.Street
-                && City == other.City;
+        protected override IEnumerable<object?> GetEqualityComponents()
+        {
+            yield return Street;
+            yield return City;
+        }
 
-        override public bool Equals(object? obj)
-            => Equals(obj as Address);
-
-        override public int GetHashCode()
-            => HashCode.Combine(Street, City);
-
-        override public string ToString()
+        public override string ToString()
             => $"{Street}, {City}";
     }
 }

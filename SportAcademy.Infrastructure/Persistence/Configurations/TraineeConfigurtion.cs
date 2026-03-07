@@ -80,6 +80,12 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasFilter("[FamilyId] IS NOT NULL");
 
             // Relationships
+            // 1:M  TraineeCodesHistory
+            builder.HasMany(t => t.TraineeHistoryCode)
+                .WithOne(thc => thc.Trainee)
+                .HasForeignKey(thc => thc.TraineeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // 1:M  Family
             builder.HasOne(t => t.Family)
                 .WithMany(f => f.Members)

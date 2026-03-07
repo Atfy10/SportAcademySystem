@@ -3,18 +3,23 @@ using System.Text.RegularExpressions;
 
 namespace SportAcademy.Domain.ValueObjects
 {
-    public sealed class Email : IEquatable<Email>
+    public sealed class Email : ValueObject
     {
-        private static readonly Regex EmailRegex = new("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex EmailRegex =
+            new("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant
+        );
 
-        private Email(string value = "") => Value = value;
+        private Email(string value = "")
+        {
+            Value = value;
+        }
 
         public string Value { get; private init; }
 
         public static Email Create(string value)
         {
             var normalized = Validate(value);
-
             return new Email(normalized);
         }
 
@@ -31,16 +36,11 @@ namespace SportAcademy.Domain.ValueObjects
             return normalized;
         }
 
-        public bool Equals(Email? other) => 
-            other is not null 
-            && Value.Equals(other.Value, 
-                StringComparison.InvariantCultureIgnoreCase);
+        protected override IEnumerable<object?> GetEqualityComponents()
+        {
+            yield return Value;
+        }
 
-        override public bool Equals(object? obj)
-            => Equals(obj as Email);
-
-        override public int GetHashCode() => Value.ToLowerInvariant().GetHashCode();
-
-        override public string ToString() => Value;
+        public override string ToString() => Value;
     }
 }

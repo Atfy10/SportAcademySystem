@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.ValueObjects
 {
-    public sealed class Coordinate
+    public sealed class Coordinate : ValueObject
     {
         public string CoX { get; private init; } = null!;
         public string CoY { get; private init; } = null!;
@@ -22,14 +22,12 @@ namespace SportAcademy.Domain.ValueObjects
             return new Coordinate(x, y);
         }
 
-        public override bool Equals(object? obj)
-            => obj is Coordinate coordinates &&
-               CoX == coordinates.CoX &&
-               CoY == coordinates.CoY;
-
-        public override int GetHashCode() => HashCode.Combine(CoX, CoY);
+        protected override IEnumerable<object?> GetEqualityComponents()
+        {
+            yield return CoX;
+            yield return CoY;
+        }
 
         public override string ToString() => $"({CoX}, {CoY})";
-
     }
 }

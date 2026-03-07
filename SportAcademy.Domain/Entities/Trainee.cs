@@ -21,6 +21,7 @@ namespace SportAcademy.Domain.Entities
         public virtual AppUser? AppUser { get; set; }
         public virtual Family Family { get; set; } = null!;
         public virtual NationalityCategory NationalityCategory { get; set; } = null!;
+        public virtual ICollection<TraineeCodesHistory> TraineeHistoryCode { get; set; } = [];
         public virtual ICollection<SportTrainee> Sports { get; set; } = [];
         public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
         public virtual ICollection<SubscriptionDetails> SubscriptionDetails { get; set; } = [];
