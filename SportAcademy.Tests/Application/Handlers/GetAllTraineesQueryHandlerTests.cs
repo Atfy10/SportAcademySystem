@@ -37,7 +37,7 @@ public class GetAllTraineesQueryHandlerTests
         };
 
         _traineeRepoMock
-            .Setup(r => r.GetAllAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAllPaginatedAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedData);
 
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -62,13 +62,13 @@ public class GetAllTraineesQueryHandlerTests
         };
 
         _traineeRepoMock
-            .Setup(r => r.GetAllAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAllPaginatedAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedData);
 
         var result = await _handler.Handle(query, CancellationToken.None);
 
         _traineeRepoMock.Verify(
-            r => r.GetAllAsync<TraineeDto>(page, It.IsAny<CancellationToken>()),
+            r => r.GetAllPaginatedAsync<TraineeDto>(page, It.IsAny<CancellationToken>()),
             Times.Once);
         result.Data!.Page.Should().Be(2);
         result.Data.PageSize.Should().Be(25);

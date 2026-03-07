@@ -185,6 +185,10 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
+builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
+
+builder.Services.AddScoped<INationalityCategoryRepository, NationalityCategoryRepository>();
+
 builder.Services.AddScoped<ICoachRepository, CoachRepository>();
 
 builder.Services.AddScoped<IChatConversationRepository, ChatConversationRepository>();

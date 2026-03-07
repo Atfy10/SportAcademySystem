@@ -49,7 +49,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().AsNoTracking().ToListAsync(cancellationToken);
 
-        public virtual async Task<PagedData<TEntityDto>> GetAllAsync<TEntityDto>(PageRequest page, CancellationToken cancellationToken = default)
+        public virtual async Task<PagedData<TEntityDto>> GetAllPaginatedAsync<TEntityDto>(PageRequest page, CancellationToken cancellationToken = default)
                 where TEntityDto : class
             => await _context.Set<TEntity>()
                 .AsNoTracking()

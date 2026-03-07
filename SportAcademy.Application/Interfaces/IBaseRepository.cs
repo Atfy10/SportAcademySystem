@@ -16,7 +16,7 @@ namespace SportAcademy.Application.Interfaces
         Task<TEntity?> GetByIdsAsync(CancellationToken cancellationToken = default,
             params TKey[] id);
         Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default);
-        Task<PagedData<TEntityDto>> GetAllAsync<TEntityDto>(PageRequest page, CancellationToken cancellationToken = default)
+        Task<PagedData<TEntityDto>> GetAllPaginatedAsync<TEntityDto>(PageRequest page, CancellationToken cancellationToken = default)
             where TEntityDto : class;
         Task AddAsync(TEntity entity, CancellationToken cancellationToken = default);
         Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
