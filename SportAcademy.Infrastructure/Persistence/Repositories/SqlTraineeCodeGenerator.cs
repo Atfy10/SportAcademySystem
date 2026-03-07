@@ -22,6 +22,7 @@ public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
         CancellationToken cancellationToken)
     {
         var ageChar = ageCategory.ToChar();
+        var ageCharString = ageChar.ToString();
 
         var result = new SqlParameter
         {
@@ -37,7 +38,7 @@ public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
             new SqlParameter("@FamilyId", familyId),
             new SqlParameter("@BranchId", branchId),
             new SqlParameter("@NationalityCategoryId", nationalityCategoryId),
-            new SqlParameter("@AgeCode", ageChar),
+            new SqlParameter("@AgeCode", ageCharString),
             result,
             cancellationToken
         );
