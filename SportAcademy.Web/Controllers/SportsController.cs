@@ -60,7 +60,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-available-for-branch/{branchId}")]
+        [HttpGet("available-for/branch/{branchId}")]
         public async Task<IActionResult> GetAvailableForBranch(int branchId, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAvailableSportsForBranchQuery(branchId), cancellationToken);

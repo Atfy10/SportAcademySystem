@@ -26,7 +26,7 @@ namespace SportAcademy.Web.Controllers
 			_mediator = mediator;
 		}
 
-		[HttpPost("create")]
+		[HttpPost]
 		public async Task<IActionResult> Create([FromBody] CreateBranchCommand command, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(command, cancellationToken);
@@ -40,14 +40,14 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
-		[HttpGet("get/{id}")]
+		[HttpGet("{id}")]
 		public async Task<IActionResult> GetById(int id)
 		{
 			var result = await _mediator.Send(new GetBranchByIdQuery(id));
 			return Ok(result);
 		}
 
-		[HttpPut("update")]
+		[HttpPut]
 		public async Task<IActionResult> Update([FromBody] UpdateBranchCommand command,
 			CancellationToken cancellationToken)
 		{
@@ -55,14 +55,14 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
-		[HttpDelete("delete")]
+		[HttpDelete("{id}")]
 		public async Task<IActionResult> Delete(int id)
 		{
 			var result = await _mediator.Send(new DeleteBranchCommand(id));
 			return Ok(result);
 		}
 
-        [HttpPost("assign-sport-to-branch")]
+        [HttpPost("branch-sports")]
         public async Task<IActionResult> AddSportToBranch([FromBody] AddSportToBranchCommand command,
 			CancellationToken cancellationToken)
         {

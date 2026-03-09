@@ -55,7 +55,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<ActionResult> EditAsync(UpdateEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);

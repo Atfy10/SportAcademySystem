@@ -29,7 +29,7 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTraineeGroupCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
@@ -49,14 +49,14 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _mediator.Send(new GetTraineeGroupByIdQuery(id));
             return Ok(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateTraineeGroupCommand command,
             CancellationToken cancellationToken)
         {
@@ -64,14 +64,14 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _mediator.Send(new DeleteTraineeGroupCommand(id));
             return Ok(result);
         }
 
-        [HttpGet("get-all-for-specific-day")]
+        [HttpGet("for-specific-day")]
         public async Task<IActionResult> GetAllForDay(
             [FromQuery] DateTime date,
             [FromQuery] int? page,

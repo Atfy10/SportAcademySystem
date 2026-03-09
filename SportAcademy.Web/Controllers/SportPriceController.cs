@@ -20,35 +20,36 @@ namespace SportAcademy.Web.Controllers
 		{
 			_mediator = mediator;
 		}
-		[HttpPost("create")]
+
+		[HttpPost]
 		public async Task<IActionResult> CreateSportPrice(CreateSportPriceCommand command, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(command, cancellationToken);
 			return Ok(result);
 		}
 
-		[HttpPut("update")]
+		[HttpPut]
 		public async Task<IActionResult> UpdateSportPrice(UpdateSportPriceCommand command, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(command, cancellationToken);
 			return Ok(result);
 		}
 
-		[HttpDelete("delete")]
+		[HttpDelete]
 		public async Task<IActionResult> DeleteSportPrice(DeleteSportPriceCommand command, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(command, cancellationToken);
 			return Ok(result);
 		}
 
-		[HttpGet("get-all")]
+		[HttpGet]
 		public async Task<IActionResult> GetAllSportPrices(CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(new GetAllSportPricesQuery(), cancellationToken);
 			return Ok(result);
 		}
 
-		[HttpGet("get/{branchId}/{sportId}/{subsTypeId}")]
+		[HttpGet("branches/{branchId}/sports/{sportId}/subType/{subscriptionTypeId}")]
 		public async Task<IActionResult> GetSportPriceByKey(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(new GetSportPriceByKeyQuery(branchId, sportId, subsTypeId), cancellationToken);

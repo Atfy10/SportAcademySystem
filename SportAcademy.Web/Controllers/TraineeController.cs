@@ -70,7 +70,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-all-for-specific-day")]
+        [HttpGet("for-specific-day")]
         public async Task<IActionResult> GetAllForSpecificDay(
             [FromQuery] DateTime date,
             [FromQuery] int? page,
@@ -83,7 +83,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-count-for-specific-day")]
+        [HttpGet("count/for-specific-day")]
         public async Task<IActionResult> GetCountForSpecificDay(
             [FromQuery] DateTime date,
             CancellationToken ct)

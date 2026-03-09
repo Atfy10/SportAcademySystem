@@ -24,42 +24,42 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var users = await _mediator.Send(new GetAllUsersQuery());
             return Ok(users);
         }
 
-        [HttpGet("get-unlinked")]
+        [HttpGet("unlinked")]
         public async Task<IActionResult> GetUnlinked()
         {
             var users = await _mediator.Send(new GetUnlinkedUsersQuery());
             return Ok(users);
         }
 
-        [HttpGet("get/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> Details(string id)
         {
             var user = await _mediator.Send(new GetUserByIdQuery(id));
             return Ok(user);
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateAsync(CreateUserCommand command)
         {
             var user = await _mediator.Send(command);
             return Ok(user);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> EditAsync(UpdateUserCommand command)
         {
             var user = await _mediator.Send(command);
             return Ok(user);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete]
         public IActionResult Delete(DeleteUserCommand command)
         {
             var isDeleted = _mediator.Send(command);
