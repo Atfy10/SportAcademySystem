@@ -36,10 +36,16 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-all")]
-        public async Task<IActionResult> GetAll()
+        [HttpGet]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken
+            )
         {
-            var result = await _mediator.Send(new GetAllTraineeGroupsQuery());
+            var result = await _mediator.Send(
+                new GetAllTraineeGroupsQuery(PageRequest.Create(page, pageSize)),
+                cancellationToken);
             return Ok(result);
         }
 

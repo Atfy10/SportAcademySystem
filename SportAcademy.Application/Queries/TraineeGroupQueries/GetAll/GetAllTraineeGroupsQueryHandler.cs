@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -12,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAll
 {
-    public class GetAllTraineeGroupsQueryHandler : IRequestHandler<GetAllTraineeGroupsQuery, Result<List<TraineeGroupDto>>>
+    public class GetAllTraineeGroupsQueryHandler : IRequestHandler<GetAllTraineeGroupsQuery, Result<PagedData<TraineeGroupDto>>>
     {
         private readonly ITraineeGroupRepository _traineeGroupRepository;
         private readonly IMapper _mapper;
@@ -26,13 +28,14 @@ namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAll
             _mapper = mapper;
         }
 
-        public async Task<Result<List<TraineeGroupDto>>> Handle(GetAllTraineeGroupsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<TraineeGroupDto>>> Handle(GetAllTraineeGroupsQuery request, CancellationToken cancellationToken)
         {
-            var traineeGroups = await _traineeGroupRepository.GetAllAsync(cancellationToken) ?? [];
+            var traineeGroups = await _traineeGroupRepository
+                .GetAllPaginatedAsync<TraineeGroup>(request.Page, cancellationToken);
 
-            var traineeGroupsDto = _mapper.Map<List<TraineeGroupDto>>(traineeGroups) ?? [];
+            var traineeGroupsDto = _mapper.Map<PagedData<TraineeGroupDto>>(traineeGroups);
 
-            return Result<List<TraineeGroupDto>>.Success(traineeGroupsDto, _operationType);
+            return Result<PagedData<TraineeGroupDto>>.Success(traineeGroupsDto, _operationType);
         }
     }
 }

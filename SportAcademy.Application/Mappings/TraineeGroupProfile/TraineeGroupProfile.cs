@@ -1,5 +1,7 @@
-﻿using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
+﻿using Application.Common.Mapping.Converters;
+using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Domain.Entities;
 
@@ -9,7 +11,22 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
 {
     public TraineeGroupMappingProfile()
     {
-        CreateMap<TraineeGroup, TraineeGroupDto>().ReverseMap();
+        CreateMap<TraineeGroup, TraineeGroup>();
+
+        CreateMap(typeof(PagedData<>), typeof(PagedData<>))
+            .ConvertUsing(typeof(PagedDataConverter<,>));
+
+        CreateMap<TraineeGroup, TraineeGroupDto>()
+            .ConstructUsing(src => new TraineeGroupDto(
+                src.Id,
+                src.SkillLevel,
+                src.MaximumCapacity,
+                src.DurationInMinutes,
+                src.Gender,
+                src.BranchId,
+                src.CoachId
+            ))
+            .ReverseMap();
 
         CreateMap<CreateTraineeGroupCommand, TraineeGroup>();
 

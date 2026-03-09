@@ -14,7 +14,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         where TKey : notnull
     {
         private readonly ApplicationDbContext _context;
-        IMapper _mapper;
+        private readonly IMapper _mapper;
 
         public BaseRepository(ApplicationDbContext context, IMapper mapper = default!)
         {

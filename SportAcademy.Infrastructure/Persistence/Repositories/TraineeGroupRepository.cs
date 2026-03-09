@@ -16,7 +16,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly IMapper _mapper;
 
         public TraineeGroupRepository(ApplicationDbContext context, IMapper mapper)
-            : base(context)
+            : base(context, mapper)
         {
             _mapper = mapper;
             _context = context;
