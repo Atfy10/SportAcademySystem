@@ -12,12 +12,12 @@ using SportAcademy.Application.Queries.UserQueries.GetUnlinkedUsers;
 
 namespace SportAcademy.Web.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        IMediator _mediator;
+        private readonly IMediator _mediator;
 
         public UserController(IMediator mediator)
         {

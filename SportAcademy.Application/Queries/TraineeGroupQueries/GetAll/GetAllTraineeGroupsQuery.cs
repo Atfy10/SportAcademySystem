@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAll
 {
     public record GetAllTraineeGroupsQuery(PageRequest Page)
-        : IRequest<Result<PagedData<TraineeGroupDto>>>, IPaginatedRequest
+        : IRequest<Result<PagedData<TraineeGroupCardDto>>>, IPaginatedRequest
     {
         public PageRequest Page { get; set; } = Page;
     }

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.UserQueries.GetAll
 {
-    public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<List<AppUserDto>>>
+    public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<List<AppUserCardDto>>>
     {
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
@@ -25,15 +25,29 @@ namespace SportAcademy.Application.Queries.UserQueries.GetAll
             _userRepository = userRepository;
         }
 
-        public async Task<Result<List<AppUserDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
+        public async Task<Result<List<AppUserCardDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
         {
-            var users = await _userRepository.GetAllAsync(cancellationToken) 
+            var users = await _userRepository.GetAllAsync(cancellationToken)
                 ?? [];
 
-            var usersDto = _mapper.Map<List<AppUserDto>>(users)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var usersDto = new List<AppUserCardDto>();
 
-            return Result<List<AppUserDto>>.Success(usersDto, _operation);
+            foreach (var user in users)
+            {
+                var roles = await _userRepository.GetUserRoleAsync(user, cancellationToken)
+                    ?? [];
+
+                usersDto.Add(new AppUserCardDto
+                {
+                    Id = user.Id,
+                    UserName = user.UserName!,
+                    Email = user.Email!,
+                    Roles = (List<string>)(roles ?? []),
+                    IsActive = !user.IsBanned
+                });
+            }
+
+            return Result<List<AppUserCardDto>>.Success(usersDto, nameof(GetAllUsersQuery));
         }
     }
 }

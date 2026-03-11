@@ -2,6 +2,7 @@
 using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.GroupScheduleDtos;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Domain.Entities;
 
@@ -15,6 +16,48 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
 
         CreateMap(typeof(PagedData<>), typeof(PagedData<>))
             .ConvertUsing(typeof(PagedDataConverter<,>));
+
+        CreateMap<TraineeGroup, TraineeGroupDetailDto>()
+            .ForMember(dest => dest.SportName,
+                opt => opt.MapFrom(src => src.Coach.Sport.Name))
+            .ForMember(dest => dest.CoachName,
+                opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+            .ForMember(dest => dest.BranchName,
+                opt => opt.MapFrom(src => src.Branch.Name))
+            .ForMember(dest => dest.Schedules,
+                opt => opt.MapFrom(src => src.GroupSchedules
+                        .Select(gs => new GroupScheduleDto
+                        {
+                            Id = gs.Id,
+                            DayOfWeek = gs.Day,
+                            StartTime = gs.StartTime,
+                            EndTime = gs.StartTime.Add(TimeSpan.FromMinutes(src.DurationInMinutes))
+                        }).ToList()
+                )
+            )
+            .ForMember(dest => dest.TraineesCount,
+                opt => opt.MapFrom(src => src.Enrollments.Count)
+            );
+
+        CreateMap<TraineeGroup, TraineeGroupCardDto>()
+            .ForMember(dest => dest.SportName,
+                opt => opt.MapFrom(src => src.Coach.Sport.Name))
+            .ForMember(dest => dest.CoachName,
+                opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+            .ForMember(dest => dest.BranchName,
+                opt => opt.MapFrom(src => src.Branch.Name))
+            .ForMember(dest => dest.Schedules,
+                opt => opt.MapFrom(src => src.GroupSchedules
+                        .Select(gs => new GroupSchedulesTimesDto
+                        {
+                            DayOfWeek = gs.Day,
+                            StartTime = gs.StartTime
+                        }).ToList()
+                )
+            )
+            .ForMember(dest => dest.TraineesCount,
+                opt => opt.MapFrom(src => src.Enrollments.Count)
+            );
 
         CreateMap<TraineeGroup, TraineeGroupDto>()
             .ConstructUsing(src => new TraineeGroupDto(

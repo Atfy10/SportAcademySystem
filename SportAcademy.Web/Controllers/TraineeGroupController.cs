@@ -12,6 +12,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAll;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetById;
 
@@ -81,6 +82,13 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new GetAllSessionsOfSpecificDayQuery(
                                             date,
                                             PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> GetTraineeGroupsCount(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetAllTraineeGroupsCountQuery(), ct);
             return Ok(result);
         }
     }

@@ -8,29 +8,22 @@ using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
 
 namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetById
 {
-    public class GetTraineeGroupByIdQueryHandler : IRequestHandler<GetTraineeGroupByIdQuery, Result<TraineeGroupDto>>
+    public class GetTraineeGroupByIdQueryHandler : IRequestHandler<GetTraineeGroupByIdQuery, Result<TraineeGroupDetailDto>>
     {
         private readonly ITraineeGroupRepository _traineeGroupRepository;
-        private readonly IMapper _mapper;
         private readonly string _operationType = OperationType.Get.ToString();
 
-        public GetTraineeGroupByIdQueryHandler(
-            ITraineeGroupRepository traineeGroupRepository,
-            IMapper mapper)
+        public GetTraineeGroupByIdQueryHandler(ITraineeGroupRepository traineeGroupRepository)
         {
             _traineeGroupRepository = traineeGroupRepository;
-            _mapper = mapper;
         }
 
-        public async Task<Result<TraineeGroupDto>> Handle(GetTraineeGroupByIdQuery request, CancellationToken cancellationToken)
+        public async Task<Result<TraineeGroupDetailDto>> Handle(GetTraineeGroupByIdQuery request, CancellationToken cancellationToken)
         {
-            var traineeGroup = await _traineeGroupRepository.GetByIdAsync(request.Id, cancellationToken)
+            var traineeGroup = await _traineeGroupRepository.GetDetailsByIdAsync(request.Id, cancellationToken)
                 ?? throw new TraineeGroupNotFoundException($"{request.Id}");
 
-            var traineeGroupDto = _mapper.Map<TraineeGroupDto>(traineeGroup)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-            return Result<TraineeGroupDto>.Success(traineeGroupDto, _operationType);
+            return Result<TraineeGroupDetailDto>.Success(traineeGroup, _operationType);
         }
     }
 }

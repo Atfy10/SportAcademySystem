@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAll
 {
-    public class GetAllTraineeGroupsQueryHandler : IRequestHandler<GetAllTraineeGroupsQuery, Result<PagedData<TraineeGroupDto>>>
+    public class GetAllTraineeGroupsQueryHandler : IRequestHandler<GetAllTraineeGroupsQuery, Result<PagedData<TraineeGroupCardDto>>>
     {
         private readonly ITraineeGroupRepository _traineeGroupRepository;
         private readonly IMapper _mapper;
@@ -28,14 +28,12 @@ namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAll
             _mapper = mapper;
         }
 
-        public async Task<Result<PagedData<TraineeGroupDto>>> Handle(GetAllTraineeGroupsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<TraineeGroupCardDto>>> Handle(GetAllTraineeGroupsQuery request, CancellationToken cancellationToken)
         {
             var traineeGroups = await _traineeGroupRepository
-                .GetAllPaginatedAsync<TraineeGroup>(request.Page, cancellationToken);
+                .GetAllAsCardAsync(request.Page, cancellationToken);
 
-            var traineeGroupsDto = _mapper.Map<PagedData<TraineeGroupDto>>(traineeGroups);
-
-            return Result<PagedData<TraineeGroupDto>>.Success(traineeGroupsDto, _operationType);
+            return Result<PagedData<TraineeGroupCardDto>>.Success(traineeGroups, _operationType);
         }
     }
 }
