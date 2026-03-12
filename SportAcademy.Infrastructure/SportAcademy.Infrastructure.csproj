@@ -7,6 +7,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Persistence\Sql\Procedures\usp_GenerateTraineeCode.sql" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Persistence\Sql\Procedures\usp_GenerateTraineeCode.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Bogus" Version="35.6.5" />
 		<PackageReference Include="Dapper" Version="2.1.66" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />

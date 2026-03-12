@@ -11,14 +11,16 @@ namespace SportAcademy.Tests.Application.Handlers;
 public class GetAllTraineesQueryHandlerTests
 {
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IAttendanceRepository> _attendanceRepoMock = new();
     private readonly Mock<ITraineeRepository> _traineeRepoMock = new();
     private readonly GetAllTraineesQueryHandler _handler;
 
     public GetAllTraineesQueryHandlerTests()
     {
         _handler = new GetAllTraineesQueryHandler(
-            _traineeRepoMock.Object,
-            _mapperMock.Object);
+            _attendanceRepoMock.Object,
+            _traineeRepoMock.Object
+        );
     }
 
     [Fact]
@@ -35,7 +37,7 @@ public class GetAllTraineesQueryHandlerTests
         };
 
         _traineeRepoMock
-            .Setup(r => r.GetAllAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAllPaginatedAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedData);
 
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -60,13 +62,13 @@ public class GetAllTraineesQueryHandlerTests
         };
 
         _traineeRepoMock
-            .Setup(r => r.GetAllAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAllPaginatedAsync<TraineeDto>(page, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedData);
 
         var result = await _handler.Handle(query, CancellationToken.None);
 
         _traineeRepoMock.Verify(
-            r => r.GetAllAsync<TraineeDto>(page, It.IsAny<CancellationToken>()),
+            r => r.GetAllPaginatedAsync<TraineeDto>(page, It.IsAny<CancellationToken>()),
             Times.Once);
         result.Data!.Page.Should().Be(2);
         result.Data.PageSize.Should().Be(25);

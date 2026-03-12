@@ -25,42 +25,42 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> Create(CreateSportCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
-		}
+        }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> Update(UpdateSportCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
-		}
+        }
 
-        [HttpDelete("delete")]
+        [HttpDelete]
         public async Task<IActionResult> Delete(int sportId)
         {
             var result = await _mediator.Send(new DeleteSportCommand(sportId));
             return Ok(result);
-		}
+        }
 
-        [HttpGet("get/{Id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int Id)
         {
             var result = await _mediator.Send(new GetSportByIdQuery(Id));
             return Ok(result);
 		}
 
-		[HttpGet("get-all")]
+		[HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _mediator.Send(new GetAllSportsQuery());
             return Ok(result);
         }
 
-        [HttpGet("get-available-for-branch/{branchId}")]
+        [HttpGet("available-for/branch/{branchId}")]
         public async Task<IActionResult> GetAvailableForBranch(int branchId, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAvailableSportsForBranchQuery(branchId), cancellationToken);

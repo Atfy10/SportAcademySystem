@@ -55,14 +55,14 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<ActionResult> EditAsync(UpdateEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteEmployeeCommand(id), ct);

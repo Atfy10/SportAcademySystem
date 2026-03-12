@@ -12,7 +12,7 @@ using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
 
 namespace SportAcademy.Web.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class CoachController : ControllerBase
@@ -38,14 +38,14 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpPost("create-with-employee")]
-        public async Task<ActionResult> CreateWithEmployee(CreateCoachWithEmployeeCommand command, CancellationToken ct)
+        [HttpPost("with-employee")]
+        public async Task<ActionResult> CreateFromEmployee(CreateCoachWithEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete("{employeeId}")]
         public async Task<ActionResult> Delete(int employeeId, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteCoachCommand(employeeId), ct);

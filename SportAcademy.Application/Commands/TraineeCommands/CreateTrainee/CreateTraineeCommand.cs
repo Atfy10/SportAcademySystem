@@ -2,11 +2,6 @@
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
@@ -15,6 +10,8 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         public required string FirstName { get; init; }
         public required string LastName { get; init; }
         public required string SSN { get; init; }
+        public int FamilyId { get; set; }
+        public int NationalityCategoryId { get; set; }
         public string? ParentNumber { get; init; }
         public string? GuardianName { get; init; }
         public DateOnly BirthDate { get; init; }

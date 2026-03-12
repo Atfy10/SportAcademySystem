@@ -13,25 +13,35 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.TraineeQueries.GetAll
 {
-    public class GetAllTraineesQueryHandler : IRequestHandler<GetAllTraineesQuery, Result<PagedData<TraineeDto>>>
+    public class GetAllTraineesQueryHandler : IRequestHandler<GetAllTraineesQuery, Result<PagedData<TraineeCardDto>>>
     {
-        private readonly IMapper _mapper;
+        private readonly IAttendanceRepository _attendanceRepository;
         private readonly ITraineeRepository _traineeRepository;
         private readonly string _operationType = OperationType.GetAll.ToString();
 
-        public GetAllTraineesQueryHandler(ITraineeRepository traineeRepository,
-            IMapper mapper)
+        public GetAllTraineesQueryHandler(
+            IAttendanceRepository attendanceRepository,
+            ITraineeRepository traineeRepository
+        )
         {
-            _mapper = mapper;
             _traineeRepository = traineeRepository;
+            _attendanceRepository = attendanceRepository;
         }
 
-        public async Task<Result<PagedData<TraineeDto>>> Handle(GetAllTraineesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<TraineeCardDto>>> Handle(GetAllTraineesQuery request, CancellationToken cancellationToken)
         {
-            var traineesDto = await _traineeRepository.GetAllAsync<TraineeDto>(request.Page,
+            var traineesDto = await _traineeRepository.GetAllPaginatedAsync<TraineeCardDto>(request.Page,
                 cancellationToken);
 
-            return Result<PagedData<TraineeDto>>.Success(traineesDto, _operationType);
+            foreach (var trainee in traineesDto.Items)
+            {
+                (int totalSessions, int attendendedSessions) = await _attendanceRepository.GetAttendanceSummaryAsync(15, null, null, cancellationToken);
+                trainee.AttendanceRate = totalSessions == 0
+                    ? 0
+                    : Math.Round((double)(attendendedSessions / totalSessions * 100), 2);
+            }
+
+            return Result<PagedData<TraineeCardDto>>.Success(traineesDto, _operationType);
         }
     }
 }

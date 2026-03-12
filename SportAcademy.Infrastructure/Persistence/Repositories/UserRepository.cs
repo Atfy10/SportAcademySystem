@@ -21,6 +21,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
+        public async Task<IReadOnlyList<string?>> GetUserRoleAsync(AppUser user, CancellationToken ct = default)
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            return roles.ToList();
+        }
+
         public async Task<IdentityResult> Register(AppUser user, string password)
         {
             var registerResult = await _userManager.CreateAsync(user, password);

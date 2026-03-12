@@ -10,6 +10,7 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface IUserRepository : IBaseRepository<AppUser, string>
     {
+        Task<IReadOnlyList<string?>> GetUserRoleAsync(AppUser user, CancellationToken ct = default);
         Task<IdentityResult> Register(AppUser user, string password);
         Task<bool> CheckPasswordAsync(AppUser user, string password);
         Task<AppUser?> GetByUsernameOrEmailAsync(string usernameOrEmail, CancellationToken ct = default);

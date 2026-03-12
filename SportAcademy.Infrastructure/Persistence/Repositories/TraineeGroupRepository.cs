@@ -16,24 +16,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly IMapper _mapper;
 
         public TraineeGroupRepository(ApplicationDbContext context, IMapper mapper)
-            : base(context)
+            : base(context, mapper)
         {
             _mapper = mapper;
             _context = context;
         }
-
-        public async Task<int> GetActiveTraineeGroupsCountAsync(CancellationToken cancellationToken = default) =>
-            await _context.TraineeGroups
-                .AsNoTracking()
-                .Where(tg => tg.Enrollments.Any(e => e.IsActive))
-                .CountAsync(cancellationToken);
-
-        public async Task<PagedData<TraineeGroupCardDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)=>
-           await _context.TraineeGroups
-                .AsNoTracking()
-                .ProjectTo<TraineeGroupCardDto>(_mapper.ConfigurationProvider)
-                .ToPagedDataAsync(page, cancellationToken);
-  
 
         public async Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
@@ -46,12 +33,25 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     tg.Branch.Name,
                     tg.DurationInMinutes,
                     tg.Enrollments.Count,
-                    tg.GroupSchedules.FirstOrDefault().StartTime 
+                    tg.GroupSchedules.FirstOrDefault().StartTime
                 ))
                 .ToPagedDataAsync(page, cancellationToken);
 
-        public async Task<int> GetAllTraineeGroupsCountAsync(CancellationToken cancellationToken = default) => await _context.TraineeGroups.CountAsync(cancellationToken);
+        public async Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, CancellationToken cancellationToken = default)
+            => await _context.TraineeGroups
+                .AsNoTracking()
+                .ProjectTo<TraineeGroupCardDto>(_mapper.ConfigurationProvider)
+                .ToPagedDataAsync(page, cancellationToken);
 
+        public async Task<TraineeGroupDetailDto?> GetDetailsByIdAsync(int id, CancellationToken cancellationToken = default)
+            => await _context.TraineeGroups
+                .AsNoTracking()
+                .Where(tg => tg.Id == id)
+                .ProjectTo<TraineeGroupDetailDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        public async Task<int> GetCountAsync(CancellationToken cancellation = default)
+            => await _context.TraineeGroups.CountAsync(cancellation);
     }
 }
 

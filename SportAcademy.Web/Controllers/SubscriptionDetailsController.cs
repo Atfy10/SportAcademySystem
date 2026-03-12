@@ -21,35 +21,35 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var result = await _mediator.Send(new GetAllSubDetailsQuery());
             return Ok(result);
         }
 
-        [HttpGet("get/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> Details(int id)
         {
             var result = await _mediator.Send(new GetSubDetailsByIdQuery(id));
             return Ok(result);
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateAsync(CreateSubscriptionDetailsCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> EditAsync(UpdateSubscriptionDetailsCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete]
         public IActionResult Delete(DeleteSubscriptionDetailsCommand command)
         {
             var result = _mediator.Send(command);

@@ -17,6 +17,8 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         public string? LastName { get; init; }
         public string? GuardianName { get; init; }
         public string? ParentNumber { get; init; }
+        public int BranchId { get; init; }
+        public List<int> SportIds { get; init; } = [];
         public AppUserDto? AppUser { get; init; }
     }
 }

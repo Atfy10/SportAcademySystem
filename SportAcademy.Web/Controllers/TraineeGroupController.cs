@@ -13,7 +13,7 @@ using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetActiveTraineeGroupsCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAll;
-using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllCards;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllTraineeGroupsCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetById;
@@ -32,28 +32,34 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTraineeGroupCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
             return Ok(result);
         }
 
-        [HttpGet("get-all")]
-        public async Task<IActionResult> GetAll()
+        [HttpGet]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken
+            )
         {
-            var result = await _mediator.Send(new GetAllTraineeGroupsQuery());
+            var result = await _mediator.Send(
+                new GetAllTraineeGroupsQuery(PageRequest.Create(page, pageSize)),
+                cancellationToken);
             return Ok(result);
         }
 
-        [HttpGet("get/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _mediator.Send(new GetTraineeGroupByIdQuery(id));
             return Ok(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateTraineeGroupCommand command,
             CancellationToken cancellationToken)
         {
@@ -61,14 +67,14 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _mediator.Send(new DeleteTraineeGroupCommand(id));
             return Ok(result);
         }
 
-        [HttpGet("get-all-for-specific-day")]
+        [HttpGet("for-specific-day")]
         public async Task<IActionResult> GetAllForDay(
             [FromQuery] DateTime date,
             [FromQuery] int? page,
@@ -82,22 +88,9 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("count")]
-        public async Task<IActionResult> GetAllTraineeGroupsCount(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetTraineeGroupsCount(CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllTraineeGroupsCountQuery(), cancellationToken);
-            return Ok(result);
-        }
-
-        [HttpGet("active-count")]
-        public async Task<IActionResult> GetActiveTraineeGroupsCount(CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new GetActiveTraineeGroupsCountQuery(), cancellationToken);
-            return Ok(result);
-        }
-        [HttpGet("get-all-cards")]
-        public async Task<IActionResult> GetAllCards([FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new GetAllTraineeGroupCardQuery(PageRequest.Create(page, pageSize)), cancellationToken);
+            var result = await _mediator.Send(new GetAllTraineeGroupsCountQuery(), ct);
             return Ok(result);
         }
     }

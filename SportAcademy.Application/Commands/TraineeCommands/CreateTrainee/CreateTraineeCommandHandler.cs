@@ -7,21 +7,25 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.TraineeExceptions;
+using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
     public class CreateTraineeCommandHandler : IRequestHandler<CreateTraineeCommand, Result<int>>
     {
+        private readonly ITraineeCodeGenerator _traineeCodeGenerator;
         private readonly IMapper _mapper;
         private readonly ITraineeService _traineeService;
         private readonly ITraineeRepository _traineeRepository;
         private readonly string _operationType = OperationType.Add.ToString();
 
-
-        public CreateTraineeCommandHandler(ITraineeService traineeService,
+        public CreateTraineeCommandHandler(
+            ITraineeCodeGenerator traineeCodeGenerator,
+            ITraineeService traineeService,
             IMapper mapper,
             ITraineeRepository traineeRepository)
         {
+            _traineeCodeGenerator = traineeCodeGenerator;
             _mapper = mapper;
             _traineeService = traineeService;
             _traineeRepository = traineeRepository;
@@ -45,14 +49,24 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             if (isPhoneNumberExist)
                 throw new PhoneNumberNotUniqueException();
 
-            trainee.Id = _traineeService.CreateTraineeCode(trainee, request.BranchId);
+            var ageCategory = trainee.AgeCategory;
 
-            bool isAdult = _traineeService.IsAdult(trainee.BirthDate);
-            bool isGuardianInfoMissing = (string.IsNullOrEmpty(trainee.ParentNumber)
-                || string.IsNullOrEmpty(trainee.GuardianName));
-            
+            bool isAdult = ageCategory == AgeCategory.Adult;
+            bool isGuardianInfoMissing = (string.IsNullOrWhiteSpace(trainee.ParentNumber)
+                || string.IsNullOrWhiteSpace(trainee.GuardianName));
             if (!isAdult && isGuardianInfoMissing)
                 throw new GuardianInfoMissingException();
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var code = await _traineeCodeGenerator.GenerateAsync(
+                trainee.FamilyId,
+                trainee.BranchId,
+                trainee.NationalityCategoryId,
+                ageCategory,
+                cancellationToken);
+
+            trainee.TraineeCode = TraineeCode.FromString(code);
 
             trainee.IsSubscribed = false;
 

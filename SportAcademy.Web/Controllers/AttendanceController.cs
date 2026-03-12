@@ -24,28 +24,28 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAttendanceCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
-        [HttpGet("get-all")]
+        [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllAttendancesQuery(),ct);
             return Ok(result);
         }
 
-        [HttpGet("get/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAttendanceByIdQuery(id), ct);
             return Ok(result);
         }
 
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateAttendanceCommand command,
             CancellationToken ct)
         {
@@ -53,7 +53,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteAttendanceCommand(id), ct);

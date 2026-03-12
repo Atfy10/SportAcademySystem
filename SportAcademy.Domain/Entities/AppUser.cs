@@ -15,8 +15,8 @@ namespace SportAcademy.Domain.Entities
         public string? DeletedBy { get; set; }
 
         // Navigation Properties
-        public virtual Employee Employee { get; set; } = null!;
-        public virtual Trainee Trainee { get; set; } = null!;
+        public virtual Employee? Employee { get; set; }
+        public virtual Trainee? Trainee { get; set; }
         public virtual Profile Profile { get; set; } = null!;
         public virtual ICollection<NotificationRecipient> Notifications { get; set; } = [];
     }

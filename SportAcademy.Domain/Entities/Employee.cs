@@ -10,10 +10,10 @@ namespace SportAcademy.Domain.Entities
         public Position Position { get; set; }
         public bool IsWork { get; set; } = true;
         public int BranchId { get; set; }
-        public required string AppUserId { get; set; }
+        public string? AppUserId { get; set; }
 
         // Navigation Property
-        public virtual AppUser? AppUser { get; set; } = null!;
+        public virtual AppUser? AppUser { get; set; }
         public virtual Branch Branch { get; set; } = null!;
         public virtual Coach Coach { get; set; } = null!;
     }

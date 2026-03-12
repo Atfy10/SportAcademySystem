@@ -9,5 +9,5 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.TraineeQueries.GetById
 {
-    public record GetTraineeByIdQuery(int Id) : IRequest<Result<TraineeDto>>;
+    public record GetTraineeByIdQuery(int Id) : IRequest<Result<TraineeDetailsDto>>;
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.ValueObjects;
 using System.Reflection.Emit;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
@@ -20,7 +21,20 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(t => t.Id)
                 .ValueGeneratedNever();
 
+            builder.Property(t => t.TraineeCode)
+                .IsRequired()
+                .HasConversion(
+                    v => v.Value,
+                    v => TraineeCode.FromString(v))
+                .HasMaxLength(25);
+
+            builder.HasIndex(t => t.TraineeCode)
+                .IsUnique()
+                .HasFilter("[TraineeCode] IS NOT NULL");
+
             // Props
+            builder.Ignore(t => t.AgeCategory);
+
             #region Person Properties
             builder.OwnsOne(t => t.Address, eb =>
                 {
@@ -59,7 +73,38 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(t => t.GuardianName)
                 .HasMaxLength(50);
 
+            builder.HasIndex(t => t.AppUserId)
+                .IsUnique()
+                .HasFilter("[AppUserId] IS NOT NULL");
+
+            builder.HasIndex(t => t.FamilyId)
+                .HasFilter("[FamilyId] IS NOT NULL");
+
             // Relationships
+            // 1:M  TraineeCodesHistory
+            builder.HasMany(t => t.TraineeHistoryCode)
+                .WithOne(thc => thc.Trainee)
+                .HasForeignKey(thc => thc.TraineeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 1:M  Family
+            builder.HasOne(t => t.Family)
+                .WithMany(f => f.Members)
+                .HasForeignKey(t => t.FamilyId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 1:M  NationalityCategory
+            builder.HasOne(t => t.NationalityCategory)
+                .WithMany(nc => nc.Trainees)
+                .HasForeignKey(t => t.NationalityCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // M:1  Branch
+            builder.HasOne(t => t.Branch)
+                .WithMany(b => b.Trainees)
+                .HasForeignKey(t => t.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // 1:1  AppUser
             builder.HasOne(t => t.AppUser)
                 .WithOne(u => u.Trainee)
