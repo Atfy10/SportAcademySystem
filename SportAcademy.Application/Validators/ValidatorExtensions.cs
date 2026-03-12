@@ -1,9 +1,4 @@
 ﻿using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Validators
 {
@@ -29,6 +24,14 @@ namespace SportAcademy.Application.Validators
                 .GreaterThan(0)
                 .WithMessage($"Selected {entityName} is not valid.")
                 .When((x, value) => value != null);
+        }
+
+        public static IRuleBuilderOptions<T, string?> NoDigits<T>(
+        this IRuleBuilder<T, string?> ruleBuilder)
+        {
+            return ruleBuilder
+                .Must(value => value is not null && string.IsNullOrEmpty(value) || !value.Any(char.IsDigit))
+                .WithMessage("{PropertyName} must not contain digits.");
         }
     }
 }

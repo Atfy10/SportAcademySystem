@@ -9,12 +9,14 @@ namespace SportAcademy.Application.Validators.TraineeValidators
         {
             RuleFor(t => t.FirstName)
                 //.NotEmpty().WithMessage("First name is required.")
+                .NoDigits()
                 .MaximumLength(50).WithMessage("First name cannot exceed 50 characters.")
                 .When(t => !string.IsNullOrEmpty(t.GuardianName));
 
 
             RuleFor(t => t.LastName)
                 //.NotEmpty().WithMessage("Last name is required.")
+                .NoDigits()
                 .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters.")
                 .When(t => !string.IsNullOrEmpty(t.GuardianName));
 

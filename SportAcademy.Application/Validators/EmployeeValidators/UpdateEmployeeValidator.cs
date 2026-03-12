@@ -1,10 +1,5 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Validators.EmployeeValidators
 {
@@ -20,10 +15,12 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
 
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required.")
+                .NoDigits()
                 .MaximumLength(50).WithMessage("First name can't exceed 50 characters.");
 
             RuleFor(x => x.LastName)
                 .NotEmpty().WithMessage("Last name is required.")
+                .NoDigits()
                 .MaximumLength(50).WithMessage("Last name can't exceed 50 characters.");
 
             RuleFor(x => x.Salary)
