@@ -8,10 +8,62 @@
 
 	<ItemGroup>
 	  <None Remove="Persistence\Sql\Procedures\usp_GenerateTraineeCode.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_AdminBasic.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_CoachSchedule.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_CoachSkill.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_EmployeeBasic.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_EmployeeWork.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_GroupsView.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_ScheduleDaily.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_ScheduleWeekly.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_TraineeAttendance.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_TraineeBasic.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_TraineeSchedule.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_TraineeSession.sql" />
+	  <None Remove="Persistence\Sql\Views\vw_TraineeSubscription.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Content Include="Persistence\Sql\Procedures\usp_GenerateTraineeCode.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_AdminBasic.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_CoachSchedule.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_CoachSkill.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_EmployeeBasic.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_EmployeeWork.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_GroupsView.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_ScheduleDaily.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_ScheduleWeekly.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_TraineeAttendance.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_TraineeBasic.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_TraineeSchedule.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_TraineeSession.sql">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Persistence\Sql\Views\vw_TraineeSubscription.sql">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup>
