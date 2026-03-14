@@ -7,9 +7,9 @@ SELECT
     SD.StartDate,
     SD.EndDate,
     SD.PaymentNumber,
-    ST.Name AS SubscriptionType,
-    S.Name AS Sport,
-    B.Name AS Branch
+    ST.Name AS SubscriptionTypeName,
+    S.Name AS SportName,
+    B.Name AS BranchName
 FROM Trainees t
 JOIN SubscriptionDetails SD ON t.Id = SD.TraineeId
 JOIN SubscriptionTypes ST ON SD.SubscriptionTypeId = ST.Id

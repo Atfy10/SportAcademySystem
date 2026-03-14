@@ -10,8 +10,8 @@ SELECT
     tg.MaximumCapacity,
     tg.DurationInMinutes,
     tg.Gender,
-    b.Name AS Branch,
-    emp.FirstName + ' ' + emp.LastName AS Coach_Name
+    b.Name AS BranchName,
+    emp.FirstName + ' ' + emp.LastName AS CoachName
 FROM Trainees t
 JOIN Enrollments e ON t.Id = e.TraineeId
 JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId

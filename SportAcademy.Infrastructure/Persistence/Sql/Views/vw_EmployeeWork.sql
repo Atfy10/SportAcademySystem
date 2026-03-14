@@ -4,7 +4,7 @@ SELECT
     E.Salary,
     E.HireDate,
     E.Position,
-    B.Name AS Branch,
+    B.Name AS BranchName,
     A.UserName
 FROM Employees E
 JOIN Branches B ON B.Id = E.BranchId
