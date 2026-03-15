@@ -5,6 +5,9 @@ using SportAcademy.Application.DTOs.SportDtos;
 
 namespace SportAcademy.Application.Queries.SportQueries.GetAll
 {
-    public record GetAllSportsQuery()
-        : IRequest<Result<IReadOnlyList<SportDto>>>;
+    public record GetAllSportsPaginatedQuery(PageRequest Page)
+        : IRequest<Result<PagedData<SportDto>>>, IPaginatedRequest
+    {
+        public PageRequest Page { get; set; } = Page;
+    }
 }

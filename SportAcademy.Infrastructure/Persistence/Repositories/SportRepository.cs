@@ -1,15 +1,12 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -50,5 +47,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<PagedData<SportDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
+            => await _context.Sports
+                .Where(s => EF.Functions.Like(s.Name, $"%{term}%"))
+                .ProjectTo<SportDto>(_mapper.ConfigurationProvider)
+                .AsNoTracking()
+                .ToPagedDataAsync(page, cancellationToken);
     }
 }

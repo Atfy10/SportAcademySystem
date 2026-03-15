@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportCommands.CreateSport;
 using SportAcademy.Application.Commands.SportCommands.DeleteSport;
 using SportAcademy.Application.Commands.SportCommands.UpdateSport;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.SportQueries.GetAll;
 using SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch;
 using SportAcademy.Application.Queries.SportQueries.GetById;
 using SportAcademy.Application.Queries.SportQueries.GetSportsCount;
+using SportAcademy.Application.Queries.SportQueries.SearchSports;
 using SportAcademy.Application.Queries.SportQueries.SearchSportsName;
 
 namespace SportAcademy.Web.Controllers
@@ -51,12 +53,26 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(new GetSportByIdQuery(Id));
             return Ok(result);
-		}
+        }
 
-		[HttpGet]
-        public async Task<IActionResult> GetAll()
+        [HttpGet("paginated")]
+        public async Task<IActionResult> GetAllPaginated(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new GetAllSportsQuery());
+            var result = await _mediator.Send(
+                new GetAllSportsPaginatedQuery(PageRequest.Create(page, pageSize)),
+                cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll(
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetAllSportsQuery(), cancellationToken);
             return Ok(result);
         }
 
@@ -71,6 +87,19 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAllSportsCount()
         {
             var result = await _mediator.Send(new GetSportsCountQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search(
+            [FromQuery] string searchTerm,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new SearchSportsQuery(
+                searchTerm, PageRequest.Create(page, pageSize)),
+                cancellationToken);
             return Ok(result);
         }
 

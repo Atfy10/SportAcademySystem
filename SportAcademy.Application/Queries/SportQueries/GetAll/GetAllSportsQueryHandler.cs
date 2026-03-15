@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.SportQueries.GetAll
 {
-    public class GetAllSportsQueryHandler : IRequestHandler<GetAllSportsQuery, Result<List<SportDto>>>
+    public class GetAllSportsQueryHandler : IRequestHandler<GetAllSportsQuery, Result<IReadOnlyList<SportDto>>>
     {
         private readonly ISportRepository _sportRepository;
         private readonly IMapper _mapper;
@@ -27,13 +28,13 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAll
             _mapper = mapper;
         }
 
-        public async Task<Result<List<SportDto>>> Handle(GetAllSportsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<IReadOnlyList<SportDto>>> Handle(GetAllSportsQuery request, CancellationToken cancellationToken)
         {
-            var sports = await _sportRepository.GetAllAsync(cancellationToken) ?? [];
+            var sports = await _sportRepository.GetAllAsync(cancellationToken);
 
-            var sportsDto = _mapper.Map<List<SportDto>>(sports) ?? [];
+            var sportsDto = _mapper.Map<IReadOnlyList<SportDto>>(sports);
 
-            return Result<List<SportDto>>.Success(sportsDto, _operationType);
+            return Result<IReadOnlyList<SportDto>>.Success(sportsDto, _operationType);
         }
     }
 }

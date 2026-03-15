@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrainee;
 using SportAcademy.Application.Commands.SportTraineeCommands.DeleteSportTrainee;
 using SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrainee;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.SportTraineeQueries.GetAll;
 using SportAcademy.Application.Queries.SportTraineeQueries.GetById;
 
@@ -44,9 +45,15 @@ namespace SportAcademy.Web.Controllers
 		}
 
 		[HttpGet]
-		public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+		public async Task<IActionResult> GetAll(
+			[FromQuery] int? page,
+			[FromQuery] int? pageSize,
+			CancellationToken cancellationToken)
 		{
-			var result = await _mediator.Send(new GetAllSportTraineesQuery(), cancellationToken);
+			var result = await _mediator.Send(
+				//new GetAllSportTraineesQuery(PageRequest.Create(page, pageSize)),
+				new GetAllSportTraineesQuery(),
+				cancellationToken);
 			return Ok(result);
 		}
 

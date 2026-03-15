@@ -89,4 +89,8 @@
 		<ProjectReference Include="..\SportAcademy.Domain\SportAcademy.Domain.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="Persistence\Queries\" />
+	</ItemGroup>
+
 </Project>
