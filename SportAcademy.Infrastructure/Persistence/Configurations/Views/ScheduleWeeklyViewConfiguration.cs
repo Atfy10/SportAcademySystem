@@ -9,7 +9,7 @@ public class ScheduleWeeklyViewConfiguration
 {
     public void Configure(EntityTypeBuilder<ScheduleWeeklyView> builder)
     {
-        builder.ToView("vw_ScheduleDaily");
+        builder.ToView("vw_ScheduleWeekly");
 
         builder.HasNoKey();
 
