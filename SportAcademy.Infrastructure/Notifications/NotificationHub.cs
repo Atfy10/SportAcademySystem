@@ -12,15 +12,15 @@ namespace SportAcademy.Infrastructure.Notifications
     [Authorize]
     public class NotificationHub : Hub<INotificationClient>
     {
-        public override Task OnConnectedAsync()
+        public override async Task OnConnectedAsync()
         {
-            Groups.AddToGroupAsync(Context.ConnectionId, "General");
-            return base.OnConnectedAsync();
+            await Groups.AddToGroupAsync(Context.ConnectionId, "General");
+            await base.OnConnectedAsync();
         }
-        public override Task OnDisconnectedAsync(Exception exception)
+        public override async Task OnDisconnectedAsync(Exception exception)
         {
-            Groups.RemoveFromGroupAsync(Context.ConnectionId, "General");
-            return base.OnDisconnectedAsync(exception);
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, "General");
+            await base.OnDisconnectedAsync(exception);
         }
     }
 }
