@@ -122,6 +122,21 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<int> GetActiveTraineesCount(CancellationToken cancellationToken = default)
             => await _context.Trainees.CountAsync(t => t.IsSubscribed, cancellationToken);
 
+        private static async Task<bool> IsFtsAvailableAsync(IDbConnection connection, string tableName)
+        {
+            var result = await connection.QuerySingleAsync<int>(@"
+                SELECT CASE
+                    WHEN SERVERPROPERTY('IsFullTextInstalled') = 1
+                        AND EXISTS (
+                            SELECT 1 FROM sys.fulltext_indexes fi
+                            JOIN sys.objects o ON fi.object_id = o.object_id
+                            WHERE o.name = @tableName
+                        )
+                    THEN 1 ELSE 0
+                END", new { tableName });
+            return result == 1;
+        }
+
         public async Task<PagedData<TraineeCardDto>> SearchAsync(
             string term,
             PageRequest pageReq,
@@ -129,81 +144,110 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var offset = (pageReq.Page - 1) * pageReq.PageSize;
             var fullTextTerm = BuildFullTextTerm(term);
-
-            var sql = @"
-                SELECT 
-                    t.Id,
-                    t.FirstName,
-                    t.LastName,
-                    DATEDIFF(YEAR, t.BirthDate, GETDATE()) AS Age,
-                    t.Email,
-                    t.PhoneNumber,
-                    t.JoinDate,
-                    t.IsSubscribed,
-
-                    (SELECT 
-                            s.Name AS SportName,
-                            st.SkillLevel AS SkillLevel
-                        FROM SportTrainees st
-                        INNER JOIN Sports s 
-                            ON st.SportId = s.Id
-                        WHERE st.TraineeId = t.Id
-                        FOR JSON PATH
-                    ) AS SportSkills,
-
-                    (ce.FirstName + ' ' + ce.LastName) AS CoachName,
-
-                    b.Name AS BranchName
-
-                FROM Trainees t
-                INNER JOIN CONTAINSTABLE(
-                    Trainees,
-                    (FirstName, LastName, Email),
-                    @term
-                ) ft ON t.Id = ft.[KEY]
-
-                LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
-                LEFT JOIN Sports s ON st.SportId = s.Id
-
-                LEFT JOIN Enrollments e ON e.TraineeId = t.Id
-                LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
-
-                LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
-                LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
-
-                LEFT JOIN Branches b ON tg.BranchId = b.Id
-                   
-                WHERE t.IsDeleted = 0
-                GROUP BY
-                t.Id,
-                t.FirstName,
-                t.LastName,
-                t.BirthDate,
-                t.Email,
-                t.PhoneNumber,
-                t.JoinDate,
-                t.IsSubscribed,
-                ce.FirstName,
-                ce.LastName,
-                b.Name,
-                ft.RANK
-
-                ORDER BY ft.RANK DESC, t.Id ASC
-                OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
-            ";
-
+            var likeTerm = $"%{term}%";
 
             var connection = _context.Database.GetDbConnection();
 
             if (connection.State != ConnectionState.Open)
                 await connection.OpenAsync(cancellationToken);
 
-            var rows = await connection.QueryAsync<TraineeCardRow>(sql, new
+            var ftsAvailable = await IsFtsAvailableAsync(connection, "Trainees");
+
+            string sql;
+            object parameters;
+
+            if (ftsAvailable)
             {
-                term = fullTextTerm,
-                offset,
-                pageReq.PageSize
-            });
+                sql = @"
+                    SELECT 
+                        t.Id,
+                        t.FirstName,
+                        t.LastName,
+                        DATEDIFF(YEAR, t.BirthDate, GETDATE()) AS Age,
+                        t.Email,
+                        t.PhoneNumber,
+                        t.JoinDate,
+                        t.IsSubscribed,
+                        (SELECT 
+                                s.Name AS SportName,
+                                st.SkillLevel AS SkillLevel
+                            FROM SportTrainees st
+                            INNER JOIN Sports s 
+                                ON st.SportId = s.Id
+                            WHERE st.TraineeId = t.Id
+                            FOR JSON PATH
+                        ) AS SportSkills,
+                        (ce.FirstName + ' ' + ce.LastName) AS CoachName,
+                        b.Name AS BranchName
+                    FROM Trainees t
+                    INNER JOIN CONTAINSTABLE(
+                        Trainees,
+                        (FirstName, LastName, Email),
+                        @term
+                    ) ft ON t.Id = ft.[KEY]
+                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
+                    LEFT JOIN Sports s ON st.SportId = s.Id
+                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
+                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
+                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
+                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
+                    LEFT JOIN Branches b ON tg.BranchId = b.Id
+                    WHERE t.IsDeleted = 0
+                    GROUP BY
+                        t.Id, t.FirstName, t.LastName, t.BirthDate, t.Email,
+                        t.PhoneNumber, t.JoinDate, t.IsSubscribed,
+                        ce.FirstName, ce.LastName, b.Name, ft.RANK
+                    ORDER BY ft.RANK DESC, t.Id ASC
+                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+                ";
+                parameters = new { term = fullTextTerm, offset, pageReq.PageSize };
+            }
+            else
+            {
+                sql = @"
+                    SELECT 
+                        t.Id,
+                        t.FirstName,
+                        t.LastName,
+                        DATEDIFF(YEAR, t.BirthDate, GETDATE()) AS Age,
+                        t.Email,
+                        t.PhoneNumber,
+                        t.JoinDate,
+                        t.IsSubscribed,
+                        (SELECT 
+                                s.Name AS SportName,
+                                st.SkillLevel AS SkillLevel
+                            FROM SportTrainees st
+                            INNER JOIN Sports s 
+                                ON st.SportId = s.Id
+                            WHERE st.TraineeId = t.Id
+                            FOR JSON PATH
+                        ) AS SportSkills,
+                        (ce.FirstName + ' ' + ce.LastName) AS CoachName,
+                        b.Name AS BranchName
+                    FROM Trainees t
+                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
+                    LEFT JOIN Sports s ON st.SportId = s.Id
+                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
+                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
+                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
+                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
+                    LEFT JOIN Branches b ON tg.BranchId = b.Id
+                    WHERE t.IsDeleted = 0
+                      AND (t.FirstName LIKE @likeTerm
+                           OR t.LastName LIKE @likeTerm
+                           OR t.Email LIKE @likeTerm)
+                    GROUP BY
+                        t.Id, t.FirstName, t.LastName, t.BirthDate, t.Email,
+                        t.PhoneNumber, t.JoinDate, t.IsSubscribed,
+                        ce.FirstName, ce.LastName, b.Name
+                    ORDER BY t.Id ASC
+                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+                ";
+                parameters = new { likeTerm, offset, pageReq.PageSize };
+            }
+
+            var rows = await connection.QueryAsync<TraineeCardRow>(sql, parameters);
 
             var trainees = rows.Select(r =>
             {

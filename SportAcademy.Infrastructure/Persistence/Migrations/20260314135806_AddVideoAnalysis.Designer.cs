@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
@@ -11,9 +12,11 @@ using SportAcademy.Infrastructure.Persistence.DBContext;
 namespace SportAcademy.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260314135806_AddVideoAnalysis")]
+    partial class AddVideoAnalysis
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1439,7 +1442,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("EmployeeId");
 
-                            b1.ToTable("Employees", (string)null);
+                            b1.ToTable("Employees");
 
                             b1.WithOwner()
                                 .HasForeignKey("EmployeeId");
@@ -1458,7 +1461,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("EmployeeId");
 
-                            b1.ToTable("Employees", (string)null);
+                            b1.ToTable("Employees");
 
                             b1.WithOwner()
                                 .HasForeignKey("EmployeeId");
@@ -1723,7 +1726,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("TraineeId");
 
-                            b1.ToTable("Trainees", (string)null);
+                            b1.ToTable("Trainees");
 
                             b1.WithOwner()
                                 .HasForeignKey("TraineeId");
@@ -1742,7 +1745,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("TraineeId");
 
-                            b1.ToTable("Trainees", (string)null);
+                            b1.ToTable("Trainees");
 
                             b1.WithOwner()
                                 .HasForeignKey("TraineeId");

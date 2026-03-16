@@ -39,68 +39,121 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var offset = (pageReq.Page - 1) * pageReq.PageSize;
             var fullTextTerm = BuildFullTextTerm(term);
-
-            var sql = @"
-                SELECT 
-                    c.EmployeeId AS Id,
-                    e.FirstName,
-                    e.LastName,
-                    e.Position,
-                    b.Name AS BranchName,
-                    e.Email,
-                    e.IsWork,
-                    e.PhoneNumber,
-                    (e.City + ', ' + e.Street) AS Address,
-                    e.HireDate,
-                    ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
-                    c.SkillLevel,
-                    s.Name AS SportName
-                FROM Coaches c
-                INNER JOIN Employees e ON c.EmployeeId = e.Id
-                INNER JOIN CONTAINSTABLE(
-                    Employees,
-                    (FirstName, LastName),
-                    @term
-                ) ft ON e.Id = ft.[KEY]
-                INNER JOIN Branches b ON e.BranchId = b.Id
-                INNER JOIN Sports s ON c.SportId = s.Id
-                LEFT JOIN (
-                    SELECT 
-                        tg.CoachId,
-                        COUNT(enr.Id) AS TotalTrainees
-                    FROM TraineeGroups tg
-                    LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId 
-                        AND enr.IsActive = 1 
-                        AND enr.IsDeleted = 0
-                    GROUP BY tg.CoachId
-                ) trainee_count ON c.EmployeeId = trainee_count.CoachId
-                ORDER BY ft.RANK DESC, c.EmployeeId ASC
-                OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
-
-                SELECT COUNT(*)
-                FROM Coaches c
-                INNER JOIN Employees e ON c.EmployeeId = e.Id
-                INNER JOIN CONTAINSTABLE(
-                    Employees,
-                    (FirstName, LastName),
-                    @term
-                ) ft ON e.Id = ft.[KEY];
-            ";
+            var likeTerm = $"%{term}%";
 
             var connection = _context.Database.GetDbConnection();
 
             if (connection.State != ConnectionState.Open)
                 await connection.OpenAsync(cancellationToken);
 
-            using var multi = await connection.QueryMultipleAsync(
-                sql,
-                new
-                {
-                    term = fullTextTerm,
-                    offset,
-                    pageReq.PageSize
-                }
-            );
+            var ftsAvailable = await connection.QuerySingleAsync<int>(@"
+                SELECT CASE
+                    WHEN SERVERPROPERTY('IsFullTextInstalled') = 1
+                        AND EXISTS (
+                            SELECT 1 FROM sys.fulltext_indexes fi
+                            JOIN sys.objects o ON fi.object_id = o.object_id
+                            WHERE o.name = 'Employees'
+                        )
+                    THEN 1 ELSE 0
+                END") == 1;
+
+            string sql;
+            object parameters;
+
+            if (ftsAvailable)
+            {
+                sql = @"
+                    SELECT 
+                        c.EmployeeId AS Id,
+                        e.FirstName,
+                        e.LastName,
+                        e.Position,
+                        b.Name AS BranchName,
+                        e.Email,
+                        e.IsWork,
+                        e.PhoneNumber,
+                        (e.City + ', ' + e.Street) AS Address,
+                        e.HireDate,
+                        ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
+                        c.SkillLevel,
+                        s.Name AS SportName
+                    FROM Coaches c
+                    INNER JOIN Employees e ON c.EmployeeId = e.Id
+                    INNER JOIN CONTAINSTABLE(
+                        Employees,
+                        (FirstName, LastName),
+                        @term
+                    ) ft ON e.Id = ft.[KEY]
+                    INNER JOIN Branches b ON e.BranchId = b.Id
+                    INNER JOIN Sports s ON c.SportId = s.Id
+                    LEFT JOIN (
+                        SELECT 
+                            tg.CoachId,
+                            COUNT(enr.Id) AS TotalTrainees
+                        FROM TraineeGroups tg
+                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId 
+                            AND enr.IsActive = 1 
+                            AND enr.IsDeleted = 0
+                        GROUP BY tg.CoachId
+                    ) trainee_count ON c.EmployeeId = trainee_count.CoachId
+                    ORDER BY ft.RANK DESC, c.EmployeeId ASC
+                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+
+                    SELECT COUNT(*)
+                    FROM Coaches c
+                    INNER JOIN Employees e ON c.EmployeeId = e.Id
+                    INNER JOIN CONTAINSTABLE(
+                        Employees,
+                        (FirstName, LastName),
+                        @term
+                    ) ft ON e.Id = ft.[KEY];
+                ";
+                parameters = new { term = fullTextTerm, offset, pageReq.PageSize };
+            }
+            else
+            {
+                sql = @"
+                    SELECT 
+                        c.EmployeeId AS Id,
+                        e.FirstName,
+                        e.LastName,
+                        e.Position,
+                        b.Name AS BranchName,
+                        e.Email,
+                        e.IsWork,
+                        e.PhoneNumber,
+                        (e.City + ', ' + e.Street) AS Address,
+                        e.HireDate,
+                        ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
+                        c.SkillLevel,
+                        s.Name AS SportName
+                    FROM Coaches c
+                    INNER JOIN Employees e ON c.EmployeeId = e.Id
+                    INNER JOIN Branches b ON e.BranchId = b.Id
+                    INNER JOIN Sports s ON c.SportId = s.Id
+                    LEFT JOIN (
+                        SELECT 
+                            tg.CoachId,
+                            COUNT(enr.Id) AS TotalTrainees
+                        FROM TraineeGroups tg
+                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId 
+                            AND enr.IsActive = 1 
+                            AND enr.IsDeleted = 0
+                        GROUP BY tg.CoachId
+                    ) trainee_count ON c.EmployeeId = trainee_count.CoachId
+                    WHERE (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
+                    ORDER BY c.EmployeeId ASC
+                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+
+                    SELECT COUNT(*)
+                    FROM Coaches c
+                    INNER JOIN Employees e ON c.EmployeeId = e.Id
+                    WHERE (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
+                ";
+                parameters = new { likeTerm, offset, pageReq.PageSize };
+            }
+
+            using var multi = await connection.QueryMultipleAsync(sql, parameters);
 
             var coaches = (await multi.ReadAsync<CoachCardDto>()).ToList();
 

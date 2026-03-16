@@ -95,51 +95,88 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var offset = (pageReq.Page - 1) * pageReq.PageSize;
             var fullTextTerm = BuildFullTextTerm(term);
-
-            var sql = @"
-                SELECT 
-                    e.Id,
-                    e.FirstName,
-                    e.LastName,
-                    e.Position,
-                    b.Name AS BranchName,
-                    e.Email,
-                    e.IsWork,
-                    e.PhoneNumber,
-                    (e.City + ', ' + e.Street) AS Address,
-                    e.HireDate
-                FROM Employees e
-                INNER JOIN CONTAINSTABLE(
-                    Employees,
-                    (FirstName, LastName),
-                    @term
-                ) ft ON e.Id = ft.[KEY]
-                INNER JOIN Branches b ON e.BranchId = b.Id
-                ORDER BY ft.RANK DESC, e.Id ASC
-                OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
-
-                SELECT COUNT(*)
-                FROM CONTAINSTABLE(
-                    Employees,
-                    (FirstName, LastName),
-                    @term
-                );            
-            ";
+            var likeTerm = $"%{term}%";
 
             var connection = _context.Database.GetDbConnection();
 
             if (connection.State != ConnectionState.Open)
                 await connection.OpenAsync(cancellationToken);
 
-            using var multi = await connection.QueryMultipleAsync(
-                sql,
-                new
-                {
-                    term = fullTextTerm,
-                    offset,
-                    pageReq.PageSize
-                }
-            );
+            var ftsAvailable = await connection.QuerySingleAsync<int>(@"
+                SELECT CASE
+                    WHEN SERVERPROPERTY('IsFullTextInstalled') = 1
+                        AND EXISTS (
+                            SELECT 1 FROM sys.fulltext_indexes fi
+                            JOIN sys.objects o ON fi.object_id = o.object_id
+                            WHERE o.name = 'Employees'
+                        )
+                    THEN 1 ELSE 0
+                END") == 1;
+
+            string sql;
+            object parameters;
+
+            if (ftsAvailable)
+            {
+                sql = @"
+                    SELECT 
+                        e.Id,
+                        e.FirstName,
+                        e.LastName,
+                        e.Position,
+                        b.Name AS BranchName,
+                        e.Email,
+                        e.IsWork,
+                        e.PhoneNumber,
+                        (e.City + ', ' + e.Street) AS Address,
+                        e.HireDate
+                    FROM Employees e
+                    INNER JOIN CONTAINSTABLE(
+                        Employees,
+                        (FirstName, LastName),
+                        @term
+                    ) ft ON e.Id = ft.[KEY]
+                    INNER JOIN Branches b ON e.BranchId = b.Id
+                    ORDER BY ft.RANK DESC, e.Id ASC
+                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+
+                    SELECT COUNT(*)
+                    FROM CONTAINSTABLE(
+                        Employees,
+                        (FirstName, LastName),
+                        @term
+                    );
+                ";
+                parameters = new { term = fullTextTerm, offset, pageReq.PageSize };
+            }
+            else
+            {
+                sql = @"
+                    SELECT 
+                        e.Id,
+                        e.FirstName,
+                        e.LastName,
+                        e.Position,
+                        b.Name AS BranchName,
+                        e.Email,
+                        e.IsWork,
+                        e.PhoneNumber,
+                        (e.City + ', ' + e.Street) AS Address,
+                        e.HireDate
+                    FROM Employees e
+                    INNER JOIN Branches b ON e.BranchId = b.Id
+                    WHERE (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
+                    ORDER BY e.Id ASC
+                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+
+                    SELECT COUNT(*)
+                    FROM Employees e
+                    WHERE (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
+                ";
+                parameters = new { likeTerm, offset, pageReq.PageSize };
+            }
+
+            using var multi = await connection.QueryMultipleAsync(sql, parameters);
 
             var employees = (await multi.ReadAsync<EmployeeCardDto>()).ToList();
 
