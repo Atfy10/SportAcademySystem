@@ -40,6 +40,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<TraineeCodesHistory> TraineeCodesHistory { get; set; }
         public DbSet<Family> Families { get; set; }
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
+        public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

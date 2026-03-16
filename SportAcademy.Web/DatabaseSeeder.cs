@@ -126,9 +126,31 @@ namespace SportAcademy.Infrastructure.Seeders
             await context.SaveChangesAsync();
             logger.LogInformation("   ✔ Coaches seeded successfully.");
 
+            // 8.5 NationalityCategories
+            logger.LogInformation("Seeding NationalityCategories...");
+            var nationalityCategories = new List<NationalityCategory>
+            {
+                new() { Code = "KW", Name = "Kuwaiti" },
+                new() { Code = "GCC", Name = "GCC" },
+                new() { Code = "AR", Name = "Arab" },
+                new() { Code = "AS", Name = "Asian" },
+                new() { Code = "OT", Name = "Other" },
+            };
+            await context.NationalityCategories.AddRangeAsync(nationalityCategories);
+            await context.SaveChangesAsync();
+
+            // 8.6 Families (one per trainee)
+            logger.LogInformation("Seeding Families...");
+            for (int fi = 1; fi <= 50; fi++)
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    $"INSERT INTO Families (FamilyCode, LastMemberNumber) VALUES ({fi}, 0)");
+            }
+            var familyIds = await context.Families.Select(f => f.Id).ToListAsync();
+
             // 9. Trainees
             logger.LogInformation("9️⃣ Seeding Trainees...");
-            var trainees = GenerateTrainees(context);
+            var trainees = GenerateTrainees(context, branches, nationalityCategories, familyIds);
             await context.Trainees.AddRangeAsync(trainees);
             await context.SaveChangesAsync();
             logger.LogInformation("   ✔ Trainees seeded successfully.");
@@ -463,7 +485,11 @@ namespace SportAcademy.Infrastructure.Seeders
             return faker.Generate(coachEmployees.Count - 1);
         }
 
-        private static List<Trainee> GenerateTrainees(ApplicationDbContext context)
+        private static List<Trainee> GenerateTrainees(
+            ApplicationDbContext context,
+            List<Branch> branches,
+            List<NationalityCategory> nationalityCategories,
+            List<int> familyIds)
         {
             var users = context.Users.Where(u => u.Employee == null).Take(50).ToList();
             if (users.Count < 50)
@@ -482,8 +508,8 @@ namespace SportAcademy.Infrastructure.Seeders
                 })
                 .RuleFor(t => t.BirthDate, f => DateOnly.FromDateTime(f.Date.Past(18, DateTime.Now.AddYears(-6))))
                 .RuleFor(t => t.Gender, f => f.PickRandom<Gender>())
-                .RuleFor(t => t.Address, f => GenerateKuwaitiAddress(f)) // Using Address value object
-                .RuleFor(t => t.Email, f => Email.Create(f.Internet.Email())) // Using Email value object
+                .RuleFor(t => t.Address, f => GenerateKuwaitiAddress(f))
+                .RuleFor(t => t.Email, f => Email.Create(f.Internet.Email()))
                 .RuleFor(t => t.PhoneNumber, f => $"{f.Random.Number(5, 9)}{f.Random.Number(1000000, 9999999)}")
                 .RuleFor(t => t.Nationality, f => f.PickRandom<Nationality>())
                 .RuleFor(t => t.IsSubscribed, f => f.Random.Bool(0.7f))
@@ -501,17 +527,37 @@ namespace SportAcademy.Infrastructure.Seeders
 
             var trainees = faker.Generate(50);
 
-            // Generate trainee IDs manually based on business logic
             var random = new Random();
-            foreach (var trainee in trainees)
+            int memberCounter = 1;
+
+            for (int j = 0; j < trainees.Count; j++)
             {
-                var branchId = random.Next(1, 9);
+                var trainee = trainees[j];
+                var branch = branches[random.Next(branches.Count)];
+                var natCat = nationalityCategories[random.Next(nationalityCategories.Count)];
+
+                // Set required FK fields
+                trainee.BranchId = branch.Id;
+                trainee.FamilyId = familyIds[j];
+                trainee.NationalityCategoryId = natCat.Id;
+                trainee.JoinDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-random.Next(30, 730)));
+
+                // Generate TraineeCode
+                var ageCategory = trainee.AgeCategory;
+                trainee.TraineeCode = TraineeCode.Create(
+                    ageCategory,
+                    j + 1,
+                    branch.Id,
+                    natCat.Code,
+                    memberCounter++);
+
+                // Generate custom trainee ID
                 var year = trainee.BirthDate.Year % 100;
                 var month = trainee.BirthDate.Month;
                 var dobCode = $"{year:D2}{month:D2}";
                 var firstLetter = char.ToUpper(trainee.FirstName[0]);
                 var ascii = ((int)firstLetter).ToString("D2");
-                var prefix = $"{branchId}{dobCode}{ascii}";
+                var prefix = $"{branch.Id}{dobCode}{ascii}";
                 var counter = random.Next(1, 99).ToString("D2");
                 trainee.Id = int.Parse($"{prefix}{counter}");
             }
