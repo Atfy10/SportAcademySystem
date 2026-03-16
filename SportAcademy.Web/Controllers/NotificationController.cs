@@ -1,7 +1,9 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.NotificationsDtos;
 using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Web.Controllers
@@ -11,13 +13,16 @@ namespace SportAcademy.Web.Controllers
     [ApiController]
     public class NotificationsController : ControllerBase
     {
+        private readonly IMediator _mediator;
         private readonly INotificationRepository _notificationRepository;
         private readonly IUserContextService _userContext;
 
         public NotificationsController(
+            IMediator mediator,
             INotificationRepository notificationRepository,
             IUserContextService userContext)
         {
+            _mediator = mediator;
             _notificationRepository = notificationRepository;
             _userContext = userContext;
         }
@@ -28,9 +33,9 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] int? pageSize,
             CancellationToken ct)
         {
-            var result = await _notificationRepository.GetUserNotificationsAsync(
-                _userContext.UserId,
-                PageRequest.Create(page, pageSize),
+            var result = await _mediator.Send(
+                new GetUserNotificationsQuery(_userContext.UserId,
+                    PageRequest.Create(page, pageSize)),
                 ct);
 
             return Ok(Result<PagedData<NotificationRecipientDto>>.Success(result, "Get"));
