@@ -1,9 +1,12 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.NotificationCommands.MarkAllNotificationsAsRead;
+using SportAcademy.Application.Commands.NotificationCommands.MarkNotificationAsRead;
 using SportAcademy.Application.Common.Pagination;
-using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.NotificationsDtos;
-using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Queries.NotificationQueries.GetUnreadCount;
+using SportAcademy.Application.Queries.NotificationQueries.GetUserNotifications;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -12,15 +15,11 @@ namespace SportAcademy.Web.Controllers
     [ApiController]
     public class NotificationsController : ControllerBase
     {
-        private readonly INotificationRepository _notificationRepository;
-        private readonly IUserContextService _userContext;
+        private readonly IMediator _mediator;
 
-        public NotificationsController(
-            INotificationRepository notificationRepository,
-            IUserContextService userContext)
+        public NotificationsController(IMediator mediator)
         {
-            _notificationRepository = notificationRepository;
-            _userContext = userContext;
+            _mediator = mediator;
         }
 
         [HttpGet]
@@ -29,37 +28,38 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] int? pageSize,
             CancellationToken ct)
         {
-            var result = await _notificationRepository.GetUserNotificationsAsync(
-                _userContext.UserId,
-                PageRequest.Create(page, pageSize),
+            var result = await _mediator.Send(
+                new GetUserNotificationsQuery(PageRequest.Create(page, pageSize)),
                 ct);
 
-            return Ok(Result<PagedData<NotificationRecipientDto>>.Success(result, "Get"));
+            return Ok(result);
         }
 
         [HttpGet("unread-count")]
         public async Task<IActionResult> GetUnreadCount(CancellationToken ct)
         {
-            var count = await _notificationRepository.GetUnreadCountAsync(_userContext.UserId, ct);
-            return Ok(Result<int>.Success(count, "Get"));
+            var count = await _mediator.Send(new GetUnreadCountQuery(), ct);
+            return Ok(count);
         }
 
         [HttpPatch("{id}/read")]
         public async Task<IActionResult> MarkAsRead(int id, CancellationToken ct)
         {
-            var success = await _notificationRepository.MarkAsReadAsync(id, _userContext.UserId, ct);
+            var success = await _mediator.Send(
+                new MarkNotificationAsReadCommand(id),
+                ct);
 
             if (!success)
-                return NotFound(Result.Failure("Update", "Notification not found"));
+                return NotFound();
 
-            return Ok(Result<object?>.Success(null, "Update"));
+            return Ok();
         }
 
         [HttpPatch("read-all")]
         public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
         {
-            await _notificationRepository.MarkAllAsReadAsync(_userContext.UserId, ct);
-            return Ok(Result<object?>.Success(null, "Update"));
+            await _mediator.Send(new MarkAllNotificationsAsReadCommand(), ct);
+            return Ok();
         }
     }
 }

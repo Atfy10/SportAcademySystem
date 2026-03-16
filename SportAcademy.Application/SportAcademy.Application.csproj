@@ -19,6 +19,7 @@
 	<ItemGroup>
 	  <Folder Include="Commands\CoachCommands\DeleteCoach\" />
 	  <Folder Include="Commands\CoachCommands\UpdateCoach\" />
+	  <Folder Include="Queries\NotificationQueries\" />
 	</ItemGroup>
 
 </Project>
