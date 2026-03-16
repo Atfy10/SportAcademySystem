@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.NotificationsDtos;
 using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Web.Controllers
