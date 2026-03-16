@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.NotificationCommands.MarkAllNotificationsAsRead;
 using SportAcademy.Application.Commands.NotificationCommands.MarkNotificationAsRead;
 using SportAcademy.Application.Common.Pagination;
-using SportAcademy.Application.DTOs.NotificationsDtos;
 using SportAcademy.Application.Queries.NotificationQueries.GetUnreadCount;
 using SportAcademy.Application.Queries.NotificationQueries.GetUserNotifications;
 
