@@ -25,7 +25,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 			var branch = _mapper.Map<Branch>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-			var emailExists = await _branchRepository.IsEmailExistAsync(branch.Email, cancellationToken);
+			var emailExists = await _branchRepository.IsEmailExistAsync(branch.Email ?? "", cancellationToken);
 			if (emailExists)
 				throw new EmailExistException();
 			
