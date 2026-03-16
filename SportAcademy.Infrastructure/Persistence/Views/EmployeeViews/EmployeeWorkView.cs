@@ -1,8 +1,9 @@
 ﻿using SportAcademy.Domain.Enums;
+using SportAcademy.Infrastructure.Persistence.Views.Interfaces;
 
 namespace SportAcademy.Infrastructure.Persistence.Views.EmployeeViews;
 
-public class EmployeeWorkView
+public class EmployeeWorkView : IModelView
 {
     public int Id { get; set; }
 

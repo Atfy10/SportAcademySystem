@@ -1,6 +1,8 @@
-﻿namespace SportAcademy.Infrastructure.Persistence.Views.ScheduleViews;
+﻿using SportAcademy.Infrastructure.Persistence.Views.Interfaces;
 
-public class ScheduleWeeklyView
+namespace SportAcademy.Infrastructure.Persistence.Views.ScheduleViews;
+
+public class ScheduleWeeklyView : IModelView
 {
     public int TraineeGroupId { get; set; }
 

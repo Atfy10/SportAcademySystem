@@ -1,6 +1,8 @@
-﻿namespace SportAcademy.Infrastructure.Persistence.Views.TraineeViews
+﻿using SportAcademy.Infrastructure.Persistence.Views.Interfaces;
+
+namespace SportAcademy.Infrastructure.Persistence.Views.TraineeViews
 {
-    public class TraineeSubscriptionView
+    public class TraineeSubscriptionView : IModelView
     {
         public int Id { get; set; }
 

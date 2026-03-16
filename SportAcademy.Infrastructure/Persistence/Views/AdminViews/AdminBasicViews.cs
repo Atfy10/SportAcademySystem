@@ -1,8 +1,9 @@
 ﻿using SportAcademy.Domain.Enums;
+using SportAcademy.Infrastructure.Persistence.Views.Interfaces;
 
 namespace SportAcademy.Infrastructure.Persistence.Views.AdminViews
 {
-    public class AdminBasicViews
+    public class AdminBasicViews : IModelView
     {
         public string UserName { get; set; } = null!;
         public string FirstName { get; set; } = null!;

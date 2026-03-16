@@ -1,8 +1,9 @@
 ﻿using SportAcademy.Domain.Enums;
+using SportAcademy.Infrastructure.Persistence.Views.Interfaces;
 
 namespace SportAcademy.Infrastructure.Persistence.Views.GroupViews;
 
-public class GroupBasicView
+public class GroupBasicView : IModelView
 {
     public int TraineeGroupId { get; set; }
 

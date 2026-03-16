@@ -1,8 +1,9 @@
 ﻿using SportAcademy.Domain.Enums;
+using SportAcademy.Infrastructure.Persistence.Views.Interfaces;
 
 namespace SportAcademy.Infrastructure.Persistence.Views.CoachViews;
 
-public class CoachScheduleView
+public class CoachScheduleView : IModelView
 {
     public int TraineeGroupId { get; set; }
     public SkillLevel SkillLevel { get; set; }

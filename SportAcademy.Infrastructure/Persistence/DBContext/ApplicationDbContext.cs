@@ -4,6 +4,12 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
+using SportAcademy.Infrastructure.Persistence.Views.AdminViews;
+using SportAcademy.Infrastructure.Persistence.Views.CoachViews;
+using SportAcademy.Infrastructure.Persistence.Views.EmployeeViews;
+using SportAcademy.Infrastructure.Persistence.Views.GroupViews;
+using SportAcademy.Infrastructure.Persistence.Views.ScheduleViews;
+using SportAcademy.Infrastructure.Persistence.Views.TraineeViews;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -41,6 +47,20 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Family> Families { get; set; }
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
 
+        //  View for reporting purposes
+        public DbSet<AdminBasicViews> AdminBasicViews { get; set; }
+        public DbSet<CoachScheduleView> CoachScheduleViews { get; set; }
+        public DbSet<CoachSkillView> CoachSkillViews { get; set; }
+        public DbSet<EmployeeBasicView> EmployeeBasicViews { get; set; }
+        public DbSet<EmployeeWorkView> EmployeeWorkViews { get; set; }
+        public DbSet<GroupBasicView> GroupBasicViews { get; set; }
+        public DbSet<ScheduleDailyView> ScheduleDailyViews { get; set; }
+        public DbSet<ScheduleWeeklyView> ScheduleWeeklyViews { get; set; }
+        public DbSet<TraineeBasicView> TraineeBasicViews { get; set; }
+        public DbSet<TraineeAttendanceView> TraineeAttendanceViews { get; set; }
+        public DbSet<TraineeSessionView> TraineeSessionViews { get; set; }
+        public DbSet<TraineeScheduleView> TraineeScheduleViews { get; set; }
+        public DbSet<TraineeSubscriptionView> TraineeSubscriptionViews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
