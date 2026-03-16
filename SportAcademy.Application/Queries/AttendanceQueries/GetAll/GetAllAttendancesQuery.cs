@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetAll
 {
-    public class GetAttendancesQuery(PageRequest Page) 
+    public class GetAllAttendancesQuery(PageRequest Page) 
         : IRequest<Result<PagedData<AttendanceDto>>>, IPaginatedRequest
     {
         public PageRequest Page { get; set; } = Page;

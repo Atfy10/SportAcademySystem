@@ -4,6 +4,5 @@ using SportAcademy.Application.DTOs.BranchDtos;
 
 namespace SportAcademy.Application.Queries.BranchQueries.GetAll
 {
-	public record GetAllAttendancesQuery () : IRequest<Result<List<BranchDropDownListDto>>>;
-
+	public record GetAllBranchesQuery () : IRequest<Result<List<BranchDropDownListDto>>>;
 }

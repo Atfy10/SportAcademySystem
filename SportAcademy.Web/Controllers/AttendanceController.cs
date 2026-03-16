@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
+using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Queries.AttendanceQueries.GetAll;
 using SportAcademy.Application.Queries.AttendanceQueries.GetAttendanceRate;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.AttendanceQueries.GetGlobalAttendanceRate;
@@ -32,9 +34,13 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken ct)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllAttendancesQuery(),ct);
+            var result = await _mediator.Send(
+                new GetAllAttendancesQuery(PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
 

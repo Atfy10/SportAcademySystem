@@ -13,13 +13,13 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetAll
 {
-    public class GetAttendancesQueryHandler : IRequestHandler<GetAttendancesQuery, Result<PagedData<AttendanceDto>>>
+    public class GetAllAttendancesQueryHandler : IRequestHandler<GetAllAttendancesQuery, Result<PagedData<AttendanceDto>>>
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IMapper _mapper;
         private readonly string _operation = OperationType.GetAll.ToString();
 
-        public GetAttendancesQueryHandler(
+        public GetAllAttendancesQueryHandler(
             IAttendanceRepository attendanceRepository,
             IMapper mapper)
         {
@@ -27,7 +27,7 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetAll
             _mapper = mapper;
         }
 
-        public async Task<Result<PagedData<AttendanceDto>>> Handle(GetAttendancesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<AttendanceDto>>> Handle(GetAllAttendancesQuery request, CancellationToken cancellationToken)
         {
             var attendancesDto = await _attendanceRepository.GetAllAsync(request.Page, cancellationToken);
 
