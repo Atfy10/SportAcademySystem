@@ -133,7 +133,10 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBeh
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PaginationNormalizationBehavior<,>));
 
-builder.Services.AddAutoMapper(typeof(TraineeProfile).Assembly);
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddMaps(typeof(TraineeProfile).Assembly);
+});
 
 builder.Services.AddScoped<ITraineeService, TraineeService>();
 
