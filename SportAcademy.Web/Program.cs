@@ -18,6 +18,7 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.Implementations;
 using SportAcademy.Infrastructure.Implementations.OpenAi;
+using SportAcademy.Infrastructure.Implementations.OpenRouter;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
@@ -86,14 +87,14 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
-            //var accessToken = context.Request.Query["access_token"];
-            //var path = context.HttpContext.Request.Path;
-            //if (!string.IsNullOrEmpty(accessToken) &&
-            //    (path.StartsWithSegments("/hubs/notification")))
-            //{
-            //    context.Token = accessToken;
-            //    return Task.CompletedTask;
-            //}
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) &&
+                path.StartsWithSegments("/hubs/notification"))
+            {
+                context.Token = accessToken;
+                return Task.CompletedTask;
+            }
             if (context.Request.Cookies.ContainsKey("jwt"))
             {
                 context.Token = context.Request.Cookies["jwt"];
@@ -201,6 +202,10 @@ builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 builder.Services.AddScoped<IChatBotService, ChatBotService>();
 
 builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
+
+builder.Services.AddHttpClient<IOpenRouterClient, OpenRouterClient>();
+
+builder.Services.AddScoped<IVideoAnalysisRepository, VideoAnalysisRepository>();
 
 builder.Services.AddScoped<ITraineeCodeGenerator, SqlTraineeCodeGenerator>();
 
