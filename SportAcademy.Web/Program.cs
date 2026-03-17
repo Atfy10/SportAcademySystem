@@ -1,28 +1,19 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using SportAcademy.Application.Behaviors;
-using SportAcademy.Application.Commands.Trainees.CreateTrainee;
+using SportAcademy.Application;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Mappings.TraineeProfile;
-using SportAcademy.Application.Services;
-using SportAcademy.Application.Validators.TraineeValidators;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Domain.Services;
-using SportAcademy.Infrastructure.Implementations;
+using SportAcademy.Infrastructure;
 using SportAcademy.Infrastructure.Implementations.OpenAi;
 using SportAcademy.Infrastructure.Implementations.OpenRouter;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
-using SportAcademy.Infrastructure.Persistence.Repositories;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Web;
 using SportAcademy.Web.Services;
@@ -122,92 +113,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+// Add Application layer services (MediatR, AutoMapper, Validators, Application Services)
+builder.Services.AddApplicationServices();
 
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateTraineeCommand).Assembly));
+// Add Infrastructure layer services (Repositories, External Clients, JWT)
+builder.Services.AddInfrastructureServices();
 
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>));
-
-builder.Services.AddValidatorsFromAssembly(typeof(CreateTraineeValidator).Assembly);
-
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PaginationNormalizationBehavior<,>));
-
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddMaps(typeof(TraineeProfile).Assembly);
-});
-
-builder.Services.AddScoped<ITraineeService, TraineeService>();
-
-builder.Services.AddScoped(typeof(IBaseRepository<,>), typeof(BaseRepository<,>));
-
-builder.Services.AddScoped<ITraineeRepository, TraineeRepository>();
-
-builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-
-builder.Services.AddScoped<IPersonService, PersonService>();
-
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-
-builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
-builder.Services.AddScoped<INotificationService, NotificationService>();
-
-builder.Services.AddScoped<IBranchRepository, BranchRepository>();
-
-builder.Services.AddScoped<ISportRepository, SportRepository>();
-
-builder.Services.AddScoped<ISportBranchRepository, SportBranchRepository>();
-
-builder.Services.AddScoped<ISportPriceRepository, SportPriceRepository>();
-
-builder.Services.AddScoped<ISubscriptionTypeRepository, SubscriptionTypeRepository>();
-
-builder.Services.AddScoped<ISportTraineeRepository, SportTraineeRepository>();
-
-builder.Services.AddScoped<ISportBranchRepository, SportBranchRepository>();
-
-builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
-
-builder.Services.AddScoped<ISessionOccurrenceRepository, SessionOccurrenceRepository>();
-
-builder.Services.AddScoped<ITraineeGroupRepository, TraineeGroupRepository>();
-
-builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
-
-builder.Services.AddScoped<ISubscriptionDetailsRepository, SubscriptionDetailsRepository>();
-
-builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-
-builder.Services.AddScoped<SubDetailsManagementService>();
-
-builder.Services.AddScoped<TraineeGroupService>();
-
-builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
-
-builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-
-builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
-
-builder.Services.AddScoped<INationalityCategoryRepository, NationalityCategoryRepository>();
-
-builder.Services.AddScoped<ICoachRepository, CoachRepository>();
-
-builder.Services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
-
-builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
-
-builder.Services.AddScoped<IChatBotService, ChatBotService>();
-
+// Register external HTTP client services (web layer specific)
 builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
-
 builder.Services.AddHttpClient<IOpenRouterClient, OpenRouterClient>();
-
-builder.Services.AddScoped<IVideoAnalysisRepository, VideoAnalysisRepository>();
-
-builder.Services.AddScoped<ITraineeCodeGenerator, SqlTraineeCodeGenerator>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
