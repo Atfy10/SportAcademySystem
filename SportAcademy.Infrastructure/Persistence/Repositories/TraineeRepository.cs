@@ -270,18 +270,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 );
             }).ToList();
 
-
-            //using var multi = await connection.QueryMultipleAsync(
-            //    sql,
-            //    new
-            //    {
-            //        term = fullTextTerm,
-            //        offset,
-            //        pageReq.PageSize
-            //    });
-
-            //var trainees = (await multi.ReadAsync<TraineeCardDto>()).ToList();
-
             return trainees.ToPagedData(pageReq);
         }
 
