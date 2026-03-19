@@ -5,6 +5,7 @@ using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.UserCommands.UserCreate;
 using SportAcademy.Application.Commands.UserCommands.UserDelete;
 using SportAcademy.Application.Commands.UserCommands.UserUpdate;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetById;
@@ -46,6 +47,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(typeof(Result<string>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateAsync(CreateUserCommand command)
         {
             var user = await _mediator.Send(command);
