@@ -14,6 +14,7 @@ using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
 namespace SportAcademy.Web.Controllers
 {
     [Authorize]
+    [Route("api/[controller]")]
     [ApiController]
     public class CoachController : ControllerBase
     {
@@ -24,56 +25,56 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("api/coach/{id}")]
+        [HttpGet("{id}")]
         public async Task<ActionResult> GetById(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetCoachByIdQuery(id), ct);
             return Ok(result);
         }
 
-        [HttpGet("api/coach/dropdown")]
+        [HttpGet("dropdown")]
         public async Task<IActionResult> GetDropdown(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllCoachesForDropdownQuery(), ct);
             return Ok(result);
         }
 
-        [HttpPost("api/coach")]
+        [HttpPost]
         public async Task<ActionResult> Create(CreateCoachCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
-        [HttpPost("api/coach/with-employee")]
+        [HttpPost("with-employee")]
         public async Task<ActionResult> CreateFromEmployee(CreateCoachWithEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
-        [HttpDelete("api/coaches/{id}")]
+        [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteCoachCommand(id), ct);
             return Ok(result);
         }
 
-        [HttpGet("api/coach/rating-average")]
+        [HttpGet("rating-average")]
         public async Task<IActionResult> GetAllCoachsAvgRating()
         {
             var result = await _mediator.Send(new GetAverageRatingQuery());
             return Ok(result);
         }
 
-        [HttpGet("api/coach/count")]
+        [HttpGet("count")]
         public async Task<IActionResult> GetAllCoachsCount()
         {
             var result = await _mediator.Send(new GetCoachsCountQuery());
             return Ok(result);
         }
 
-        [HttpGet("api/coach/search")]
+        [HttpGet("search")]
         public async Task<IActionResult> SearchCoaches(
             [FromQuery] string searchTerm,
             [FromQuery] int? page,

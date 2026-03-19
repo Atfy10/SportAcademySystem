@@ -17,6 +17,7 @@ using SportAcademy.Application.Queries.SportQueries.SearchSportsName;
 namespace SportAcademy.Web.Controllers
 {
     [Authorize]
+    [Route("api/[controller]")]
     [ApiController]
     public class SportsController : ControllerBase
     {
@@ -27,35 +28,35 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpPost("api/sports")]
+        [HttpPost]
         public async Task<IActionResult> Create(CreateSportCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
-        [HttpPut("api/sports")]
+        [HttpPut]
         public async Task<IActionResult> Update(UpdateSportCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
-        [HttpDelete("api/sport/{sportId}")]
+        [HttpDelete("{sportId}")]
         public async Task<IActionResult> Delete(int sportId)
         {
             var result = await _mediator.Send(new DeleteSportCommand(sportId));
             return Ok(result);
         }
 
-        [HttpGet("api/sport/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int Id)
         {
             var result = await _mediator.Send(new GetSportByIdQuery(Id));
             return Ok(result);
         }
 
-        [HttpGet("api/sports/paginated")]
+        [HttpGet("paginated")]
         public async Task<IActionResult> GetAllPaginated(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -67,7 +68,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("api/sports")]
+        [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(
@@ -75,21 +76,21 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("api/sports/available-for/branch/{branchId}")]
+        [HttpGet("available-for/branch/{branchId}")]
         public async Task<IActionResult> GetAvailableForBranch(int branchId, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetAvailableSportsForBranchQuery(branchId), cancellationToken);
             return Ok(result);
         }
 
-        [HttpGet("api/sports/count")]
+        [HttpGet("count")]
         public async Task<IActionResult> GetAllSportsCount()
         {
             var result = await _mediator.Send(new GetSportsCountQuery());
             return Ok(result);
         }
 
-        [HttpGet("api/sports/search")]
+        [HttpGet("search")]
         public async Task<IActionResult> Search(
             [FromQuery] string searchTerm,
             [FromQuery] int? page,
@@ -102,7 +103,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpGet("api/sports/search-name")]
+        [HttpGet("search-name")]
         public async Task<IActionResult> SearchSportsName(
             [FromQuery] string searchTerm,
             CancellationToken cancellationToken)
@@ -111,7 +112,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpPost("api/sports/{sportId}/skill-level")]
+        [HttpPost("{sportId}/skill-level")]
         public async Task<IActionResult> AddSkillLevel(int sportId, [FromBody] AddSkillLevelCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(new AddSkillLevelCommand(sportId, command.Name, command.Description), ct);
