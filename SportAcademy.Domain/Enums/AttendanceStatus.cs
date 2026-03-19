@@ -10,6 +10,7 @@ namespace SportAcademy.Domain.Enums
     {
         Present = 1,
         Absent,
-        Excused
+        Excused,
+        Late = 4
     }
 }
