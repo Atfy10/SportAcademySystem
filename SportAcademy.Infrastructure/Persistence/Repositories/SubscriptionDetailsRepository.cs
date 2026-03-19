@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -56,5 +57,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .ThenInclude(sp => sp.Branch)
                 .Include(sd => sd.Payment)
                     .ThenInclude(p => p.Branch);
+
+        public async Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
+            => await _context.SubscriptionDetails
+                .Include(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.SportSubscriptionType)
+                        .ThenInclude(sst => sst.SubscriptionType)
+                .Include(sd => sd.Trainee)
+                .AsNoTracking()
+                .Select(sd => new SubscriptionDetailsDropdownDto(
+                    sd.Id,
+                    sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
+                    sd.TraineeId,
+                    sd.Trainee.FirstName + " " + sd.Trainee.LastName
+                ))
+                .ToListAsync(cancellationToken);
     }
 }

@@ -25,5 +25,6 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<EmployeeDto>> GetActiveAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetActiveCoachesAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetCoachEmployeesWithoutCoachRecordAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<bool> ToggleIsWorkAsync(int id, CancellationToken cancellationToken = default);
     }
 }

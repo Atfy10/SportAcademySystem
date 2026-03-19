@@ -27,68 +27,105 @@ namespace SportAcademy.Application.Behaviors
             {
                 return await next(cancellationToken);
             }
-            catch (FluentValidation.ValidationException ex)
+            catch (ValidationException ex)
             {
-                _logger.LogWarning("Validation failed for {RequestType}: {Errors}",
-                    request.GetType().Name, ex.Errors);
+                var requestType = request.GetType().Name;
 
                 var errors = ex.Errors
                     .GroupBy(e => e.PropertyName)
-                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.ErrorMessage).ToArray()
+                    );
 
-                return CreateFailureWithErrors<TResponse>(request.GetType().Name,
+                _logger.LogWarning(ex,
+                    "Validation failed for {RequestType}. Errors: {@Errors}",
+                    requestType,
+                    errors);
+
+                return CreateFailureWithErrors<TResponse>(
+                    requestType,
                     "Some information you entered is invalid. Please review and try again.",
                     errors);
             }
             catch (DomainValidationException ex)
             {
-                _logger.LogWarning("Domain validation failed for {RequestType}: {Message}",
-                    request.GetType().Name, ex.Message);
+                var requestType = request.GetType().Name;
 
-                return CreateFailure<TResponse>(request.GetType().Name, ex.Message, 400);
+                _logger.LogWarning(ex,
+                    "Domain validation failed for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning("Argument exception for {RequestType}: {Message}",
-                    request.GetType().Name, ex.Message);
+                var requestType = request.GetType().Name;
 
-                return CreateFailure<TResponse>(request.GetType().Name, ex.Message, 400);
+                _logger.LogWarning(ex,
+                    "Argument exception for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
             }
             catch (IdNotFoundException ex)
             {
-                _logger.LogWarning("Resource not found for {RequestType}: {Message}",
-                    request.GetType().Name, ex.Message);
+                var requestType = request.GetType().Name;
 
-                return CreateFailure<TResponse>(request.GetType().Name, ex.Message, 404);
+                _logger.LogWarning(ex,
+                    "Resource not found for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 404);
             }
             catch (ConflictException ex)
             {
-                _logger.LogWarning("Conflict for {RequestType}: {Message}",
-                    request.GetType().Name, ex.Message);
+                var requestType = request.GetType().Name;
 
-                return CreateFailure<TResponse>(request.GetType().Name, ex.Message, 409);
+                _logger.LogWarning(ex,
+                    "Conflict detected for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
             }
             catch (SSNNotUniqueException ex)
             {
-                _logger.LogWarning("SSN conflict for {RequestType}: {Message}",
-                    request.GetType().Name, ex.Message);
+                var requestType = request.GetType().Name;
 
-                return CreateFailure<TResponse>(request.GetType().Name, ex.Message, 409);
+                _logger.LogWarning(ex,
+                    "SSN conflict for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
             }
             catch (PhoneNumberNotUniqueException ex)
             {
-                _logger.LogWarning("Phone conflict for {RequestType}: {Message}",
-                    request.GetType().Name, ex.Message);
+                var requestType = request.GetType().Name;
 
-                return CreateFailure<TResponse>(request.GetType().Name, ex.Message, 409);
+                _logger.LogWarning(ex,
+                    "Phone number conflict for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
             }
             catch (Exception ex)
             {
-                _logger.LogError("{Message}, Inner Exception: {inner}",
-                    ex.Message, ex.InnerException);
+                var requestType = request.GetType().Name;
 
-                return CreateFailure<TResponse>(request.GetType().Name,
-                    "An unexpected error occurred. Please try again later.", 500);
+                _logger.LogError(ex,
+                    "Unhandled exception occurred for {RequestType}",
+                    requestType);
+
+                return CreateFailure<TResponse>(
+                    requestType,
+                    "An unexpected error occurred. Please try again later.",
+                    500);
             }
         }
 
@@ -108,7 +145,7 @@ namespace SportAcademy.Application.Behaviors
                 var genericType = responseType.GetGenericArguments()[0];
                 var failureMethod = typeof(Result)
                     .GetMethod(nameof(Result.Failure),
-                        new[] { typeof(string), typeof(string), typeof(int), typeof(Dictionary<string, string[]>) })
+                        [typeof(string), typeof(string), typeof(int), typeof(Dictionary<string, string[]>)])
                     ?.MakeGenericMethod(genericType);
 
                 if (failureMethod != null)
@@ -136,7 +173,7 @@ namespace SportAcademy.Application.Behaviors
                 var genericType = responseType.GetGenericArguments()[0];
                 var failureMethod = typeof(Result)
                     .GetMethod(nameof(Result.Failure),
-                        new[] { typeof(string), typeof(string), typeof(Dictionary<string, string[]>) })
+                        [typeof(string), typeof(string), typeof(Dictionary<string, string[]>)])
                     ?.MakeGenericMethod(genericType);
 
                 if (failureMethod != null)

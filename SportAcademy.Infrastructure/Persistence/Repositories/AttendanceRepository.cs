@@ -73,5 +73,29 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return (total, attended);
         }
+
+        public async Task<List<AttendanceRecordDto>> GetBySessionOccurrenceAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default)
+        {
+            var records = await _context.Attendances
+                .Include(a => a.Enrollment)
+                    .ThenInclude(e => e.Trainee)
+                .Where(a => a.SessionOccurrenceId == sessionOccurrenceId)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            return records.Select(a => new AttendanceRecordDto(
+                a.Id,
+                a.Enrollment.TraineeId,
+                $"{a.Enrollment.Trainee.FirstName} {a.Enrollment.Trainee.LastName}",
+                a.CheckInTime.ToString("HH:mm:ss"),
+                a.AttendanceStatus.ToString()
+            )).ToList();
+        }
+
+        public async Task<Attendance?> GetBySessionAndTraineeAsync(int sessionOccurrenceId, int traineeId, CancellationToken cancellationToken = default)
+            => await _context.Attendances
+                .Include(a => a.Enrollment)
+                .Where(a => a.SessionOccurrenceId == sessionOccurrenceId && a.Enrollment.TraineeId == traineeId)
+                .FirstOrDefaultAsync(cancellationToken);
     }
 }

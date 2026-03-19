@@ -5,6 +5,7 @@ using SportAcademy.Application.Commands.CoachCommands.CreateCoach;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Queries.CoachQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
 using SportAcademy.Application.Queries.CoachQueries.GetById;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
@@ -14,7 +15,6 @@ namespace SportAcademy.Web.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
     public class CoachController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -24,49 +24,56 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("api/coach/{id}")]
         public async Task<ActionResult> GetById(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetCoachByIdQuery(id), ct);
             return Ok(result);
         }
 
-        [HttpPost]
+        [HttpGet("api/coach/dropdown")]
+        public async Task<IActionResult> GetDropdown(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetAllCoachesForDropdownQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("api/coach")]
         public async Task<ActionResult> Create(CreateCoachCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
-        [HttpPost("with-employee")]
+        [HttpPost("api/coach/with-employee")]
         public async Task<ActionResult> CreateFromEmployee(CreateCoachWithEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
-        [HttpDelete("{employeeId}")]
-        public async Task<ActionResult> Delete(int employeeId, CancellationToken ct)
+        [HttpDelete("api/coaches/{id}")]
+        public async Task<ActionResult> Delete(int id, CancellationToken ct)
         {
-            var result = await _mediator.Send(new DeleteCoachCommand(employeeId), ct);
+            var result = await _mediator.Send(new DeleteCoachCommand(id), ct);
             return Ok(result);
         }
 
-        [HttpGet("rating-average")]
+        [HttpGet("api/coach/rating-average")]
         public async Task<IActionResult> GetAllCoachsAvgRating()
         {
             var result = await _mediator.Send(new GetAverageRatingQuery());
             return Ok(result);
         }
 
-        [HttpGet("count")]
+        [HttpGet("api/coach/count")]
         public async Task<IActionResult> GetAllCoachsCount()
         {
             var result = await _mediator.Send(new GetCoachsCountQuery());
             return Ok(result);
         }
 
-        [HttpGet("search")]
+        [HttpGet("api/coach/search")]
         public async Task<IActionResult> SearchCoaches(
             [FromQuery] string searchTerm,
             [FromQuery] int? page,

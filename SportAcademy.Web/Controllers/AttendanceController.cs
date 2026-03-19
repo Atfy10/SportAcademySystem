@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
@@ -8,8 +9,8 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetAll;
 using SportAcademy.Application.Queries.AttendanceQueries.GetAttendanceRate;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
+using SportAcademy.Application.Queries.AttendanceQueries.GetBySessionOccurrence;
 using SportAcademy.Application.Queries.AttendanceQueries.GetGlobalAttendanceRate;
-using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers
@@ -85,6 +86,25 @@ namespace SportAcademy.Web.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetGlobalAttendanceRateQuery(month), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("session/{sessionOccurrenceId}")]
+        public async Task<IActionResult> GetBySession(
+            [FromRoute] int sessionOccurrenceId,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(
+                new GetAttendanceBySessionOccurrenceQuery(sessionOccurrenceId), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("bulk")]
+        public async Task<IActionResult> BulkCreate(
+            [FromBody] BulkCreateAttendanceCommand command,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
     }

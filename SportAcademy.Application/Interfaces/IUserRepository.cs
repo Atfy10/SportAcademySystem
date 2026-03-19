@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using SportAcademy.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -20,5 +20,6 @@ namespace SportAcademy.Application.Interfaces
         Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken = default);
         Task<IdentityResult> AssignToRole(AppUser user, string role);
         Task<List<AppUser>> GetUnlinkedUsers(CancellationToken cancellationToken = default);
+        Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword);
     }
 }

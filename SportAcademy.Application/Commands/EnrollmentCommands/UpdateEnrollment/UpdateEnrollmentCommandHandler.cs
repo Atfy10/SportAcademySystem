@@ -3,6 +3,7 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 
@@ -24,7 +25,8 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
 
         public async Task<Result<EnrollmentDto>> Handle(UpdateEnrollmentCommand request, CancellationToken cancellationToken)
         {
-            var enrollment = await _enrollmentRepository.GetByIdAsync(request.Id, cancellationToken)
+            var enrollment = await _enrollmentRepository
+                .GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new EnrollmentNotFoundException($"{request.Id}");
 
             _mapper.Map(request, enrollment);

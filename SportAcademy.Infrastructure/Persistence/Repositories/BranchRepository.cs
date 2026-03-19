@@ -6,10 +6,13 @@ using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.BranchDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -51,5 +54,112 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.TraineeGroups
                 .Where(g => g.BranchId == branchId)
                 .SumAsync(g => g.MaximumCapacity, ct);
+
+        public async Task<PagedData<BranchCardDto>> GetAllPaginatedAsync(PageRequest page, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Branchs.AsNoTracking();
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query
+                .OrderBy(b => b.Id)
+                .Skip((page.Page - 1) * page.PageSize)
+                .Take(page.PageSize)
+                .Select(b => new BranchCardDto
+                {
+                    Id = b.Id,
+                    Name = b.Name,
+                    City = b.City,
+                    Country = b.Country,
+                    PhoneNumber = b.PhoneNumber,
+                    Email = b.Email,
+                    CoX = b.CoX != null ? double.Parse(b.CoX) : null,
+                    CoY = b.CoY != null ? double.Parse(b.CoY) : null
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PagedData<BranchCardDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page.Page,
+                PageSize = page.PageSize
+            };
+        }
+
+        public async Task<PagedData<BranchCardDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Branchs
+                .Where(b => b.Name.Contains(term) || b.City.Contains(term) || b.Country.Contains(term))
+                .AsNoTracking();
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query
+                .OrderBy(b => b.Id)
+                .Skip((page.Page - 1) * page.PageSize)
+                .Take(page.PageSize)
+                .Select(b => new BranchCardDto
+                {
+                    Id = b.Id,
+                    Name = b.Name,
+                    City = b.City,
+                    Country = b.Country,
+                    PhoneNumber = b.PhoneNumber,
+                    Email = b.Email,
+                    CoX = b.CoX != null ? double.Parse(b.CoX) : null,
+                    CoY = b.CoY != null ? double.Parse(b.CoY) : null
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PagedData<BranchCardDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = page.Page,
+                PageSize = page.PageSize
+            };
+        }
+
+        public async Task<BranchStatsDto> GetBranchStatsAsync(int branchId, CancellationToken cancellationToken = default)
+        {
+            var totalTrainees = await _context.Enrollments
+                .Where(e => e.TraineeGroup!.BranchId == branchId && e.IsActive)
+                .Select(e => e.TraineeId)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            var totalCoaches = await _context.Coachs
+                .Where(c => c.Employee!.BranchId == branchId)
+                .CountAsync(cancellationToken);
+
+            var activeGroups = await _context.TraineeGroups
+                .Where(g => g.BranchId == branchId)
+                .CountAsync(cancellationToken);
+
+            var today = DateTime.Today;
+            var activeSessions = await _context.SessionOccurrences
+                .Where(s => s.GroupSchedule!.TraineeGroup!.BranchId == branchId
+                    && s.StartDateTime.Date == today
+                    && s.Status != SessionStatus.Canceled)
+                .CountAsync(cancellationToken);
+
+            return new BranchStatsDto
+            {
+                TotalTrainees = totalTrainees,
+                TotalCoaches = totalCoaches,
+                ActiveGroups = activeGroups,
+                ActiveSessions = activeSessions
+            };
+        }
+
+        public async Task<bool> ToggleIsActiveAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var branch = await _context.Branchs.FindAsync(new object[] { id }, cancellationToken);
+            if (branch == null)
+                return false;
+
+            branch.IsActive = !branch.IsActive;
+            await _context.SaveChangesAsync(cancellationToken);
+            return branch.IsActive;
+        }
     }
 }

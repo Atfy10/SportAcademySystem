@@ -52,6 +52,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<int> GetCountAsync(CancellationToken cancellation = default)
             => await _context.TraineeGroups.CountAsync(cancellation);
+
+        public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
+            => await _context.TraineeGroups
+                .AsNoTracking()
+                .Select(tg => new TraineeGroupDropdownDto(tg.Id, tg.Name))
+                .ToListAsync(cancellationToken);
     }
 }
 

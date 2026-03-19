@@ -1,11 +1,16 @@
-﻿using SportAcademy.Domain.Enums;
+namespace SportAcademy.Application.DTOs.SessionOccurrenceDtos;
 
-namespace SportAcademy.Application.DTOs.SessionOccurrenceDtos
-{
-    public record SessionOccurrenceDto(
-        int Id,
-        int GroupScheduleId,
-        DateTime StartDateTime,
-        SessionStatus Status
-    );
-}
+public record SessionOccurrenceDto(
+    int Id,
+    int TraineeGroupId,
+    string Date,
+    string SportName,
+    string CoachName,
+    string BranchName,
+    string StartTime,
+    int DurationInMinutes,
+    int TotalEnrolled,
+    int TotalPresent,
+    int TotalLate,
+    int TotalAbsent
+);

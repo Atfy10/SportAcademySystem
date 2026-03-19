@@ -10,6 +10,6 @@ namespace SportAcademy.Application.Interfaces
     public interface IPaymentRepository : IBaseRepository<Payment, string>
     {
         Task<bool> IsRelatedToSubscriptionAsync(string paymentNumber, CancellationToken cancellationToken = default);
-
+        Task<bool> ExistsForSubscriptionAsync(int subscriptionDetailsId, CancellationToken cancellationToken = default);
     }
 }

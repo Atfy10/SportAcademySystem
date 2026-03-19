@@ -23,5 +23,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Payments
                 .AnyAsync(p => p.PaymentNumber == paymentNumber && p.SubscriptionDetails != null,
                     cancellationToken);
+
+        public async Task<bool> ExistsForSubscriptionAsync(int subscriptionDetailsId, CancellationToken cancellationToken = default)
+            => await _context.Payments
+                .AnyAsync(p => p.SubscriptionDetails != null && p.SubscriptionDetails.Id == subscriptionDetailsId, cancellationToken);
     }
 }

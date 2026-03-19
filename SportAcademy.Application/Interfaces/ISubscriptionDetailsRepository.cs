@@ -1,4 +1,5 @@
-﻿using SportAcademy.Domain.Entities;
+﻿using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
+using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Interfaces
 {
@@ -10,5 +11,6 @@ namespace SportAcademy.Application.Interfaces
         Task<List<SubscriptionDetails>?> GetAllFullSubDetailsAsync(CancellationToken cancellationToken = default);
         Task<SubscriptionDetails?> GetFullSubscriptionDetails(int subscriptionId, CancellationToken cancellationToken = default);
         Task<List<SubscriptionDetails>?> GetActiveSubscriptionDetailsForTraineeAsync(int traineeId, CancellationToken cancellationToken = default);
+        Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default);
     }
 }

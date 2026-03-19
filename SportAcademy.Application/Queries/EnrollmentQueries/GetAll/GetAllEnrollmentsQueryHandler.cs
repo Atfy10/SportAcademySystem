@@ -1,40 +1,22 @@
-﻿using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.EnrollmentQueries.GetAll
 {
-    public class GetAllEnrollmentsQueryHandler : IRequestHandler<GetAllEnrollmentsQuery, Result<List<EnrollmentDto>>>
+    public class GetAllEnrollmentsQueryHandler(
+        IEnrollmentRepository enrollmentRepository)
+        : IRequestHandler<GetAllEnrollmentsQuery, Result<PagedData<EnrollmentCardDto>>>
     {
-        private readonly IEnrollmentRepository _enrollmentRepository;
-        private readonly IMapper _mapper;
-        private readonly string _operationType = OperationType.GetAll.ToString();
-
-        public GetAllEnrollmentsQueryHandler(
-            IEnrollmentRepository enrollmentRepository,
-            IMapper mapper)
+        public async Task<Result<PagedData<EnrollmentCardDto>>> Handle(
+            GetAllEnrollmentsQuery request,
+            CancellationToken cancellationToken)
         {
-            _enrollmentRepository = enrollmentRepository;
-            _mapper = mapper;
-        }
-
-        public async Task<Result<List<EnrollmentDto>>> Handle(GetAllEnrollmentsQuery request, CancellationToken cancellationToken)
-        {
-            var enrollments = await _enrollmentRepository.GetAllAsync(cancellationToken) 
-                ?? [];
-
-            var enrollmentsDto = _mapper.Map<List<EnrollmentDto>>(enrollments) 
-                ?? [];
-
-            return Result<List<EnrollmentDto>>.Success(enrollmentsDto, _operationType);
+            var result = await enrollmentRepository.GetAllAsync(request.Page, cancellationToken);
+            return Result<PagedData<EnrollmentCardDto>>.Success(result, OperationType.GetAll.ToString());
         }
     }
 }

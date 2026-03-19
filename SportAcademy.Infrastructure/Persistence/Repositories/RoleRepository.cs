@@ -39,5 +39,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             }
             return false;
         }
+
+        public async Task<List<string>> GetAllRolesAsync(CancellationToken cancellationToken = default)
+            => await _roleManager.Roles.Select(r => r.Name!).ToListAsync(cancellationToken);
     }
 }

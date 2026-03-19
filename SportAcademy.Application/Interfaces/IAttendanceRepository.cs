@@ -21,5 +21,7 @@ namespace SportAcademy.Application.Interfaces
             DateOnly? toDate,
             CancellationToken cancellationToken
         );
+        Task<List<AttendanceRecordDto>> GetBySessionOccurrenceAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default);
+        Task<Attendance?> GetBySessionAndTraineeAsync(int sessionOccurrenceId, int traineeId, CancellationToken cancellationToken = default);
     }
 }

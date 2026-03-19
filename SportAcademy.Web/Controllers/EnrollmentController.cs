@@ -1,16 +1,23 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.EnrollmentCommands.ActivateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
+using SportAcademy.Application.Commands.EnrollmentCommands.SuspendEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
+using SportAcademy.Application.Commands.EnrollmentCommands.UpdatePaymentStatus;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Queries.EnrollmentQueries.CountActive;
+using SportAcademy.Application.Queries.EnrollmentQueries.CountAll;
+using SportAcademy.Application.Queries.EnrollmentQueries.CountPendingPayment;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAll;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForAllSports;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForSport;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetById;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSport;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSports;
+using SportAcademy.Application.Queries.EnrollmentQueries.SearchEnrollments;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -34,9 +41,13 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllEnrollmentsQuery());
+            var result = await _mediator.Send(
+                new GetAllEnrollmentsQuery(PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
         }
 
@@ -112,6 +123,68 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(
                 new GetEnrollmentsCountForSportQuery(sportId, from, to),
                 cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search(
+            [FromQuery] string term,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(
+                new SearchEnrollmentsQuery(term, PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("count")]
+        public async Task<IActionResult> CountAll(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new CountAllEnrollmentsQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("count/active")]
+        public async Task<IActionResult> CountActive(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new CountActiveEnrollmentsQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("count/pending-payment")]
+        public async Task<IActionResult> CountPendingPayment(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new CountPendingPaymentsQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPatch("{id}/activate")]
+        public async Task<IActionResult> Activate(
+            [FromRoute] int id,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new ActivateEnrollmentCommand(id), ct);
+            return Ok(result);
+        }
+
+        [HttpPatch("{id}/suspend")]
+        public async Task<IActionResult> Suspend(
+            [FromRoute] int id,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new SuspendEnrollmentCommand(id), ct);
+            return Ok(result);
+        }
+
+        [HttpPatch("{id}/payment-status")]
+        public async Task<IActionResult> UpdatePaymentStatus(
+            [FromRoute] int id,
+            [FromBody] UpdatePaymentStatusCommand command,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(
+                new UpdatePaymentStatusCommand(id, command.PaymentStatus), ct);
             return Ok(result);
         }
     }

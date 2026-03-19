@@ -14,5 +14,6 @@ namespace SportAcademy.Application.Interfaces
             PageRequest pageReq,
             CancellationToken cancellationToken);
         Task<Coach?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default);
+        Task<List<CoachDropdownItemDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default);
     }
 }

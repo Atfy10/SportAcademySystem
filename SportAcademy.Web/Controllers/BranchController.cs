@@ -1,88 +1,122 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.BranchCommands.AddSportToBranch;
 using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
 using SportAcademy.Application.Commands.BranchCommands.DeleteBranch;
+using SportAcademy.Application.Commands.BranchCommands.ToggleBranchStatus;
 using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
-using SportAcademy.Application.Queries.BranchQueries;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
+using SportAcademy.Application.Queries.BranchQueries.GetBranchStats;
 using SportAcademy.Application.Queries.BranchQueries.GetBranchesCount;
 using SportAcademy.Application.Queries.BranchQueries.GetById;
-
+using SportAcademy.Application.Queries.BranchQueries.GetPaginated;
+using SportAcademy.Application.Queries.BranchQueries.SearchBranches;
 
 namespace SportAcademy.Web.Controllers
 {
     [Authorize]
-    [Route("api/[controller]")]
-	[ApiController]
-	public class BranchController : ControllerBase
-	{
-		private readonly IMediator _mediator;
+    [ApiController]
+    public class BranchController : ControllerBase
+    {
+        private readonly IMediator _mediator;
 
-		public BranchController(IMediator mediator)
-		{
-			_mediator = mediator;
-		}
+        public BranchController(IMediator mediator)
+        {
+            _mediator = mediator;
+        }
 
-		[HttpPost]
-		public async Task<IActionResult> Create([FromBody] CreateBranchCommand command, CancellationToken cancellationToken)
-		{
-			var result = await _mediator.Send(command, cancellationToken);
-			return Ok(result);
-		}
-
-		[HttpGet]
-		public async Task<IActionResult> GetAll()
-		{
-			var result = await _mediator.Send(new GetAllBranchesQuery());
-			return Ok(result);
-		}
-
-		[HttpGet("{id}")]
-		public async Task<IActionResult> GetById(int id)
-		{
-			var result = await _mediator.Send(new GetBranchByIdQuery(id));
-			return Ok(result);
-		}
-
-		[HttpPut]
-		public async Task<IActionResult> Update([FromBody] UpdateBranchCommand command,
-			CancellationToken cancellationToken)
-		{
-			var result = await _mediator.Send(command, cancellationToken);
-			return Ok(result);
-		}
-
-		[HttpDelete("{id}")]
-		public async Task<IActionResult> Delete(int id)
-		{
-			var result = await _mediator.Send(new DeleteBranchCommand(id));
-			return Ok(result);
-		}
-
-        [HttpPost("branch-sports")]
-        public async Task<IActionResult> AddSportToBranch([FromBody] AddSportToBranchCommand command,
-			CancellationToken cancellationToken)
+        [HttpPost("api/branch")]
+        public async Task<IActionResult> Create([FromBody] CreateBranchCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
             return Ok(result);
         }
 
-		[HttpGet("count")]
-		public async Task<IActionResult> GetBranchesCount(CancellationToken cancellationToken)
-		{
-			var result = await _mediator.Send(new GetBranchesCountQuery(), cancellationToken);
-			return Ok(result);
+        [HttpGet("api/branch")]
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken)
+        {
+            var pageReq = PageRequest.Create(page, pageSize);
+            var result = await _mediator.Send(new GetPaginatedBranchesQuery(pageReq), cancellationToken);
+            return Ok(result);
         }
 
-        [HttpGet("{id}/capacity")]
-        public async Task<IActionResult> GetBranchCapacity(int id,CancellationToken ct)
+        [HttpGet("api/branch/search")]
+        public async Task<IActionResult> Search(
+            [FromQuery] string term,
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(
-                new GetBranchTotalCapacityQuery(id),ct);
+            var pageReq = PageRequest.Create(page, pageSize);
+            var result = await _mediator.Send(new SearchBranchesQuery(term, pageReq), cancellationToken);
+            return Ok(result);
+        }
 
+        [HttpGet("api/branch/dropdown")]
+        public async Task<IActionResult> GetDropdown(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetAllBranchesQuery(), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("api/branch/{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var result = await _mediator.Send(new GetBranchByIdQuery(id));
+            return Ok(result);
+        }
+
+        [HttpGet("api/branch/{id}/stats")]
+        public async Task<IActionResult> GetStats(int id, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetBranchStatsQuery(id), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPut("api/branch")]
+        public async Task<IActionResult> Update([FromBody] UpdateBranchCommand command, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPatch("api/branch/{id}/toggle-status")]
+        public async Task<IActionResult> ToggleStatus(int id, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new ToggleBranchStatusCommand(id), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpDelete("api/branch/{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var result = await _mediator.Send(new DeleteBranchCommand(id));
+            return Ok(result);
+        }
+
+        [HttpPost("api/branch/branch-sports")]
+        public async Task<IActionResult> AddSportToBranch([FromBody] AddSportToBranchCommand command, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("api/branch/count")]
+        public async Task<IActionResult> GetBranchesCount(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetBranchesCountQuery(), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("api/branch/{id}/capacity")]
+        public async Task<IActionResult> GetBranchCapacity(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetBranchTotalCapacityQuery(id), ct);
             return Ok(result);
         }
     }

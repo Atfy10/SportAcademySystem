@@ -191,5 +191,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return string.Join(" AND ",
                 tokens.Select(t => $"\"{t}*\""));
         }
+
+        public async Task<bool> ToggleIsWorkAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var employee = await _context.Employees.FindAsync(new object[] { id }, cancellationToken);
+            if (employee == null)
+                return false;
+
+            employee.IsWork = !employee.IsWork;
+            await _context.SaveChangesAsync(cancellationToken);
+            return employee.IsWork;
+        }
     }
 }

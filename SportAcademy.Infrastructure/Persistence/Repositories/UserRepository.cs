@@ -100,5 +100,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.AppUsers
                 .Where(u => u.Employee == null && u.Trainee == null)
                 .ToListAsync(cancellationToken);
+
+        public async Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword)
+            => await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
     }
 }
