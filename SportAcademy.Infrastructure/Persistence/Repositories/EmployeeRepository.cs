@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Azure.Core;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -7,6 +8,7 @@ using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 using System.Data;
@@ -192,11 +194,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 tokens.Select(t => $"\"{t}*\""));
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>The new state of employee</returns>
+        /// <exception cref="EmployeeNotFoundException"></exception>
         public async Task<bool> ToggleIsWorkAsync(int id, CancellationToken cancellationToken = default)
         {
-            var employee = await _context.Employees.FindAsync(new object[] { id }, cancellationToken);
-            if (employee == null)
-                return false;
+            var employee = await _context.Employees.FindAsync(new object[] { id }, cancellationToken)
+                    ?? throw new EmployeeNotFoundException(id.ToString());
 
             employee.IsWork = !employee.IsWork;
             await _context.SaveChangesAsync(cancellationToken);

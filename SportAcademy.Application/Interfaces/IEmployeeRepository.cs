@@ -2,11 +2,7 @@
 using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 
 namespace SportAcademy.Application.Interfaces
 {
@@ -25,6 +21,14 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<EmployeeDto>> GetActiveAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetActiveCoachesAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetCoachEmployeesWithoutCoachRecordAsync(PageRequest page, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns>The new state of employee</returns>
+        /// <exception cref="EmployeeNotFoundException"></exception>
         Task<bool> ToggleIsWorkAsync(int id, CancellationToken cancellationToken = default);
     }
 }

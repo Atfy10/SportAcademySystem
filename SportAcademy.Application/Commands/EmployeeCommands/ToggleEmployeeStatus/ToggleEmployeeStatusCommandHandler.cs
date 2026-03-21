@@ -19,8 +19,6 @@ public class ToggleEmployeeStatusCommandHandler : IRequestHandler<ToggleEmployee
     public async Task<Result<bool>> Handle(ToggleEmployeeStatusCommand request, CancellationToken cancellationToken)
     {
         var newStatus = await _employeeRepository.ToggleIsWorkAsync(request.Id, cancellationToken);
-        if (!newStatus)
-            throw new EmployeeNotFoundException(request.Id.ToString());
 
         return Result<bool>.Success(newStatus, _operation);
     }
