@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.CreateSessionOccurrence;
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.DeleteSessionOccurence;
+using SportAcademy.Application.Commands.SessionOccurrenceCommands.GenerateSessionOccurrences;
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSessionOccurrence;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.SessionOccurrenceQueries.CountAll;
@@ -91,6 +92,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> Count(CancellationToken ct)
         {
             var result = await _mediator.Send(new CountSessionOccurrencesQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("generate")]
+        public async Task<IActionResult> Generate([FromBody] GenerateSessionOccurrencesCommand command, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(command, cancellationToken);
             return Ok(result);
         }
     }

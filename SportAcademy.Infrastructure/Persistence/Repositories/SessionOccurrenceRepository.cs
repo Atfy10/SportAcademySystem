@@ -65,5 +65,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<int> CountAsync(CancellationToken cancellationToken = default)
             => await _context.SessionOccurrences.CountAsync(cancellationToken);
+
+        public async Task<DateTime?> GetLastOccurrenceDateAsync(int traineeGroupId, CancellationToken cancellationToken = default)
+            => await _context.SessionOccurrences
+                .Where(s => s.GroupSchedule!.TraineeGroupId == traineeGroupId)
+                .OrderByDescending(s => s.StartDateTime)
+                .Select(s => (DateTime?)s.StartDateTime)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        public async Task AddRangeAsync(IEnumerable<SessionOccurrence> entities, CancellationToken cancellationToken = default)
+        {
+            await _context.SessionOccurrences.AddRangeAsync(entities, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace SportAcademy.Application.DTOs.TraineeGroupDtos
+using SportAcademy.Application.DTOs.GroupScheduleDtos;
+
+namespace SportAcademy.Application.DTOs.TraineeGroupDtos
 {
     public record ListTraineeGroupDto(
         int Id,
@@ -7,6 +9,6 @@
         string BranchName,
         int DurationInMinutes,
         int TraineesCount,
-        TimeOnly StartTime
+        IReadOnlyList<GroupScheduleItemDto> Schedules
     );
 }

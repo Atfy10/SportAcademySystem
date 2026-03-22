@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using System.Reflection;
 using DomainValidationException = SportAcademy.Domain.Exceptions.GeneralExceptions.ValidationException;
@@ -110,6 +111,50 @@ namespace SportAcademy.Application.Behaviors
 
                 _logger.LogWarning(ex,
                     "Phone number conflict for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (InvalidSearchTermException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Invalid search term for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
+            }
+            catch (InvalidDurationException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Invalid duration for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
+            }
+            catch (NoSchedulesFoundException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "No schedules found for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (SessionGapTooLargeException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Session gap too large for {RequestType}. Message: {Message}",
                     requestType,
                     ex.Message);
 

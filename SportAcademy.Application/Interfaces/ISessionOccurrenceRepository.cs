@@ -11,4 +11,6 @@ public interface ISessionOccurrenceRepository : IBaseRepository<SessionOccurrenc
     Task<PagedData<SessionOccurrenceDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default);
     Task<int?> GetTraineeGroupIdAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default);
     Task<int> CountAsync(CancellationToken cancellationToken = default);
+    Task<DateTime?> GetLastOccurrenceDateAsync(int traineeGroupId, CancellationToken cancellationToken = default);
+    Task AddRangeAsync(IEnumerable<SessionOccurrence> entities, CancellationToken cancellationToken = default);
 }

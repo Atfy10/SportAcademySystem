@@ -77,17 +77,25 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForMember(dest => dest.Id, opt => opt.Ignore());
 
         CreateMap<TraineeGroup, ListTraineeGroupDto>()
-            .ForMember(dest => dest.SportName,
-                opt => opt.MapFrom(src => src.Coach.Sport.Name))
-            .ForMember(dest => dest.CoachName,
-                opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
-            .ForMember(dest => dest.BranchName,
-                opt => opt.MapFrom(src => src.Branch.Name))
-            .ForMember(dest => dest.StartTime,
-                opt => opt.MapFrom(src => src.GroupSchedules
-                                            .Select(gs => gs.StartTime)
-                                            .FirstOrDefault())
-            );
+            .ConstructUsing(src => new ListTraineeGroupDto(
+                src.Id,
+                src.Coach.Sport.Name,
+                src.Coach.Employee.FirstName,
+                src.Branch.Name,
+                src.DurationInMinutes,
+                src.Enrollments.Count,
+                src.GroupSchedules
+                    .Select(gs => new GroupScheduleItemDto
+                    {
+                        DayOfWeek = gs.Day.ToString(),
+                        StartTime = gs.StartTime.ToString("HH:mm:ss")
+                    }).ToList()))
+            .ForMember(dest => dest.SportName, opt => opt.Ignore())
+            .ForMember(dest => dest.CoachName, opt => opt.Ignore())
+            .ForMember(dest => dest.BranchName, opt => opt.Ignore())
+            .ForMember(dest => dest.DurationInMinutes, opt => opt.Ignore())
+            .ForMember(dest => dest.TraineesCount, opt => opt.Ignore())
+            .ForMember(dest => dest.Schedules, opt => opt.Ignore());
 
         CreateMap<TraineeGroup, TraineeGroupDropdownDto>()
             .ConstructUsing(src => new TraineeGroupDropdownDto(src.Id, src.Name));
