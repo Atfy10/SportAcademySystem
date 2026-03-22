@@ -1,4 +1,5 @@
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -185,17 +186,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<List<CoachDropdownItemDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
             => await _context.Coachs
                 .Where(c => !c.IsDeleted)
-                .Include(c => c.Employee)
-                .Include(c => c.Employee!.Branch)
                 .AsNoTracking()
-                .Select(c => new CoachDropdownItemDto
-                {
-                    Id = c.EmployeeId,
-                    EmployeeFirstName = c.Employee!.FirstName,
-                    EmployeeLastName = c.Employee.LastName,
-                    BranchId = c.Employee.BranchId,
-                    BranchName = c.Employee.Branch!.Name
-                })
+                .ProjectTo<CoachDropdownItemDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
     }
 }

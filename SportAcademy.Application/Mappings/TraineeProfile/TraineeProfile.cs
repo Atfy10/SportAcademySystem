@@ -86,6 +86,14 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 {
                     SportId = s.Id
                 }).ToList()));
+
+            CreateMap<Trainee, TraineeDropdownDto>()
+                .ConstructUsing(src => new TraineeDropdownDto
+                {
+                    Id = src.Id,
+                    FirstName = src.FirstName,
+                    LastName = src.LastName
+                });
         }
 
         private static int GetAge(Trainee trainee)

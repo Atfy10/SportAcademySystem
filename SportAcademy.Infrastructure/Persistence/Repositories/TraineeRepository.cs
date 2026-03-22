@@ -343,12 +343,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Trainees
                 .Where(t => !t.IsDeleted)
                 .AsNoTracking()
-                .Select(t => new TraineeDropdownDto
-                {
-                    Id = t.Id,
-                    FirstName = t.FirstName,
-                    LastName = t.LastName
-                })
+                .ProjectTo<TraineeDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
     }
 }

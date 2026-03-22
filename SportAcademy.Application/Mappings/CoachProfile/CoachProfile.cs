@@ -58,6 +58,16 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                     src.Employee.IsWork,
                     src.Rate
                 ));
+
+            CreateMap<Coach, CoachDropdownItemDto>()
+                .ConstructUsing(src => new CoachDropdownItemDto
+                {
+                    Id = src.EmployeeId,
+                    EmployeeFirstName = src.Employee.FirstName,
+                    EmployeeLastName = src.Employee.LastName,
+                    BranchId = src.Employee.BranchId,
+                    BranchName = src.Employee.Branch.Name
+                });
         }
     }
 }

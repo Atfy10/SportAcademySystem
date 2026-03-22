@@ -88,5 +88,8 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                                             .Select(gs => gs.StartTime)
                                             .FirstOrDefault())
             );
+
+        CreateMap<TraineeGroup, TraineeGroupDropdownDto>()
+            .ConstructUsing(src => new TraineeGroupDropdownDto(src.Id, src.Name));
     }
 }

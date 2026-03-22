@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
@@ -26,5 +27,25 @@ namespace SportAcademy.Domain.Entities
         public virtual TraineeGroup TraineeGroup { get; set; } = null!;
         public virtual ICollection<Attendance> Attendances { get; set; } = [];
         public virtual SubscriptionDetails SubscriptionDetails { get; set; } = null!;
+
+        public string GetPaymentStatus()
+        {
+            if (ExpiryDate < DateTime.UtcNow) return "Overdue";
+            if (SubscriptionDetails != null && SubscriptionDetails.Payment != null) return "Paid";
+            return "Pending";
+        }
+
+        public string GetStatus()
+        {
+            if (ExpiryDate < DateTime.UtcNow) return "Expired";
+            if (!IsActive) return "Suspended";
+            return "Active";
+        }
+
+        public int GetSessionsCompleted()
+            => Attendances.Count(a =>
+                a.AttendanceStatus == AttendanceStatus.Present ||
+                a.AttendanceStatus == AttendanceStatus.Late);
+
     }
 }

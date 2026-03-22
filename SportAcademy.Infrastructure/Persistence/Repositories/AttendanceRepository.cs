@@ -8,19 +8,13 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
     public class AttendanceRepository : BaseRepository<Attendance, int>, IAttendanceRepository
     {
         private readonly ApplicationDbContext _context;
-        IMapper _mapper;
+        private readonly IMapper _mapper;
 
         public AttendanceRepository(ApplicationDbContext context, IMapper mapper)
             : base(context, mapper)
@@ -40,11 +34,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct) * 100 /
                 await _context.Attendances.CountAsync(ct);
 
-
         public async Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Attendances
-                .Include(a => a.Enrollment)
-                .Include(a => a.SessionOccurrence)
+                .AsNoTracking()
                 .ProjectTo<AttendanceDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
 
@@ -55,8 +47,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
            CancellationToken cancellationToken)
         {
             var query = _context.Attendances
-                .Include(a => a.Enrollment)
-                .Include(a => a.SessionOccurrence)
                 .Where(a => a.Enrollment.TraineeId == traineeId);
 
             if (fromDate.HasValue)
@@ -75,26 +65,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<List<AttendanceRecordDto>> GetBySessionOccurrenceAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default)
-        {
-            var records = await _context.Attendances
-                .Include(a => a.Enrollment)
-                    .ThenInclude(e => e.Trainee)
+            => await _context.Attendances
                 .Where(a => a.SessionOccurrenceId == sessionOccurrenceId)
                 .AsNoTracking()
+                .ProjectTo<AttendanceRecordDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
-
-            return records.Select(a => new AttendanceRecordDto(
-                a.Id,
-                a.Enrollment.TraineeId,
-                $"{a.Enrollment.Trainee.FirstName} {a.Enrollment.Trainee.LastName}",
-                a.CheckInTime.ToString("HH:mm:ss"),
-                a.AttendanceStatus.ToString()
-            )).ToList();
-        }
 
         public async Task<Attendance?> GetBySessionAndTraineeAsync(int sessionOccurrenceId, int traineeId, CancellationToken cancellationToken = default)
             => await _context.Attendances
-                .Include(a => a.Enrollment)
                 .Where(a => a.SessionOccurrenceId == sessionOccurrenceId && a.Enrollment.TraineeId == traineeId)
                 .FirstOrDefaultAsync(cancellationToken);
     }

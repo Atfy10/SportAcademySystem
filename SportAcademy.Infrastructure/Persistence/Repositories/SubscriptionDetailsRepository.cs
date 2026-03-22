@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
@@ -9,10 +11,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     public class SubscriptionDetailsRepository : BaseRepository<SubscriptionDetails, int>, ISubscriptionDetailsRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public SubscriptionDetailsRepository(ApplicationDbContext context) : base(context)
+        public SubscriptionDetailsRepository(ApplicationDbContext context, IMapper mapper) : base(context, mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<List<SubscriptionDetails>?> GetAllFullSubDetailsAsync(CancellationToken cancellationToken = default)
@@ -60,17 +64,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
             => await _context.SubscriptionDetails
-                .Include(sd => sd.SportPrice)
-                    .ThenInclude(sp => sp.SportSubscriptionType)
-                        .ThenInclude(sst => sst.SubscriptionType)
-                .Include(sd => sd.Trainee)
                 .AsNoTracking()
-                .Select(sd => new SubscriptionDetailsDropdownDto(
-                    sd.Id,
-                    sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
-                    sd.TraineeId,
-                    sd.Trainee.FirstName + " " + sd.Trainee.LastName
-                ))
+                .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
     }
 }

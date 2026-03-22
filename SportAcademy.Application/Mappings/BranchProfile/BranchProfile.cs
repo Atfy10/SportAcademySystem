@@ -15,11 +15,23 @@ namespace SportAcademy.Application.Mappings.BranchProfile
 
             CreateMap<Branch, BranchDto>().ReverseMap();
 
+            CreateMap<Branch, BranchCardDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.City, opt => opt.MapFrom(src => src.City))
+                .ForMember(dest => dest.Country, opt => opt.MapFrom(src => src.Country))
+                .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.CoX, opt => opt.MapFrom(src => ParseCoordinate(src.CoX)))
+                .ForMember(dest => dest.CoY, opt => opt.MapFrom(src => ParseCoordinate(src.CoY)));
+
             CreateMap<Branch, UpdateBranchCommand>()
                 .ReverseMap()
                 .ForAllMembers(opt =>
                     opt.Condition((src, dest, srcMember) => srcMember != null));
         }
 
+        private static double? ParseCoordinate(string? value)
+            => string.IsNullOrEmpty(value) ? null : double.Parse(value);
     }
 }

@@ -8,6 +8,6 @@ public record BranchCardDto
     public string Country { get; init; } = default!;
     public string? PhoneNumber { get; init; }
     public string? Email { get; init; }
-    public double? CoX { get; init; }
-    public double? CoY { get; init; }
+    public string? CoX { get; init; }
+    public string? CoY { get; init; }
 }

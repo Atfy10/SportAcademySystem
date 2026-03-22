@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.NotificationsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +18,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     public class NotificationRepository : BaseRepository<Notification, int>, INotificationRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly IMapper _mapper;
 
-        public NotificationRepository(ApplicationDbContext context) : base(context)
+        public NotificationRepository(ApplicationDbContext context, IMapper mapper) : base(context, mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task AddWithRecipient(Notification notification, string userId)
@@ -38,33 +43,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             string userId, PageRequest page, CancellationToken ct = default)
         {
             var query = _context.NotificationRecipients
-                .AsNoTracking()
                 .Where(r => r.UserId == userId)
                 .OrderByDescending(r => r.Notification.CreatedAt)
-                .Select(r => new NotificationRecipientDto
-                {
-                    Id = r.NotificationId,
-                    Title = r.Notification.GroupName ?? "Notification",
-                    Message = r.Notification.Message,
-                    Type = r.Notification.GroupName != null ? "group" : "system",
-                    IsRead = r.IsRead,
-                    CreatedAt = r.Notification.CreatedAt
-                });
+                .AsNoTracking()
+                .ProjectTo<NotificationRecipientDto>(_mapper.ConfigurationProvider);
 
-            var totalCount = await query.CountAsync(ct);
-
-            var items = await query
-                .Skip(page.Skip)
-                .Take(page.PageSize)
-                .ToListAsync(ct);
-
-            return new PagedData<NotificationRecipientDto>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = page.Page,
-                PageSize = page.PageSize
-            };
+            return await query.ToPagedDataAsync(page, ct);
         }
 
         public async Task<int> GetUnreadCountAsync(string userId, CancellationToken ct = default)

@@ -32,6 +32,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<List<BranchDropDownListDto>> GetAllBranchsBase(CancellationToken cancellationToken = default)
             => await _context.Branchs
+                .AsNoTracking()
                 .ProjectTo<BranchDropDownListDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
@@ -57,66 +58,23 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<PagedData<BranchCardDto>> GetAllPaginatedAsync(PageRequest page, CancellationToken cancellationToken = default)
         {
-            var query = _context.Branchs.AsNoTracking();
-
-            var totalCount = await query.CountAsync(cancellationToken);
-            var items = await query
+            var query = _context.Branchs
                 .OrderBy(b => b.Id)
-                .Skip((page.Page - 1) * page.PageSize)
-                .Take(page.PageSize)
-                .Select(b => new BranchCardDto
-                {
-                    Id = b.Id,
-                    Name = b.Name,
-                    City = b.City,
-                    Country = b.Country,
-                    PhoneNumber = b.PhoneNumber,
-                    Email = b.Email,
-                    CoX = b.CoX != null ? double.Parse(b.CoX) : null,
-                    CoY = b.CoY != null ? double.Parse(b.CoY) : null
-                })
-                .ToListAsync(cancellationToken);
+                .AsNoTracking()
+                .ProjectTo<BranchCardDto>(_mapper.ConfigurationProvider);
 
-            return new PagedData<BranchCardDto>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = page.Page,
-                PageSize = page.PageSize
-            };
+            return await query.ToPagedDataAsync(page, cancellationToken);
         }
 
         public async Task<PagedData<BranchCardDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
         {
             var query = _context.Branchs
                 .Where(b => b.Name.Contains(term) || b.City.Contains(term) || b.Country.Contains(term))
-                .AsNoTracking();
-
-            var totalCount = await query.CountAsync(cancellationToken);
-            var items = await query
                 .OrderBy(b => b.Id)
-                .Skip((page.Page - 1) * page.PageSize)
-                .Take(page.PageSize)
-                .Select(b => new BranchCardDto
-                {
-                    Id = b.Id,
-                    Name = b.Name,
-                    City = b.City,
-                    Country = b.Country,
-                    PhoneNumber = b.PhoneNumber,
-                    Email = b.Email,
-                    CoX = b.CoX != null ? double.Parse(b.CoX) : null,
-                    CoY = b.CoY != null ? double.Parse(b.CoY) : null
-                })
-                .ToListAsync(cancellationToken);
+                .AsNoTracking()
+                .ProjectTo<BranchCardDto>(_mapper.ConfigurationProvider);
 
-            return new PagedData<BranchCardDto>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = page.Page,
-                PageSize = page.PageSize
-            };
+            return await query.ToPagedDataAsync(page, cancellationToken);
         }
 
         public async Task<BranchStatsDto> GetBranchStatsAsync(int branchId, CancellationToken cancellationToken = default)

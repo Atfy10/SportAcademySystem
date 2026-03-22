@@ -70,6 +70,14 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 .ForAllMembers(
                     opt => opt.Condition((src, dest, srcMember) => srcMember != null)
                 );
+
+            CreateMap<SubscriptionDetails, SubscriptionDetailsDropdownDto>()
+                .ConstructUsing(src => new SubscriptionDetailsDropdownDto(
+                    src.Id,
+                    src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
+                    src.TraineeId,
+                    $"{src.Trainee.FirstName} {src.Trainee.LastName}"
+                ));
         }
     }
 }

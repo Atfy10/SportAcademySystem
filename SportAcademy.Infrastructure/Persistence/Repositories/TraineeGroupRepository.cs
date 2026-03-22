@@ -24,17 +24,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
-                .AsNoTracking()
                 .Where(tg => tg.GroupSchedules.Any(gs => gs.Day == day.DayOfWeek))
-                .Select(tg => new ListTraineeGroupDto(
-                    tg.Id,
-                    tg.Coach.Sport.Name,
-                    tg.Coach.Employee.FirstName,
-                    tg.Branch.Name,
-                    tg.DurationInMinutes,
-                    tg.Enrollments.Count,
-                    tg.GroupSchedules.FirstOrDefault().StartTime
-                ))
+                .AsNoTracking()
+                .ProjectTo<ListTraineeGroupDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
 
         public async Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, CancellationToken cancellationToken = default)
@@ -45,8 +37,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<TraineeGroupDetailDto?> GetDetailsByIdAsync(int id, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
-                .AsNoTracking()
                 .Where(tg => tg.Id == id)
+                .AsNoTracking()
                 .ProjectTo<TraineeGroupDetailDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -56,7 +48,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
                 .AsNoTracking()
-                .Select(tg => new TraineeGroupDropdownDto(tg.Id, tg.Name))
+                .ProjectTo<TraineeGroupDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
     }
 }
