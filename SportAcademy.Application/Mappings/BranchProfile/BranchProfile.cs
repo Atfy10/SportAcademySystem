@@ -22,16 +22,13 @@ namespace SportAcademy.Application.Mappings.BranchProfile
                 .ForMember(dest => dest.Country, opt => opt.MapFrom(src => src.Country))
                 .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-                .ForMember(dest => dest.CoX, opt => opt.MapFrom(src => ParseCoordinate(src.CoX)))
-                .ForMember(dest => dest.CoY, opt => opt.MapFrom(src => ParseCoordinate(src.CoY)));
+                .ForMember(dest => dest.CoX, opt => opt.MapFrom(src => src.CoX))
+                .ForMember(dest => dest.CoY, opt => opt.MapFrom(src => src.CoY));
 
             CreateMap<Branch, UpdateBranchCommand>()
                 .ReverseMap()
                 .ForAllMembers(opt =>
                     opt.Condition((src, dest, srcMember) => srcMember != null));
         }
-
-        private static double? ParseCoordinate(string? value)
-            => string.IsNullOrEmpty(value) ? null : double.Parse(value);
     }
 }
