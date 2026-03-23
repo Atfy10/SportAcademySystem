@@ -73,7 +73,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             if (request.FamilyId > 0)
             {
-                var family = await _familyRepository.GetByIdAsync(request.FamilyId, cancellationToken)
+                _ = await _familyRepository.GetByIdAsync(request.FamilyId, cancellationToken)
                     ?? throw new IdNotFoundException("Family", request.FamilyId.ToString());
             }
 
