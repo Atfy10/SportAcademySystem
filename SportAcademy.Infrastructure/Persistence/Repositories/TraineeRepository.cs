@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Dapper;
 using Microsoft.EntityFrameworkCore;
@@ -345,5 +345,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .ProjectTo<TraineeDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
+
+        public async Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken = default)
+            => await _context.Trainees
+                .Where(t => t.Id != 0)
+                .AnyAsync(t => t.Email.Value == email.ToLowerInvariant(), cancellationToken);
     }
-}
+
+    }

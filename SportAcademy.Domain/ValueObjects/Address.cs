@@ -21,8 +21,7 @@ namespace SportAcademy.Domain.ValueObjects
 
         private static void Validate(string street, string city)
         {
-            if (string.IsNullOrWhiteSpace(street)
-                || string.IsNullOrWhiteSpace(city))
+            if (string.IsNullOrWhiteSpace(street) && string.IsNullOrWhiteSpace(city))
                 throw new InvalidAddressException();
         }
 

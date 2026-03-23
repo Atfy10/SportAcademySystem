@@ -1,4 +1,4 @@
-﻿using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Domain.Entities;
 
@@ -11,5 +11,7 @@ namespace SportAcademy.Application.Interfaces
         Task<int> CountAsync(CancellationToken cancellationToken = default);
         Task<IReadOnlyList<SportDropDownListDto>> SearchNameAsync(string term, CancellationToken cancellationToken = default);
         Task<PagedData<SportDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default);
+        Task<bool> AreIdsExistAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default);
     }
+
 }

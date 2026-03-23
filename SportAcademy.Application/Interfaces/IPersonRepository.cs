@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,5 +10,7 @@ namespace SportAcademy.Application.Interfaces
     {
         Task<bool> IsPhoneNumberExistAsync(string phoneNumber, int excludedId = 0, CancellationToken cancellationToken = default);
         Task<bool> IsSSNExistAsync(string ssn, CancellationToken cancellationToken = default);
+        Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken = default);
     }
+
 }

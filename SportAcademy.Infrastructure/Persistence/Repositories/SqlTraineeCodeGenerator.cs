@@ -37,8 +37,7 @@ public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
             new SqlParameter("@BranchId", branchId),
             new SqlParameter("@NationalityCategoryId", nationalityCategoryId),
             new SqlParameter("@AgeCode", ageCharString),
-            result,
-            cancellationToken
+            result
         );
 
         return result.Value!.ToString()!;

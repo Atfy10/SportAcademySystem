@@ -1,3 +1,4 @@
+using AutoMapper;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -159,6 +160,17 @@ namespace SportAcademy.Application.Behaviors
                     ex.Message);
 
                 return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (AutoMapperMappingException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "AutoMapper mapping failed for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
             }
             catch (Exception ex)
             {

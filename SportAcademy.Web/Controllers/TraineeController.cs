@@ -58,9 +58,10 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> CreateAsync(CreateTraineeCommand command)
+        public async Task<ActionResult> CreateAsync(CreateTraineeCommand command,
+            CancellationToken ct)
         {
-            var trainee = await _mediator.Send(command);
+            var trainee = await _mediator.Send(command, ct);
             return Ok(trainee);
         }
 

@@ -25,8 +25,8 @@
         Syrian,
         Lebanese,
         Pakistani,
-        Philippine,
-        Palaestinian,
+        Filipino,
+        Palestinian,
         Other
     }
 }

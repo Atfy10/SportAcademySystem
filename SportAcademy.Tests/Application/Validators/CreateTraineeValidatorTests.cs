@@ -17,7 +17,13 @@ public class CreateTraineeValidatorTests
         SSN = "304031512345",
         BirthDate = new DateOnly(2004, 3, 15),
         Gender = Gender.Male,
-        BranchId = 1
+        BranchId = 1,
+        NationalityCategoryId = 1,
+        FamilyId = 0,
+        PhoneNumber = "51234567",
+        Email = "ahmed@example.com",
+        Nationality = Nationality.Kuwaiti,
+        SportIds = [1]
     };
 
     [Fact]

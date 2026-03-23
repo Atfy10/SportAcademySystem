@@ -211,5 +211,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync(cancellationToken);
             return employee.IsWork;
         }
+
+        public async Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken = default)
+            => await _context.Employees
+                .Where(e => e.Id != 0)
+                .AnyAsync(e => e.Email.Value == email.ToLowerInvariant(), cancellationToken);
     }
 }

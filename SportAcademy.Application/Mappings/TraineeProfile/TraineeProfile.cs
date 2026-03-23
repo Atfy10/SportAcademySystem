@@ -1,8 +1,10 @@
-﻿using SportAcademy.Application.Commands.Trainees.CreateTrainee;
+using AutoMapper;
+using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.DTOs.TraineeDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Mappings.TraineeProfile
 {
@@ -10,6 +12,9 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
     {
         public TraineeProfile()
         {
+            CreateMap<string, Email>()
+                .ConvertUsing(src => Email.Create(src));
+
             CreateMap<DateOnly, DateTime>()
                 .ConvertUsing(d => d.ToDateTime(TimeOnly.MinValue));
 
@@ -55,18 +60,28 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                     src.JoinDate.ToDateTime(TimeOnly.MinValue)
                 ));
 
+            CreateMap<CreateTraineeCommand, Trainee>()
+                .ForMember(dest => dest.Address,
+                    opt => opt.MapFrom((src, dest) =>
+                    {
+                        if (string.IsNullOrWhiteSpace(src.Street) && string.IsNullOrWhiteSpace(src.City))
+                            return Address.Create("", "");
+                        return Address.Create(src.Street ?? "", src.City ?? "");
+                    }))
+                .ForMember(dest => dest.Sports,
+                    opt => opt.MapFrom(src => src.SportIds
+                        .Select(id => new SportTrainee { SportId = id })
+                        .ToList()))
+                .ForAllMembers(opts =>
+                    opts.Condition((src, dest, srcMember) => srcMember != null));
+
             CreateMap<Trainee, CreateTraineeCommand>()
-                .ForMember(dest => dest.Sports, 
-                    opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.SportId,
-                        st.Sport.Name
-                )).ToHashSet()))
-                .ReverseMap()
-                .ForMember(dest => dest.Sports, 
-                    opt => opt.MapFrom(src => src.Sports.Select(s => new SportTrainee
-                        {
-                            SportId = s.Id
-                        }).ToList()
-                ))
+                .ForPath(dest => dest.Street, opt => opt.MapFrom(src => src.Address != null ? src.Address.Street : null))
+                .ForPath(dest => dest.City, opt => opt.MapFrom(src => src.Address != null ? src.Address.City : null))
+                .ForMember(dest => dest.SportIds,
+                    opt => opt.MapFrom(src => src.Sports
+                        .Select(st => st.SportId)
+                        .ToHashSet()))
                 .ForAllMembers(opts =>
                     opts.Condition((src, dest, srcMember) => srcMember != null));
 

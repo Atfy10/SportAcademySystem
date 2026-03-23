@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -53,5 +53,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ProjectTo<SportDto>(_mapper.ConfigurationProvider)
                 .AsNoTracking()
                 .ToPagedDataAsync(page, cancellationToken);
+
+        public async Task<bool> AreIdsExistAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
+        {
+            var idList = ids.ToList();
+            if (!idList.Any()) return true;
+            var existingCount = await _context.Sports
+                .Where(s => idList.Contains(s.Id))
+                .CountAsync(cancellationToken);
+            return existingCount == idList.Count;
+        }
     }
-}
+
+    }
