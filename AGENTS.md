@@ -66,7 +66,7 @@ Required keys in `appsettings.json`:
 
 ## Architecture
 
-This is a .NET 8 Clean Architecture solution (targets `net8.0`, EF Core 9) with five projects:
+This is a .NET 9 Clean Architecture solution (targets `net9.0`, EF Core 9) with five projects:
 
 **Dependency flow:** `Web → Application → Domain` and `Web → Infrastructure → Application/Domain`. Tests reference `Application` and `Domain` only.
 
