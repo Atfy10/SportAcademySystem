@@ -31,14 +31,22 @@ public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
             Direction = System.Data.ParameterDirection.Output
         };
 
-        await _context.Database.ExecuteSqlRawAsync(
-            "EXEC usp_GenerateTraineeCode @FamilyId, @BranchId, @NationalityCategoryId, @AgeCode, @TraineeCode OUTPUT",
-            new SqlParameter("@FamilyId", familyId),
-            new SqlParameter("@BranchId", branchId),
-            new SqlParameter("@NationalityCategoryId", nationalityCategoryId),
-            new SqlParameter("@AgeCode", ageCharString),
-            result
-        );
+        try
+        {
+            await _context.Database.ExecuteSqlRawAsync(
+                "EXEC usp_GenerateTraineeCode @FamilyId, @BranchId, @NationalityCategoryId, @AgeCode, @TraineeCode OUTPUT",
+                new SqlParameter("@FamilyId", familyId),
+                new SqlParameter("@BranchId", branchId),
+                new SqlParameter("@NationalityCategoryId", nationalityCategoryId),
+                new SqlParameter("@AgeCode", ageCharString),
+                result
+            );
+        }
+        catch (SqlException ex)
+        {
+            Console.WriteLine(ex.Message);   // 👈 ده المهم
+            throw;
+        }
 
         return result.Value!.ToString()!;
     }

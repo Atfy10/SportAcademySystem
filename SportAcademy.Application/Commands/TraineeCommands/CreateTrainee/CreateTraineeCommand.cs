@@ -1,10 +1,10 @@
-﻿using MediatR;
+using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
-    public record CreateTraineeCommand : IRequest<Result<int>>
+    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>
     {
         public required string FirstName { get; init; }
         public required string LastName { get; init; }

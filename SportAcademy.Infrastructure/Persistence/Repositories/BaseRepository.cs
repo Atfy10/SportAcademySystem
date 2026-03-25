@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -13,8 +13,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         where TEntity : class
         where TKey : notnull
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
+        protected readonly ApplicationDbContext _context;
+        protected readonly IMapper _mapper;
 
         public BaseRepository(ApplicationDbContext context, IMapper mapper = default!)
         {
@@ -28,7 +28,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public virtual async Task AddAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             await _context.Set<TEntity>().AddAsync(entity, cancellationToken);
-            await SaveChanges(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
         }
 
         public virtual async Task DeleteAsync(TKey id, CancellationToken cancellationToken = default)
@@ -37,13 +37,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 ?? throw new IdNotFoundException(typeof(TEntity).Name, id.ToString()!);
 
             _context.Set<TEntity>().Remove(entity);
-            await SaveChanges(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
         }
 
         public virtual async Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             _context.Set<TEntity>().Remove(entity);
-            await SaveChanges(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
         }
 
         public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -65,12 +65,38 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public virtual async Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
         {
             _context.Set<TEntity>().Update(entity);
-            await SaveChanges(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
         }
 
-        protected async Task SaveChanges(CancellationToken cancellationToken = default)
+        public virtual async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public virtual async Task<TEntity> AddAsyncWithoutSave(TEntity entity, CancellationToken cancellationToken = default)
+        {
+            await _context.Set<TEntity>().AddAsync(entity, cancellationToken);
+            return entity;
+        }
+
+        public virtual async Task UpdateAsyncWithoutSave(TEntity entity, CancellationToken cancellationToken = default)
+        {
+            _context.Set<TEntity>().Update(entity);
+            await Task.CompletedTask;
+        }
+
+        public virtual async Task DeleteAsyncWithoutSave(TKey id, CancellationToken cancellationToken = default)
+        {
+            var entity = await GetByIdAsync(id, cancellationToken)
+                ?? throw new IdNotFoundException(typeof(TEntity).Name, id.ToString()!);
+            _context.Set<TEntity>().Remove(entity);
+            await Task.CompletedTask;
+        }
+
+        public virtual async Task DeleteAsyncWithoutSave(TEntity entity, CancellationToken cancellationToken = default)
+        {
+            _context.Set<TEntity>().Remove(entity);
+            await Task.CompletedTask;
         }
     }
 }

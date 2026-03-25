@@ -216,20 +216,6 @@ namespace SportAcademy.Application.Behaviors
                 }
             }
 
-            //if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
-            //{
-            //    var genericType = responseType.GetGenericArguments()[0];
-            //    var failureMethod = typeof(Result)
-            //        .GetMethod(nameof(Result.Failure),
-            //            [typeof(string), typeof(string), typeof(int), typeof(Dictionary<string, string[]>)])
-            //        ?.MakeGenericMethod(genericType);
-
-            //    if (failureMethod != null)
-            //    {
-            //        return (TResult)failureMethod.Invoke(null, new object?[] { requestName, message, statusCode, null })!;
-            //    }
-            //}
-
             throw new InvalidOperationException($"Unsupported response type: {responseType.Name}");
         }
 
@@ -260,20 +246,6 @@ namespace SportAcademy.Application.Behaviors
                     return (TResult)failureInstance!;
                 }
             }
-
-            //if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
-            //{
-            //    var genericType = responseType.GetGenericArguments()[0];
-            //    var failureMethod = typeof(Result)
-            //        .GetMethod(nameof(Result.Failure),
-            //            [typeof(string), typeof(string), typeof(Dictionary<string, string[]>)])
-            //        ?.MakeGenericMethod(genericType);
-
-            //    if (failureMethod != null)
-            //    {
-            //        return (TResult)failureMethod.Invoke(null, new object[] { requestName, message, errors })!;
-            //    }
-            //}
 
             throw new InvalidOperationException($"Unsupported response type: {responseType.Name}");
         }

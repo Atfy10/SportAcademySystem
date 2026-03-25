@@ -26,5 +26,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(f => f.FamilyCode == code)
                 .ProjectTo<TFamilyDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
+
+        public int SelectNextId()
+        {
+            var nextId = _context.Database
+                .SqlQueryRaw<int>("SELECT NEXT VALUE FOR FamilyCodeSequence")
+                .AsEnumerable()
+                .First();
+
+            return nextId;
+        }
     }
 }

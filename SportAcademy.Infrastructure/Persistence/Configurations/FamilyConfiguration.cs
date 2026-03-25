@@ -11,7 +11,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.ToTable("Families");
 
             builder.Property(f => f.Id)
-            .HasDefaultValueSql("NEXT VALUE FOR FamilyCodeSequence");
+                .HasDefaultValueSql("NEXT VALUE FOR FamilyCodeSequence");
 
             builder.Property(f => f.FamilyCode)
                 .IsRequired()

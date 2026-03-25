@@ -1,4 +1,4 @@
-﻿using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Common.Pagination;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,5 +22,11 @@ namespace SportAcademy.Application.Interfaces
         Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default);
         Task DeleteAsync(TKey id, CancellationToken cancellationToken = default);
         Task DeleteAsync(TEntity entity, CancellationToken cancellationToken = default);
+
+        Task<TEntity> AddAsyncWithoutSave(TEntity entity, CancellationToken cancellationToken = default);
+        Task UpdateAsyncWithoutSave(TEntity entity, CancellationToken cancellationToken = default);
+        Task DeleteAsyncWithoutSave(TKey id, CancellationToken cancellationToken = default);
+        Task DeleteAsyncWithoutSave(TEntity entity, CancellationToken cancellationToken = default);
+        Task SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

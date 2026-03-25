@@ -6,5 +6,6 @@ namespace SportAcademy.Application.Interfaces
     {
         Task<IReadOnlyList<TFamilyDto>> SearchFamiliesWithCode<TFamilyDto>(int code, CancellationToken cancellationToken = default)
             where TFamilyDto : class;
+        int SelectNextId();
     }
 }

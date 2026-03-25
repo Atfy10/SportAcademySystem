@@ -36,7 +36,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 IsRead = false
             });
 
-            await SaveChanges();
+            await SaveChangesAsync();
         }
 
         public async Task<PagedData<NotificationRecipientDto>> GetUserNotificationsAsync(
@@ -67,7 +67,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             if (recipient == null) return false;
 
             recipient.IsRead = true;
-            await SaveChanges(ct);
+            await SaveChangesAsync(ct);
             return true;
         }
 

@@ -1,12 +1,12 @@
-﻿namespace SportAcademy.Domain.Entities
+namespace SportAcademy.Domain.Entities
 {
     public class Family
     {
-        public int Id { get; private set; }
+        public int Id { get; set; }
 
-        public int FamilyCode { get; private set; }
+        public int FamilyCode { get; set; }
 
-        public int LastMemberNumber { get; private set; }
+        public int LastMemberNumber { get; set; }
 
         public ICollection<Trainee> Members { get; } = [];
     }

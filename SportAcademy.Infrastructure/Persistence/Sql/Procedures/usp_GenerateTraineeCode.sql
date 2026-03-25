@@ -1,4 +1,4 @@
-CREATE PROCEDURE usp_GenerateTraineeCode
+CREATE OR ALTER PROCEDURE usp_GenerateTraineeCode
     @FamilyId INT,
     @BranchId INT,
     @NationalityCategoryId INT,
