@@ -105,12 +105,10 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 }).ToList()));
 
             CreateMap<Trainee, TraineeDropdownDto>()
-                .ConstructUsing(src => new TraineeDropdownDto
-                {
-                    Id = src.Id,
-                    FirstName = src.FirstName,
-                    LastName = src.LastName
-                });
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName));
+
         }
 
         private static int GetAge(Trainee trainee)
