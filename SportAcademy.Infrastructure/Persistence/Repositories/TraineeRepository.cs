@@ -12,6 +12,7 @@ using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 using System.Data;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -26,6 +27,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _context = context;
             _mapper = mapper;
         }
+
+        public async Task<List<int>> GetIdsAsync(CancellationToken ct = default)
+            => await _context.Trainees
+                .Select(t => t.Id)
+                .OrderDescending()
+                .ToListAsync(cancellationToken: ct);
 
         public async Task<PagedData<TraineeOfSpecificDayDto>> GetAllTraineesOfSpecificDayAsync(
                 DateTime date,
@@ -139,17 +146,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<PagedData<TraineeCardDto>> SearchAsync(
             string term,
-            PageRequest pageReq,
-            CancellationToken cancellationToken)
+            PageRequest page,
+            CancellationToken ct = default)
         {
-            var offset = (pageReq.Page - 1) * pageReq.PageSize;
+            var offset = (page.Page - 1) * page.PageSize;
             var fullTextTerm = BuildFullTextTerm(term);
             var likeTerm = $"%{term}%";
 
             var connection = _context.Database.GetDbConnection();
 
             if (connection.State != ConnectionState.Open)
-                await connection.OpenAsync(cancellationToken);
+                await connection.OpenAsync(ct);
 
             var ftsAvailable = await IsFtsAvailableAsync(connection, "Trainees");
 
@@ -161,6 +168,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 sql = @"
                     SELECT 
                         t.Id,
+                        t.TraineeCode AS Code,
                         t.FirstName,
                         t.LastName,
                         DATEDIFF(YEAR, t.BirthDate, GETDATE()) AS Age,
@@ -191,22 +199,23 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
                     LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
                     LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
-                    LEFT JOIN Branches b ON tg.BranchId = b.Id
+                    LEFT JOIN Branches b ON t.BranchId = b.Id
                     WHERE t.IsDeleted = 0
                     GROUP BY
-                        t.Id, t.FirstName, t.LastName, t.BirthDate, t.Email,
+                        t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate, t.IsSubscribed,
                         ce.FirstName, ce.LastName, b.Name, ft.RANK
                     ORDER BY ft.RANK DESC, t.Id ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
                 ";
-                parameters = new { term = fullTextTerm, offset, pageReq.PageSize };
+                parameters = new { term = fullTextTerm, offset, page.PageSize };
             }
             else
             {
                 sql = @"
                     SELECT 
                         t.Id,
+                        t.TraineeCode AS Code,
                         t.FirstName,
                         t.LastName,
                         DATEDIFF(YEAR, t.BirthDate, GETDATE()) AS Age,
@@ -238,25 +247,34 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                            OR t.LastName LIKE @likeTerm
                            OR t.Email LIKE @likeTerm)
                     GROUP BY
-                        t.Id, t.FirstName, t.LastName, t.BirthDate, t.Email,
+                        t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate, t.IsSubscribed,
                         ce.FirstName, ce.LastName, b.Name
                     ORDER BY t.Id ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
                 ";
-                parameters = new { likeTerm, offset, pageReq.PageSize };
+                parameters = new { likeTerm, offset, page.PageSize };
             }
 
             var rows = await connection.QueryAsync<TraineeCardRow>(sql, parameters);
 
             var trainees = rows.Select(r =>
             {
+                var options = new JsonSerializerOptions
+                {
+                    Converters = { new JsonStringEnumConverter(null, true) }
+                };
+
                 var sports = string.IsNullOrWhiteSpace(r.SportSkills)
                     ? []
-                    : JsonSerializer.Deserialize<List<TraineeSportSkillDto>>(r.SportSkills)!;
+                    : JsonSerializer.Deserialize<List<TraineeSportSkillDto>>(
+                        r.SportSkills,
+                        options
+                        );
 
                 return new TraineeCardDto(
                     r.Id,
+                    r.Code,
                     r.FirstName,
                     r.LastName,
                     r.Age,
@@ -264,13 +282,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     r.PhoneNumber,
                     r.JoinDate,
                     r.IsSubscribed,
-                    sports,
+                    sports ?? [],
                     r.CoachName,
                     r.BranchName
                 );
             }).ToList();
 
-            return trainees.ToPagedData(pageReq);
+            return trainees.ToPagedData(page);
         }
 
         private static string BuildFullTextTerm(string term)
@@ -352,4 +370,4 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .AnyAsync(t => t.Email.Value == email.ToLowerInvariant(), cancellationToken);
     }
 
-    }
+}

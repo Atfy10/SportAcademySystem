@@ -35,7 +35,7 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetAll
 
             foreach (var trainee in traineesDto.Items)
             {
-                (int totalSessions, int attendendedSessions) = await _attendanceRepository.GetAttendanceSummaryAsync(15, null, null, cancellationToken);
+                (int totalSessions, int attendendedSessions) = await _attendanceRepository.GetAttendanceSummaryAsync(trainee.Id, null, null, cancellationToken);
                 trainee.AttendanceRate = totalSessions == 0
                     ? 0
                     : Math.Round((double)(attendendedSessions / totalSessions * 100), 2);

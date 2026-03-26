@@ -4,7 +4,7 @@ namespace SportAcademy.Domain.Enums
 {
     public enum SkillLevel
     {
-        NotSpecified = 1,
+        NotSpecified = 0,
         Beginner,
         Intermediate,
         Advanced,

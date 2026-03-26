@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -97,13 +96,27 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             if (sportIds.Count != 0)
             {
                 var allSportsExist = await _sportRepository.AreIdsExistAsync(sportIds, cancellationToken);
+                var allSports = await _sportRepository.GetAllAsync(cancellationToken);
+                var allTraineeSports = new List<SportTrainee>();
                 if (!allSportsExist)
                 {
-                    var allSports = await _sportRepository.GetAllAsync(cancellationToken);
                     var validIds = allSports.Select(s => s.Id).ToHashSet();
                     var invalidIds = sportIds.Where(id => !validIds.Contains(id)).ToList();
                     throw new IdNotFoundException("Sport", invalidIds.FirstOrDefault().ToString());
                 }
+
+                foreach (var sportId in sportIds)
+                {
+                    allTraineeSports.Add(
+                        new SportTrainee
+                        {
+                            SportId = sportId,
+                            SkillLevel = SkillLevel.NotSpecified
+                        }
+                    );
+                }
+
+                trainee.Sports = allTraineeSports;
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -115,6 +128,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
                 ageCategory,
                 cancellationToken);
 
+            trainee.Id = await CreateTraineeId(trainee);
             trainee.TraineeCode = TraineeCode.FromString(code);
             trainee.IsSubscribed = false;
             trainee.FamilyId = familyId;
@@ -146,6 +160,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
                 new CreateTraineeResponse
                 {
                     TraineeId = trainee.Id,
+                    Code = trainee.TraineeCode.Value,
                     Username = username,
                     Password = password
                 },
@@ -169,6 +184,28 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
                 throw new InvalidOperationException("Unable to generate unique username");
 
             return username;
+        }
+
+        private async Task<int> CreateTraineeId(Trainee trainee)
+        {
+            var year = (trainee.BirthDate.Year % 100);
+            var month = (trainee.BirthDate.Month);
+            var dobCode = $"{year:D2}{month:D2}";
+
+            var firstLetter = char.ToUpper(trainee.FirstName[0]);
+            var ascii = ((int)firstLetter).ToString("D2");
+
+            var prefix = $"{trainee.BranchId}{dobCode}{ascii}";
+
+            var ids = await _traineeRepository.GetIdsAsync();
+            var count = ids
+                .Where(id => id.ToString().StartsWith(prefix))
+                .ToList().Count;
+
+            var counter = (count + 1).ToString("D1");
+
+            var codeString = $"{prefix}{counter}";
+            return int.Parse(codeString);
         }
     }
 }

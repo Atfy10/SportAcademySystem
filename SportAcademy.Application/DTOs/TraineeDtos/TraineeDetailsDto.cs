@@ -2,6 +2,7 @@
 
 public record TraineeDetailsDto(
     int Id,
+    string Code,
     string FirstName,
     string LastName,
     string? Email,

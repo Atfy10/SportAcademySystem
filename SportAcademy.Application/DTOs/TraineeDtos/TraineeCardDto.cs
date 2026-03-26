@@ -2,6 +2,7 @@
 
 public record TraineeCardDto(
     int Id,
+    string Code,
     string FirstName,
     string LastName,
     int Age,

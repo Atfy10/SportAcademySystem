@@ -24,6 +24,7 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
             CreateMap<Trainee, TraineeCardDto>()
                 .ConstructUsing(src => new TraineeCardDto(
                     src.Id,
+                    src.TraineeCode.Value,
                     src.FirstName,
                     src.LastName,
                     GetAge(src),
@@ -45,6 +46,7 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
             CreateMap<Trainee, TraineeDetailsDto>()
                 .ConstructUsing(src => new TraineeDetailsDto(
                     src.Id,
+                    src.TraineeCode.Value,
                     src.FirstName,
                     src.LastName,
                     src.Email.ToString(),

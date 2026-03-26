@@ -27,6 +27,7 @@
         Pakistani,
         Filipino,
         Palestinian,
+        Palaestinian,
         Other
     }
 }
