@@ -74,9 +74,7 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
             CreateMap<SubscriptionDetails, SubscriptionDetailsDropdownDto>()
                 .ConstructUsing(src => new SubscriptionDetailsDropdownDto(
                     src.Id,
-                    src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
-                    src.TraineeId,
-                    $"{src.Trainee.FirstName} {src.Trainee.LastName}"
+                    src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString()
                 ));
         }
     }

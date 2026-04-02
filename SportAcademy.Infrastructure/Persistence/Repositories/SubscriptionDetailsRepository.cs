@@ -67,5 +67,21 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
+
+        public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)
+        {
+            var query = _context.SubscriptionDetails
+                .Where(sd => sd.IsActive && !sd.IsDeleted);
+
+            if (traineeId.HasValue)
+            {
+                query = query.Where(sd => sd.TraineeId == traineeId.Value);
+            }
+
+            return await query
+                .AsNoTracking()
+                .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

@@ -61,9 +61,9 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("dropdown")]
-        public async Task<IActionResult> GetDropdown(CancellationToken ct)
+        public async Task<IActionResult> GetDropdown([FromQuery] int? traineeId, CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllSubscriptionDetailsForDropdownQuery(), ct);
+            var result = await _mediator.Send(new GetAllSubscriptionDetailsForDropdownQuery(traineeId), ct);
             return Ok(result);
         }
     }

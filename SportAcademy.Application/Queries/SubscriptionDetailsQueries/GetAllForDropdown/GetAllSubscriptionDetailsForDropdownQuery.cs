@@ -5,4 +5,4 @@ using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAllForDropdown;
 
-public record GetAllSubscriptionDetailsForDropdownQuery : IRequest<Result<List<SubscriptionDetailsDropdownDto>>>;
+public record GetAllSubscriptionDetailsForDropdownQuery(int? TraineeId = null) : IRequest<Result<List<SubscriptionDetailsDropdownDto>>>;

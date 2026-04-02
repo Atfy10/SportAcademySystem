@@ -14,7 +14,8 @@ public class GetAllSubscriptionDetailsForDropdownQueryHandler(
         GetAllSubscriptionDetailsForDropdownQuery request,
         CancellationToken cancellationToken)
     {
-        var items = await subscriptionDetailsRepository.GetAllForDropdownAsync(cancellationToken);
+        var items = await subscriptionDetailsRepository.GetActiveForTraineeDropdownAsync(
+            request.TraineeId, cancellationToken);
         return Result<List<SubscriptionDetailsDropdownDto>>.Success(items, OperationType.GetAll.ToString());
     }
 }
