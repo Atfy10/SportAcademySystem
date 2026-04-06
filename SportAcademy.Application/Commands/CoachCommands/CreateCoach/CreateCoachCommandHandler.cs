@@ -41,6 +41,8 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
                 SkillLevel = request.SkillLevel
             };
 
+            employee.Position = Position.Coach;
+
             ct.ThrowIfCancellationRequested();
 
             await _coachRepository.AddAsync(coach, ct);

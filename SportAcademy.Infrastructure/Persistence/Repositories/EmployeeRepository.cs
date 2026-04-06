@@ -21,7 +21,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
 
-        public EmployeeRepository(ApplicationDbContext context, IMapper mapper) 
+        public EmployeeRepository(ApplicationDbContext context, IMapper mapper)
             : base(context, mapper)
         {
             _context = context;
@@ -65,6 +65,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             query = filters.SortBy?.ToLower() switch
             {
+                "name" => filters.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(e => e.FirstName + " " + e.LastName)
+                    : query.OrderBy(e => e.FirstName + " " + e.LastName),
                 "position" => filters.SortOrder?.ToLower() == "desc"
                     ? query.OrderByDescending(e => e.Position)
                     : query.OrderBy(e => e.Position),
