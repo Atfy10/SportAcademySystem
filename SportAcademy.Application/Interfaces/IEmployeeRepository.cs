@@ -1,6 +1,7 @@
 ﻿using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.DTOs.EmployeeDtos;
+using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 
@@ -16,7 +17,7 @@ namespace SportAcademy.Application.Interfaces
         Task<int> GetEmployeesCountAsync(CancellationToken ct = default);
         Task<int> GetActiveEmployeesCountAsync(CancellationToken ct = default);
         Task<int> GetActiveCoachesCountAsync(CancellationToken ct = default);
-        Task<PagedData<EmployeeCardDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default);
+        Task<PagedData<EmployeeCardDto>> GetAllAsync(PageRequest page, EmployeeFilterOptions filters, CancellationToken cancellationToken = default);
         Task<Employee?> GetFullEmployee(int id, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetActiveAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetActiveCoachesAsync(PageRequest page, CancellationToken cancellationToken = default);

@@ -35,10 +35,20 @@ namespace SportAcademy.Web.Controllers
         public async Task<ActionResult> Index(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] string? status,
+            [FromQuery] int? branchId,
+            [FromQuery] string? position,
+            [FromQuery] string? sortBy,
+            [FromQuery] string? sortOrder,
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllEmployeesQuery(
-                                                PageRequest.Create(page, pageSize)), ct);
+                                                PageRequest.Create(page, pageSize),
+                                                status,
+                                                branchId,
+                                                position,
+                                                sortBy,
+                                                sortOrder), ct);
             return Ok(result);
         }
 
