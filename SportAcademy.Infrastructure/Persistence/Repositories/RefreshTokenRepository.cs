@@ -41,7 +41,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(RefreshToken token, CancellationToken ct = default)
         {
-            _context.RefreshTokens.Update(token);
+            _context.RefreshTokens.Attach(token);
+            _context.Entry(token).State = EntityState.Modified;
             await _context.SaveChangesAsync(ct);
         }
 

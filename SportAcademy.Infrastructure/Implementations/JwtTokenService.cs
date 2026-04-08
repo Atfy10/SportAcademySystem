@@ -71,8 +71,7 @@ namespace SportAcademy.Infrastructure.Implementations
 
         public string HashToken(string token)
         {
-            using var sha256 = SHA256.Create();
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+            var hashedBytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
             return Convert.ToBase64String(hashedBytes);
         }
 
@@ -87,7 +86,7 @@ namespace SportAcademy.Infrastructure.Implementations
             
             var storedToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, ct);
             
-            if (storedToken == null)
+            if (storedToken is null)
                 return null;
 
             if (storedToken.IsRevoked)
@@ -99,7 +98,7 @@ namespace SportAcademy.Infrastructure.Implementations
             if (gracePeriodExpiry < now)
                 return null;
 
-            if (storedToken.User == null)
+            if (storedToken.User is null)
                 return null;
 
             var newAccessToken = GenerateJwtToken(storedToken.User);
@@ -130,6 +129,9 @@ namespace SportAcademy.Infrastructure.Implementations
 
         public async Task RevokeRefreshTokenAsync(RefreshToken token, CancellationToken ct = default)
         {
+            token.IsRevoked = true;
+            token.RevokedAt = DateTime.UtcNow;
+
             await _refreshTokenRepository.UpdateAsync(token, ct);
         }
     }

@@ -187,20 +187,6 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
 
             }
 
-            // RefreshToken configuration
-            modelBuilder.Entity<RefreshToken>(entity =>
-            {
-                entity.HasOne(rt => rt.User)
-                    .WithMany()
-                    .HasForeignKey(rt => rt.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                entity.HasOne(rt => rt.ReplacedByToken)
-                    .WithMany()
-                    .HasForeignKey(rt => rt.ReplacedByTokenId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
             base.OnModelCreating(modelBuilder);
         }
     }
