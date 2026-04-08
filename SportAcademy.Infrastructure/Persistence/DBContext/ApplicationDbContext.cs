@@ -47,6 +47,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Family> Families { get; set; }
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
         public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         //  View for reporting purposes
         public DbSet<AdminBasicViews> AdminBasicViews { get; set; }
@@ -183,7 +184,22 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                         .Property<string?>("SecondPhoneNumber")
                         .HasMaxLength(12);
                 }
+
             }
+
+            // RefreshToken configuration
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasOne(rt => rt.User)
+                    .WithMany()
+                    .HasForeignKey(rt => rt.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(rt => rt.ReplacedByToken)
+                    .WithMany()
+                    .HasForeignKey(rt => rt.ReplacedByTokenId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             base.OnModelCreating(modelBuilder);
         }

@@ -43,6 +43,7 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
             services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
             services.AddScoped<IVideoAnalysisRepository, VideoAnalysisRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             // Register JWT token service
             services.AddScoped<IJwtTokenService, JwtTokenService>();
