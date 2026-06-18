@@ -42,10 +42,12 @@ namespace SportAcademy.Infrastructure.Implementations
             var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key!));
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha512);
 
+            var expireMinutes = int.TryParse(_configuration["Jwt:ExpireMinutes"], out var parsed) ? parsed : 30;
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(30),
+                Expires = DateTime.UtcNow.AddMinutes(expireMinutes),
                 SigningCredentials = signingCredentials,
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],
@@ -117,7 +119,10 @@ namespace SportAcademy.Infrastructure.Implementations
                 CreatedAt = now,
                 IsRevoked = false
             };
-            await _refreshTokenRepository.AddAsync(newToken, ct);
+            newToken = await _refreshTokenRepository.AddAsync(newToken, ct);
+
+            storedToken.ReplacedByTokenId = newToken.Id;
+            await _refreshTokenRepository.UpdateAsync(storedToken, ct);
 
             return new RefreshTokenResult(newAccessToken, newRefreshToken);
         }

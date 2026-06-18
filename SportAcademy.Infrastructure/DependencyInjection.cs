@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Services;
+using SportAcademy.Infrastructure.BackgroundServices;
 using SportAcademy.Infrastructure.Implementations;
 using SportAcademy.Infrastructure.Persistence.Repositories;
 
@@ -55,6 +56,9 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<ITraineeService, TraineeService>();
             services.AddScoped<IPersonService, PersonService>();
             services.AddScoped<ITraineeCodeGenerator, SqlTraineeCodeGenerator>();
+
+            // Register background services
+            services.AddHostedService<RefreshTokenCleanupService>();
 
             return services;
         }
