@@ -51,14 +51,14 @@ namespace SportAcademy.Web.Controllers
             if (!success)
                 return NotFound();
 
-            return Ok();
+            return NoContent();
         }
 
         [HttpPatch("read-all")]
         public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
         {
             await _mediator.Send(new MarkAllNotificationsAsReadCommand(), ct);
-            return Ok();
+            return NoContent();
         }
     }
 }
