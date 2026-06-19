@@ -1,11 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
 {
@@ -23,6 +20,23 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(x => x.GroupName)
                 .IsRequired(false)
                 .HasMaxLength(30);
+
+            builder.Property(x => x.Title)
+                .IsRequired(false)
+                .HasMaxLength(100);
+
+            var typeConverter = new ValueConverter<NotificationType?, string?>(
+                v => v.HasValue ? v.Value.ToString() : null,
+                v => string.IsNullOrEmpty(v) ? null : (NotificationType)Enum.Parse(typeof(NotificationType), v, true));
+
+            builder.Property(x => x.Type)
+                .IsRequired(false)
+                .HasConversion(typeConverter)
+                .HasDefaultValue(NotificationType.System);
+
+            builder.Property(x => x.ActionUrl)
+                .IsRequired(false)
+                .HasMaxLength(500);
 
             builder.Property(x => x.CreatedAt)
                 .IsRequired()

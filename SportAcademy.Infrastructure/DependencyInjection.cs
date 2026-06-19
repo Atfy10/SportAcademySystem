@@ -52,6 +52,9 @@ namespace SportAcademy.Infrastructure
             // Register Notification Service
             services.AddScoped<INotificationService, NotificationService>();
 
+            // Register Realtime Service
+            services.AddScoped<IRealtimeService, RealtimeService>();
+
             // Register Domain Services
             services.AddScoped<ITraineeService, TraineeService>();
             services.AddScoped<IPersonService, PersonService>();
