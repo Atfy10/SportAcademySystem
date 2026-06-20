@@ -1,13 +1,9 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
-using SportAcademy.Domain.Exceptions.SharedExceptions;
 
 namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
 {
@@ -19,9 +15,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
 
         public CreateCoachCommandHandler(
             IEmployeeRepository employeeRepository,
-            ICoachRepository coachRepository,
-            IPersonService personService,
-            IMapper mapper)
+            ICoachRepository coachRepository)
         {
             _employeeRepository = employeeRepository;
             _coachRepository = coachRepository;
@@ -41,7 +35,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
                 SkillLevel = request.SkillLevel
             };
 
-            employee.Position = Position.Coach;
+            employee.SetPosition(Position.Coach);
 
             ct.ThrowIfCancellationRequested();
 

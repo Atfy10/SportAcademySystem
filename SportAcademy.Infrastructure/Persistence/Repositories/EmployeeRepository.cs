@@ -246,7 +246,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var employee = await _context.Employees.FindAsync(new object[] { id }, cancellationToken)
                     ?? throw new EmployeeNotFoundException(id.ToString());
 
-            employee.IsWork = !employee.IsWork;
+            employee.ToggleIsWork();
             await _context.SaveChangesAsync(cancellationToken);
             return employee.IsWork;
         }

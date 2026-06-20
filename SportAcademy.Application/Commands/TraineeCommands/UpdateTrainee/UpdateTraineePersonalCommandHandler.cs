@@ -1,14 +1,11 @@
 ﻿using AutoMapper;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BranchExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
-using SportAcademy.Domain.Exceptions.SportExceptions;
 using SportAcademy.Domain.Exceptions.TraineeExceptions;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
@@ -16,19 +13,16 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
     public class UpdateTraineePersonalCommandHandler : IRequestHandler<UpdateTraineePersonalCommand, Result<UpdateTraineePersonalCommand>>
     {
         private readonly IBranchRepository _branchRepository;
-        private readonly ITraineeService _traineeService;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IMapper _mapper;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateTraineePersonalCommandHandler(
             IBranchRepository branchRepository,
-            ITraineeService traineeService,
             ITraineeRepository traineeRepository,
             IMapper mapper)
         {
             _branchRepository = branchRepository;
-            _traineeService = traineeService;
             _traineeRepository = traineeRepository;
             _mapper = mapper;
         }

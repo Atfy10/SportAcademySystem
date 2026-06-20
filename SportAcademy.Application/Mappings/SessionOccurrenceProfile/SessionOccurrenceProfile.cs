@@ -25,12 +25,13 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
                         0
                     )
                 )
-                .ReverseMap();
+                .ForAllMembers(opt => opt.Ignore());
 
-            CreateMap<CreateSessionOccurrenceCommand, SessionOccurrence>();
+            CreateMap<CreateSessionOccurrenceCommand, SessionOccurrence>()
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<UpdateSessionOccurrenceCommand, SessionOccurrence>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForAllMembers(opt => opt.Ignore());
         }
     }
 }

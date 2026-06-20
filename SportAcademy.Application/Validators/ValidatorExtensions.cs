@@ -30,7 +30,7 @@ namespace SportAcademy.Application.Validators
         this IRuleBuilder<T, string?> ruleBuilder)
         {
             return ruleBuilder
-                .Must(value => value is not null && string.IsNullOrEmpty(value) || !value.Any(char.IsDigit))
+                .Must(value => string.IsNullOrEmpty(value) || !value.Any(char.IsDigit))
                 .WithMessage("{PropertyName} must not contain digits.");
         }
     }

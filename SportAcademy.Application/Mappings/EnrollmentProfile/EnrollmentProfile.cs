@@ -11,12 +11,13 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
         public EnrollmentMappingProfile()
         {
             CreateMap<Enrollment, EnrollmentDto>()
-                .ReverseMap();
+                .ForAllMembers(opt => opt.Ignore());
 
-            CreateMap<CreateEnrollmentCommand, Enrollment>();
+            CreateMap<CreateEnrollmentCommand, Enrollment>()
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<UpdateEnrollmentCommand, Enrollment>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<Enrollment, EnrollmentDataDto>()
                 .ConstructUsing(src => new EnrollmentDataDto(
@@ -29,7 +30,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     src.Trainee.FirstName + " " + src.Trainee.LastName,
                     src.TraineeGroup.Coach.Employee.FirstName + " " + src.TraineeGroup.Coach.Employee.LastName,
                     src.SubscriptionDetailsId
-                ));
+                ))
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<Enrollment, EnrollmentCardDto>()
                 .ConstructUsing(src => new EnrollmentCardDto(
@@ -48,7 +50,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     src.GetStatus(),
                     GetSessionsCompleted(src.Attendances),
                     src.SessionAllowed
-                ));
+                ))
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<Enrollment, EnrollmentDetailDto>()
                 .ConstructUsing(src => new EnrollmentDetailDto(
@@ -70,7 +73,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     src.SessionAllowed - src.SessionRemaining,
                     src.SessionAllowed,
                     src.SubscriptionDetailsId
-                ));
+                ))
+                .ForAllMembers(opt => opt.Ignore());
         }
 
         private static int GetSessionsCompleted(ICollection<Attendance> src)

@@ -2,7 +2,6 @@ using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
-using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -10,7 +9,6 @@ using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.TraineeExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
-using SportAcademy.Domain.Helpers;
 using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
@@ -24,7 +22,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher<AppUser> _passwordHasher;
         private readonly ISportRepository _sportRepository;
-        private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateTraineeCommandHandler(
@@ -34,8 +31,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             IFamilyRepository familyRepository,
             IUserRepository userRepository,
             IPasswordHasher<AppUser> passwordHasher,
-            ISportRepository sportRepository,
-            IPublisher publisher)
+            ISportRepository sportRepository)
         {
             _traineeCodeGenerator = traineeCodeGenerator;
             _mapper = mapper;
@@ -44,18 +40,12 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _sportRepository = sportRepository;
-            _publisher = publisher;
         }
 
         public async Task<Result<CreateTraineeResponse>> Handle(CreateTraineeCommand request, CancellationToken cancellationToken)
         {
             var trainee = _mapper.Map<Trainee>(request)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-            trainee.JoinDate = DateOnly.FromDateTime(DateTime.UtcNow);
-
-            if (!PersonValidationHelper.IsValidSSN(trainee.SSN, trainee.BirthDate))
-                throw new SSNSyntaxErrorException();
 
             var isSSNExist = await _traineeRepository
                 .IsSSNExistAsync(trainee.SSN, cancellationToken);
@@ -72,13 +62,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             if (isEmailExist)
                 throw new EmailExistException();
 
-            var ageCategory = trainee.AgeCategory;
-            bool isAdult = ageCategory == AgeCategory.Adult;
-            bool isGuardianInfoMissing = (string.IsNullOrWhiteSpace(trainee.ParentNumber)
-                || string.IsNullOrWhiteSpace(trainee.GuardianName));
-            if (!isAdult && isGuardianInfoMissing)
-                throw new GuardianInfoMissingException();
-
             int familyId;
             if (request.FamilyId > 0)
             {
@@ -88,39 +71,22 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             }
             else
             {
-                var newFamily = new Family
-                {
-                    LastMemberNumber = 0
-                };
+                var newFamily = Family.Create();
                 await _familyRepository.AddAsyncWithoutSave(newFamily, cancellationToken);
-                familyId = _familyRepository.SelectNextId();
+                familyId = newFamily.Id;
             }
 
             var sportIds = request.SportIds.ToList();
             if (sportIds.Count != 0)
             {
-                var allSportsExist = await _sportRepository.AreIdsExistAsync(sportIds, cancellationToken);
                 var allSports = await _sportRepository.GetAllAsync(cancellationToken);
-                var allTraineeSports = new List<SportTrainee>();
-                if (!allSportsExist)
-                {
-                    var validIds = allSports.Select(s => s.Id).ToHashSet();
-                    var invalidIds = sportIds.Where(id => !validIds.Contains(id)).ToList();
-                    throw new IdNotFoundException("Sport", invalidIds.FirstOrDefault().ToString());
-                }
+                var validIds = allSports.Select(s => s.Id).ToHashSet();
+                var invalidIds = sportIds.Where(id => !validIds.Contains(id)).ToList();
+                if (invalidIds.Count != 0)
+                    throw new IdNotFoundException("Sport", invalidIds.First().ToString());
 
                 foreach (var sportId in sportIds)
-                {
-                    allTraineeSports.Add(
-                        new SportTrainee
-                        {
-                            SportId = sportId,
-                            SkillLevel = SkillLevel.NotSpecified
-                        }
-                    );
-                }
-
-                trainee.Sports = allTraineeSports;
+                    trainee.AssignSport(sportId);
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -129,13 +95,12 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
                 familyId,
                 trainee.BranchId,
                 trainee.NationalityCategoryId,
-                ageCategory,
+                trainee.AgeCategory,
                 cancellationToken);
 
-            trainee.Id = await CreateTraineeId(trainee);
-            trainee.TraineeCode = TraineeCode.FromString(code);
-            trainee.IsSubscribed = false;
-            trainee.FamilyId = familyId;
+            var traineeId = await CreateTraineeId(trainee);
+            trainee.SetIds(traineeId, familyId);
+            trainee.SetTraineeCode(TraineeCode.FromString(code));
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -144,7 +109,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             cancellationToken.ThrowIfCancellationRequested();
 
             string username = await GenerateUniqueUsername(trainee.FirstName, trainee.LastName, cancellationToken);
-            string password = PersonValidationHelper.GeneratePassword();
+            string password = GeneratePassword();
 
             var appUser = new AppUser
             {
@@ -159,8 +124,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             await _userRepository.AddAsyncWithoutSave(appUser, cancellationToken);
 
             await _familyRepository.SaveChangesAsync(cancellationToken);
-
-            await _publisher.Publish(new TraineeCreatedEvent(trainee.Id), cancellationToken);
 
             return Result<CreateTraineeResponse>.Success(
                 new CreateTraineeResponse
@@ -212,6 +175,14 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             var codeString = $"{prefix}{counter}";
             return int.Parse(codeString);
+        }
+
+        private static string GeneratePassword()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+            var password = new string(Enumerable.Repeat(chars, 12)
+                .Select(s => s[Random.Shared.Next(s.Length)]).ToArray());
+            return password;
         }
     }
 }

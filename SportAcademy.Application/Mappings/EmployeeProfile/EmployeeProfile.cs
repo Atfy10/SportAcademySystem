@@ -21,20 +21,45 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
                 .ReverseMap();
 
             CreateMap<CreateEmployeeCommand, Employee>()
-                .ForMember(dest => dest.Address,
-                    opt => opt.MapFrom(src =>
-                    Address.Create(src.Street, src.City)))
-                .ForMember(dest => dest.Email,
-                    opt => opt.MapFrom(src =>
-                    Email.Create(src.Email)))
-                .ForMember(dest => dest.SecondPhoneNumber,
-                    opt => opt.MapFrom(src =>
-                    src.SecondNumber))
-                .ForMember(dest => dest.Nationality,
-                    opt => opt.MapFrom(src =>
-                    Enum.Parse<Nationality>(src.Nationality)));
+                .ConstructUsing((src, _) =>
+                {
+                    var address = Address.Create(src.Street, src.City);
+                    var email = Email.Create(src.Email);
+                    var nationality = Enum.Parse<Nationality>(src.Nationality);
 
-            CreateMap<CreateEmployeeDto, Employee>();
+                    var data = new PersonData(
+                        src.FirstName,
+                        src.LastName,
+                        src.SSN,
+                        email,
+                        src.BirthDate,
+                        src.Gender,
+                        nationality,
+                        address,
+                        src.PhoneNumber,
+                        src.SecondNumber);
+
+                    return Employee.Create(data, src.Salary, src.Position, src.BranchId);
+                });
+
+            CreateMap<CreateEmployeeDto, Employee>()
+                .ConstructUsing((src, _) =>
+                {
+                    var data = new PersonData(
+                        src.FirstName,
+                        src.LastName,
+                        src.SSN,
+                        Email.Create(src.FirstName + "@academy.com"),
+                        src.BirthDate,
+                        src.Gender,
+                        Nationality.Kuwaiti,
+                        Address.Create(src.Address, src.Address),
+                        src.PhoneNumber,
+                        src.SecondNumber);
+
+                    return Employee.Create(data, src.Salary, src.Position, src.BranchId);
+                })
+                .ForMember(dest => dest.Address, opt => opt.Ignore());
 
             CreateMap<UpdateEmployeeCommand, Employee>()
                 .ForMember(dest => dest.Address,

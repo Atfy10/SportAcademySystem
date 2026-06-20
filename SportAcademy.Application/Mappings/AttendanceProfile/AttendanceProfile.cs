@@ -35,13 +35,15 @@ namespace SportAcademy.Application.Mappings.AttendanceProfile
                 ));
 
             CreateMap<Attendance, CreateAttendanceCommand>()
-                .ForMember(dest => dest.AttendanceDate, 
-                    opt => opt.MapFrom(src => DateOnly.FromDateTime(src.AttendanceDate)))
-                .ReverseMap()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.AttendanceDate,
-                    opt => opt.MapFrom(src => new DateTime(src.AttendanceDate ?? new DateOnly(),
-                                                    new TimeOnly())));
+                .ConstructUsing(src => new CreateAttendanceCommand(
+                    DateOnly.FromDateTime(src.AttendanceDate),
+                    src.AttendanceStatus,
+                    src.CheckInTime,
+                    src.CoachNote,
+                    src.EnrollmentId,
+                    src.SessionOccurrenceId
+                ))
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<Attendance, UpdateAttendanceCommand>()
                 .ReverseMap();

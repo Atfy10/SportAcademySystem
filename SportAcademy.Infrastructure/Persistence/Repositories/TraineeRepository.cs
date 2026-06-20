@@ -338,21 +338,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var toAdd = requested.Except(current).ToList();
             var toRemove = current.Except(requested).ToList();
 
-            foreach (var entity in trainee.Sports
-                .Where(x => toRemove.Contains(x.SportId))
-                .ToList())
-            {
-                trainee.Sports.Remove(entity);
-            }
+            foreach (var sportId in toRemove)
+                trainee.RemoveSport(sportId);
 
             foreach (var sportId in toAdd)
-            {
-                trainee.Sports.Add(new SportTrainee
-                {
-                    SportId = sportId,
-                    TraineeId = trainee.Id
-                });
-            }
+                trainee.AssignSport(sportId);
 
             return Task.CompletedTask;
         }

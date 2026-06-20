@@ -5,6 +5,7 @@ using SportAcademy.Application.Commands.SessionOccurrenceCommands.GenerateSessio
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.ValueObjects;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 
@@ -47,7 +48,7 @@ public class GenerateSessionOccurrencesCommandHandlerTests
             Coach = new Coach
             {
                 Sport = new Sport { Name = "Swimming" },
-                Employee = new Employee { FirstName = "Ahmed", LastName = "Ali", SSN = "123456789012", PhoneNumber = "0501234567" }
+                Employee = Employee.Create(new PersonData("Ahmed", "Ali", "290010112345", Email.Create("ahmed@test.com"), new DateOnly(1990, 1, 1), Gender.Male, Nationality.Kuwaiti, Address.Create("St", "City"), "0501234567", null), 5000m, Position.Coach, 1)
             },
             Branch = new Branch { Name = "Main Branch", City = "Riyadh", Country = "Saudi Arabia", PhoneNumber = "0501234567", CoX = "24.7136", CoY = "46.6753" },
             Enrollments = new List<Enrollment>()

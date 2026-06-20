@@ -41,7 +41,7 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                         " " + src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.LastName,
                     src.Branch.Name ?? string.Empty
                 ))
-                .ReverseMap();
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<Trainee, TraineeDetailsDto>()
                 .ConstructUsing(src => new TraineeDetailsDto(
@@ -60,22 +60,43 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                     src.IsSubscribed,
                     src.Enrollments.Count,
                     src.JoinDate.ToDateTime(TimeOnly.MinValue)
-                ));
+                ))
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<CreateTraineeCommand, Trainee>()
-                .ForMember(dest => dest.Address,
-                    opt => opt.MapFrom((src, dest) =>
-                    {
-                        if (string.IsNullOrWhiteSpace(src.Street) && string.IsNullOrWhiteSpace(src.City))
-                            return Address.Create("", "");
-                        return Address.Create(src.Street ?? "", src.City ?? "");
-                    }))
-                .ForMember(dest => dest.Sports,
-                    opt => opt.MapFrom(src => src.SportIds
-                        .Select(id => new SportTrainee { SportId = id })
-                        .ToList()))
-                .ForAllMembers(opts =>
-                    opts.Condition((src, dest, srcMember) => srcMember != null));
+                .ConstructUsing((src, _) =>
+                {
+                    var address = string.IsNullOrWhiteSpace(src.Street) && string.IsNullOrWhiteSpace(src.City)
+                        ? Address.Create("Unknown", "Unknown")
+                        : Address.Create(src.Street ?? "Unknown", src.City ?? "Unknown");
+
+                    var email = Email.Create(src.Email);
+
+                    var data = new PersonData(
+                        src.FirstName,
+                        src.LastName,
+                        src.SSN,
+                        email,
+                        src.BirthDate,
+                        src.Gender,
+                        src.Nationality,
+                        address,
+                        src.PhoneNumber,
+                        null);
+
+                    var trainee = Trainee.Create(
+                        data,
+                        src.ParentNumber,
+                        src.GuardianName,
+                        src.BranchId,
+                        src.NationalityCategoryId);
+
+                    foreach (var sportId in src.SportIds)
+                        trainee.AssignSport(sportId);
+
+                    return trainee;
+                })
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<Trainee, CreateTraineeCommand>()
                 .ForPath(dest => dest.Street, opt => opt.MapFrom(src => src.Address != null ? src.Address.Street : null))
@@ -87,22 +108,21 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForAllMembers(opts =>
                     opts.Condition((src, dest, srcMember) => srcMember != null));
 
-            CreateMap<Trainee, UpdateTraineePersonalCommand>();
+            CreateMap<Trainee, UpdateTraineePersonalCommand>()
+                .ForMember(dest => dest.SportIds,
+                    opt => opt.MapFrom(src => src.Sports.Select(st => st.SportId).ToList()));
 
             CreateMap<UpdateTraineePersonalCommand, Trainee>()
-                .ForMember(src => src.Sports, opt => opt.Ignore())
-                .ForAllMembers(opts =>
-                    opts.Condition((src, dest, srcMember) => srcMember != null));
+                .ForAllMembers(opts => opts.Ignore());
 
             CreateMap<Trainee, TraineeDto>()
-                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.Sport.Id,
-                    st.Sport.Name
-                )).ToHashSet()))
-                .ReverseMap()
-                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(s => new SportTrainee
-                {
-                    SportId = s.Id
-                }).ToList()));
+                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportDto(
+                    st.Sport.Id,
+                    st.Sport.Name,
+                    st.Sport.Description,
+                    st.Sport.Category,
+                    st.Sport.IsRequireHealthTest
+                )).ToHashSet()));
 
             CreateMap<Trainee, TraineeDropdownDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))

@@ -12,7 +12,8 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
 {
     public TraineeGroupMappingProfile()
     {
-        CreateMap<TraineeGroup, TraineeGroup>();
+        CreateMap<TraineeGroup, TraineeGroup>()
+            .ForAllMembers(opt => opt.Ignore());
 
         CreateMap(typeof(PagedData<>), typeof(PagedData<>))
             .ConvertUsing(typeof(PagedDataConverter<,>));
@@ -69,12 +70,13 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 src.BranchId,
                 src.CoachId
             ))
-            .ReverseMap();
+            .ForAllMembers(opt => opt.Ignore());
 
-        CreateMap<CreateTraineeGroupCommand, TraineeGroup>();
+        CreateMap<CreateTraineeGroupCommand, TraineeGroup>()
+            .ForAllMembers(opt => opt.Ignore());
 
         CreateMap<UpdateTraineeGroupCommand, TraineeGroup>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
+            .ForAllMembers(opt => opt.Ignore());
 
         CreateMap<TraineeGroup, ListTraineeGroupDto>()
             .ConstructUsing(src => new ListTraineeGroupDto(
@@ -90,14 +92,10 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                         DayOfWeek = gs.Day.ToString(),
                         StartTime = gs.StartTime.ToString("HH:mm:ss")
                     }).ToList()))
-            .ForMember(dest => dest.SportName, opt => opt.Ignore())
-            .ForMember(dest => dest.CoachName, opt => opt.Ignore())
-            .ForMember(dest => dest.BranchName, opt => opt.Ignore())
-            .ForMember(dest => dest.DurationInMinutes, opt => opt.Ignore())
-            .ForMember(dest => dest.TraineesCount, opt => opt.Ignore())
-            .ForMember(dest => dest.Schedules, opt => opt.Ignore());
+            .ForAllMembers(opt => opt.Ignore());
 
         CreateMap<TraineeGroup, TraineeGroupDropdownDto>()
-            .ConstructUsing(src => new TraineeGroupDropdownDto(src.Id, src.Name));
+            .ConstructUsing(src => new TraineeGroupDropdownDto(src.Id, src.Name))
+            .ForAllMembers(opt => opt.Ignore());
     }
 }

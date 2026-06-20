@@ -15,6 +15,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             // TableName 
             builder.ToTable("Trainees");
 
+            builder.UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
+
             //PK
             builder.HasKey(t => t.Id);
 
@@ -87,6 +89,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasForeignKey(thc => thc.TraineeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Navigation(t => t.TraineeHistoryCode)
+                .HasField("_traineeHistoryCode")
+                .UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
+
             // 1:M  Family
             builder.HasOne(t => t.Family)
                 .WithMany(f => f.Members)
@@ -118,17 +124,29 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasForeignKey(st => st.TraineeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Navigation(t => t.Sports)
+                .HasField("_sports")
+                .UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
+
             // 1:M  Enrollment
             builder.HasMany(t => t.Enrollments)
                 .WithOne(e => e.Trainee)
                 .HasForeignKey(e => e.TraineeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Navigation(t => t.Enrollments)
+                .HasField("_enrollments")
+                .UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
+
             // 1:M  SubscriptionDetails
             builder.HasMany(t => t.SubscriptionDetails)
                 .WithOne(sd => sd.Trainee)
                 .HasForeignKey(sd => sd.TraineeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Navigation(t => t.SubscriptionDetails)
+                .HasField("_subscriptionDetails")
+                .UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
         }
     }
 }

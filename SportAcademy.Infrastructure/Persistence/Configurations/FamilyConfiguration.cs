@@ -10,6 +10,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("Families");
 
+            builder.UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
+
             builder.Property(f => f.Id)
                 .HasDefaultValueSql("NEXT VALUE FOR FamilyCodeSequence");
 
@@ -25,6 +27,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .WithOne(t => t.Family)
                 .HasForeignKey("FamilyId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(f => f.Members)
+                .HasField("_members")
+                .UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
         }
     }
 }

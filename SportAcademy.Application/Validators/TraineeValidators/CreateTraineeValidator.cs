@@ -1,6 +1,6 @@
 using FluentValidation;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
-using SportAcademy.Domain.Helpers;
+using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Validators.TraineeValidators
 {
@@ -19,10 +19,12 @@ namespace SportAcademy.Application.Validators.TraineeValidators
                 .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters.");
 
             RuleFor(t => t.SSN)
-                .NotEmpty().WithMessage("SSN is required.")
+                .NotEmpty().WithMessage("SSN is required.");
+
+            RuleFor(t => t.SSN)
                 .Length(12).WithMessage("SSN must be exactly 12 digits.")
                 .Matches(@"^\d{12}$").WithMessage("SSN must contain only numeric digits.")
-                .Must((cmd, ssn) => PersonValidationHelper.IsValidSSN(ssn, cmd.BirthDate))
+                .Must((cmd, ssn) => Person.IsSsnValid(ssn, cmd.BirthDate))
                 .WithMessage("SSN must start with birth date components (YYMMDD prefix matching birth year).")
                 .When(t => !string.IsNullOrEmpty(t.SSN));
 

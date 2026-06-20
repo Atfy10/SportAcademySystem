@@ -2,12 +2,32 @@ namespace SportAcademy.Domain.Entities
 {
     public class Family
     {
-        public int Id { get; set; }
+        private List<Trainee> _members = [];
 
-        public int FamilyCode { get; set; }
+        private Family() { }
 
-        public int LastMemberNumber { get; set; }
+        public int Id { get; private set; }
+        public int FamilyCode { get; private set; }
+        public int LastMemberNumber { get; private set; }
+        public IReadOnlyCollection<Trainee> Members => _members.AsReadOnly();
 
-        public ICollection<Trainee> Members { get; } = [];
+        public static Family Create()
+        {
+            return new Family
+            {
+                LastMemberNumber = 0
+            };
+        }
+
+        public int GenerateNextMemberNumber()
+        {
+            LastMemberNumber++;
+            return LastMemberNumber;
+        }
+
+        public void SetFamilyCode(int code)
+        {
+            FamilyCode = code;
+        }
     }
 }

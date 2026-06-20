@@ -15,6 +15,7 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
         public SubscriptionDetailsProfile()
         {
             CreateMap<SubscriptionDetails, SubscriptionDetailsDto>()
+                .ForMember(dest => dest.EmployeeName, opt => opt.Ignore())
                 .ForPath(
                     dest => dest.Trainee.Id,
                     opt => opt.MapFrom(src => src.Trainee.Id)
@@ -58,24 +59,20 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 .ForMember(
                     dest => dest.Price,
                     opt => opt.MapFrom(src => src.SportPrice.Price)
-                )
-                .ReverseMap()
-                .ForAllMembers(
-                    opt => opt.Condition((src, dest, srcMember) => srcMember != null)
                 );
 
-            CreateMap<CreateSubscriptionDetailsCommand, SubscriptionDetails>();
+            CreateMap<CreateSubscriptionDetailsCommand, SubscriptionDetails>()
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<UpdateSubscriptionDetailsCommand, SubscriptionDetails>()
-                .ForAllMembers(
-                    opt => opt.Condition((src, dest, srcMember) => srcMember != null)
-                );
+                .ForAllMembers(opt => opt.Ignore());
 
             CreateMap<SubscriptionDetails, SubscriptionDetailsDropdownDto>()
                 .ConstructUsing(src => new SubscriptionDetailsDropdownDto(
                     src.Id,
                     src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString()
-                ));
+                ))
+                .ForAllMembers(opt => opt.Ignore());
         }
     }
 }

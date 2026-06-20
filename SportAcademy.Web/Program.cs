@@ -14,7 +14,6 @@ using SportAcademy.Infrastructure.Implementations.OpenRouter;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
-using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Web;
 using SportAcademy.Web.Services;
 using System.Text;
@@ -172,7 +171,7 @@ builder.Services.AddSwaggerGen(c =>
 
 //builder.Services.AddOpenApi();
 
-builder.Services.AddUserSeeder();
+    
 
 builder.Services.AddSignalR();
 
@@ -192,10 +191,6 @@ using (var scope = app.Services.CreateScope())
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
     await dbContext.Database.MigrateAsync();
-
-    await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
-
-    await DatabaseSeeder.SeedDatabase(dbContext, logger);
 }
 
 app.UseHttpsRedirection();

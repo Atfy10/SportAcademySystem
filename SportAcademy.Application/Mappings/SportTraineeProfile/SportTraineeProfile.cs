@@ -16,10 +16,14 @@ namespace SportAcademy.Application.Mappings.SportTraineeProfile
 		public SportTraineeProfile()
 		{
 			CreateMap<CreateSportTraineeCommand, SportTrainee>()
-				.ForMember(dest => dest.SkillLevel, opt => opt.MapFrom(src => Enum.Parse<SkillLevel>(src.SkillLevel)));
+				.ForMember(dest => dest.SkillLevel, opt => opt.MapFrom(src => Enum.Parse<SkillLevel>(src.SkillLevel)))
+				.ForMember(dest => dest.Sport, opt => opt.Ignore())
+				.ForMember(dest => dest.Trainee, opt => opt.Ignore());
 
 			CreateMap<UpdateSportTraineeCommand, SportTrainee>()
-				.ForMember(dest => dest.SkillLevel, opt => opt.MapFrom(src => Enum.Parse<SkillLevel>(src.SkillLevel)));
+				.ForMember(dest => dest.SkillLevel, opt => opt.MapFrom(src => Enum.Parse<SkillLevel>(src.SkillLevel)))
+				.ForMember(dest => dest.Sport, opt => opt.Ignore())
+				.ForMember(dest => dest.Trainee, opt => opt.Ignore());
 
 			CreateMap<SportTrainee, SportTraineeDto>()
 				.ForMember(dest => dest.SkillLevel, opt => opt.MapFrom(src => src.SkillLevel.ToString()))
