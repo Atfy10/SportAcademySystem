@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Interfaces;
@@ -22,8 +21,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             IJwtTokenService jwtTokenService,
             IUserRepository userRepository,
             IRoleRepository roleRepository,
-            IRefreshTokenRepository refreshTokenRepository,
-            IMapper mapper)
+            IRefreshTokenRepository refreshTokenRepository)
         {
             _jwtTokenService = jwtTokenService;
             _userRepository = userRepository;

@@ -1,7 +1,7 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.UserExceptions;
@@ -11,19 +11,16 @@ namespace SportAcademy.Application.Commands.AuthCommands.Register
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<string>>
     {
         private readonly string _operation = OperationType.Signup.ToString();
-        private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
         private readonly IProfileRepository _profileRepository;
         private readonly IJwtTokenService _jwtTokenService;
 
         public RegisterCommandHandler(
             IUserRepository userRepository,
-            IMapper mapper,
             IJwtTokenService jwtTokenService,
             IProfileRepository profileRepository)
         {
             _userRepository = userRepository;
-            _mapper = mapper;
             _jwtTokenService = jwtTokenService;
             _profileRepository = profileRepository;
         }
@@ -39,8 +36,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.Register
             if (isEmailExist)
                 throw new EmailExistException();
 
-            var user = _mapper.Map<AppUser>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var user = request.ToAppUser();
 
             ct.ThrowIfCancellationRequested();
 
@@ -54,11 +50,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.Register
 
             ct.ThrowIfCancellationRequested();
 
-            var profile = new Domain.Entities.Profile
-            {
-                AppUserId = user.Id,
-            };
-
+            var profile = Domain.Entities.Profile.Create(user.Id);
             await _profileRepository.AddAsync(profile, ct);
 
             return Result<string>.Success(token, _operation);

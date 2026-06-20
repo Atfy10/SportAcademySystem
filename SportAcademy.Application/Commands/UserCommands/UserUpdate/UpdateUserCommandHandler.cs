@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.UserExceptions;
 
@@ -10,15 +10,12 @@ namespace SportAcademy.Application.Commands.UserCommands.UserUpdate
 {
     public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Result<AppUserDto>>
     {
-        private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
         private readonly string _operation = OperationType.Update.ToString();
 
-        public UpdateUserCommandHandler(IUserRepository userRepository,
-            IMapper mapper)
+        public UpdateUserCommandHandler(IUserRepository userRepository)
         {
             _userRepository = userRepository;
-            _mapper = mapper;
         }
 
         public async Task<Result<AppUserDto>> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
@@ -29,12 +26,11 @@ namespace SportAcademy.Application.Commands.UserCommands.UserUpdate
             var user = await _userRepository.GetByUsernameAsync(request.Username, cancellationToken)
                 ?? throw new UserNotFoundException();
 
-            _mapper.Map(request, user);
+            user.ApplyUpdate(request);
 
             await _userRepository.UpdateAsync(user, cancellationToken);
 
-            var appUserDto = _mapper.Map<AppUserDto>(user)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var appUserDto = user.ToDto();
 
             return Result<AppUserDto>.Success(appUserDto, _operation);
         }

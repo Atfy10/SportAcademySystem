@@ -111,13 +111,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             string username = await GenerateUniqueUsername(trainee.FirstName, trainee.LastName, cancellationToken);
             string password = GeneratePassword();
 
-            var appUser = new AppUser
-            {
-                UserName = username,
-                Email = trainee.Email.Value,
-                PhoneNumber = trainee.PhoneNumber,
-                IsBanned = false
-            };
+            var appUser = AppUser.CreateWithTrainee(username, trainee.Email.Value, trainee.PhoneNumber);
             appUser.PasswordHash = _passwordHasher.HashPassword(appUser, password);
             appUser.Trainee = trainee;
 

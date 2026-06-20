@@ -26,13 +26,13 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasData(
-                new NationalityCategory { Id = 1, Code = "AM", Name = "American" },
-                new NationalityCategory { Id = 2, Code = "EU", Name = "European" },
-                new NationalityCategory { Id = 3, Code = "AS", Name = "Asian" },
-                new NationalityCategory { Id = 4, Code = "AF", Name = "African" },
-                new NationalityCategory { Id = 5, Code = "AG", Name = "Arab Gulf" },
-                new NationalityCategory { Id = 6, Code = "AR", Name = "Arab" },
-                new NationalityCategory { Id = 7, Code = "OC", Name = "Oceanian" }
+                new NationalityCategory(1, "AM", "American"),
+                new NationalityCategory(2, "EU", "European"),
+                new NationalityCategory(3, "AS", "Asian"),
+                new NationalityCategory(4, "AF", "African"),
+                new NationalityCategory(5, "AG", "Arab Gulf"),
+                new NationalityCategory(6, "AR", "Arab"),
+                new NationalityCategory(7, "OC", "Oceanian")
             );
 
             builder.HasIndex(nc => nc.Code)

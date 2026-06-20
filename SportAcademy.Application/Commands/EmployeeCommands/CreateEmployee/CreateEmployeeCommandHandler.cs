@@ -46,7 +46,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
 
             var userName = GenerateUserName(employee.FirstName, employee.LastName);
             var password = GeneratePassword();
-            var user = await _userRepository.Register(new AppUser() { UserName = userName }, password);
+            var user = await _userRepository.Register(AppUser.CreateForEmployee(userName), password);
 
             if(!user.Succeeded)
                 throw new UserRegistrationException([.. user.Errors.Select(e => e.Description)]);

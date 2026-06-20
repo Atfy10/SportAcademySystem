@@ -22,7 +22,7 @@ public class ToggleUserActiveCommandHandler : IRequestHandler<ToggleUserActiveCo
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken)
             ?? throw new IdNotFoundException(nameof(AppUser), request.UserId);
 
-        user.IsBanned = !user.IsBanned;
+        user.ToggleBanStatus();
         await _userRepository.UpdateAsync(user, cancellationToken);
 
         return Result<bool>.Success(!user.IsBanned, _operation);

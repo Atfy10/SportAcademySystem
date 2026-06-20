@@ -1,27 +1,18 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.UserQueries.GetAll
 {
     public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<List<AppUserCardDto>>>
     {
-        private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
         private readonly string _operation = OperationType.GetAll.ToString();
 
-        public GetAllUsersQueryHandler(IUserRepository userRepository,
-            IMapper mapper)
+        public GetAllUsersQueryHandler(IUserRepository userRepository)
         {
-            _mapper = mapper;
             _userRepository = userRepository;
         }
 
