@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -14,16 +15,19 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ISubscriptionDetailsRepository _subRepository;
         private readonly IMapper _mapper;
+        private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateEnrollmentCommandHandler(
             IEnrollmentRepository enrollmentRepository,
             ISubscriptionDetailsRepository subscriptionDetailsRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IPublisher publisher)
         {
             _enrollmentRepository = enrollmentRepository;
             _subRepository = subscriptionDetailsRepository;
             _mapper = mapper;
+            _publisher = publisher;
         }
 
         public async Task<Result<int>> Handle(CreateEnrollmentCommand request, CancellationToken cancellationToken)
@@ -47,6 +51,8 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             await _enrollmentRepository.AddAsync(enrollment, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            await _publisher.Publish(new EnrollmentCreatedEvent(enrollment.Id), cancellationToken);
 
             return Result<int>.Success(enrollment.Id, _operationType);
         }

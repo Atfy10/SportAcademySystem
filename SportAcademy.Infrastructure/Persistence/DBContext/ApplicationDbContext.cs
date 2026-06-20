@@ -47,6 +47,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Family> Families { get; set; }
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
         public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         //  View for reporting purposes
         public DbSet<AdminBasicViews> AdminBasicViews { get; set; }
@@ -183,6 +184,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                         .Property<string?>("SecondPhoneNumber")
                         .HasMaxLength(12);
                 }
+
             }
 
             base.OnModelCreating(modelBuilder);

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using Moq;
 using SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 using SportAcademy.Application.Interfaces;
@@ -12,6 +13,7 @@ public class BulkCreateAttendanceCommandHandlerTests
     private readonly Mock<IAttendanceRepository> _attendanceRepoMock = new();
     private readonly Mock<ISessionOccurrenceRepository> _sessionRepoMock = new();
     private readonly Mock<IEnrollmentRepository> _enrollmentRepoMock = new();
+    private readonly Mock<IPublisher> _publisherMock = new();
     private readonly BulkCreateAttendanceCommandHandler _handler;
 
     public BulkCreateAttendanceCommandHandlerTests()
@@ -19,7 +21,8 @@ public class BulkCreateAttendanceCommandHandlerTests
         _handler = new BulkCreateAttendanceCommandHandler(
             _attendanceRepoMock.Object,
             _sessionRepoMock.Object,
-            _enrollmentRepoMock.Object);
+            _enrollmentRepoMock.Object,
+            _publisherMock.Object);
     }
 
     private static BulkCreateAttendanceCommand CreateValidCommand(List<AttendanceItem> items) =>
@@ -58,7 +61,7 @@ public class BulkCreateAttendanceCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().BeTrue();
-        result.Message.Should().Be(OperationType.Add.ToString());
+        result.Message.Should().Be("Add operation done successfully");
     }
 
     [Fact]

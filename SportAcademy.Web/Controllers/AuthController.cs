@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.AuthCommands.ChangePassword;
 using SportAcademy.Application.Commands.AuthCommands.Login;
+using SportAcademy.Application.Commands.AuthCommands.RefreshToken;
 using SportAcademy.Application.Commands.AuthCommands.Register;
+using SportAcademy.Application.Commands.AuthCommands.RevokeToken;
 using SportAcademy.Application.Commands.AuthCommands.ToggleUserActive;
 using SportAcademy.Application.Commands.UserCommands.UserCreate;
+using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Queries.AuthQueries.GetAllRoles;
 using SportAcademy.Application.Queries.AuthQueries.GetMyProfile;
 
@@ -72,6 +75,22 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new RefreshTokenCommand(request.RefreshToken), ct);
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpPost("revoke")]
+        public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new RevokeTokenCommand(request.RefreshToken), ct);
             return Ok(result);
         }
     }

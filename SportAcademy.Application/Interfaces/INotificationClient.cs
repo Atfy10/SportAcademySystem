@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SportAcademy.Application.DTOs.NotificationsDtos;
 
 namespace SportAcademy.Application.Interfaces
 {
     public interface INotificationClient
     {
-        Task RecieveNotification(string message);
+        Task ReceiveNotification(NotificationRecipientDto notification);
+        Task AttendanceUpdated(int sessionOccurrenceId);
+        Task SessionOccurrenceUpdated(int sessionOccurrenceId);
+        Task EnrollmentUpdated(int enrollmentId);
+        Task DashboardStatsUpdated();
+        Task TraineeGroupUpdated(int traineeGroupId);
     }
 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
@@ -12,8 +8,10 @@ namespace SportAcademy.Domain.Entities
         public required string Message { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? GroupName { get; set; }
+        public string? Title { get; set; }
+        public NotificationType? Type { get; set; }
+        public string? ActionUrl { get; set; }
 
-        // Navigation Property
         public virtual ICollection<NotificationRecipient> Recipients { get; set; } = [];
     }
 }

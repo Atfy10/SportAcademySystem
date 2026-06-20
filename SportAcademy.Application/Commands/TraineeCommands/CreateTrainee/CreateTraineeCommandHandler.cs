@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -23,6 +24,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher<AppUser> _passwordHasher;
         private readonly ISportRepository _sportRepository;
+        private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateTraineeCommandHandler(
@@ -32,7 +34,8 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             IFamilyRepository familyRepository,
             IUserRepository userRepository,
             IPasswordHasher<AppUser> passwordHasher,
-            ISportRepository sportRepository)
+            ISportRepository sportRepository,
+            IPublisher publisher)
         {
             _traineeCodeGenerator = traineeCodeGenerator;
             _mapper = mapper;
@@ -41,6 +44,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _sportRepository = sportRepository;
+            _publisher = publisher;
         }
 
         public async Task<Result<CreateTraineeResponse>> Handle(CreateTraineeCommand request, CancellationToken cancellationToken)
@@ -155,6 +159,8 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             await _userRepository.AddAsyncWithoutSave(appUser, cancellationToken);
 
             await _familyRepository.SaveChangesAsync(cancellationToken);
+
+            await _publisher.Publish(new TraineeCreatedEvent(trainee.Id), cancellationToken);
 
             return Result<CreateTraineeResponse>.Success(
                 new CreateTraineeResponse

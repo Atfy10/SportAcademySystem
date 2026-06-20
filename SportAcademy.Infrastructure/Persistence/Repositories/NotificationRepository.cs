@@ -26,7 +26,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _mapper = mapper;
         }
 
-        public async Task AddWithRecipient(Notification notification, string userId)
+        public async Task<Notification> AddWithRecipient(Notification notification, string userId)
         {
             await _context.Notifications.AddAsync(notification);
             await _context.NotificationRecipients.AddAsync(new NotificationRecipient
@@ -37,6 +37,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             });
 
             await SaveChangesAsync();
+            return notification;
         }
 
         public async Task<PagedData<NotificationRecipientDto>> GetUserNotificationsAsync(

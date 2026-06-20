@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Interfaces
 {
     public interface INotificationService
     {
-        Task SendNotificationAsync(string userId, string message);
-        Task SendNotificationToGroupAsync(string groupName, string message);
-        Task BroadcastNotificationAsync(string message);
+        Task SendNotificationAsync(string userId, string title, string message,
+            NotificationType type = NotificationType.System, string? actionUrl = null);
+        Task SendNotificationToGroupAsync(string groupName, string title, string message,
+            NotificationType type = NotificationType.System);
+        Task BroadcastNotificationAsync(string title, string message,
+            NotificationType type = NotificationType.System);
     }
 }
