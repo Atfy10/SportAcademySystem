@@ -45,14 +45,8 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             var plainRefreshToken = _jwtTokenService.GenerateRefreshToken();
             var refreshTokenHash = _jwtTokenService.HashToken(plainRefreshToken);
 
-            var refreshTokenEntity = new Domain.Entities.RefreshToken
-            {
-                TokenHash = refreshTokenHash,
-                UserId = user.Id,
-                ExpiresAt = DateTime.UtcNow.AddDays(RefreshTokenExpiryDays),
-                CreatedAt = DateTime.UtcNow,
-                IsRevoked = false
-            };
+            var refreshTokenEntity = Domain.Entities.RefreshToken.Create(
+                refreshTokenHash, user.Id, DateTime.UtcNow.AddDays(RefreshTokenExpiryDays));
             await _refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
 
             return Result<AuthResponseDto>.Success(new AuthResponseDto(accessToken, plainRefreshToken), _operation);

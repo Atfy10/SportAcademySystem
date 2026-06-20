@@ -1,16 +1,11 @@
-﻿using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.DTOs.ChatDtos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using MediatR;
-using SportAcademy.Domain.Entities;
-using SportAcademy.Domain.Exceptions;
-using SportAcademy.Domain.Enums;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.ChatDtos;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
+using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions;
 
 namespace SportAcademy.Application.Commands.ChatCommands.AddMessage
 {
@@ -19,17 +14,14 @@ namespace SportAcademy.Application.Commands.ChatCommands.AddMessage
     {
         private readonly IChatConversationRepository _conversationRepository;
         private readonly IChatMessageRepository _messageRepository;
-        private readonly IMapper _mapper;
-        private readonly string _operation = OperationType.Add.ToString();
+        private readonly string _operation = "Add";
 
         public AddMessageCommandHandler(
             IChatConversationRepository conversationRepository,
-            IChatMessageRepository messageRepository,
-            IMapper mapper)
+            IChatMessageRepository messageRepository)
         {
             _conversationRepository = conversationRepository;
             _messageRepository = messageRepository;
-            _mapper = mapper;
         }
 
         public async Task<Result<ChatMessageDto>> Handle(
@@ -40,18 +32,12 @@ namespace SportAcademy.Application.Commands.ChatCommands.AddMessage
                 .GetByIdAsync(request.ConversationId, cancellationToken)
                 ?? throw new ChatConversationNotFoundException(request.ConversationId.ToString());
 
-            var message = new OpenAiMessage
-            {
-                Id = Guid.NewGuid(),
-                ChatConversationId = conversation.Id,
-                Role = request.Role,
-                Content = request.Content,
-                CreatedAt = DateTime.UtcNow
-            };
+            var message = OpenAiMessage.Create(
+                Guid.NewGuid(), conversation.Id, request.Role, request.Content);
 
             await _messageRepository.AddAsync(message, cancellationToken);
 
-            var dto = _mapper.Map<ChatMessageDto>(message);
+            var dto = message.ToDto();
 
             return Result<ChatMessageDto>.Success(dto, _operation);
         }

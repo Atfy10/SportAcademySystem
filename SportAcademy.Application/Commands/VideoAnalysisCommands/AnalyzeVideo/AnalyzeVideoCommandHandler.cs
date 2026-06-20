@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.VideoAnalysisDtos;
@@ -17,7 +16,6 @@ public class AnalyzeVideoCommandHandler
     private readonly IOpenRouterClient _openRouterClient;
     private readonly IVideoAnalysisRepository _repository;
     private readonly IUserContextService _userContext;
-    private readonly IMapper _mapper;
     private readonly string _operation = OperationType.Add.ToString();
 
     private static readonly JsonSerializerOptions _jsonOptions = new()
@@ -28,13 +26,11 @@ public class AnalyzeVideoCommandHandler
     public AnalyzeVideoCommandHandler(
         IOpenRouterClient openRouterClient,
         IVideoAnalysisRepository repository,
-        IUserContextService userContext,
-        IMapper mapper)
+        IUserContextService userContext)
     {
         _openRouterClient = openRouterClient;
         _repository = repository;
         _userContext = userContext;
-        _mapper = mapper;
     }
 
     public async Task<Result<VideoAnalysisResultDto>> Handle(
@@ -53,15 +49,12 @@ public class AnalyzeVideoCommandHandler
         var normalizedJson = JsonSerializer.Serialize(parsedResult, _jsonOptions);
 
         // Save to database
-        var entity = new VideoAnalysis
-        {
-            Id = Guid.NewGuid(),
-            UserId = _userContext.UserId,
-            MovementType = request.MovementType,
-            LandmarksJson = JsonSerializer.Serialize(request.Landmarks),
-            AiAnalysisResult = normalizedJson,
-            CreatedAt = DateTime.UtcNow
-        };
+        var entity = VideoAnalysis.Create(
+            Guid.NewGuid(),
+            _userContext.UserId,
+            request.MovementType,
+            JsonSerializer.Serialize(request.Landmarks),
+            normalizedJson);
 
         await _repository.AddAsync(entity, cancellationToken);
 

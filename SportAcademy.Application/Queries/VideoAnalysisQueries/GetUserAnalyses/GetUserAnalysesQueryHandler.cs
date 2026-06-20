@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.VideoAnalysisDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.VideoAnalysisQueries.GetUserAnalyses;
@@ -12,17 +12,14 @@ public class GetUserAnalysesQueryHandler
 {
     private readonly IVideoAnalysisRepository _repository;
     private readonly IUserContextService _userContext;
-    private readonly IMapper _mapper;
     private readonly string _operation = OperationType.Get.ToString();
 
     public GetUserAnalysesQueryHandler(
         IVideoAnalysisRepository repository,
-        IUserContextService userContext,
-        IMapper mapper)
+        IUserContextService userContext)
     {
         _repository = repository;
         _userContext = userContext;
-        _mapper = mapper;
     }
 
     public async Task<Result<List<VideoAnalysisResultDto>>> Handle(
@@ -32,7 +29,7 @@ public class GetUserAnalysesQueryHandler
         var entities = await _repository.GetByUserIdAsync(
             _userContext.UserId, cancellationToken);
 
-        var dtos = _mapper.Map<List<VideoAnalysisResultDto>>(entities);
+        var dtos = entities.Select(e => e.ToDto()).ToList();
         return Result<List<VideoAnalysisResultDto>>.Success(dtos, _operation);
     }
 }

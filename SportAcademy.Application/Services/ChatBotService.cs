@@ -25,11 +25,7 @@ namespace SportAcademy.Application.Services
                 .GetByConversationIdAsync(conversationId, cancellationToken);
 
             var aiMessages = history
-                .Select(m => new OpenAiMessage
-                {
-                    Role = m.Role,
-                    Content = m.Content
-                })
+                .Select(m => OpenAiMessage.CreateForChat(m.Role, m.Content))
                 .ToList();
 
             // call AI

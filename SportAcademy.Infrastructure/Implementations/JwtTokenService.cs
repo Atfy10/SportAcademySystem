@@ -107,21 +107,11 @@ namespace SportAcademy.Infrastructure.Implementations
             var newRefreshToken = GenerateRefreshToken();
             var newRefreshTokenHash = HashToken(newRefreshToken);
 
-            storedToken.IsRevoked = true;
-            storedToken.RevokedAt = now;
-            await _refreshTokenRepository.UpdateAsync(storedToken, ct);
-
-            var newToken = new RefreshToken
-            {
-                TokenHash = newRefreshTokenHash,
-                UserId = storedToken.UserId,
-                ExpiresAt = now.AddDays(RefreshTokenExpiryDays),
-                CreatedAt = now,
-                IsRevoked = false
-            };
+            var newToken = RefreshToken.Create(newRefreshTokenHash,
+                storedToken.UserId, now.AddDays(RefreshTokenExpiryDays));
             newToken = await _refreshTokenRepository.AddAsync(newToken, ct);
 
-            storedToken.ReplacedByTokenId = newToken.Id;
+            storedToken.Revoke(newToken.Id);
             await _refreshTokenRepository.UpdateAsync(storedToken, ct);
 
             return new RefreshTokenResult(newAccessToken, newRefreshToken);
@@ -134,9 +124,7 @@ namespace SportAcademy.Infrastructure.Implementations
 
         public async Task RevokeRefreshTokenAsync(RefreshToken token, CancellationToken ct = default)
         {
-            token.IsRevoked = true;
-            token.RevokedAt = DateTime.UtcNow;
-
+            token.Revoke();
             await _refreshTokenRepository.UpdateAsync(token, ct);
         }
     }

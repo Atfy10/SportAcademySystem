@@ -61,8 +61,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             foreach (var token in tokens)
             {
-                token.IsRevoked = true;
-                token.RevokedAt = DateTime.UtcNow;
+                token.Revoke();
             }
 
             await _context.SaveChangesAsync(ct);

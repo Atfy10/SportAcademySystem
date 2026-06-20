@@ -30,8 +30,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.RevokeToken
                 return Result<bool>.Failure(_operation, "Token already revoked", 400);
             }
 
-            storedToken.IsRevoked = true;
-            storedToken.RevokedAt = DateTime.UtcNow;
+            storedToken.Revoke();
             await _jwtTokenService.RevokeRefreshTokenAsync(storedToken, ct);
 
             return Result<bool>.Success(true, _operation);

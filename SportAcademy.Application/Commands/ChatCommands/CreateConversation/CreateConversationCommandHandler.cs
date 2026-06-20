@@ -1,15 +1,9 @@
-﻿using SportAcademy.Application.DTOs.ChatDtos;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using MediatR;
-using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Entities;
-using SportAcademy.Domain.Enums;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.ChatDtos;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
+using SportAcademy.Domain.Entities;
 
 namespace SportAcademy.Application.Commands.ChatCommands.CreateConversation
 {
@@ -17,31 +11,23 @@ namespace SportAcademy.Application.Commands.ChatCommands.CreateConversation
     : IRequestHandler<CreateConversationCommand, Result<ChatConversationDto>>
     {
         private readonly IChatConversationRepository _conversationRepository;
-        private readonly IMapper _mapper;
-        private readonly string _operation = OperationType.Add.ToString();
+        private readonly string _operation = "Add";
 
         public CreateConversationCommandHandler(
-            IChatConversationRepository conversationRepository,
-            IMapper mapper)
+            IChatConversationRepository conversationRepository)
         {
             _conversationRepository = conversationRepository;
-            _mapper = mapper;
         }
 
         public async Task<Result<ChatConversationDto>> Handle(
             CreateConversationCommand request,
             CancellationToken cancellationToken)
         {
-            var conversation = new ChatConversation
-            {
-                Id = Guid.NewGuid(),
-                Title = request.Title,
-                CreatedAt = DateTime.UtcNow
-            };
+            var conversation = ChatConversation.Create(Guid.NewGuid(), request.Title);
 
             await _conversationRepository.AddAsync(conversation, cancellationToken);
 
-            var dto = _mapper.Map<ChatConversationDto>(conversation);
+            var dto = conversation.ToDto();
 
             return Result<ChatConversationDto>.Success(dto, _operation);
         }
