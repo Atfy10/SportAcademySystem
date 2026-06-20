@@ -78,7 +78,7 @@ namespace SportAcademy.Domain.Entities
         {
             if (_sports.Any(s => s.SportId == sportId))
                 return;
-            _sports.Add(new SportTrainee { SportId = sportId, SkillLevel = skillLevel });
+            _sports.Add(SportTrainee.CreateWithoutTrainee(sportId, skillLevel));
         }
 
         public void RemoveSport(int sportId)

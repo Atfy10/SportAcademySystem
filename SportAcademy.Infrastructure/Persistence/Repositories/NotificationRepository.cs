@@ -29,12 +29,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<Notification> AddWithRecipient(Notification notification, string userId)
         {
             await _context.Notifications.AddAsync(notification);
-            await _context.NotificationRecipients.AddAsync(new NotificationRecipient
-            {
-                Notification = notification,
-                UserId = userId,
-                IsRead = false
-            });
+            await _context.NotificationRecipients.AddAsync(
+                NotificationRecipient.CreateWithNotification(notification, userId));
 
             await SaveChangesAsync();
             return notification;
@@ -67,7 +63,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             if (recipient == null) return false;
 
-            recipient.IsRead = true;
+            recipient.MarkAsRead();
             await SaveChangesAsync(ct);
             return true;
         }

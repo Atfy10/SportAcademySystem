@@ -3,7 +3,7 @@ using SportAcademy.Application.DTOs.NotificationsDtos;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 
-namespace SportAcademy.Application.Mappings.NotificationProfile
+namespace SportAcademy.Infrastructure.Mappings
 {
     public class NotificationMappingProfile : AutoMapper.Profile
     {

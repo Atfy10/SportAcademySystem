@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportTraineeDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
@@ -13,15 +13,12 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrai
 	public class UpdateSportTraineeCommandHandler : IRequestHandler<UpdateSportTraineeCommand, Result<SportTraineeDto>>
 	{
 		private readonly ISportTraineeRepository _sportTraineeRepository;
-		private readonly IMapper _mapper;
 		private readonly string _operationType = OperationType.Update.ToString();
 
 		public UpdateSportTraineeCommandHandler(
-			ISportTraineeRepository sportTraineeRepository,
-			IMapper mapper)
+			ISportTraineeRepository sportTraineeRepository)
 		{
 			_sportTraineeRepository = sportTraineeRepository;
-			_mapper = mapper;
 		}
 
 		public async Task<Result<SportTraineeDto>> Handle(UpdateSportTraineeCommand request, CancellationToken cancellationToken)
@@ -35,11 +32,8 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrai
 
 			cancellationToken.ThrowIfCancellationRequested();
 
-			var sportTrainee = _mapper.Map<SportTrainee>(request)
-				?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-			var dto = _mapper.Map<SportTraineeDto>(sportTrainee)
-				?? throw new AutoMapperMappingException("Error occurred while mapping.");
+			var sportTrainee = SportTrainee.Create(request.SportId, request.TraineeId, Enum.Parse<SkillLevel>(request.SkillLevel));
+			var dto = sportTrainee.ToDto();
 
             await _sportTraineeRepository.UpdateAsync(sportTrainee, cancellationToken);
 

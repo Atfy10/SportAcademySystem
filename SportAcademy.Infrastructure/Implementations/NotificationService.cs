@@ -22,12 +22,7 @@ namespace SportAcademy.Infrastructure.Implementations
         public async Task BroadcastNotificationAsync(string title, string message,
             NotificationType type = NotificationType.System)
         {
-            var notification = new Notification
-            {
-                Title = title,
-                Message = message,
-                Type = type
-            };
+            var notification = Notification.Create(message, title, type);
             await _notificationRepository.AddAsync(notification);
 
             await _hubContext.Clients.All.ReceiveNotification(new NotificationRecipientDto
@@ -46,13 +41,7 @@ namespace SportAcademy.Infrastructure.Implementations
             NotificationType type = NotificationType.System, string? actionUrl = null)
         {
             var notification = await _notificationRepository.AddWithRecipient(
-                new Notification
-                {
-                    Title = title,
-                    Message = message,
-                    Type = type,
-                    ActionUrl = actionUrl
-                },
+                Notification.Create(message, title, type, actionUrl: actionUrl),
                 userId);
 
             await _hubContext.Clients.User(userId).ReceiveNotification(new NotificationRecipientDto
@@ -70,13 +59,7 @@ namespace SportAcademy.Infrastructure.Implementations
         public async Task SendNotificationToGroupAsync(string groupName, string title, string message,
             NotificationType type = NotificationType.System)
         {
-            var notification = new Notification
-            {
-                Title = title,
-                Message = message,
-                Type = type,
-                GroupName = groupName
-            };
+            var notification = Notification.Create(message, title, type, groupName: groupName);
             await _notificationRepository.AddAsync(notification);
 
             await _hubContext.Clients.Group(groupName).ReceiveNotification(new NotificationRecipientDto

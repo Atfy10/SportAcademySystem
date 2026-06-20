@@ -1,9 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportTraineeDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Entities;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.SportExceptions;
@@ -16,19 +15,16 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrai
 		private readonly ISportTraineeRepository _sportTraineeRepository;
 		private readonly ISportRepository _sportRepository;
 		private readonly ITraineeRepository _traineeRepository;
-		private readonly IMapper _mapper;
 		private readonly string _operationType = OperationType.Add.ToString();
 
 		public CreateSportTraineeCommandHandler(
 			ISportTraineeRepository sportTraineeRepository,
 			ISportRepository sportRepository,
-			ITraineeRepository traineeRepository,
-			IMapper mapper)
+			ITraineeRepository traineeRepository)
 		{
 			_sportTraineeRepository = sportTraineeRepository;
 			_sportRepository = sportRepository;
 			_traineeRepository = traineeRepository;
-			_mapper = mapper;
 		}
 
 		public async Task<Result<SportTraineeDto>> Handle(CreateSportTraineeCommand request, CancellationToken cancellationToken)
@@ -50,15 +46,11 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrai
 
 			cancellationToken.ThrowIfCancellationRequested();
 
-			var sportTrainee = _mapper.Map<SportTrainee>(request)
-				?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-			var dto = _mapper.Map<SportTraineeDto>(sportTrainee)
-				?? throw new AutoMapperMappingException("Error occurred while mapping.");
+			var sportTrainee = request.ToSportTrainee();
+			var dto = sportTrainee.ToDto();
 
             await _sportTraineeRepository.AddAsync(sportTrainee, cancellationToken);
 			return Result<SportTraineeDto>.Success(dto, _operationType);
 		}
-
     }
 }
