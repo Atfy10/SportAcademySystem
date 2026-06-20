@@ -24,9 +24,26 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetAll
 
         public async Task<Result<PagedData<EmployeeCardDto>>> Handle(GetAllEmployeesQuery request, CancellationToken cancellationToken)
         {
-            var employeesDto = await _employeeRepository.GetAllAsync(request.Page, cancellationToken);
+            var filters = new EmployeeFilterOptions
+            {
+                Status = request.Status,
+                BranchId = request.BranchId,
+                Position = request.Position,
+                SortBy = request.SortBy ?? "name",
+                SortOrder = request.SortOrder ?? "asc"
+            };
+
+            var employeesDto = await _employeeRepository.GetAllAsync(request.Page, filters, cancellationToken);
 
             return Result<PagedData<EmployeeCardDto>>.Success(employeesDto, _operationType);
         }
     }
+
+    public record EmployeeFilterOptions(
+        string? Status = null,
+        int? BranchId = null,
+        string? Position = null,
+        string SortBy = "name",
+        string SortOrder = "asc"
+    );
 }

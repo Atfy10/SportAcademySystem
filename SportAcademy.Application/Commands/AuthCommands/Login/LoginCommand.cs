@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.AuthDtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +12,5 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
     public record LoginCommand(
         string UserNameOrEmail,
         string Password
-        ) : IRequest<Result<string>>;
+        ) : IRequest<Result<AuthResponseDto>>;
 }

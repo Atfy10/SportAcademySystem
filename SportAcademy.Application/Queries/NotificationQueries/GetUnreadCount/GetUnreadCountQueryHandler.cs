@@ -1,12 +1,15 @@
 using MediatR;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.NotificationQueries.GetUnreadCount
 {
-    public class GetUnreadCountQueryHandler : IRequestHandler<GetUnreadCountQuery, int>
+    public class GetUnreadCountQueryHandler : IRequestHandler<GetUnreadCountQuery, Result<int>>
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly IUserContextService _userContext;
+        private readonly string _operation = OperationType.GetAll.ToString();
 
         public GetUnreadCountQueryHandler(
             INotificationRepository notificationRepository,
@@ -16,9 +19,10 @@ namespace SportAcademy.Application.Queries.NotificationQueries.GetUnreadCount
             _userContext = userContext;
         }
 
-        public async Task<int> Handle(GetUnreadCountQuery request, CancellationToken cancellationToken)
+        public async Task<Result<int>> Handle(GetUnreadCountQuery request, CancellationToken cancellationToken)
         {
-            return await _notificationRepository.GetUnreadCountAsync(_userContext.UserId, cancellationToken);
+            var count = await _notificationRepository.GetUnreadCountAsync(_userContext.UserId, cancellationToken);
+            return Result<int>.Success(count, _operation);
         }
     }
 }

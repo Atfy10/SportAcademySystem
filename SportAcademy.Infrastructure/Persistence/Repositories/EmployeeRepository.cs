@@ -7,6 +7,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.DTOs.EmployeeDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -20,7 +21,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
 
-        public EmployeeRepository(ApplicationDbContext context, IMapper mapper) 
+        public EmployeeRepository(ApplicationDbContext context, IMapper mapper)
             : base(context, mapper)
         {
             _context = context;
@@ -45,11 +46,49 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(e => e.IsWork && e.Coach != null)
                 .CountAsync(ct);
 
-        public Task<PagedData<EmployeeCardDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
-            => _context.Employees
-                .AsNoTracking()
+        public async Task<PagedData<EmployeeCardDto>> GetAllAsync(PageRequest page, EmployeeFilterOptions filters, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Employees
+                .Include(e => e.Branch)
+                .AsNoTracking();
+
+            if (filters.Status == "active")
+                query = query.Where(e => e.IsWork);
+            else if (filters.Status == "inactive")
+                query = query.Where(e => !e.IsWork);
+
+            if (filters.BranchId.HasValue)
+                query = query.Where(e => e.BranchId == filters.BranchId);
+
+            if (!string.IsNullOrEmpty(filters.Position) && Enum.TryParse<Domain.Enums.Position>(filters.Position, out var position))
+                query = query.Where(e => e.Position == position);
+
+            query = filters.SortBy?.ToLower() switch
+            {
+                "name" => filters.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(e => e.FirstName + " " + e.LastName)
+                    : query.OrderBy(e => e.FirstName + " " + e.LastName),
+                "position" => filters.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(e => e.Position)
+                    : query.OrderBy(e => e.Position),
+                "branch" => filters.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(e => e.Branch!.Name)
+                    : query.OrderBy(e => e.Branch!.Name),
+                "status" => filters.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(e => e.IsWork)
+                    : query.OrderBy(e => e.IsWork),
+                "hired" => filters.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(e => e.HireDate)
+                    : query.OrderBy(e => e.HireDate),
+                _ => filters.SortOrder?.ToLower() == "desc"
+                    ? query.OrderByDescending(e => e.LastName).ThenByDescending(e => e.FirstName)
+                    : query.OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+            };
+
+            return await query
                 .ProjectTo<EmployeeCardDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
+        }
 
         public async Task<PagedData<EmployeeDto>> GetActiveAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Employees

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -11,13 +12,16 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttenda
 public class BulkCreateAttendanceCommandHandler(
     IAttendanceRepository attendanceRepository,
     ISessionOccurrenceRepository sessionOccurrenceRepository,
-    IEnrollmentRepository enrollmentRepository)
+    IEnrollmentRepository enrollmentRepository,
+    IPublisher publisher)
     : IRequestHandler<BulkCreateAttendanceCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
         BulkCreateAttendanceCommand request,
         CancellationToken cancellationToken)
     {
+        var updatedSessionIds = new HashSet<int>();
+
         foreach (var item in request.Items)
         {
             var groupId = await sessionOccurrenceRepository.GetTraineeGroupIdAsync(
@@ -56,7 +60,12 @@ public class BulkCreateAttendanceCommandHandler(
                 attendance.UpdatedAt = DateTime.UtcNow;
                 await attendanceRepository.UpdateAsync(attendance, cancellationToken);
             }
+
+            updatedSessionIds.Add(item.SessionOccurrenceId);
         }
+
+        await publisher.Publish(
+            new BulkAttendanceCreatedEvent(updatedSessionIds), cancellationToken);
 
         return Result<bool>.Success(true, OperationType.Add.ToString());
     }

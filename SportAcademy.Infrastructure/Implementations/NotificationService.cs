@@ -1,13 +1,9 @@
-﻿using MediatR;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
+using SportAcademy.Application.DTOs.NotificationsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Notifications;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Infrastructure.Implementations
 {
@@ -23,22 +19,76 @@ namespace SportAcademy.Infrastructure.Implementations
             _notificationRepository = notificationRepository;
         }
 
-        public async Task BroadcastNotificationAsync(string message)
+        public async Task BroadcastNotificationAsync(string title, string message,
+            NotificationType type = NotificationType.System)
         {
-            await _notificationRepository.AddAsync(new Notification { Message = message });
-            await _hubContext.Clients.All.RecieveNotification(message);
+            var notification = new Notification
+            {
+                Title = title,
+                Message = message,
+                Type = type
+            };
+            await _notificationRepository.AddAsync(notification);
+
+            await _hubContext.Clients.All.ReceiveNotification(new NotificationRecipientDto
+            {
+                Id = 0,
+                Title = title,
+                Message = message,
+                Type = type,
+                ActionUrl = null,
+                IsRead = false,
+                CreatedAt = notification.CreatedAt
+            });
         }
 
-        public async Task SendNotificationAsync(string userId, string message)
+        public async Task SendNotificationAsync(string userId, string title, string message,
+            NotificationType type = NotificationType.System, string? actionUrl = null)
         {
-            await _notificationRepository.AddWithRecipient(new Notification { Message = message }, userId);
-            await _hubContext.Clients.User(userId).RecieveNotification(message);
+            var notification = await _notificationRepository.AddWithRecipient(
+                new Notification
+                {
+                    Title = title,
+                    Message = message,
+                    Type = type,
+                    ActionUrl = actionUrl
+                },
+                userId);
+
+            await _hubContext.Clients.User(userId).ReceiveNotification(new NotificationRecipientDto
+            {
+                Id = notification.Id,
+                Title = notification.Title ?? title,
+                Message = notification.Message,
+                Type = notification.Type ?? type,
+                ActionUrl = notification.ActionUrl,
+                IsRead = false,
+                CreatedAt = notification.CreatedAt
+            });
         }
 
-        public async Task SendNotificationToGroupAsync(string groupName, string message)
+        public async Task SendNotificationToGroupAsync(string groupName, string title, string message,
+            NotificationType type = NotificationType.System)
         {
-            await _notificationRepository.AddAsync(new Notification { Message = message, GroupName = groupName });
-            await _hubContext.Clients.Group(groupName).RecieveNotification(message);
+            var notification = new Notification
+            {
+                Title = title,
+                Message = message,
+                Type = type,
+                GroupName = groupName
+            };
+            await _notificationRepository.AddAsync(notification);
+
+            await _hubContext.Clients.Group(groupName).ReceiveNotification(new NotificationRecipientDto
+            {
+                Id = 0,
+                Title = title,
+                Message = message,
+                Type = type,
+                ActionUrl = null,
+                IsRead = false,
+                CreatedAt = notification.CreatedAt
+            });
         }
     }
 }
