@@ -66,8 +66,7 @@ public class TraineeGroupRepositoryTests
     {
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
-            _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _sessionOccurrenceRepoMock.Object);
         var command = CreateCommand(traineeGroupId: 5);
         var group = CreateTraineeGroup(CreateSchedule());
 
@@ -90,8 +89,7 @@ public class TraineeGroupRepositoryTests
     {
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
-            _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _sessionOccurrenceRepoMock.Object);
         var command = CreateCommand(traineeGroupId: 0);
 
         var act = () => handler.Handle(command, CancellationToken.None);
@@ -107,8 +105,7 @@ public class TraineeGroupRepositoryTests
     {
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
-            _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _sessionOccurrenceRepoMock.Object);
         var command = CreateCommand(traineeGroupId: 999);
 
         _traineeGroupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(999, It.IsAny<CancellationToken>()))
@@ -127,8 +124,7 @@ public class TraineeGroupRepositoryTests
     {
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
-            _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _sessionOccurrenceRepoMock.Object);
         var command = CreateCommand(traineeGroupId: 1);
         var group = CreateTraineeGroup();
 

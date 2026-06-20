@@ -1,6 +1,4 @@
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
@@ -41,23 +39,18 @@ public class BulkCreateAttendanceCommandHandler(
                     ? TimeOnly.Parse(item.CheckInTime)
                     : TimeOnly.FromDateTime(DateTime.UtcNow);
 
-                attendance = new Attendance
-                {
-                    EnrollmentId = enrollmentId.Value,
-                    SessionOccurrenceId = item.SessionOccurrenceId,
-                    AttendanceStatus = item.Status,
-                    AttendanceDate = DateTime.UtcNow,
-                    CheckInTime = checkInTime,
-                    CoachNote = string.Empty
-                };
+                attendance = Attendance.Create(
+                    enrollmentId.Value,
+                    item.SessionOccurrenceId,
+                    item.Status,
+                    DateTime.UtcNow,
+                    checkInTime,
+                    string.Empty);
                 await attendanceRepository.AddAsync(attendance, cancellationToken);
             }
             else
             {
-                if (item.CheckInTime != null)
-                    attendance.CheckInTime = TimeOnly.Parse(item.CheckInTime);
-                attendance.AttendanceStatus = item.Status;
-                attendance.UpdatedAt = DateTime.UtcNow;
+                attendance.UpdateStatus(item.Status, item.CheckInTime);
                 await attendanceRepository.UpdateAsync(attendance, cancellationToken);
             }
 

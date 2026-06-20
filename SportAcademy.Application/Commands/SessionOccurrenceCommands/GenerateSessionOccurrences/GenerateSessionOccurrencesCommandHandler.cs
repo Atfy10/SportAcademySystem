@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
@@ -13,18 +12,15 @@ public class GenerateSessionOccurrencesCommandHandler : IRequestHandler<Generate
 {
     private readonly ITraineeGroupRepository _traineeGroupRepository;
     private readonly ISessionOccurrenceRepository _sessionOccurrenceRepository;
-    private readonly IMapper _mapper;
     private readonly string _operationType = OperationType.Add.ToString();
     private const int MaxDurationDays = 90;
 
     public GenerateSessionOccurrencesCommandHandler(
         ITraineeGroupRepository traineeGroupRepository,
-        ISessionOccurrenceRepository sessionOccurrenceRepository,
-        IMapper mapper)
+        ISessionOccurrenceRepository sessionOccurrenceRepository)
     {
         _traineeGroupRepository = traineeGroupRepository;
         _sessionOccurrenceRepository = sessionOccurrenceRepository;
-        _mapper = mapper;
     }
 
     public async Task<Result<int>> Handle(GenerateSessionOccurrencesCommand request, CancellationToken cancellationToken)
@@ -81,12 +77,8 @@ public class GenerateSessionOccurrencesCommandHandler : IRequestHandler<Generate
                 if (schedule.Day == date.DayOfWeek)
                 {
                     var startDateTime = date.ToDateTime(schedule.StartTime);
-                    sessionsToCreate.Add(new SessionOccurrence
-                    {
-                        GroupScheduleId = schedule.Id,
-                        StartDateTime = startDateTime,
-                        Status = SessionStatus.Scheduled
-                    });
+                    sessionsToCreate.Add(SessionOccurrence.Create(
+                        schedule.Id, startDateTime, SessionStatus.Scheduled));
                 }
             }
         }

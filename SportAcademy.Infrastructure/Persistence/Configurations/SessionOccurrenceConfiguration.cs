@@ -31,6 +31,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasForeignKey(a => a.SessionOccurrenceId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Navigation(so => so.Attendances)
+                .HasField("_attendances")
+                .UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
+
             // 1:M GroupSchedule
             builder.HasOne(so => so.GroupSchedule)
                 .WithMany(gs => gs.SessionOccurrences)

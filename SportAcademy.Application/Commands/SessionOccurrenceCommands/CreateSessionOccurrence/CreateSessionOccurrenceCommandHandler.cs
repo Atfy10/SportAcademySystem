@@ -1,8 +1,7 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Entities;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.CreateSessionOccurrence
@@ -10,21 +9,17 @@ namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.CreateSess
     public class CreateSessionOccurrenceCommandHandler : IRequestHandler<CreateSessionOccurrenceCommand, Result<int>>
     {
         private readonly ISessionOccurrenceRepository _sessionOccurrenceRepository;
-        private readonly IMapper _mapper;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateSessionOccurrenceCommandHandler(
-            ISessionOccurrenceRepository sessionOccurrenceRepository,
-            IMapper mapper)
+            ISessionOccurrenceRepository sessionOccurrenceRepository)
         {
             _sessionOccurrenceRepository = sessionOccurrenceRepository;
-            _mapper = mapper;
         }
 
         public async Task<Result<int>> Handle(CreateSessionOccurrenceCommand request, CancellationToken cancellationToken)
         {
-            var sessionOccurrence = _mapper.Map<SessionOccurrence>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var sessionOccurrence = request.ToSessionOccurrence();
 
             cancellationToken.ThrowIfCancellationRequested();
 

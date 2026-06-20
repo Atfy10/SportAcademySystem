@@ -1,18 +1,12 @@
-﻿using SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance;
-using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
+using AutoMapper;
 using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace SportAcademy.Application.Mappings.AttendanceProfile
+namespace SportAcademy.Infrastructure.Mappings
 {
-    public class AttendanceProfile : AutoMapper.Profile
+    public class AttendanceMappingProfile : AutoMapper.Profile
     {
-        public AttendanceProfile()
+        public AttendanceMappingProfile()
         {
             CreateMap<Attendance, AttendanceDto>()
                 .ConstructUsing(src => new AttendanceDto(
@@ -33,20 +27,6 @@ namespace SportAcademy.Application.Mappings.AttendanceProfile
                     src.CheckInTime.ToString("HH:mm:ss"),
                     src.AttendanceStatus.ToString()
                 ));
-
-            CreateMap<Attendance, CreateAttendanceCommand>()
-                .ConstructUsing(src => new CreateAttendanceCommand(
-                    DateOnly.FromDateTime(src.AttendanceDate),
-                    src.AttendanceStatus,
-                    src.CheckInTime,
-                    src.CoachNote,
-                    src.EnrollmentId,
-                    src.SessionOccurrenceId
-                ))
-                .ForAllMembers(opt => opt.Ignore());
-
-            CreateMap<Attendance, UpdateAttendanceCommand>()
-                .ReverseMap();
         }
     }
 }
