@@ -21,8 +21,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
 
             // Props
             builder.Property(st => st.Name)
-                .IsRequired()
-                .HasConversion<string>();
+                .IsRequired();
 
             builder.Property(st => st.DaysPerMonth)
                 .IsRequired();

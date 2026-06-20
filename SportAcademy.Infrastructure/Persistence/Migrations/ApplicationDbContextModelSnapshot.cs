@@ -1372,7 +1372,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("VideoAnalyses");
+                    b.ToTable("VideoAnalyses", (string)null);
                 });
 
             modelBuilder.Entity("SportAcademy.Infrastructure.Persistence.Views.AdminViews.AdminBasicViews", b =>
@@ -1921,7 +1921,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("EmployeeId");
 
-                            b1.ToTable("Employees");
+                            b1.ToTable("Employees", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("EmployeeId");
@@ -1940,7 +1940,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("EmployeeId");
 
-                            b1.ToTable("Employees");
+                            b1.ToTable("Employees", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("EmployeeId");
@@ -2223,7 +2223,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("TraineeId");
 
-                            b1.ToTable("Trainees");
+                            b1.ToTable("Trainees", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("TraineeId");
@@ -2242,7 +2242,7 @@ namespace SportAcademy.Infrastructure.Migrations
 
                             b1.HasKey("TraineeId");
 
-                            b1.ToTable("Trainees");
+                            b1.ToTable("Trainees", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("TraineeId");

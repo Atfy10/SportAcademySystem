@@ -24,7 +24,7 @@ namespace SportAcademy.Infrastructure.Mappings
                     BranchId = src.BranchId,
                     BranchName = src.Branch.Name,
                     SubsTypeId = src.SubsTypeId,
-                    SubscriptionTypeName = src.SportSubscriptionType.SubscriptionType.Name.ToString(),
+                    SubscriptionTypeName = src.SportSubscriptionType.SubscriptionType.Name,
                     Price = src.Price
                 });
         }

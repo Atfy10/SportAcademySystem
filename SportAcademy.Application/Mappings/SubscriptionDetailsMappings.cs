@@ -32,7 +32,7 @@ namespace SportAcademy.Application.Mappings
                 },
                 SportName = sd.SportPrice?.SportSubscriptionType?.Sport?.Name ?? string.Empty,
                 BranchName = sd.SportPrice?.Branch?.Name ?? string.Empty,
-                SubscriptionTypeName = sd.SportPrice?.SportSubscriptionType?.SubscriptionType?.Name.ToString() ?? string.Empty,
+                SubscriptionTypeName = sd.SportPrice?.SportSubscriptionType?.SubscriptionType?.Name ?? string.Empty,
                 Price = sd.SportPrice?.Price ?? 0,
                 StartDate = sd.StartDate,
                 EndDate = sd.EndDate,
