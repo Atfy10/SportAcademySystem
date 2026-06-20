@@ -191,7 +191,7 @@ using (var scope = app.Services.CreateScope())
 
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-    dbContext.Database.Migrate();
+    await dbContext.Database.MigrateAsync();
 
     await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
 
