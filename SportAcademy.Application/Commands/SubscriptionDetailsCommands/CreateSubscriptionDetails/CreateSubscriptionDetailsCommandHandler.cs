@@ -1,14 +1,9 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Application.Services;
-using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions.PaymentExceptions;
-using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
-using SportAcademy.Domain.Services;
-using System.Threading;
 
 namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscriptionDetails
 {
@@ -18,34 +13,26 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
         private readonly SubDetailsManagementService _subscriptionDetailsMangeService;
         private readonly IPaymentRepository _paymentRepository;
-        private readonly IMapper _mapper;
 
         public CreateSubscriptionDetailsCommandHandler(
             ISubscriptionDetailsRepository subscriptionDetailsRepository,
             IPaymentRepository paymentRepository,
-            SubDetailsManagementService subscriptionDetailsMangeService,
-            IMapper mapper)
+            SubDetailsManagementService subscriptionDetailsMangeService)
         {
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
             _paymentRepository = paymentRepository;
             _subscriptionDetailsMangeService = subscriptionDetailsMangeService;
-            _mapper = mapper;
         }
 
         public async Task<Result<int>> Handle(CreateSubscriptionDetailsCommand request, CancellationToken cancellationToken)
         {
-            var subDetails = _mapper.Map<SubscriptionDetails>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var subDetails = request.ToSubscriptionDetails();
 
             await _subscriptionDetailsMangeService
                 .ValidatePaymentAsync(request.PaymentNumber, cancellationToken);
 
             await _subscriptionDetailsMangeService
                 .ValidateSubscriptionAsync(subDetails, cancellationToken);
-
-            var isSubActive = SubscriptionDetailsService.IsSubscriptionActive(subDetails);
-            if (!isSubActive)
-                subDetails.IsActive = false;
 
             cancellationToken.ThrowIfCancellationRequested();
 

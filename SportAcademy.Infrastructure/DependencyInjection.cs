@@ -1,7 +1,10 @@
+using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Infrastructure.BackgroundServices;
 using SportAcademy.Infrastructure.Implementations;
+using SportAcademy.Infrastructure.Mappings;
+using SportAcademy.Application.Mappings.TraineeProfile;
 using SportAcademy.Infrastructure.Persistence.Repositories;
 
 namespace SportAcademy.Infrastructure
@@ -52,6 +55,13 @@ namespace SportAcademy.Infrastructure
 
             // Register Realtime Service
             services.AddScoped<IRealtimeService, RealtimeService>();
+
+            // Register AutoMapper profiles (Application + Infrastructure)
+            services.AddAutoMapper(cfg =>
+            {
+                cfg.AddMaps(typeof(TraineeProfile).Assembly);
+                cfg.AddMaps(typeof(EnrollmentMappingProfile).Assembly);
+            });
 
             // Register Domain Services
             services.AddScoped<ITraineeCodeGenerator, SqlTraineeCodeGenerator>();

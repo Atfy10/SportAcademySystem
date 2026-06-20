@@ -2,13 +2,6 @@
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Exceptions.PaymentExceptions;
 using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
-using SportAcademy.Domain.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Services
 {
@@ -45,7 +38,7 @@ namespace SportAcademy.Application.Services
             var activeSubs = await _subscriptionDetailsRepository
                 .GetActiveSubscriptionDetailsForTraineeAsync(sub.TraineeId, ct);
 
-            var hasConflict = SubscriptionDetailsService.HasActiveSubscriptionConflict(
+            var hasConflict = SubscriptionDetails.HasDateConflictWith(
                 sub, activeSubs);
             if (hasConflict)
                 throw new SubscriptionConflictException();

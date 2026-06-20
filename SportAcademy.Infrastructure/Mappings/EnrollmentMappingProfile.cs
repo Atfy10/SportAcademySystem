@@ -1,24 +1,14 @@
-﻿using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
-using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
+using AutoMapper;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 
-namespace SportAcademy.Application.Mappings.EnrollmentProfile
+namespace SportAcademy.Infrastructure.Mappings
 {
     public class EnrollmentMappingProfile : AutoMapper.Profile
     {
         public EnrollmentMappingProfile()
         {
-            CreateMap<Enrollment, EnrollmentDto>()
-                .ForAllMembers(opt => opt.Ignore());
-
-            CreateMap<CreateEnrollmentCommand, Enrollment>()
-                .ForAllMembers(opt => opt.Ignore());
-
-            CreateMap<UpdateEnrollmentCommand, Enrollment>()
-                .ForAllMembers(opt => opt.Ignore());
-
             CreateMap<Enrollment, EnrollmentDataDto>()
                 .ConstructUsing(src => new EnrollmentDataDto(
                     src.Id,
@@ -30,8 +20,7 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     src.Trainee.FirstName + " " + src.Trainee.LastName,
                     src.TraineeGroup.Coach.Employee.FirstName + " " + src.TraineeGroup.Coach.Employee.LastName,
                     src.SubscriptionDetailsId
-                ))
-                .ForAllMembers(opt => opt.Ignore());
+                ));
 
             CreateMap<Enrollment, EnrollmentCardDto>()
                 .ConstructUsing(src => new EnrollmentCardDto(
@@ -50,8 +39,7 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     src.GetStatus(),
                     GetSessionsCompleted(src.Attendances),
                     src.SessionAllowed
-                ))
-                .ForAllMembers(opt => opt.Ignore());
+                ));
 
             CreateMap<Enrollment, EnrollmentDetailDto>()
                 .ConstructUsing(src => new EnrollmentDetailDto(
@@ -73,13 +61,12 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     src.SessionAllowed - src.SessionRemaining,
                     src.SessionAllowed,
                     src.SubscriptionDetailsId
-                ))
-                .ForAllMembers(opt => opt.Ignore());
+                ));
         }
 
-        private static int GetSessionsCompleted(ICollection<Attendance> src)
+        private static int GetSessionsCompleted(IEnumerable<Attendance> attendances)
         {
-            return src.Count(a =>
+            return attendances.Count(a =>
                 a.AttendanceStatus == AttendanceStatus.Present ||
                 a.AttendanceStatus == AttendanceStatus.Late);
         }

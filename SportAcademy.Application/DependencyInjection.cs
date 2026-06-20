@@ -4,11 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using SportAcademy.Application.Behaviors;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Mappings.TraineeProfile;
 using SportAcademy.Application.Services;
 using SportAcademy.Application.Validators.TraineeValidators;
 using SportAcademy.Domain.Contract;
-using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application
 {
@@ -33,12 +31,6 @@ namespace SportAcademy.Application
 
             // Register FluentValidation validators
             services.AddValidatorsFromAssembly(typeof(CreateTraineeValidator).Assembly);
-
-            // Register AutoMapper profiles
-            services.AddAutoMapper(cfg =>
-            {
-                cfg.AddMaps(typeof(TraineeProfile).Assembly);
-            });
 
             // Register Application Services
             services.AddScoped<IChatBotService, ChatBotService>();

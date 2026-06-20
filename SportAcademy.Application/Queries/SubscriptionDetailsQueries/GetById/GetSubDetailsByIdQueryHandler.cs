@@ -1,17 +1,10 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAll;
-using SportAcademy.Application.Services;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetById
 {
@@ -19,18 +12,11 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetById
     {
         private readonly string _operation = OperationType.Get.ToString();
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
-        private readonly IMapper _mapper;
-        private readonly SubDetailsManagementService _subscriptionDetailsMangeService;
 
         public GetSubDetailsByIdQueryHandler(
-            ISubscriptionDetailsRepository subscriptionDetailsRepository,
-            SubDetailsManagementService managementService,
-            IMapper mapper
-            )
+            ISubscriptionDetailsRepository subscriptionDetailsRepository)
         {
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
-            _subscriptionDetailsMangeService = managementService;
-            _mapper = mapper;
         }
 
         public async Task<Result<SubscriptionDetailsDto>> Handle(GetSubDetailsByIdQuery request, CancellationToken cancellationToken)
@@ -40,8 +26,7 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetById
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var subDetailsDto = _mapper.Map<SubscriptionDetailsDto>(subDetails)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var subDetailsDto = subDetails.ToDto();
 
             cancellationToken.ThrowIfCancellationRequested();
 

@@ -17,7 +17,7 @@ public class ActivateEnrollmentCommandHandler(
             .GetByIdAsync(request.Id, cancellationToken)
             ?? throw new Domain.Exceptions.BaseExceptions.IdNotFoundException("Enrollment", request.Id.ToString());
 
-        enrollment.IsActive = true;
+        enrollment.Activate();
         await enrollmentRepository.UpdateAsync(enrollment, cancellationToken);
 
         return Result<bool>.Success(true, OperationType.Update.ToString());

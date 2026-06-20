@@ -46,6 +46,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                    .HasForeignKey(a => a.EnrollmentId)
                    .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Navigation(e => e.Attendances)
+                .HasField("_attendances")
+                .UsePropertyAccessMode(PropertyAccessMode.FieldDuringConstruction);
+
             // 1:1 SubscriptionDetails
             builder.HasOne(e => e.SubscriptionDetails)
                    .WithOne(sd => sd.Enrollment)

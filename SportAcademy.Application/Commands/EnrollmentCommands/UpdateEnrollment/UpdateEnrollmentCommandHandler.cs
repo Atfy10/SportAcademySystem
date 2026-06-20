@@ -1,9 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Entities;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 
@@ -11,15 +10,12 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
 {
     public class UpdateEnrollmentCommandHandler : IRequestHandler<UpdateEnrollmentCommand, Result<EnrollmentDto>>
     {
-        private readonly IMapper _mapper;
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateEnrollmentCommandHandler(
-            IMapper mapper,
             IEnrollmentRepository enrollmentRepository)
         {
-            _mapper = mapper;
             _enrollmentRepository = enrollmentRepository;
         }
 
@@ -29,7 +25,15 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
                 .GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new EnrollmentNotFoundException($"{request.Id}");
 
-            _mapper.Map(request, enrollment);
+            enrollment.ExtendExpiry(request.ExpiryDate);
+            enrollment.AdjustSessionRemaining(request.SessionRemaining);
+            if (request.IsActive.HasValue)
+            {
+                if (request.IsActive.Value)
+                    enrollment.Activate();
+                else
+                    enrollment.Suspend();
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -37,8 +41,7 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var enrollmentDto = _mapper.Map<EnrollmentDto>(enrollment)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var enrollmentDto = enrollment.ToDto();
 
             return Result<EnrollmentDto>.Success(enrollmentDto, _operationType);
         }

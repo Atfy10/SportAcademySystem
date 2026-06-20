@@ -1,6 +1,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 
@@ -25,12 +26,10 @@ public class UpdatePaymentStatusCommandHandler(
                 enrollment.SubscriptionDetailsId, cancellationToken);
             if (!hasPayment)
             {
-                var payment = new Payment
-                {
-                    PaymentNumber = $"PAY-{DateTime.UtcNow:yyyyMMddHHmmss}",
-                    PaidDate = DateTime.UtcNow,
-                    BranchId = 1
-                };
+                var payment = Payment.Create(
+                    $"PAY-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                    PaymentMethod.Cash,
+                    1);
                 await paymentRepository.AddAsync(payment, cancellationToken);
             }
         }

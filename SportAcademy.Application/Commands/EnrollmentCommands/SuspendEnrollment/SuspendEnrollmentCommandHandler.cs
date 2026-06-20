@@ -18,7 +18,7 @@ public class SuspendEnrollmentCommandHandler(
             .GetByIdAsync(request.Id, cancellationToken)
             ?? throw new Domain.Exceptions.BaseExceptions.IdNotFoundException("Enrollment", request.Id.ToString());
 
-        enrollment.IsActive = false;
+        enrollment.Suspend();
         await enrollmentRepository.UpdateAsync(enrollment, cancellationToken);
 
         return Result<bool>.Success(true, OperationType.Update.ToString());
