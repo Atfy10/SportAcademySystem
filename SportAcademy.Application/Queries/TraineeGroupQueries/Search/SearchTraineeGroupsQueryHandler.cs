@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
@@ -12,13 +11,11 @@ namespace SportAcademy.Application.Queries.TraineeGroupQueries.Search;
 public class SearchTraineeGroupsQueryHandler : IRequestHandler<SearchTraineeGroupsQuery, Result<PagedData<ListTraineeGroupDto>>>
 {
     private readonly ITraineeGroupRepository _traineeGroupRepository;
-    private readonly IMapper _mapper;
     private readonly string _operationType = OperationType.GetAll.ToString();
 
-    public SearchTraineeGroupsQueryHandler(ITraineeGroupRepository traineeGroupRepository, IMapper mapper)
+    public SearchTraineeGroupsQueryHandler(ITraineeGroupRepository traineeGroupRepository)
     {
         _traineeGroupRepository = traineeGroupRepository;
-        _mapper = mapper;
     }
 
     public async Task<Result<PagedData<ListTraineeGroupDto>>> Handle(SearchTraineeGroupsQuery request, CancellationToken cancellationToken)

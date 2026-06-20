@@ -1,9 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Application.Services;
-using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup
@@ -12,28 +11,24 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
     {
         private readonly TraineeGroupService _traineeGroupService;
         private readonly ITraineeGroupRepository _traineeGroupRepository;
-        private readonly IMapper _mapper;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateTraineeGroupCommandHandler(
             TraineeGroupService traineeGroupService,
-            ITraineeGroupRepository traineeGroupRepository,
-            IMapper mapper)
+            ITraineeGroupRepository traineeGroupRepository)
         {
             _traineeGroupService = traineeGroupService;
             _traineeGroupRepository = traineeGroupRepository;
-            _mapper = mapper;
         }
 
         public async Task<Result<int>> Handle(CreateTraineeGroupCommand request, CancellationToken cancellationToken)
         {
-            var traineeGroup = _mapper.Map<TraineeGroup>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var traineeGroup = request.ToTraineeGroup();
 
             cancellationToken.ThrowIfCancellationRequested();
 
             var tgName = await _traineeGroupService.GenerateTraineeGroupNameAsync(request);
-            traineeGroup.Name = tgName;
+            traineeGroup.SetName(tgName);
 
             await _traineeGroupRepository.AddAsync(traineeGroup, cancellationToken);
 

@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
 
@@ -10,15 +10,11 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
 {
     public class UpdateTraineeGroupCommandHandler : IRequestHandler<UpdateTraineeGroupCommand, Result<TraineeGroupDto>>
     {
-        private readonly IMapper _mapper;
         private readonly ITraineeGroupRepository _traineeGroupRepository;
         private readonly string _operationType = OperationType.Update.ToString();
 
-        public UpdateTraineeGroupCommandHandler(
-            IMapper mapper,
-            ITraineeGroupRepository traineeGroupRepository)
+        public UpdateTraineeGroupCommandHandler(ITraineeGroupRepository traineeGroupRepository)
         {
-            _mapper = mapper;
             _traineeGroupRepository = traineeGroupRepository;
         }
 
@@ -27,7 +23,7 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
             var traineeGroup = await _traineeGroupRepository.GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new TraineeGroupNotFoundException($"{request.Id}");
 
-            _mapper.Map(request, traineeGroup);
+            traineeGroup.ApplyUpdate(request);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -35,8 +31,7 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var traineeGroupDto = _mapper.Map<TraineeGroupDto>(traineeGroup)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var traineeGroupDto = traineeGroup.ToDto();
 
             return Result<TraineeGroupDto>.Success(traineeGroupDto, _operationType);
         }

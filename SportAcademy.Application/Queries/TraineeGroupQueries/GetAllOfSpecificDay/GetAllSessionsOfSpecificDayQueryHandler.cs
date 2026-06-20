@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
@@ -8,12 +7,10 @@ namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAllOfSpecificD
 {
     public class GetAllSessionsOfSpecificDayQueryHandler : IRequestHandler<GetAllSessionsOfSpecificDayQuery, Result<PagedData<ListTraineeGroupDto>>>
     {
-        private readonly IMapper _mapper;
         private readonly ITraineeGroupRepository _traineeGroupRepository;
 
-        public GetAllSessionsOfSpecificDayQueryHandler(IMapper mapper, ITraineeGroupRepository traineeGroupRepository)
+        public GetAllSessionsOfSpecificDayQueryHandler(ITraineeGroupRepository traineeGroupRepository)
         {
-            _mapper = mapper;
             _traineeGroupRepository = traineeGroupRepository;
         }
 
