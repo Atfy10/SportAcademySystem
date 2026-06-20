@@ -1,4 +1,3 @@
-using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
@@ -11,15 +10,10 @@ namespace SportAcademy.Application.Queries.CoachQueries.SearchCoachs
     public class SearchCoachQueryHandler : IRequestHandler<SearchCoachQuery, Result<PagedData<CoachCardDto>>>
     {
         private readonly ICoachRepository _coachRepository;
-        private readonly IMapper _mapper;
 
-        public SearchCoachQueryHandler(
-            ICoachRepository coachRepository,
-            IMapper mapper
-        )
+        public SearchCoachQueryHandler(ICoachRepository coachRepository)
         {
             _coachRepository = coachRepository;
-            _mapper = mapper;
         }
 
         public async Task<Result<PagedData<CoachCardDto>>> Handle(SearchCoachQuery request, CancellationToken cancellationToken)

@@ -38,11 +38,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.AddSportToBranch
             if (exists)
                 throw new ConflictException(nameof(Sport), nameof(Branch));
 
-            var sportBranch = new SportBranch
-            {
-                SportId = request.SportId,
-                BranchId = request.BranchId
-            };
+            var sportBranch = SportBranch.Create(request.SportId, request.BranchId);
 
             await _sportBranchRepository.AddAsync(sportBranch, cancellationToken);
 

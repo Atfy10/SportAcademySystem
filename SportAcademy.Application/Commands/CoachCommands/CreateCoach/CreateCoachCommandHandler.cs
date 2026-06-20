@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Entities;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 
@@ -28,12 +28,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
 
             ct.ThrowIfCancellationRequested();
 
-            var coach = new Coach
-            {
-                EmployeeId = request.EmployeeId,
-                SportId = request.SportId,
-                SkillLevel = request.SkillLevel
-            };
+            var coach = request.ToCoach();
 
             employee.SetPosition(Position.Coach);
 

@@ -4,7 +4,6 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
-using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Commands.CoachCommands.DeleteCoach
 {
@@ -27,7 +26,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.DeleteCoach
             var coach = await _coachRepository.GetByIdAsync(request.EmployeeId, ct)
                 ?? throw new IdNotFoundException(nameof(Coach), request.EmployeeId.ToString());
 
-            coach.MarkAsDeleted(_userContextService.UserId ?? "System");
+            coach.MarkDeleted(_userContextService.UserId);
             await _coachRepository.UpdateAsync(coach, ct);
 
             return Result<bool>.Success(true, _operationType);

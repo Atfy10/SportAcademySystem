@@ -1,16 +1,15 @@
-﻿using SportAcademy.Application.Commands.CoachCommands.CreateCoach;
-using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
+using AutoMapper;
 using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Domain.Entities;
 
-namespace SportAcademy.Application.Mappings.CoachProfile
+namespace SportAcademy.Infrastructure.Mappings
 {
-    public class CoachProfile : AutoMapper.Profile
+    public class CoachMappingProfile : AutoMapper.Profile
     {
-        public CoachProfile()
+        public CoachMappingProfile()
         {
             CreateMap<Coach, CoachCardDto>()
-                .ConstructUsing(src => new CoachCardDto(
+                .ConstructUsing((src, _) => new CoachCardDto(
                     src.EmployeeId,
                     src.Employee.FirstName,
                     src.Employee.LastName,
@@ -26,22 +25,10 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                         .Count(e => e.IsActive && !e.IsDeleted),
                     src.SkillLevel,
                     src.Sport.Name
-                ))
-                .ReverseMap();
-
-            CreateMap<CreateCoachCommand, Coach>();
-
-            CreateMap<CreateCoachWithEmployeeCommand, Coach>()
-                .ForMember(
-                    dest => dest.Employee,
-                    opt => opt.Ignore()
-                );
-
-            CreateMap<Coach, CoachSummaryDto>().ReverseMap();
+                ));
 
             CreateMap<Coach, CoachDetailsDto>()
-                .ConstructUsing(src => new CoachDetailsDto
-                (
+                .ConstructUsing((src, _) => new CoachDetailsDto(
                     src.EmployeeId,
                     src.Employee.FirstName,
                     src.Employee.LastName,
@@ -50,7 +37,7 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                     src.Employee.Branch.Name,
                     src.Sport.Name,
                     src.SkillLevel.ToString(),
-                    null, // Certifications not implemented yet
+                    null,
                     src.TraineeGroups
                         .SelectMany(tg => tg.Enrollments)
                         .Count(e => e.IsActive && !e.IsDeleted),
@@ -58,6 +45,16 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                     src.Employee.IsWork,
                     src.Rate
                 ));
+
+            CreateMap<Coach, CoachSummaryDto>()
+                .ConstructUsing(src => new CoachSummaryDto
+                {
+                    Id = src.EmployeeId,
+                    Name = src.Employee.FirstName + " " + src.Employee.LastName,
+                    SportName = src.Sport.Name,
+                    BirthDate = src.Employee.BirthDate,
+                    SkillLevel = src.SkillLevel.ToString()
+                });
 
             CreateMap<Coach, CoachDropdownItemDto>()
                 .ConstructUsing(src => new CoachDropdownItemDto

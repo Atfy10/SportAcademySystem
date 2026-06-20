@@ -2,11 +2,23 @@
 {
     public class SportBranch
     {
-        public int SportId { get; set; }
-        public int BranchId { get; set; }
+        private SportBranch() { }
 
-        // Navigation Property
-        public virtual Sport Sport { get; set; } = null!;
-        public virtual Branch Branch { get; set; } = null!;
+        private SportBranch(int sportId, int branchId)
+        {
+            SportId = sportId;
+            BranchId = branchId;
+        }
+
+        public int SportId { get; private set; }
+        public int BranchId { get; private set; }
+
+        public virtual Sport Sport { get; private set; } = null!;
+        public virtual Branch Branch { get; private set; } = null!;
+
+        public static SportBranch Create(int sportId, int branchId)
+        {
+            return new SportBranch(sportId, branchId);
+        }
     }
 }

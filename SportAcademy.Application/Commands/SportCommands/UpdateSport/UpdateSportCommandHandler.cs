@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SportExceptions;
 
@@ -10,15 +10,11 @@ namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
 {
     public class UpdateSportCommandHandler : IRequestHandler<UpdateSportCommand, Result<SportDto>>
     {
-        private readonly IMapper _mapper;
         private readonly ISportRepository _sportRepository;
         private readonly string _operationType = OperationType.Update.ToString();
 
-        public UpdateSportCommandHandler(
-            IMapper mapper,
-            ISportRepository sportRepository)
+        public UpdateSportCommandHandler(ISportRepository sportRepository)
         {
-            _mapper = mapper;
             _sportRepository = sportRepository;
         }
 
@@ -34,7 +30,7 @@ namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
                     throw new SportExistsException();
             }
 
-            _mapper.Map(request, sport);
+            sport.ApplyUpdate(request);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -42,11 +38,9 @@ namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var sportDto = _mapper.Map<SportDto>(sport)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var sportDto = sport.ToDto();
 
             return Result<SportDto>.Success(sportDto, _operationType);
         }
     }
-
 }

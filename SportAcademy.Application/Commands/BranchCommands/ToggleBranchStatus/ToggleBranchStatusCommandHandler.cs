@@ -18,10 +18,13 @@ public class ToggleBranchStatusCommandHandler : IRequestHandler<ToggleBranchStat
 
     public async Task<Result<bool>> Handle(ToggleBranchStatusCommand request, CancellationToken cancellationToken)
     {
-        var newStatus = await _branchRepository.ToggleIsActiveAsync(request.Id, cancellationToken);
-        if (!newStatus)
-            throw new BranchNotFoundException(request.Id.ToString());
+        var branch = await _branchRepository.GetByIdAsync(request.Id, cancellationToken)
+            ?? throw new BranchNotFoundException(request.Id.ToString());
 
-        return Result<bool>.Success(newStatus, _operation);
+        branch.ToggleStatus();
+
+        await _branchRepository.UpdateAsync(branch, cancellationToken);
+
+        return Result<bool>.Success(branch.IsActive, _operation);
     }
 }

@@ -115,7 +115,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             if (branch == null)
                 return false;
 
-            branch.IsActive = !branch.IsActive;
+            branch.ToggleStatus();
             await _context.SaveChangesAsync(cancellationToken);
             return branch.IsActive;
         }

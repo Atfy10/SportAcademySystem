@@ -1,15 +1,10 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BranchExceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBranch
 {
@@ -17,16 +12,13 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBra
     {
         private readonly ISportRepository _sportRepository;
         private readonly IBranchRepository _brancRepository;
-        private readonly IMapper _mapper;
         private readonly string _operation = OperationType.Get.ToString();
 
         public GetAvailableSportsForBranchQueryHandler(
             ISportRepository sportRepository,
-            IBranchRepository branchRepository,
-            IMapper mapper)
+            IBranchRepository branchRepository)
         {
             _sportRepository = sportRepository;
-            _mapper = mapper;
             _brancRepository = branchRepository;
         }
         public async Task<Result<List<SportDto>>> Handle(GetAvailableSportsForBranchQuery request, CancellationToken cancellationToken)
@@ -41,8 +33,7 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAvailableSportsForBra
             var sports = await _sportRepository
                 .GetAvailableSportsForBranch(request.branchId, cancellationToken) ?? [];
 
-            var sportsDto = _mapper.Map<List<SportDto>>(sports) 
-                ?? throw new AutoMapperMappingException();
+            var sportsDto = sports.Select(s => s.ToDto()).ToList();
 
             return Result<List<SportDto>>.Success(sportsDto, _operation);
         }

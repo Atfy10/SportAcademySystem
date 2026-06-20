@@ -2,6 +2,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
@@ -37,16 +38,11 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             if (isSSNExist)
                 throw new SSNNotUniqueException();
 
-             //employee.AppUserId = "";
-
             ct.ThrowIfCancellationRequested();
 
             await _employeeRepository.AddAsync(employee, ct);
 
-            var coach = _mapper.Map<Coach>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-            coach.EmployeeId = employee.Id;
+            var coach = request.ToCoach(employee.Id);
 
             ct.ThrowIfCancellationRequested();
 
