@@ -19,5 +19,6 @@ namespace SportAcademy.Domain.Entities
         public virtual Trainee? Trainee { get; set; }
         public virtual Profile Profile { get; set; } = null!;
         public virtual ICollection<NotificationRecipient> Notifications { get; set; } = [];
+    public virtual ICollection<NotificationGroupMember> GroupMemberships { get; set; } = [];
     }
 }

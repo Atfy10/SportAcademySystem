@@ -17,6 +17,7 @@ namespace SportAcademy.Application.DTOs.BranchDtos
 		public string CoX { get; init; } = null!;
 		public string CoY { get; init; } = null!;
 		public bool IsActive { get; init; }
+		public List<string> Sports { get; init; } = [];
 	}
 
 }

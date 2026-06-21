@@ -25,7 +25,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<SportPrice?> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
             => await _context.SportPrices.FirstOrDefaultAsync(
-                sp => IsExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
+                sp => sp.BranchId == branchId
+                    && sp.SportId == sportId
+                    && sp.SubsTypeId == subsTypeId,
                 cancellationToken);
 
         public async Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken = default)
@@ -41,7 +43,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .Include(sp => sp.SportSubscriptionType.Sport)
                     .Include(sp => sp.SportSubscriptionType.SubscriptionType)
                     .FirstOrDefaultAsync(
-                        sp => IsExistAsync(branchId, sportId, subsTypeId, cancellationToken).Result,
+                        sp => sp.BranchId == branchId
+                            && sp.SportId == sportId
+                            && sp.SubsTypeId == subsTypeId,
                         cancellationToken);
     }
 }

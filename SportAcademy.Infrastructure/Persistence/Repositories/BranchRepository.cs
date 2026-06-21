@@ -109,6 +109,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             };
         }
 
+        public async Task<Branch?> GetByIdWithSportsAsync(int id, CancellationToken cancellationToken = default)
+            => await _context.Branchs
+                .Include(b => b.Sports)
+                .ThenInclude(sb => sb.Sport)
+                .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
+
         public async Task<bool> ToggleIsActiveAsync(int id, CancellationToken cancellationToken = default)
         {
             var branch = await _context.Branchs.FindAsync(new object[] { id }, cancellationToken);

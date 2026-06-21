@@ -1,12 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -27,5 +23,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<bool> ExistsForSubscriptionAsync(int subscriptionDetailsId, CancellationToken cancellationToken = default)
             => await _context.Payments
                 .AnyAsync(p => p.SubscriptionDetails != null && p.SubscriptionDetails.Id == subscriptionDetailsId, cancellationToken);
+
+        public async Task<Payment> CreatePaymentAsync(string paymentNumber, PaymentMethod method, int branchId, CancellationToken cancellationToken = default)
+        {
+            var payment = new Payment
+            {
+                PaymentNumber = paymentNumber,
+                Method = method,
+                BranchId = branchId,
+                PaidDate = DateTime.UtcNow
+            };
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync(cancellationToken);
+            return payment;
+        }
     }
 }

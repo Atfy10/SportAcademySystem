@@ -55,7 +55,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             CancellationToken ct = default)
             => await _context.Enrollments
                 .Where(e => e.TraineeGroup!.Coach!.SportId == sportId)
-                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddDays(-30))
+                .Where(e => e.EnrollmentDate >= (from ?? DateTime.UtcNow.AddYears(-5))
                     && e.EnrollmentDate < (to ?? DateTime.UtcNow))
                 .CountAsync(ct);
 

@@ -745,6 +745,20 @@ namespace SportAcademy.Infrastructure.Migrations
                     b.ToTable("Notification", (string)null);
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.NotificationGroupMember", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("GroupName")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("UserId", "GroupName");
+
+                    b.ToTable("NotificationGroupMembers", (string)null);
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.NotificationRecipient", b =>
                 {
                     b.Property<string>("UserId")
@@ -1129,6 +1143,9 @@ namespace SportAcademy.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NumberOfMonths")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -1995,6 +2012,17 @@ namespace SportAcademy.Infrastructure.Migrations
                     b.Navigation("TraineeGroup");
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.NotificationGroupMember", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.AppUser", "User")
+                        .WithMany("GroupMemberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.NotificationRecipient", b =>
                 {
                     b.HasOne("SportAcademy.Domain.Entities.Notification", "Notification")
@@ -2103,6 +2131,12 @@ namespace SportAcademy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SportAcademy.Domain.Entities.SportBranch", "SportBranch")
+                        .WithMany()
+                        .HasForeignKey("SportId", "BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("SportAcademy.Domain.Entities.SportSubscriptionType", "SportSubscriptionType")
                         .WithMany("SportPrices")
                         .HasForeignKey("SportId", "SubsTypeId")
@@ -2110,6 +2144,8 @@ namespace SportAcademy.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Branch");
+
+                    b.Navigation("SportBranch");
 
                     b.Navigation("SportSubscriptionType");
                 });
@@ -2307,6 +2343,8 @@ namespace SportAcademy.Infrastructure.Migrations
             modelBuilder.Entity("SportAcademy.Domain.Entities.AppUser", b =>
                 {
                     b.Navigation("Employee");
+
+                    b.Navigation("GroupMemberships");
 
                     b.Navigation("Notifications");
 

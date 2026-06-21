@@ -22,5 +22,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<bool> IsExistAsync(int sportId, int branchId, CancellationToken cancellationToken)
             => await _context.SportBranchs
                 .AnyAsync(sb => sb.SportId == sportId && sb.BranchId == branchId, cancellationToken);
+
+        public async Task<List<SportBranch>> GetAllWithBranchesAsync(CancellationToken cancellationToken = default)
+            => await _context.SportBranchs
+                .Include(sb => sb.Branch)
+                .ToListAsync(cancellationToken);
     }
 }

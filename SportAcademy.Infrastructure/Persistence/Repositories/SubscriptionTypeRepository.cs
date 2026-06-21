@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -18,5 +13,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 		{
 			_context = context;
 		}
+
+		public async Task<List<SubscriptionType>> GetAllWithSportsAsync(CancellationToken cancellationToken = default)
+			=> await _context.SubscriptionTypes
+				.AsNoTracking()
+				.Include(st => st.Sports)
+					.ThenInclude(sst => sst.Sport)
+				.ToListAsync(cancellationToken);
+
+		public async Task<SubscriptionType?> GetByIdWithSportsAsync(int id, CancellationToken cancellationToken = default)
+			=> await _context.SubscriptionTypes
+				.Include(st => st.Sports)
+					.ThenInclude(sst => sst.Sport)
+				.SingleOrDefaultAsync(st => st.Id == id, cancellationToken);
 	}
 }

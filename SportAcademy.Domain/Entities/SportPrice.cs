@@ -9,6 +9,7 @@
 
         // Navigation Property
         public virtual Branch Branch { get; set; } = null!;
+        public virtual SportBranch SportBranch { get; set; } = null!;
         public virtual SportSubscriptionType SportSubscriptionType { get; set; } = null!;
         public virtual ICollection<SubscriptionDetails> SubscriptionsDetails { get; set; } = null!;
     }

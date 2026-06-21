@@ -13,5 +13,6 @@ namespace SportAcademy.Application.Interfaces
         Task<List<SubscriptionDetails>?> GetActiveSubscriptionDetailsForTraineeAsync(int traineeId, CancellationToken cancellationToken = default);
         Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default);
         Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default);
+        Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default);
     }
 }

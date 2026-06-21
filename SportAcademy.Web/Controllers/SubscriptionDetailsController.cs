@@ -7,6 +7,7 @@ using SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSubscr
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAll;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetById;
+using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetStats;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -40,6 +41,9 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> CreateAsync(CreateSubscriptionDetailsCommand command)
         {
             var result = await _mediator.Send(command);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
 
@@ -64,6 +68,17 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetDropdown([FromQuery] int? traineeId, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllSubscriptionDetailsForDropdownQuery(traineeId), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetStats(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetSubDetailsStatsQuery(), ct);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
     }

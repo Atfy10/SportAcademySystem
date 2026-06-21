@@ -13,7 +13,10 @@ namespace SportAcademy.Application.Mappings.BranchProfile
 
             CreateMap<Branch, CreateBranchCommand>().ReverseMap();
 
-            CreateMap<Branch, BranchDto>().ReverseMap();
+            CreateMap<Branch, BranchDto>()
+                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src =>
+                    src.Sports.Select(sb => sb.Sport.Name).ToList()))
+                .ReverseMap();
 
             CreateMap<Branch, BranchCardDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))

@@ -22,7 +22,7 @@ namespace SportAcademy.Application.Queries.BranchQueries.GetById
 
 		public async Task<Result<BranchDto>> Handle(GetBranchByIdQuery request, CancellationToken cancellationToken)
 		{
-			var branch = await _branchRepository.GetByIdAsync(request.Id, cancellationToken)
+			var branch = await _branchRepository.GetByIdWithSportsAsync(request.Id, cancellationToken)
 				?? throw new BranchNotFoundException($"{request.Id}");
 
 			var branchDto = _mapper.Map<BranchDto>(branch)

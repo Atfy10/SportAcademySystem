@@ -18,6 +18,7 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 		private readonly ISportRepository _sportRepository;
 		private readonly IBranchRepository _branchRepository;
 		private readonly ISubscriptionTypeRepository _subscriptionTypeRepository;
+		private readonly ISportBranchRepository _sportBranchRepository;
 		private readonly string _operationType = OperationType.Add.ToString();
 		private readonly IMapper _mapper;
 
@@ -26,12 +27,14 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 			ISportRepository sportRepository,
 			IBranchRepository branchRepository,
 			ISubscriptionTypeRepository subscriptionTypeRepository,
+			ISportBranchRepository sportBranchRepository,
 			IMapper mapper)
 		{
 			_sportPriceRepository = sportPriceRepository;
 			_sportRepository = sportRepository;
 			_branchRepository = branchRepository;
 			_subscriptionTypeRepository = subscriptionTypeRepository;
+			_sportBranchRepository = sportBranchRepository;
 			_mapper = mapper;
 		}
 		public async Task<Result<SportPriceBranchDto>> Handle(CreateSportPriceCommand request, CancellationToken cancellationToken)
@@ -55,6 +58,11 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 				request.SubsTypeId, cancellationToken);
 			if (!subsTypeExists)
 				throw new SubscriptionTypeNotFoundException($"{request.SubsTypeId}");
+
+			var sportBranchExists = await _sportBranchRepository.IsExistAsync(
+				request.SportId, request.BranchId, cancellationToken);
+			if (!sportBranchExists)
+				throw new SportBranchNotFoundException();
 
 			cancellationToken.ThrowIfCancellationRequested();
 

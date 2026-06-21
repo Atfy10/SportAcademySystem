@@ -32,7 +32,7 @@ namespace SportAcademy.Infrastructure.Implementations
 
             await _hubContext.Clients.All.ReceiveNotification(new NotificationRecipientDto
             {
-                Id = 0,
+                Id = notification.Id,
                 Title = title,
                 Message = message,
                 Type = type,
@@ -78,10 +78,11 @@ namespace SportAcademy.Infrastructure.Implementations
                 GroupName = groupName
             };
             await _notificationRepository.AddAsync(notification);
+            await _notificationRepository.AddRecipientsForGroupAsync(notification.Id, groupName);
 
             await _hubContext.Clients.Group(groupName).ReceiveNotification(new NotificationRecipientDto
             {
-                Id = 0,
+                Id = notification.Id,
                 Title = title,
                 Message = message,
                 Type = type,

@@ -27,4 +27,7 @@ public class RealtimeService : IRealtimeService
 
     public async Task TraineeGroupUpdated(int traineeGroupId)
         => await _hubContext.Clients.All.TraineeGroupUpdated(traineeGroupId);
+
+    public async Task SubscriptionUpdated(int subscriptionId)
+        => await _hubContext.Clients.All.SubscriptionUpdated(subscriptionId);
 }

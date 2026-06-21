@@ -83,5 +83,28 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var in15Days = today.AddDays(15);
+
+            var total = await _context.SubscriptionDetails
+                .CountAsync(sd => !sd.IsDeleted, cancellationToken);
+            var active = await _context.SubscriptionDetails
+                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today, cancellationToken);
+            var expired = await _context.SubscriptionDetails
+                .CountAsync(sd => !sd.IsDeleted && sd.EndDate < today, cancellationToken);
+            var expiringSoon = await _context.SubscriptionDetails
+                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.EndDate <= in15Days, cancellationToken);
+
+            return new SubscriptionStatsDto
+            {
+                Total = total,
+                Active = active,
+                Expired = expired,
+                ExpiringSoon = expiringSoon
+            };
+        }
     }
 }

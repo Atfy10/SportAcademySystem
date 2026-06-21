@@ -11,7 +11,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
     public record CreateSubscriptionDetailsCommand(
         DateOnly StartDate,
         DateOnly EndDate,
-        string PaymentNumber,
+        string? PaymentNumber,
         int TraineeId,
         int SubscriptionTypeId,
         int SportId,

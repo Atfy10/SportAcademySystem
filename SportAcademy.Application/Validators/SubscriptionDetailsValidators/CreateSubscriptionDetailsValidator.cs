@@ -1,12 +1,13 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscriptionDetails;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
 {
 
     public class CreateSubscriptionDetailsValidator : AbstractValidator<CreateSubscriptionDetailsCommand>
     {
-        public CreateSubscriptionDetailsValidator()
+        public CreateSubscriptionDetailsValidator(ISportPriceRepository sportPriceRepository)
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 
@@ -21,7 +22,6 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
                 .WithMessage("End date should be after the start date.");
 
             RuleFor(x => x.PaymentNumber)
-                .NotEmpty().WithMessage("Please enter a payment number.")
                 .MaximumLength(50)
                 .WithMessage("Payment number can’t be longer than 50 characters.");
 
@@ -36,6 +36,14 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
 
             RuleFor(x => x.BranchId)
                 .ApplyIdRuleFor("Branch");
+
+            RuleFor(x => x)
+                .MustAsync(async (cmd, ct) =>
+                {
+                    var exists = await sportPriceRepository.IsExistAsync(cmd.BranchId, cmd.SportId, cmd.SubscriptionTypeId, ct);
+                    return exists;
+                })
+                .WithMessage("No price configured for this sport, branch, and plan combination.");
         }
     }
 }

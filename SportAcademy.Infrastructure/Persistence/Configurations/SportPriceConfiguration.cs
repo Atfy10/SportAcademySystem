@@ -16,6 +16,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
 
             //Table Name
             builder.ToTable("SportPrices");
+
             //Pk 
             builder.HasKey(sp => new { sp.SportId, sp.BranchId, sp.SubsTypeId });
 
@@ -31,7 +32,13 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasForeignKey(sp => sp.BranchId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-                // 1:M  SportSubscriptionType
+            // 1:M  SportBranch
+            builder.HasOne(sp => sp.SportBranch)
+                .WithMany()
+                .HasForeignKey(sp => new { sp.SportId, sp.BranchId })
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 1:M  SportSubscriptionType
                 builder.HasOne(sp => sp.SportSubscriptionType)
                     .WithMany(st => st.SportPrices)
                     .HasForeignKey(sp => new

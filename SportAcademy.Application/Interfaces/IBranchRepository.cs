@@ -21,5 +21,6 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<BranchCardDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default);
         Task<BranchStatsDto> GetBranchStatsAsync(int branchId, CancellationToken cancellationToken = default);
         Task<bool> ToggleIsActiveAsync(int id, CancellationToken cancellationToken = default);
+        Task<Branch?> GetByIdWithSportsAsync(int id, CancellationToken cancellationToken = default);
     }
 }

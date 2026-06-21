@@ -307,6 +307,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 {
                     Name = SubType.Basic,
                     DaysPerMonth = 8,
+                    NumberOfMonths = 1,
                     IsActive = true,
                     IsOffer = false
                 },
@@ -314,6 +315,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 {
                     Name = SubType.Silver,
                     DaysPerMonth = 12,
+                    NumberOfMonths = 1,
                     IsActive = true,
                     IsOffer = false
                 },
@@ -321,6 +323,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 {
                     Name = SubType.Gold,
                     DaysPerMonth = 16,
+                    NumberOfMonths = 1,
                     IsActive = true,
                     IsOffer = false
                 },
@@ -328,6 +331,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 {
                     Name = SubType.Platinum,
                     DaysPerMonth = 24,
+                    NumberOfMonths = 1,
                     IsActive = true,
                     IsOffer = true
                 },
@@ -335,6 +339,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 {
                     Name = SubType.Monthly,
                     DaysPerMonth = 20,
+                    NumberOfMonths = 1,
                     IsActive = true,
                     IsOffer = false
                 }

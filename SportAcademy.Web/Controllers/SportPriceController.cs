@@ -49,7 +49,7 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
-		[HttpGet("branches/{branchId}/sports/{sportId}/subType/{subscriptionTypeId}")]
+		[HttpGet("branches/{branchId}/sports/{sportId}/subType/{subsTypeId}")]
 		public async Task<IActionResult> GetSportPriceByKey(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(new GetSportPriceByKeyQuery(branchId, sportId, subsTypeId), cancellationToken);

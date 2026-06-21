@@ -189,13 +189,13 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    //var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
     await dbContext.Database.MigrateAsync();
 
-    await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
+    //await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
 
-    await DatabaseSeeder.SeedDatabase(dbContext, logger);
+    //await DatabaseSeeder.SeedDatabase(dbContext, logger);
 }
 
 app.UseHttpsRedirection();
@@ -215,5 +215,5 @@ if (app.Environment.IsProduction())
     app.MapGet("/health", () => Results.Ok("API Running"));
 }
 
-app.Run();
+await app.RunAsync();
 

@@ -40,6 +40,23 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return notification;
         }
 
+        public async Task AddRecipientsForGroupAsync(int notificationId, string groupName, CancellationToken ct = default)
+        {
+            var members = await _context.NotificationGroupMembers
+                .Where(m => m.GroupName == groupName)
+                .ToListAsync(ct);
+
+            var recipients = members.Select(m => new NotificationRecipient
+            {
+                NotificationId = notificationId,
+                UserId = m.UserId,
+                IsRead = false
+            });
+
+            await _context.NotificationRecipients.AddRangeAsync(recipients, ct);
+            await SaveChangesAsync(ct);
+        }
+
         public async Task<PagedData<NotificationRecipientDto>> GetUserNotificationsAsync(
             string userId, PageRequest page, CancellationToken ct = default)
         {

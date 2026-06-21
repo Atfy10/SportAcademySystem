@@ -7,6 +7,7 @@ namespace SportAcademy.Domain.Entities
         public int Id { get; set; }
         public SubType Name { get; set; }
         public int DaysPerMonth { get; set; }
+        public int NumberOfMonths { get; set; }
         public bool IsActive { get; set; } = true;
         public bool IsOffer { get; set; } = false;
 

@@ -10,5 +10,6 @@ namespace SportAcademy.Application.Interfaces
         Task EnrollmentUpdated(int enrollmentId);
         Task DashboardStatsUpdated();
         Task TraineeGroupUpdated(int traineeGroupId);
+        Task SubscriptionUpdated(int subscriptionId);
     }
 }

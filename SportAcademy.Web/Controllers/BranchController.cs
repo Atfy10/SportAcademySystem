@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.BranchCommands.AddSportToBranch;
 using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
 using SportAcademy.Application.Commands.BranchCommands.DeleteBranch;
+using SportAcademy.Application.Commands.BranchCommands.RemoveSportFromBranch;
 using SportAcademy.Application.Commands.BranchCommands.ToggleBranchStatus;
 using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
 using SportAcademy.Application.Queries.BranchQueries.GetBranchStats;
 using SportAcademy.Application.Queries.BranchQueries.GetBranchesCount;
+using SportAcademy.Application.Queries.BranchQueries.GetBranchesGroupedBySport;
 using SportAcademy.Application.Queries.BranchQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetPaginated;
 using SportAcademy.Application.Queries.BranchQueries.SearchBranches;
@@ -107,6 +109,13 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [HttpDelete("branch-sports")]
+        public async Task<IActionResult> RemoveSportFromBranch([FromQuery] int sportId, [FromQuery] int branchId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new RemoveSportFromBranchCommand(sportId, branchId), cancellationToken);
+            return Ok(result);
+        }
+
         [HttpGet("count")]
         public async Task<IActionResult> GetBranchesCount(CancellationToken cancellationToken)
         {
@@ -118,6 +127,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetBranchCapacity(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetBranchTotalCapacityQuery(id), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("by-sport/grouped")]
+        public async Task<IActionResult> GetBranchesGroupedBySport(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetBranchesGroupedBySportQuery(), ct);
             return Ok(result);
         }
     }
