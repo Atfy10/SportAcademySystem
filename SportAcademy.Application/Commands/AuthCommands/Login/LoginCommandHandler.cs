@@ -36,6 +36,9 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             var user = await _userRepository.GetByUsernameOrEmailAsync(request.UserNameOrEmail, cancellationToken)
                 ?? throw new UserLoginException();
 
+            if (user.IsBanned)
+                throw new UserLoginException();
+
             var isPasswordValid = await _userRepository.CheckPasswordAsync(user, request.Password);
             if (!isPasswordValid)
                 throw new UserLoginException();

@@ -19,5 +19,6 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<TraineeCardDto>> SearchAsync(string term, PageRequest page, CancellationToken ct = default);
         Task<PagedData<TraineeCardDto>> SearchByIdAsync(int id, PageRequest page, CancellationToken ct = default);
         Task<List<TraineeDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default);
+        Task RecalculateIsSubscribedAsync(int traineeId, CancellationToken cancellationToken = default);
     }
 }

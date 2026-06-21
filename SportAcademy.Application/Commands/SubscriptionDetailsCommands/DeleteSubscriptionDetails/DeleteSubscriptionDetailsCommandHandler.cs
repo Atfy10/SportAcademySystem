@@ -20,16 +20,19 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.DeleteSu
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
         private readonly IMapper _mapper;
         private readonly SubDetailsManagementService _subscriptionDetailsMangeService;
+        private readonly ITraineeRepository _traineeRepository;
 
         public DeleteSubscriptionDetailsCommandHandler(
             ISubscriptionDetailsRepository subscriptionDetailsRepository,
             SubDetailsManagementService managementService,
-            IMapper mapper
+            IMapper mapper,
+            ITraineeRepository traineeRepository
             )
         {
             _mapper = mapper;
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
             _subscriptionDetailsMangeService = managementService;
+            _traineeRepository = traineeRepository;
         }
 
         public async Task<Result<bool>> Handle(DeleteSubscriptionDetailsCommand request, CancellationToken cancellationToken)
@@ -41,9 +44,13 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.DeleteSu
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            var traineeId = subDetails.TraineeId;
+
             await _subscriptionDetailsRepository.DeleteAsync(subDetails, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            await _traineeRepository.RecalculateIsSubscribedAsync(traineeId, cancellationToken);
 
             return Result<bool>.Success(true, _operation);
         }

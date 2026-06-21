@@ -14,6 +14,19 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(u => u.IsBanned)
                 .HasDefaultValue(false);
 
+            builder.Property(u => u.Email)
+                .IsRequired();
+
+            builder.Property(u => u.PhoneNumber)
+                .HasMaxLength(12)
+                .IsRequired(false);
+
+            builder.HasIndex(u => u.Email)
+                .IsUnique();
+
+            builder.HasIndex(u => u.PhoneNumber)
+                .IsUnique();
+
             //  Relations
             //  1:1  Emp (Optional)
             builder.HasOne(u => u.Employee)

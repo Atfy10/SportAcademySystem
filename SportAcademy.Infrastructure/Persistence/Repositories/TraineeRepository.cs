@@ -368,6 +368,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Trainees
                 .Where(t => t.Id != 0)
                 .AnyAsync(t => t.Email.Value == email.ToLowerInvariant(), cancellationToken);
+
+        public async Task RecalculateIsSubscribedAsync(int traineeId, CancellationToken cancellationToken = default)
+        {
+            var hasActive = await _context.SubscriptionDetails
+                .AnyAsync(sd => sd.TraineeId == traineeId && sd.Status == SubscriptionStatus.Active && !sd.IsDeleted, cancellationToken);
+
+            await _context.Trainees
+                .Where(t => t.Id == traineeId)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsSubscribed, hasActive), cancellationToken);
+        }
     }
 
 }

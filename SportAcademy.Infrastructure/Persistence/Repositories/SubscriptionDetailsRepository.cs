@@ -99,6 +99,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(sd => sd.Status == SubscriptionStatus.Active && sd.EndDate < today)
                 .ExecuteUpdateAsync(s => s.SetProperty(sd => sd.Status, SubscriptionStatus.Expired), cancellationToken);
 
+            await _context.Trainees
+                .Where(t => t.IsSubscribed && !t.SubscriptionDetails.Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted))
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsSubscribed, false), cancellationToken);
+
             var total = await _context.SubscriptionDetails
                 .CountAsync(sd => !sd.IsDeleted, cancellationToken);
             var active = await _context.SubscriptionDetails

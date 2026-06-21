@@ -12,12 +12,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     public class UserRepository : BaseRepository<AppUser, string>, IUserRepository
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
 
         public UserRepository(ApplicationDbContext context,
-            UserManager<AppUser> userManager) : base(context)
+            UserManager<AppUser> userManager,
+            RoleManager<IdentityRole> roleManager) : base(context)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _context = context;
         }
 
@@ -62,6 +65,56 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return result;
         }
 
+        public async Task<(IdentityResult Result, List<string> NotFoundRoles)> AssignToRolesAsync(AppUser user, IEnumerable<string> roles, CancellationToken cancellationToken = default)
+        {
+            var notFoundRoles = new List<string>();
+
+            foreach (var role in roles)
+            {
+                if (!await _roleManager.RoleExistsAsync(role))
+                    notFoundRoles.Add(role);
+            }
+
+            if (notFoundRoles.Count > 0)
+                return (IdentityResult.Failed(new IdentityError
+                {
+                    Code = "RolesNotFound",
+                    Description = $"The following roles do not exist: {string.Join(", ", notFoundRoles)}"
+                }), notFoundRoles);
+
+            var result = await _userManager.AddToRolesAsync(user, roles);
+            return (result, notFoundRoles);
+        }
+
+        public async Task<(IdentityResult Result, List<string> NotFoundRoles)> ReplaceRolesAsync(AppUser user, IEnumerable<string> roles, CancellationToken cancellationToken = default)
+        {
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Count > 0)
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
+                if (!removeResult.Succeeded)
+                    return (removeResult, []);
+            }
+
+            var notFoundRoles = new List<string>();
+
+            foreach (var role in roles)
+            {
+                if (!await _roleManager.RoleExistsAsync(role))
+                    notFoundRoles.Add(role);
+            }
+
+            if (notFoundRoles.Count > 0)
+                return (IdentityResult.Failed(new IdentityError
+                {
+                    Code = "RolesNotFound",
+                    Description = $"The following roles do not exist: {string.Join(", ", notFoundRoles)}"
+                }), notFoundRoles);
+
+            var result = await _userManager.AddToRolesAsync(user, roles);
+            return (result, notFoundRoles);
+        }
+
         public override async Task UpdateAsync(AppUser entity, CancellationToken cancellationToken = default)
         {
             await _userManager.UpdateAsync(entity);
@@ -103,5 +156,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword)
             => await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+        public async Task<IdentityResult> AdminResetPasswordAsync(AppUser user, string newPassword)
+        {
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            return await _userManager.ResetPasswordAsync(user, token, newPassword);
+        }
     }
 }

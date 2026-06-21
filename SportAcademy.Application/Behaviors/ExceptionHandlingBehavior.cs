@@ -6,6 +6,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
+using SportAcademy.Domain.Exceptions.UserExceptions;
 using System.Reflection;
 using DomainValidationException = SportAcademy.Domain.Exceptions.GeneralExceptions.ValidationException;
 
@@ -167,6 +168,17 @@ namespace SportAcademy.Application.Behaviors
 
                 _logger.LogWarning(ex,
                     "AutoMapper mapping failed for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
+            }
+            catch (UserLoginException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Login failed for {RequestType}. Message: {Message}",
                     requestType,
                     ex.Message);
 

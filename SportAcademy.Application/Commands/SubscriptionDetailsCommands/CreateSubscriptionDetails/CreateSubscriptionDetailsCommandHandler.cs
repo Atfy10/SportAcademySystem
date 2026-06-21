@@ -15,17 +15,20 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         private readonly string _operation = OperationType.Add.ToString();
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
         private readonly SubDetailsManagementService _subscriptionDetailsMangeService;
+        private readonly ITraineeRepository _traineeRepository;
         private readonly IMapper _mapper;
         private readonly IPublisher _publisher;
 
         public CreateSubscriptionDetailsCommandHandler(
             ISubscriptionDetailsRepository subscriptionDetailsRepository,
             SubDetailsManagementService subscriptionDetailsMangeService,
+            ITraineeRepository traineeRepository,
             IMapper mapper,
             IPublisher publisher)
         {
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
             _subscriptionDetailsMangeService = subscriptionDetailsMangeService;
+            _traineeRepository = traineeRepository;
             _mapper = mapper;
             _publisher = publisher;
         }
@@ -49,6 +52,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             cancellationToken.ThrowIfCancellationRequested();
 
             await _subscriptionDetailsRepository.AddAsync(subDetails, cancellationToken);
+
+            await _traineeRepository.RecalculateIsSubscribedAsync(subDetails.TraineeId, cancellationToken);
 
             await _publisher.Publish(new SubscriptionCreatedEvent(subDetails.Id, subDetails.TraineeId), cancellationToken);
 

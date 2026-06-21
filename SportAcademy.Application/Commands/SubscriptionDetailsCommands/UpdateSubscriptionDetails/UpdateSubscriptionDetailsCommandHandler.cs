@@ -17,16 +17,19 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
         private readonly IMapper _mapper;
         private readonly SubDetailsManagementService _subscriptionDetailsMangeService;
+        private readonly ITraineeRepository _traineeRepository;
 
         public UpdateSubscriptionDetailsCommandHandler(
             ISubscriptionDetailsRepository subscriptionDetailsRepository,
             SubDetailsManagementService managementService,
-            IMapper mapper
+            IMapper mapper,
+            ITraineeRepository traineeRepository
             )
         {
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
             _subscriptionDetailsMangeService = managementService;
             _mapper = mapper;
+            _traineeRepository = traineeRepository;
         }
 
         public async Task<Result<SubscriptionDetailsDto>> Handle(UpdateSubscriptionDetailsCommand request, CancellationToken cancellationToken)
@@ -51,6 +54,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
             cancellationToken.ThrowIfCancellationRequested();
 
             await _subscriptionDetailsRepository.UpdateAsync(subDetails, cancellationToken);
+
+            await _traineeRepository.RecalculateIsSubscribedAsync(subDetails.TraineeId, cancellationToken);
 
             var subscriptionDetailsDto = _mapper.Map<SubscriptionDetailsDto>(subDetails);
 
