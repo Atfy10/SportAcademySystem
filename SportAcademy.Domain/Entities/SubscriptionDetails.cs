@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
@@ -7,7 +8,7 @@ namespace SportAcademy.Domain.Entities
         public int Id { get; set; }
         public required DateOnly StartDate { get; set; }
         public required DateOnly EndDate { get; set; }
-        public bool IsActive { get; set; } = true;
+        public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
         public required string PaymentNumber { get; set; }
         public int TraineeId { get; set; }
         public int SubscriptionTypeId { get; set; }

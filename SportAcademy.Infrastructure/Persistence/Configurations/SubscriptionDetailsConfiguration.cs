@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Extensions.Configuration;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,8 +32,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(sd => sd.EndDate)
                 .IsRequired();
 
-            builder.Property(sd => sd.IsActive)
-                .HasDefaultValue(true);
+            builder.Property(sd => sd.Status)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(SubscriptionStatus.Active);
 
             // Relationships
             // 1:1 Payment

@@ -15,6 +15,10 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
         public SubscriptionDetailsProfile()
         {
             CreateMap<SubscriptionDetails, SubscriptionDetailsDto>()
+                .ForMember(
+                    dest => dest.Id,
+                    opt => opt.MapFrom(src => src.Id)
+                )
                 .ForPath(
                     dest => dest.Trainee.Id,
                     opt => opt.MapFrom(src => src.Trainee.Id)
@@ -58,6 +62,10 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 .ForMember(
                     dest => dest.Price,
                     opt => opt.MapFrom(src => src.SportPrice.Price)
+                )
+                .ForMember(
+                    dest => dest.Status,
+                    opt => opt.MapFrom(src => src.Status)
                 )
                 .ReverseMap()
                 .ForAllMembers(

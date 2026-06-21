@@ -46,7 +46,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
 
             var isSubActive = SubscriptionDetailsService.IsSubscriptionActive(subDetails);
             if (!isSubActive)
-                subDetails.IsActive = false;
+                subDetails.Status = SubscriptionStatus.Expired;
 
             cancellationToken.ThrowIfCancellationRequested();
 

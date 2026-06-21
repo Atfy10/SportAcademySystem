@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
@@ -44,7 +45,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<List<SubscriptionDetails>?> GetActiveSubscriptionDetailsForTraineeAsync(int traineeId, CancellationToken cancellationToken = default)
             => await _context.SubscriptionDetails
-                .Where(sd => sd.TraineeId == traineeId && sd.IsActive)
+                .Where(sd => sd.TraineeId == traineeId && sd.Status == SubscriptionStatus.Active)
                 .ToListAsync(cancellationToken);
 
         private IQueryable<SubscriptionDetails> GetFullSubDetails()
@@ -68,10 +69,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
+        public async Task<List<SubscriptionDetails>?> GetLatestSubscriptionsAsync(CancellationToken cancellationToken = default)
+            => await GetFullSubDetails()
+                .GroupBy(sd => new { sd.TraineeId, sd.SportPrice.SportId, sd.SportPrice.BranchId })
+                .Select(g => g.OrderByDescending(sd => sd.Id).First())
+                .ToListAsync(cancellationToken);
+
         public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)
         {
             var query = _context.SubscriptionDetails
-                .Where(sd => sd.IsActive && !sd.IsDeleted);
+                .Where(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted);
 
             if (traineeId.HasValue)
             {
@@ -87,16 +94,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var in15Days = today.AddDays(15);
+
+            await _context.SubscriptionDetails
+                .Where(sd => sd.Status == SubscriptionStatus.Active && sd.EndDate < today)
+                .ExecuteUpdateAsync(s => s.SetProperty(sd => sd.Status, SubscriptionStatus.Expired), cancellationToken);
 
             var total = await _context.SubscriptionDetails
                 .CountAsync(sd => !sd.IsDeleted, cancellationToken);
             var active = await _context.SubscriptionDetails
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today, cancellationToken);
+                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.Status == SubscriptionStatus.Active, cancellationToken);
             var expired = await _context.SubscriptionDetails
                 .CountAsync(sd => !sd.IsDeleted && sd.EndDate < today, cancellationToken);
             var expiringSoon = await _context.SubscriptionDetails
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.EndDate <= in15Days, cancellationToken);
+                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.EndDate <= today.AddDays(15), cancellationToken);
 
             return new SubscriptionStatsDto
             {
