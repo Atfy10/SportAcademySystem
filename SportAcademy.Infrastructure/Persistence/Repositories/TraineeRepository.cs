@@ -194,11 +194,32 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             }
 
             string sql;
+            string countSql;
+            int totalCount;
 
             if (hasTerm && ftsAvailable)
             {
                 filterParams["term"] = fullTextTerm;
                 var filterClause = filterConditions.Count > 0 ? "AND " + string.Join(" AND ", filterConditions) : "";
+
+                var fromJoinWhere = $@"
+                    FROM Trainees t
+                    INNER JOIN CONTAINSTABLE(
+                        Trainees,
+                        (FirstName, LastName, Email),
+                        @term
+                    ) ft ON t.Id = ft.[KEY]
+                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
+                    LEFT JOIN Sports s ON st.SportId = s.Id
+                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
+                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
+                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
+                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
+                    LEFT JOIN Branches b ON t.BranchId = b.Id
+                    WHERE t.IsDeleted = 0
+                    {filterClause}";
+
+                countSql = $"SELECT COUNT(DISTINCT t.Id) {fromJoinWhere}";
                 sql = $@"
                     SELECT 
                         t.Id,
@@ -224,21 +245,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         ) AS SportSkills,
                         (ce.FirstName + ' ' + ce.LastName) AS CoachName,
                         b.Name AS BranchName
-                    FROM Trainees t
-                    INNER JOIN CONTAINSTABLE(
-                        Trainees,
-                        (FirstName, LastName, Email),
-                        @term
-                    ) ft ON t.Id = ft.[KEY]
-                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
-                    LEFT JOIN Sports s ON st.SportId = s.Id
-                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
-                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
-                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
-                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
-                    LEFT JOIN Branches b ON t.BranchId = b.Id
-                    WHERE t.IsDeleted = 0
-                    {filterClause}
+                    {fromJoinWhere}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate,
@@ -255,6 +262,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     filterParams["likeTerm"] = likeTerm;
                 }
                 var filterClause = filterConditions.Count > 0 ? "AND " + string.Join(" AND ", filterConditions) : "";
+
+                var fromJoinWhere = $@"
+                    FROM Trainees t
+                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
+                    LEFT JOIN Sports s ON st.SportId = s.Id
+                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
+                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
+                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
+                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
+                    LEFT JOIN Branches b ON t.BranchId = b.Id
+                    WHERE t.IsDeleted = 0
+                    {filterClause}";
+
+                countSql = $"SELECT COUNT(DISTINCT t.Id) {fromJoinWhere}";
                 sql = $@"
                     SELECT 
                         t.Id,
@@ -280,16 +301,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         ) AS SportSkills,
                         (ce.FirstName + ' ' + ce.LastName) AS CoachName,
                         b.Name AS BranchName
-                    FROM Trainees t
-                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
-                    LEFT JOIN Sports s ON st.SportId = s.Id
-                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
-                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
-                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
-                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
-                    LEFT JOIN Branches b ON t.BranchId = b.Id
-                    WHERE t.IsDeleted = 0
-                    {filterClause}
+                    {fromJoinWhere}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate,
@@ -297,11 +309,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     {BuildSortClause(sortBy, sortDir, "t.Id ASC")}
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
                 ";
-                filterParams["likeTerm"] = likeTerm;
             }
 
             var parameters = new DynamicParameters(filterParams);
-            var rows = await connection.QueryAsync<TraineeCardRow>(sql, parameters);
+            var multi = await connection.QueryMultipleAsync($"{countSql}; {sql}", parameters);
+            totalCount = await multi.ReadSingleAsync<int>();
+            var rows = (await multi.ReadAsync<TraineeCardRow>()).ToList();
 
             var trainees = rows.Select(r =>
             {
@@ -333,7 +346,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 );
             }).ToList();
 
-            return trainees.ToPagedData(page);
+            return new PagedData<TraineeCardDto>
+            {
+                Items = trainees,
+                TotalCount = totalCount,
+                Page = page.Page,
+                PageSize = page.PageSize
+            };
         }
 
         private static string BuildFullTextTerm(string term)
@@ -516,7 +535,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return sortColumn == null
                 ? $"ORDER BY {defaultSort}"
-                : $"ORDER BY {sortColumn} {dir}";
+                : $"ORDER BY {string.Join(", ", sortColumn.Split(',', StringSplitOptions.TrimEntries).Select(c => $"{c} {dir}"))}";
         }
     }
 
