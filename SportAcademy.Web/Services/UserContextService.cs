@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Application.Interfaces;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace SportAcademy.Web.Services
@@ -15,7 +16,7 @@ namespace SportAcademy.Web.Services
 
         public string UserId =>
             User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User?.FindFirstValue("sub")!;
+            ?? User?.FindFirstValue(JwtRegisteredClaimNames.Sub)!;
 
         public List<string> Role
         {

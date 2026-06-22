@@ -30,7 +30,6 @@ namespace SportAcademy.Infrastructure.Implementations
                 new(ClaimTypes.NameIdentifier, appUser.Id),
                 new(ClaimTypes.Name, appUser.UserName!),
                 new(JwtRegisteredClaimNames.Email, appUser.Email!),
-                new(ClaimTypes.Email, appUser.Email!),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
             foreach (var role in roles)

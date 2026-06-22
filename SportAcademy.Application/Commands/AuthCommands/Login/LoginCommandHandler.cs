@@ -46,7 +46,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             var roles = await _roleRepository.GetRolesForUser(user.Id, cancellationToken);
 
             var accessToken = _jwtTokenService.GenerateJwtToken(user, [.. roles]);
-            
+
             var plainRefreshToken = _jwtTokenService.GenerateRefreshToken();
             var refreshTokenHash = _jwtTokenService.HashToken(plainRefreshToken);
 

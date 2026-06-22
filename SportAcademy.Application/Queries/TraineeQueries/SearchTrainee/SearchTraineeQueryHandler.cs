@@ -33,6 +33,10 @@ namespace SportAcademy.Application.Queries.TraineeQueries.SearchTrainee
             var trainees = await _traineeRepository.SearchAsync(
                 request.Term,
                 request.Page,
+                request.Sport,
+                request.Status,
+                request.SortBy,
+                request.SortDir,
                 cancellationToken
             );
 

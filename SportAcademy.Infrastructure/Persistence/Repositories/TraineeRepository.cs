@@ -151,6 +151,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<TraineeCardDto>> SearchAsync(
             string term,
             PageRequest page,
+            string? sport = null,
+            string? status = null,
+            string? sortBy = null,
+            string? sortDir = null,
             CancellationToken ct = default)
         {
             var offset = (page.Page - 1) * page.PageSize;
@@ -164,12 +168,38 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             var ftsAvailable = await IsFtsAvailableAsync(connection, "Trainees");
 
-            string sql;
-            object parameters;
+            var hasTerm = !string.IsNullOrWhiteSpace(term);
+            var hasSport = !string.IsNullOrWhiteSpace(sport);
+            var hasStatus = !string.IsNullOrWhiteSpace(status);
 
-            if (ftsAvailable)
+            var filterConditions = new List<string>();
+            var filterParams = new Dictionary<string, object>
             {
-                sql = @"
+                ["offset"] = offset,
+                ["pageSize"] = page.PageSize
+            };
+
+            if (hasSport)
+            {
+                filterConditions.Add("s.Name = @sport");
+                filterParams["sport"] = sport!;
+            }
+
+            if (hasStatus)
+            {
+                if (status!.Equals("active", StringComparison.OrdinalIgnoreCase))
+                    filterConditions.Add("EXISTS (SELECT 1 FROM SubscriptionDetails sd WHERE sd.TraineeId = t.Id AND sd.Status = N'Active' AND sd.IsDeleted = 0)");
+                else
+                    filterConditions.Add("NOT EXISTS (SELECT 1 FROM SubscriptionDetails sd WHERE sd.TraineeId = t.Id AND sd.Status = N'Active' AND sd.IsDeleted = 0)");
+            }
+
+            string sql;
+
+            if (hasTerm && ftsAvailable)
+            {
+                filterParams["term"] = fullTextTerm;
+                var filterClause = filterConditions.Count > 0 ? "AND " + string.Join(" AND ", filterConditions) : "";
+                sql = $@"
                     SELECT 
                         t.Id,
                         t.TraineeCode AS Code,
@@ -208,18 +238,24 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
                     LEFT JOIN Branches b ON t.BranchId = b.Id
                     WHERE t.IsDeleted = 0
+                    {filterClause}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate,
                         ce.FirstName, ce.LastName, b.Name, ft.RANK
-                    ORDER BY ft.RANK DESC, t.Id ASC
+                    {BuildSortClause(sortBy, sortDir, "ft.RANK DESC, t.Id ASC")}
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
                 ";
-                parameters = new { term = fullTextTerm, offset, page.PageSize };
             }
             else
             {
-                sql = @"
+                if (hasTerm)
+                {
+                    filterConditions.Add($"(t.FirstName LIKE @likeTerm OR t.LastName LIKE @likeTerm OR t.Email LIKE @likeTerm)");
+                    filterParams["likeTerm"] = likeTerm;
+                }
+                var filterClause = filterConditions.Count > 0 ? "AND " + string.Join(" AND ", filterConditions) : "";
+                sql = $@"
                     SELECT 
                         t.Id,
                         t.TraineeCode AS Code,
@@ -251,21 +287,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
                     LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
                     LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
-                    LEFT JOIN Branches b ON tg.BranchId = b.Id
+                    LEFT JOIN Branches b ON t.BranchId = b.Id
                     WHERE t.IsDeleted = 0
-                      AND (t.FirstName LIKE @likeTerm
-                           OR t.LastName LIKE @likeTerm
-                           OR t.Email LIKE @likeTerm)
+                    {filterClause}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate,
                         ce.FirstName, ce.LastName, b.Name
-                    ORDER BY t.Id ASC
+                    {BuildSortClause(sortBy, sortDir, "t.Id ASC")}
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
                 ";
-                parameters = new { likeTerm, offset, page.PageSize };
+                filterParams["likeTerm"] = likeTerm;
             }
 
+            var parameters = new DynamicParameters(filterParams);
             var rows = await connection.QueryAsync<TraineeCardRow>(sql, parameters);
 
             var trainees = rows.Select(r =>
@@ -378,6 +413,111 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Trainees
                 .Where(t => t.Id != 0)
                 .AnyAsync(t => t.Email.Value == email.ToLowerInvariant(), cancellationToken);
+
+        public async Task<List<TraineeExportDto>> GetExportDataByIdsAsync(List<int> ids, CancellationToken ct = default)
+        {
+            var trainees = await _context.Trainees
+                .AsNoTracking()
+                .Where(t => ids.Contains(t.Id))
+                .Include(t => t.Branch)
+                .Include(t => t.Family)
+                .Include(t => t.NationalityCategory)
+                .Include(t => t.Sports).ThenInclude(st => st.Sport)
+                .Include(t => t.Enrollments).ThenInclude(e => e.TraineeGroup)
+                .Include(t => t.SubscriptionDetails)
+                    .ThenInclude(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.SportSubscriptionType)
+                    .ThenInclude(sst => sst.SubscriptionType)
+                .ToListAsync(ct);
+
+            return trainees.Select(t => new TraineeExportDto
+            {
+                Id = t.Id,
+                TraineeCode = t.TraineeCode.Value,
+                FirstName = t.FirstName,
+                LastName = t.LastName,
+                SSN = t.SSN,
+                Email = t.Email.Value,
+                PhoneNumber = t.PhoneNumber,
+                SecondPhoneNumber = t.SecondPhoneNumber,
+                BirthDate = t.BirthDate,
+                Age = t.GetAge(),
+                Gender = t.Gender.ToString(),
+                Nationality = t.Nationality.ToString(),
+                GuardianName = t.GuardianName,
+                ParentNumber = t.ParentNumber,
+                Street = t.Address.Street,
+                City = t.Address.City,
+                JoinDate = t.JoinDate.ToDateTime(TimeOnly.MinValue),
+                BranchName = t.Branch.Name,
+                FamilyId = t.FamilyId,
+                FamilyCode = t.Family.FamilyCode,
+                NationalityCategoryName = t.NationalityCategory.Name,
+                IsSubscribed = t.SubscriptionDetails.Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted),
+                CreatedAt = t.CreatedAt,
+                CreatedBy = t.CreatedBy,
+                SportNames = string.Join("|", t.Sports.Select(s => s.Sport.Name)),
+                SkillLevels = string.Join("|", t.Sports.Select(s => s.SkillLevel.ToString())),
+                LatestEnrollmentDate = t.Enrollments
+                    .OrderByDescending(e => e.EnrollmentDate)
+                    .Select(e => DateOnly.FromDateTime(e.EnrollmentDate))
+                    .Cast<DateOnly?>()
+                    .FirstOrDefault(),
+                LatestExpiryDate = t.Enrollments
+                    .OrderByDescending(e => e.EnrollmentDate)
+                    .Select(e => DateOnly.FromDateTime(e.ExpiryDate))
+                    .Cast<DateOnly?>()
+                    .FirstOrDefault(),
+                LatestSessionAllowed = t.Enrollments
+                    .OrderByDescending(e => e.EnrollmentDate)
+                    .Select(e => (int?)e.SessionAllowed)
+                    .FirstOrDefault(),
+                LatestSessionRemaining = t.Enrollments
+                    .OrderByDescending(e => e.EnrollmentDate)
+                    .Select(e => (int?)e.SessionRemaining)
+                    .FirstOrDefault(),
+                LatestGroupName = t.Enrollments
+                    .OrderByDescending(e => e.EnrollmentDate)
+                    .Select(e => e.TraineeGroup.Name)
+                    .FirstOrDefault(),
+                LatestSubscriptionStartDate = t.SubscriptionDetails
+                    .OrderByDescending(sd => sd.StartDate)
+                    .Select(sd => (DateOnly?)sd.StartDate)
+                    .FirstOrDefault(),
+                LatestSubscriptionEndDate = t.SubscriptionDetails
+                    .OrderByDescending(sd => sd.StartDate)
+                    .Select(sd => (DateOnly?)sd.EndDate)
+                    .FirstOrDefault(),
+                LatestSubscriptionType = t.SubscriptionDetails
+                    .OrderByDescending(sd => sd.StartDate)
+                    .Select(sd => sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString())
+                    .FirstOrDefault(),
+                LatestSubscriptionStatus = t.SubscriptionDetails
+                    .OrderByDescending(sd => sd.StartDate)
+                    .Select(sd => sd.Status.ToString())
+                    .FirstOrDefault(),
+            }).ToList();
+        }
+
+        private static string BuildSortClause(string? sortBy, string? sortDir, string defaultSort)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                return $"ORDER BY {defaultSort}";
+
+            var dir = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
+
+            var sortColumn = sortBy.ToLowerInvariant() switch
+            {
+                "name" => "t.FirstName, t.LastName",
+                "branch" => "b.Name",
+                "joined" => "t.JoinDate",
+                _ => null
+            };
+
+            return sortColumn == null
+                ? $"ORDER BY {defaultSort}"
+                : $"ORDER BY {sortColumn} {dir}";
+        }
     }
 
 }

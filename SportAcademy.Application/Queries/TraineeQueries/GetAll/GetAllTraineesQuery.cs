@@ -5,8 +5,13 @@ using SportAcademy.Application.DTOs.TraineeDtos;
 
 namespace SportAcademy.Application.Queries.TraineeQueries.GetAll
 {
-    public record GetAllTraineesQuery(PageRequest Page)
-        : IRequest<Result<PagedData<TraineeCardDto>>>, IPaginatedRequest
+    public record GetAllTraineesQuery(
+        PageRequest Page,
+        string? Sport = null,
+        string? Status = null,
+        string? SortBy = null,
+        string? SortDir = null
+    ) : IRequest<Result<PagedData<TraineeCardDto>>>, IPaginatedRequest
     {
         public PageRequest Page { get; set; } = Page;
     }
