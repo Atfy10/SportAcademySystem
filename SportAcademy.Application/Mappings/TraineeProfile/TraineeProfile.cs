@@ -4,6 +4,7 @@ using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.DTOs.TraineeDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Mappings.TraineeProfile
@@ -22,45 +23,34 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ConvertUsing(st => st.Sport.Name);
 
             CreateMap<Trainee, TraineeCardDto>()
-                .ConstructUsing(src => new TraineeCardDto(
-                    src.Id,
-                    src.TraineeCode.Value,
-                    src.FirstName,
-                    src.LastName,
-                    GetAge(src),
-                    src.Email.ToString(),
-                    src.PhoneNumber,
-                    src.JoinDate.ToDateTime(TimeOnly.MinValue),
-                    src.IsSubscribed,
-                    src.Sports.Select(st => new TraineeSportSkillDto
+                .ForCtorParam("Code", o => o.MapFrom(s => s.TraineeCode.Value))
+                .ForCtorParam("Age", o => o.MapFrom(s => GetAge(s)))
+                .ForCtorParam("Email", o => o.MapFrom(s => s.Email.ToString()))
+                .ForCtorParam("JoinDate", o => o.MapFrom(s => s.JoinDate.ToDateTime(TimeOnly.MinValue)))
+                .ForCtorParam("IsSubscribed", o => o.MapFrom(s => s.SubscriptionDetails
+                    .Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted)))
+                .ForCtorParam("SportSkills", o => o.MapFrom(s => s.Sports
+                    .Select(st => new TraineeSportSkillDto
                     {
                         SkillLevel = st.SkillLevel,
                         SportName = st.Sport.Name
-                    }).ToList(),
-                    src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.FirstName +
-                        " " + src.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.LastName,
-                    src.Branch.Name ?? string.Empty
-                ))
+                    }).ToList()))
+                .ForCtorParam("CoachName", o => o.MapFrom(s =>
+                    s.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.FirstName +
+                    " " + s.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.LastName))
+                .ForCtorParam("BranchName", o => o.MapFrom(s => s.Branch.Name ?? string.Empty))
                 .ReverseMap();
 
             CreateMap<Trainee, TraineeDetailsDto>()
-                .ConstructUsing(src => new TraineeDetailsDto(
-                    src.Id,
-                    src.TraineeCode.Value,
-                    src.FirstName,
-                    src.LastName,
-                    src.Email.ToString(),
-                    src.PhoneNumber,
-                    src.ParentNumber,
-                    src.GuardianName,
-                    src.Branch.Name ?? string.Empty,
-                    src.BirthDate,
-                    src.Gender.ToString(),
-                    src.Sports.Select(s => s.Sport.Name).ToList(),
-                    src.IsSubscribed,
-                    src.Enrollments.Count,
-                    src.JoinDate.ToDateTime(TimeOnly.MinValue)
-                ));
+                .ForCtorParam("Code", o => o.MapFrom(s => s.TraineeCode.Value))
+                .ForCtorParam("Email", o => o.MapFrom(s => s.Email.ToString()))
+                .ForCtorParam("BranchName", o => o.MapFrom(s => s.Branch.Name ?? string.Empty))
+                .ForCtorParam("Gender", o => o.MapFrom(s => s.Gender.ToString()))
+                .ForCtorParam("Sports", o => o.MapFrom(s => s.Sports.Select(sport => sport.Sport.Name).ToList()))
+                .ForCtorParam("IsSubscribed", o => o.MapFrom(s => s.SubscriptionDetails
+                    .Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted)))
+                .ForCtorParam("EnrollmentCount", o => o.MapFrom(s => s.Enrollments.Count))
+                .ForCtorParam("JoinDate", o => o.MapFrom(s => s.JoinDate.ToDateTime(TimeOnly.MinValue)));
 
             CreateMap<CreateTraineeCommand, Trainee>()
                 .ForMember(dest => dest.Address,

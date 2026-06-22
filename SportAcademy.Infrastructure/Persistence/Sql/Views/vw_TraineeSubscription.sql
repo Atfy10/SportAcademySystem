@@ -2,7 +2,10 @@ CREATE OR ALTER VIEW dbo.vw_TraineeSubscription AS
 SELECT
     t.Id,
     t.FirstName,
-    t.IsSubscribed,
+    CASE WHEN EXISTS (
+        SELECT 1 FROM SubscriptionDetails sd
+        WHERE sd.TraineeId = t.Id AND sd.Status = N'Active' AND sd.IsDeleted = 0
+    ) THEN 1 ELSE 0 END AS IsSubscribed,
     t.GuardianName,
     SD.StartDate,
     SD.EndDate,

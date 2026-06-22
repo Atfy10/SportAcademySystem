@@ -134,7 +134,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             trainee.Id = await CreateTraineeId(trainee);
             trainee.TraineeCode = TraineeCode.FromString(code);
-            trainee.IsSubscribed = false;
             trainee.FamilyId = familyId;
 
             cancellationToken.ThrowIfCancellationRequested();

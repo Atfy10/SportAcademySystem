@@ -55,7 +55,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     t.Email,
                     t.PhoneNumber,
                     t.JoinDate,
-                    t.IsSubscribed,
+                    IsSubscribed = t.SubscriptionDetails.Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted),
 
                     SportName = ts.Sport.Name,
                     ts.SkillLevel,
@@ -127,7 +127,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<int> GetActiveTraineesCount(CancellationToken cancellationToken = default)
-            => await _context.Trainees.CountAsync(t => t.IsSubscribed, cancellationToken);
+            => await _context.SubscriptionDetails
+                .Where(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted)
+                .Select(sd => sd.TraineeId)
+                .Distinct()
+                .CountAsync(cancellationToken);
 
         private static async Task<bool> IsFtsAvailableAsync(IDbConnection connection, string tableName)
         {
@@ -175,7 +179,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         t.Email,
                         t.PhoneNumber,
                         t.JoinDate,
-                        t.IsSubscribed,
+                        CASE WHEN EXISTS (
+                            SELECT 1 FROM SubscriptionDetails sd
+                            WHERE sd.TraineeId = t.Id AND sd.Status = N'Active' AND sd.IsDeleted = 0
+                        ) THEN 1 ELSE 0 END AS IsSubscribed,
                         (SELECT 
                                 s.Name AS SportName,
                                 st.SkillLevel AS SkillLevel
@@ -203,7 +210,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     WHERE t.IsDeleted = 0
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
-                        t.PhoneNumber, t.JoinDate, t.IsSubscribed,
+                        t.PhoneNumber, t.JoinDate,
                         ce.FirstName, ce.LastName, b.Name, ft.RANK
                     ORDER BY ft.RANK DESC, t.Id ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
@@ -222,7 +229,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         t.Email,
                         t.PhoneNumber,
                         t.JoinDate,
-                        t.IsSubscribed,
+                        CASE WHEN EXISTS (
+                            SELECT 1 FROM SubscriptionDetails sd
+                            WHERE sd.TraineeId = t.Id AND sd.Status = N'Active' AND sd.IsDeleted = 0
+                        ) THEN 1 ELSE 0 END AS IsSubscribed,
                         (SELECT 
                                 s.Name AS SportName,
                                 st.SkillLevel AS SkillLevel
@@ -248,7 +258,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                            OR t.Email LIKE @likeTerm)
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
-                        t.PhoneNumber, t.JoinDate, t.IsSubscribed,
+                        t.PhoneNumber, t.JoinDate,
                         ce.FirstName, ce.LastName, b.Name
                     ORDER BY t.Id ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
@@ -368,16 +378,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Trainees
                 .Where(t => t.Id != 0)
                 .AnyAsync(t => t.Email.Value == email.ToLowerInvariant(), cancellationToken);
-
-        public async Task RecalculateIsSubscribedAsync(int traineeId, CancellationToken cancellationToken = default)
-        {
-            var hasActive = await _context.SubscriptionDetails
-                .AnyAsync(sd => sd.TraineeId == traineeId && sd.Status == SubscriptionStatus.Active && !sd.IsDeleted, cancellationToken);
-
-            await _context.Trainees
-                .Where(t => t.Id == traineeId)
-                .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsSubscribed, hasActive), cancellationToken);
-        }
     }
 
 }

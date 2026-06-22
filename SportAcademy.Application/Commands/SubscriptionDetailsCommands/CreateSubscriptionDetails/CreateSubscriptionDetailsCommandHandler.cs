@@ -53,8 +53,6 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
 
             await _subscriptionDetailsRepository.AddAsync(subDetails, cancellationToken);
 
-            await _traineeRepository.RecalculateIsSubscribedAsync(subDetails.TraineeId, cancellationToken);
-
             await _publisher.Publish(new SubscriptionCreatedEvent(subDetails.Id, subDetails.TraineeId), cancellationToken);
 
             return Result<int>.Success(subDetails.Id, _operation);

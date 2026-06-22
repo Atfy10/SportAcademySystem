@@ -11,14 +11,11 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.SuspendS
     {
         private readonly string _operation = OperationType.Update.ToString();
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
-        private readonly ITraineeRepository _traineeRepository;
 
         public SuspendSubscriptionCommandHandler(
-            ISubscriptionDetailsRepository subscriptionDetailsRepository,
-            ITraineeRepository traineeRepository)
+            ISubscriptionDetailsRepository subscriptionDetailsRepository)
         {
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
-            _traineeRepository = traineeRepository;
         }
 
         public async Task<Result<bool>> Handle(SuspendSubscriptionCommand request, CancellationToken cancellationToken)
@@ -33,13 +30,9 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.SuspendS
 
             subDetails.Status = SubscriptionStatus.Suspended;
 
-            var traineeId = subDetails.TraineeId;
-
             await _subscriptionDetailsRepository.UpdateAsync(subDetails, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
-
-            await _traineeRepository.RecalculateIsSubscribedAsync(traineeId, cancellationToken);
 
             return Result<bool>.Success(true, _operation);
         }

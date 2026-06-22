@@ -1,5 +1,6 @@
 ﻿using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SportAcademy.Domain.Entities
 {
@@ -8,7 +9,6 @@ namespace SportAcademy.Domain.Entities
         public int Id { get; set; }
         public TraineeCode TraineeCode { get; set; } = null!;
         public DateOnly JoinDate { get; set; }
-        public bool IsSubscribed { get; set; }
         public string? ParentNumber { get; set; }
         public string? GuardianName { get; set; }
         public string? AppUserId { get; set; }
@@ -25,6 +25,9 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<SportTrainee> Sports { get; set; } = [];
         public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
         public virtual ICollection<SubscriptionDetails> SubscriptionDetails { get; set; } = [];
+
+        [NotMapped]
+        public bool IsSubscribed => SubscriptionDetails?.Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted) ?? false;
 
         public AgeCategory AgeCategory
         {

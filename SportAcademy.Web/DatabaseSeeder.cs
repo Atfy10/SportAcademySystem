@@ -517,7 +517,6 @@ namespace SportAcademy.Infrastructure.Seeders
                 .RuleFor(t => t.Email, f => Email.Create(f.Internet.Email()))
                 .RuleFor(t => t.PhoneNumber, f => $"{f.Random.Number(5, 9)}{f.Random.Number(1000000, 9999999)}")
                 .RuleFor(t => t.Nationality, f => f.PickRandom<Nationality>())
-                .RuleFor(t => t.IsSubscribed, f => f.Random.Bool(0.7f))
                 .RuleFor(t => t.ParentNumber, (f, t) =>
                 {
                     var age = DateTime.Now.Year - t.BirthDate.Year;
@@ -642,7 +641,7 @@ namespace SportAcademy.Infrastructure.Seeders
         {
             var subscriptionDetails = new List<SubscriptionDetails>();
             var random = new Random();
-            var subscribedTrainees = trainees.Where(t => t.IsSubscribed).ToList();
+            var subscribedTrainees = trainees.Where(t => random.NextDouble() < 0.7).ToList();
 
             for (int i = 0; i < subscribedTrainees.Count && i < payments.Count; i++)
             {

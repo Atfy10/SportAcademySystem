@@ -64,8 +64,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasDefaultValueSql("GETDATE()")
                 .IsRequired();
 
-            builder.Property(t => t.IsSubscribed)
-                .IsRequired();
+            builder.Ignore(t => t.IsSubscribed);
 
             builder.Property(t => t.ParentNumber)
                 .HasMaxLength(13);
