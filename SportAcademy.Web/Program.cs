@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using SportAcademy.Application;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
@@ -22,6 +23,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, cfg) =>
+    cfg.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
@@ -105,7 +109,8 @@ builder.Services.AddCors(options =>
             "https://localhost:8080",
             "http://localhost:8080",
             "https://localhost:8081",
-            "http://localhost:8081"
+            "http://localhost:8081",
+            "https://localhost:44306"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -189,13 +194,11 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    //var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
     await dbContext.Database.MigrateAsync();
 
     //await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
 
-    //await DatabaseSeeder.SeedDatabase(dbContext, logger);
+    //await DatabaseSeeder.SeedDatabase(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Program>>());
 }
 
 app.UseHttpsRedirection();
@@ -215,5 +218,17 @@ if (app.Environment.IsProduction())
     app.MapGet("/health", () => Results.Ok("API Running"));
 }
 
-await app.RunAsync();
+try
+{
+    Log.Information("Starting SportAcademy API");
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "SportAcademy API terminated unexpectedly");
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
 
