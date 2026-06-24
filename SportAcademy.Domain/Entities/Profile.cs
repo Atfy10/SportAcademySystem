@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Entities
 {
     public class Profile
     {
-        public required string AppUserId { get; set; }
+        public required Guid AppUserId { get; set; }
         public string? ProfileImageUrl { get; set; }
         public string? Bio { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -29,6 +29,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             return await _context.RefreshTokens
                 .Include(rt => rt.User)
+                    .ThenInclude(u => u.UserRoles)
+                        .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, ct);
         }
 
@@ -46,14 +48,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(string userId, CancellationToken ct = default)
+        public async Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(Guid userId, CancellationToken ct = default)
         {
             return await _context.RefreshTokens
                 .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiresAt > DateTime.UtcNow)
                 .ToListAsync(ct);
         }
 
-        public async Task RevokeAllUserTokensAsync(string userId, CancellationToken ct = default)
+        public async Task RevokeAllUserTokensAsync(Guid userId, CancellationToken ct = default)
         {
             var tokens = await _context.RefreshTokens
                 .Where(rt => rt.UserId == userId && !rt.IsRevoked)

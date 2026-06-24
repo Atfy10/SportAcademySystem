@@ -18,7 +18,7 @@ namespace SportAcademy.Application.DTOs.TraineeDtos
         public string? ParentNumber { get; init; }
         public string? GuardianName { get; init; }
         public DateOnly BirthDate { get; init; }
-        public string? AppUserId { get; init; }
+        public Guid? AppUserId { get; init; }
         public int BranchId { get; init; }
         public HashSet<SportDto> Sports { get; init; } = [];
         public List<EnrollmentDto> Enrollments { get; init; } = [];

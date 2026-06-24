@@ -21,7 +21,7 @@ namespace SportAcademy.Application.Queries.NotificationQueries.GetUnreadCount
 
         public async Task<Result<int>> Handle(GetUnreadCountQuery request, CancellationToken cancellationToken)
         {
-            var count = await _notificationRepository.GetUnreadCountAsync(_userContext.UserId, cancellationToken);
+            var count = await _notificationRepository.GetUnreadCountAsync(Guid.Parse(_userContext.UserId), cancellationToken);
             return Result<int>.Success(count, _operation);
         }
     }

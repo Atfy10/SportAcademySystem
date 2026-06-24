@@ -15,7 +15,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         public string? GuardianName { get; init; }
         public DateOnly BirthDate { get; init; }
         public Gender Gender { get; init; }
-        public string? AppUserId { get; init; }
+        public Guid? AppUserId { get; init; }
         public int BranchId { get; init; }
         public HashSet<int> SportIds { get; init; } = [];
 

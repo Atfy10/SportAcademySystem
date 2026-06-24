@@ -4,7 +4,7 @@ public class VideoAnalysis
 {
     public Guid Id { get; set; }
 
-    public string UserId { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
 
     /// <summary>
     /// JSON string containing the pose landmarks data from MediaPipe

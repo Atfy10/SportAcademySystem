@@ -9,5 +9,5 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.UserQueries.GetById
 {
-    public record GetUserByIdQuery(string Id) : IRequest<Result<AppUserDto>>;
+    public record GetUserByIdQuery(Guid Id) : IRequest<Result<AppUserDto>>;
 }

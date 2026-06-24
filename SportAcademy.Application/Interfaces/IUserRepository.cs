@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Interfaces
 {
-    public interface IUserRepository : IBaseRepository<AppUser, string>
+    public interface IUserRepository : IBaseRepository<AppUser, Guid>
     {
         Task<IReadOnlyList<string?>> GetUserRoleAsync(AppUser user, CancellationToken ct = default);
         Task<IdentityResult> Register(AppUser user, string password);

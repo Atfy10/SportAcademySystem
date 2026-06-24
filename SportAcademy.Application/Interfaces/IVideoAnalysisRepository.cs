@@ -4,5 +4,5 @@ namespace SportAcademy.Application.Interfaces;
 
 public interface IVideoAnalysisRepository : IBaseRepository<VideoAnalysis, Guid>
 {
-    Task<List<VideoAnalysis>> GetByUserIdAsync(string userId, CancellationToken cancellationToken);
+    Task<List<VideoAnalysis>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken);
 }

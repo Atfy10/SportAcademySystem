@@ -8,5 +8,5 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.UserCommands.UserDelete
 {
-    public record DeleteUserCommand(string Id) : IRequest<Result<bool>>;
+    public record DeleteUserCommand(Guid Id) : IRequest<Result<bool>>;
 }

@@ -20,6 +20,6 @@ namespace SportAcademy.Application.DTOs.EmployeeDtos
         string? SecondPhoneNumber,
         Position Position,
         int BranchId,
-        string AppUserId
+        Guid AppUserId
     );
 }

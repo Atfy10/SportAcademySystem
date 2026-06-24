@@ -3,7 +3,7 @@ using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class AppUser : IdentityUser, IAuditableEntity, ISoftDeletable
+    public class AppUser : IdentityUser<Guid>, IAuditableEntity, ISoftDeletable
     {
         public bool IsBanned { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -18,6 +18,7 @@ namespace SportAcademy.Domain.Entities
         public virtual Employee? Employee { get; set; }
         public virtual Trainee? Trainee { get; set; }
         public virtual Profile Profile { get; set; } = null!;
+        public ICollection<AppUserRole> UserRoles { get; set; } = [];
         public virtual ICollection<NotificationRecipient> Notifications { get; set; } = [];
         public virtual ICollection<NotificationGroupMember> GroupMemberships { get; set; } = [];
     }

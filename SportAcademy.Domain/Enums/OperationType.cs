@@ -18,6 +18,7 @@ namespace SportAcademy.Domain.Enums
         Logout,
         Validation,
         RefreshToken,
-        RevokeToken
+        RevokeToken,
+        VerifyPassword
     }
 }

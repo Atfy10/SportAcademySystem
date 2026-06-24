@@ -27,7 +27,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog((context, cfg) =>
     cfg.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
+builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
     // Example password settings (optional)
     options.Password.RequiredLength = 4;
@@ -186,19 +186,19 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        //await dbContext.Database.MigrateAsync();
+
+        //await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
+
+        //await DatabaseSeeder.SeedDatabase(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Program>>());
+    }
+
     app.UseSwagger();
     app.UseSwaggerUI();
-}
-
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-    await dbContext.Database.MigrateAsync();
-
-    //await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
-
-    //await DatabaseSeeder.SeedDatabase(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Program>>());
 }
 
 app.UseHttpsRedirection();

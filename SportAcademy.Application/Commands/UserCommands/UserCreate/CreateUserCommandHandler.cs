@@ -34,7 +34,7 @@ namespace SportAcademy.Application.Commands.UserCommands.UserCreate
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
             await _userRepository.AddAsync(user, cancellationToken);
-            return Result<string>.Success(user.Id, _operationType);
+            return Result<string>.Success(user.Id.ToString(), _operationType);
         }
     }
 }

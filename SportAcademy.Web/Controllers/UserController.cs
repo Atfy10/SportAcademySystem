@@ -42,7 +42,7 @@ namespace SportAcademy.Web.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> Details(string id)
         {
-            var user = await _mediator.Send(new GetUserByIdQuery(id));
+            var user = await _mediator.Send(new GetUserByIdQuery(Guid.Parse(id)));
             return Ok(user);
         }
 

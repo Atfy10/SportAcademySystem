@@ -11,7 +11,7 @@ namespace SportAcademy.Domain.Entities
         
         public string TokenHash { get; set; } = string.Empty;
         
-        public string UserId { get; set; } = string.Empty;
+        public Guid UserId { get; set; }
         
         public DateTime ExpiresAt { get; set; }
         

@@ -10,6 +10,7 @@ using SportAcademy.Application.Commands.AuthCommands.RefreshToken;
 using SportAcademy.Application.Commands.AuthCommands.Register;
 using SportAcademy.Application.Commands.AuthCommands.RevokeToken;
 using SportAcademy.Application.Commands.AuthCommands.ToggleUserActive;
+using SportAcademy.Application.Commands.AuthCommands.VerifyPassword;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Queries.AuthQueries.GetAllRoles;
 using SportAcademy.Application.Queries.AuthQueries.GetMyProfile;
@@ -60,7 +61,7 @@ namespace SportAcademy.Web.Controllers
         [HttpPost("users/{userId}/toggle-active")]
         public async Task<IActionResult> ToggleUserActive([FromRoute] string userId, CancellationToken ct)
         {
-            var result = await _mediator.Send(new ToggleUserActiveCommand(userId), ct);
+            var result = await _mediator.Send(new ToggleUserActiveCommand(Guid.Parse(userId)), ct);
             return Ok(result);
         }
 
@@ -68,7 +69,7 @@ namespace SportAcademy.Web.Controllers
         [HttpPost("users/{userId}/roles")]
         public async Task<IActionResult> AssignRoles([FromRoute] string userId, [FromBody] List<string> roles, CancellationToken ct)
         {
-            var result = await _mediator.Send(new AssignRolesToUserCommand(userId, roles), ct);
+            var result = await _mediator.Send(new AssignRolesToUserCommand(Guid.Parse(userId), roles), ct);
             return Ok(result);
         }
 
@@ -79,7 +80,7 @@ namespace SportAcademy.Web.Controllers
             [FromBody] AdminResetUserPasswordRequest request,
             CancellationToken ct)
         {
-            var cmd = new AdminResetUserPasswordCommand(userId, request.AdminPassword, request.NewPassword);
+            var cmd = new AdminResetUserPasswordCommand(Guid.Parse(userId), request.AdminPassword, request.NewPassword);
             var result = await _mediator.Send(cmd, ct);
             return Ok(result);
         }
@@ -95,6 +96,14 @@ namespace SportAcademy.Web.Controllers
         [Authorize]
         [HttpPost("change-password")]
         public async Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpPost("verify-password")]
+        public async Task<IActionResult> VerifyPassword([FromBody] VerifyPasswordCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);

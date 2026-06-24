@@ -23,7 +23,7 @@ public class AdminResetUserPasswordCommandHandler : IRequestHandler<AdminResetUs
 
     public async Task<Result<bool>> Handle(AdminResetUserPasswordCommand request, CancellationToken cancellationToken)
     {
-        var admin = await _userRepository.GetByIdAsync(_userContext.UserId, cancellationToken)
+        var admin = await _userRepository.GetByIdAsync(Guid.Parse(_userContext.UserId), cancellationToken)
             ?? throw new IdNotFoundException(nameof(AppUser), _userContext.UserId);
 
         var passwordValid = await _userRepository.CheckPasswordAsync(admin, request.AdminPassword);

@@ -26,8 +26,8 @@ namespace SportAcademy.Infrastructure.Implementations
         {
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, appUser.Id),
-                new(ClaimTypes.NameIdentifier, appUser.Id),
+                new(JwtRegisteredClaimNames.Sub, appUser.Id.ToString()),
+                new(ClaimTypes.NameIdentifier, appUser.Id.ToString()),
                 new(ClaimTypes.Name, appUser.UserName!),
                 new(JwtRegisteredClaimNames.Email, appUser.Email!),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
@@ -102,7 +102,8 @@ namespace SportAcademy.Infrastructure.Implementations
             if (storedToken.User is null)
                 return null;
 
-            var newAccessToken = GenerateJwtToken(storedToken.User);
+            var roles = storedToken.User.UserRoles.Select(r => r.Role.Name ?? "").ToArray();
+            var newAccessToken = GenerateJwtToken(storedToken.User, roles);
             var newRefreshToken = GenerateRefreshToken();
             var newRefreshTokenHash = HashToken(newRefreshToken);
 

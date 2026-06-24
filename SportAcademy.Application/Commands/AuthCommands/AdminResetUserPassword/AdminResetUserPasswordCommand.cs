@@ -4,7 +4,7 @@ using SportAcademy.Application.Common.Result;
 namespace SportAcademy.Application.Commands.AuthCommands.AdminResetUserPassword;
 
 public record AdminResetUserPasswordCommand(
-    string UserId,
+    Guid UserId,
     string AdminPassword,
     string NewPassword
 ) : IRequest<Result<bool>>;

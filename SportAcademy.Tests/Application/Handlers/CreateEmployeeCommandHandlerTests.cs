@@ -65,7 +65,7 @@ public class CreateEmployeeCommandHandlerTests
 
     private static AppUser CreateMappedAppUser(string userId = "test-user-123") => new()
     {
-        Id = userId,
+        Id = new Guid(userId),
         UserName = "mohammad.al-sabah",
         Email = "mohammad.sabah@academy.com",
         IsBanned = false,

@@ -12,7 +12,7 @@ namespace SportAcademy.Application.Interfaces
         Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken ct = default);
         Task<RefreshToken?> GetByIdAsync(int id, CancellationToken ct = default);
         Task UpdateAsync(RefreshToken token, CancellationToken ct = default);
-        Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(string userId, CancellationToken ct = default);
-        Task RevokeAllUserTokensAsync(string userId, CancellationToken ct = default);
+        Task<List<RefreshToken>> GetActiveTokensByUserIdAsync(Guid userId, CancellationToken ct = default);
+        Task RevokeAllUserTokensAsync(Guid userId, CancellationToken ct = default);
     }
 }

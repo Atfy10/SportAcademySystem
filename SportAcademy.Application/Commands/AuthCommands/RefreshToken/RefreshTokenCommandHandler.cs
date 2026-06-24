@@ -20,7 +20,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.RefreshToken
         {
             var result = await _jwtTokenService.ValidateAndRefreshTokenAsync(request.RefreshToken, ct);
 
-            if (result == null)
+            if (result is null)
             {
                 return Result<AuthResponseDto>.Failure(_operation, "Invalid or expired refresh token", 401);
             }

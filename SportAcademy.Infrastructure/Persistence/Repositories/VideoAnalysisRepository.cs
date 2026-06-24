@@ -15,7 +15,7 @@ public class VideoAnalysisRepository : BaseRepository<VideoAnalysis, Guid>, IVid
     }
 
     public async Task<List<VideoAnalysis>> GetByUserIdAsync(
-        string userId, CancellationToken cancellationToken)
+        Guid userId, CancellationToken cancellationToken)
     {
         return await _context.VideoAnalyses
             .AsNoTracking()

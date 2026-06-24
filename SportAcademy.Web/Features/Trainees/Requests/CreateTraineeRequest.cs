@@ -15,7 +15,7 @@ public record CreateTraineeRequest(
     string? GuardianName,
     DateOnly BirthDate,
     Gender Gender,
-    string? AppUserId,
+    Guid? AppUserId,
     int BranchId,
     HashSet<int> SportIds,
     // Person base class fields:

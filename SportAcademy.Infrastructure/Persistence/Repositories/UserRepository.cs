@@ -9,15 +9,15 @@ using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
-    public class UserRepository : BaseRepository<AppUser, string>, IUserRepository
+    public class UserRepository : BaseRepository<AppUser, Guid>, IUserRepository
     {
         private readonly UserManager<AppUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly RoleManager<AppRole> _roleManager;
         private readonly ApplicationDbContext _context;
 
         public UserRepository(ApplicationDbContext context,
             UserManager<AppUser> userManager,
-            RoleManager<IdentityRole> roleManager) : base(context)
+            RoleManager<AppRole> roleManager) : base(context)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -125,14 +125,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             await _userManager.DeleteAsync(entity);
         }
 
-        public override async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+        public override async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             await _userManager.DeleteAsync(await GetByIdAsync(id, cancellationToken)
                 ?? throw new IdNotFoundException(EntityTypes.User.DisplayName(), id.ToString()));
         }
 
-        public override async Task<AppUser?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
-            => await _userManager.FindByIdAsync(id);
+        public override async Task<AppUser?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+            => await _userManager.FindByIdAsync(id.ToString());
 
         public override async Task<List<AppUser>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _userManager.Users.ToListAsync(cancellationToken);

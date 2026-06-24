@@ -22,7 +22,7 @@ public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Resul
 
     public async Task<Result<MyProfileDto>> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(_userContext.UserId, cancellationToken)
+        var user = await _userRepository.GetByIdAsync(Guid.Parse(_userContext.UserId), cancellationToken)
             ?? throw new IdNotFoundException(nameof(AppUser), _userContext.UserId);
 
         var roles = await _userRepository.GetUserRoleAsync(user, cancellationToken);

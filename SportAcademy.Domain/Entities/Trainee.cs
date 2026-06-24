@@ -11,7 +11,7 @@ namespace SportAcademy.Domain.Entities
         public DateOnly JoinDate { get; set; }
         public string? ParentNumber { get; set; }
         public string? GuardianName { get; set; }
-        public string? AppUserId { get; set; }
+        public Guid? AppUserId { get; set; }
         public int BranchId { get; set; }
         public int FamilyId { get; set; }
         public int NationalityCategoryId { get; set; }

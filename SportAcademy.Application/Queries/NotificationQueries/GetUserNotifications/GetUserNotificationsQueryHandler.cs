@@ -24,7 +24,7 @@ namespace SportAcademy.Application.Queries.NotificationQueries.GetUserNotificati
         public async Task<Result<PagedData<NotificationRecipientDto>>> Handle(GetUserNotificationsQuery request, CancellationToken cancellationToken)
         {
             var data = await _notificationRepository.GetUserNotificationsAsync(
-                _userContext.UserId,
+                Guid.Parse(_userContext.UserId),
                 request.PageRequest,
                 cancellationToken);
 

@@ -30,7 +30,7 @@ public class GetUserAnalysesQueryHandler
         CancellationToken cancellationToken)
     {
         var entities = await _repository.GetByUserIdAsync(
-            _userContext.UserId, cancellationToken);
+            Guid.Parse(_userContext.UserId), cancellationToken);
 
         var dtos = _mapper.Map<List<VideoAnalysisResultDto>>(entities);
         return Result<List<VideoAnalysisResultDto>>.Success(dtos, _operation);

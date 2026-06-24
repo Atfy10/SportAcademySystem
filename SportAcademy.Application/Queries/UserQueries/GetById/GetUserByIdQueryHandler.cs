@@ -22,9 +22,6 @@ namespace SportAcademy.Application.Queries.UserQueries.GetById
         }
         public async Task<Result<AppUserDto>> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(request.Id))
-                throw new ArgumentOutOfRangeException(nameof(request.Id));
-
             var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new UserNotFoundException();
 

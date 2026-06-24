@@ -2,7 +2,7 @@
 
 public record AppUserCardDto
 {
-    public string Id { get; init; } = default!;
+    public Guid Id { get; init; }
 
     public string UserName { get; init; } = default!;
 

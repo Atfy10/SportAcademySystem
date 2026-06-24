@@ -8,20 +8,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
     public class RoleRepository : IRoleRepository
     {
-        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly RoleManager<AppRole> _roleManager;
         private readonly UserManager<AppUser> _userManager;
 
         public RoleRepository(
-            RoleManager<IdentityRole> roleManager,
+            RoleManager<AppRole> roleManager,
             UserManager<AppUser> userManager)
         {
             _roleManager = roleManager;
             _userManager = userManager;
         }
 
-        public async Task<List<string>> GetRolesForUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<string>> GetRolesForUser(Guid userId, CancellationToken cancellationToken = default)
         {
-            var user = await _userManager.FindByIdAsync(userId)
+            var user = await _userManager.FindByIdAsync(userId.ToString())
                 ?? throw new IdNotFoundException(nameof(AppUser), userId);
 
             var roles = await _userManager.GetRolesAsync(user);

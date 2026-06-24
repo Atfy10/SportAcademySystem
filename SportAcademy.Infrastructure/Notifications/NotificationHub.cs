@@ -24,7 +24,7 @@ namespace SportAcademy.Infrastructure.Notifications
 
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var userId = Context.UserIdentifier;
+            var userId = Guid.Parse(Context.UserIdentifier!);
 
             var isAdmin = await db.UserRoles
                 .Where(ur => ur.UserId == userId)

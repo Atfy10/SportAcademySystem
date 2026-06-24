@@ -84,12 +84,8 @@ namespace SportAcademy.Infrastructure.Seeders
             await context.SaveChangesAsync();
             logger.LogInformation("   ✔ Sports seeded successfully.");
 
-            // 3. Subscription Types
-            logger.LogInformation("3️⃣ Seeding SubscriptionTypes...");
-            var subscriptionTypes = GenerateSubscriptionTypes();
-            await context.SubscriptionTypes.AddRangeAsync(subscriptionTypes);
-            await context.SaveChangesAsync();
-            logger.LogInformation("   ✔ SubscriptionTypes seeded successfully.");
+            // 3. Subscription Types (seeded via HasData in SubscriptionTypeConfiguration)
+            var subscriptionTypes = GetSubscriptionTypeReferences();
 
             // 4. SportBranch
             logger.LogInformation("4️⃣ Seeding SportBranches...");
@@ -299,50 +295,15 @@ namespace SportAcademy.Infrastructure.Seeders
             return sports;
         }
 
-        private static List<SubscriptionType> GenerateSubscriptionTypes()
+        private static List<SubscriptionType> GetSubscriptionTypeReferences()
         {
             return new List<SubscriptionType>
             {
-                new SubscriptionType
-                {
-                    Name = SubType.Basic,
-                    DaysPerMonth = 8,
-                    NumberOfMonths = 1,
-                    IsActive = true,
-                    IsOffer = false
-                },
-                new SubscriptionType
-                {
-                    Name = SubType.Silver,
-                    DaysPerMonth = 12,
-                    NumberOfMonths = 1,
-                    IsActive = true,
-                    IsOffer = false
-                },
-                new SubscriptionType
-                {
-                    Name = SubType.Gold,
-                    DaysPerMonth = 16,
-                    NumberOfMonths = 1,
-                    IsActive = true,
-                    IsOffer = false
-                },
-                new SubscriptionType
-                {
-                    Name = SubType.Platinum,
-                    DaysPerMonth = 24,
-                    NumberOfMonths = 1,
-                    IsActive = true,
-                    IsOffer = true
-                },
-                new SubscriptionType
-                {
-                    Name = SubType.Monthly,
-                    DaysPerMonth = 20,
-                    NumberOfMonths = 1,
-                    IsActive = true,
-                    IsOffer = false
-                }
+                new() { Id = 1, Name = SubType.Basic, DaysPerMonth = 8, NumberOfMonths = 1, IsActive = true, IsOffer = false },
+                new() { Id = 2, Name = SubType.Silver, DaysPerMonth = 12, NumberOfMonths = 1, IsActive = true, IsOffer = false },
+                new() { Id = 3, Name = SubType.Gold, DaysPerMonth = 16, NumberOfMonths = 1, IsActive = true, IsOffer = false },
+                new() { Id = 4, Name = SubType.Platinum, DaysPerMonth = 24, NumberOfMonths = 1, IsActive = true, IsOffer = true },
+                new() { Id = 5, Name = SubType.Monthly, DaysPerMonth = 20, NumberOfMonths = 1, IsActive = true, IsOffer = false }
             };
         }
 

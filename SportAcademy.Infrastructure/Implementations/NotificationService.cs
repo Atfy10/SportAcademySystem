@@ -53,7 +53,7 @@ namespace SportAcademy.Infrastructure.Implementations
                     Type = type,
                     ActionUrl = actionUrl
                 },
-                userId);
+                Guid.Parse(userId));
 
             await _hubContext.Clients.User(userId).ReceiveNotification(new NotificationRecipientDto
             {

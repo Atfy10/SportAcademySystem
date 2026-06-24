@@ -28,6 +28,11 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsUnique();
 
             //  Relations
+            builder.HasMany(u => u.UserRoles)
+                .WithOne(ur => ur.User)
+                .HasForeignKey(ur => ur.UserId)
+                .IsRequired();
+
             //  1:1  Emp (Optional)
             builder.HasOne(u => u.Employee)
                 .WithOne(e => e.AppUser)

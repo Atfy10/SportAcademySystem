@@ -20,7 +20,7 @@ namespace SportAcademy.Application.Commands.NotificationCommands.MarkNotificatio
         {
             return await _notificationRepository.MarkAsReadAsync(
                 request.NotificationId,
-                _userContext.UserId,
+                Guid.Parse(_userContext.UserId),
                 cancellationToken);
         }
     }

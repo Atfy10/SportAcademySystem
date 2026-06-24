@@ -9,16 +9,16 @@ namespace SportAcademy.Domain.Exceptions.BaseExceptions
     public class IdNotFoundException : Exception
     {
         private const string _message = "{entity} with ID: {id} not found.";
-        public IdNotFoundException(string entity, string id)
+        public IdNotFoundException(string entity, object id)
             : base($"{FormatMessage(entity, id)}")
         {
         }
-        public IdNotFoundException(string entity, string id, Exception inner)
+        public IdNotFoundException(string entity, object id, Exception inner)
             : base(FormatMessage(entity, id), inner)
         {
         }
 
-        private static string FormatMessage(string entity, string id) =>
-            _message.Replace("{entity}", entity).Replace("{id}", id);
+        private static string FormatMessage(string entity, object id) =>
+            _message.Replace("{entity}", entity).Replace("{id}", id.ToString() ?? "");
     }
 }

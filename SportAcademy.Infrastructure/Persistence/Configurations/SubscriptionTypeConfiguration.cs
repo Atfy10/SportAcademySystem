@@ -1,11 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SportAcademy.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
 {
@@ -40,6 +36,54 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .WithOne(sst => sst.SubscriptionType)
                 .HasForeignKey(sst => sst.SubscriptionTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasData(
+                new SubscriptionType
+                {
+                    Id = 1,
+                    Name = SubType.Basic,
+                    DaysPerMonth = 8,
+                    NumberOfMonths = 1,
+                    IsActive = true,
+                    IsOffer = false
+                },
+                new SubscriptionType
+                {
+                    Id = 2,
+                    Name = SubType.Silver,
+                    DaysPerMonth = 12,
+                    NumberOfMonths = 1,
+                    IsActive = true,
+                    IsOffer = false
+                },
+                new SubscriptionType
+                {
+                    Id = 3,
+                    Name = SubType.Gold,
+                    DaysPerMonth = 16,
+                    NumberOfMonths = 1,
+                    IsActive = true,
+                    IsOffer = false
+                },
+                new SubscriptionType
+                {
+                    Id = 4,
+                    Name = SubType.Platinum,
+                    DaysPerMonth = 24,
+                    NumberOfMonths = 1,
+                    IsActive = true,
+                    IsOffer = true
+                },
+                new SubscriptionType
+                {
+                    Id = 5,
+                    Name = SubType.Monthly,
+                    DaysPerMonth = 20,
+                    NumberOfMonths = 1,
+                    IsActive = true,
+                    IsOffer = false
+                }
+            );
         }
     }
 }

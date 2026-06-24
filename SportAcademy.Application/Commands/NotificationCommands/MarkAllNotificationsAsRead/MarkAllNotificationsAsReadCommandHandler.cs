@@ -18,7 +18,7 @@ namespace SportAcademy.Application.Commands.NotificationCommands.MarkAllNotifica
 
         public async Task<int> Handle(MarkAllNotificationsAsReadCommand request, CancellationToken cancellationToken)
         {
-            return await _notificationRepository.MarkAllAsReadAsync(_userContext.UserId, cancellationToken);
+            return await _notificationRepository.MarkAllAsReadAsync(Guid.Parse(_userContext.UserId), cancellationToken);
         }
     }
 }

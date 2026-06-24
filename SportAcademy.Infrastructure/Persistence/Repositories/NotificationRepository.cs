@@ -26,7 +26,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _mapper = mapper;
         }
 
-        public async Task<Notification> AddWithRecipient(Notification notification, string userId)
+        public async Task<Notification> AddWithRecipient(Notification notification, Guid userId)
         {
             await _context.Notifications.AddAsync(notification);
             await _context.NotificationRecipients.AddAsync(new NotificationRecipient
@@ -58,7 +58,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<PagedData<NotificationRecipientDto>> GetUserNotificationsAsync(
-            string userId, PageRequest page, CancellationToken ct = default)
+            Guid userId, PageRequest page, CancellationToken ct = default)
         {
             var query = _context.NotificationRecipients
                 .Where(r => r.UserId == userId)
@@ -69,7 +69,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return await query.ToPagedDataAsync(page, ct);
         }
 
-        public async Task<int> GetUnreadCountAsync(string userId, CancellationToken ct = default)
+        public async Task<int> GetUnreadCountAsync(Guid userId, CancellationToken ct = default)
         {
             return await _context.NotificationRecipients
                 .AsNoTracking()
@@ -77,7 +77,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .CountAsync(ct);
         }
 
-        public async Task<bool> MarkAsReadAsync(int notificationId, string userId, CancellationToken ct = default)
+        public async Task<bool> MarkAsReadAsync(int notificationId, Guid userId, CancellationToken ct = default)
         {
             var recipient = await _context.NotificationRecipients
                 .FirstOrDefaultAsync(r => r.NotificationId == notificationId && r.UserId == userId, ct);
@@ -89,7 +89,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return true;
         }
 
-        public async Task<int> MarkAllAsReadAsync(string userId, CancellationToken ct = default)
+        public async Task<int> MarkAllAsReadAsync(Guid userId, CancellationToken ct = default)
         {
             return await _context.NotificationRecipients
                 .Where(r => r.UserId == userId && !r.IsRead)

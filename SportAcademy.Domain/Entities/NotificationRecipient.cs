@@ -10,7 +10,7 @@ namespace SportAcademy.Domain.Entities
     {
         public bool IsRead { get; set; }
         public int NotificationId { get; set; }
-        public required string UserId { get; set; }
+        public required Guid UserId { get; set; }
 
         // Navigation Property
         public virtual AppUser User { get; set; } = null!;
