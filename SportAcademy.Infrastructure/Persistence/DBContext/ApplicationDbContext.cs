@@ -187,7 +187,6 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                         .Property<string?>("SecondPhoneNumber")
                         .HasMaxLength(12);
                 }
-
             }
 
             base.OnModelCreating(modelBuilder);

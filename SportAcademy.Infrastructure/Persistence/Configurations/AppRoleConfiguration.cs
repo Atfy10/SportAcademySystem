@@ -24,22 +24,29 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 new AppRole
                 {
                     Id = Guid.Parse("00000002-0000-0000-0000-000000000002"),
+                    Name = "Owner",
+                    NormalizedName = "OWNER",
+                    ConcurrencyStamp = ""
+                },
+                new AppRole
+                {
+                    Id = Guid.Parse("00000003-0000-0000-0000-000000000003"),
                     Name = "Admin",
                     NormalizedName = "ADMIN",
                     ConcurrencyStamp = ""
                 },
                 new AppRole
                 {
-                    Id = Guid.Parse("00000003-0000-0000-0000-000000000003"),
-                    Name = "User",
-                    NormalizedName = "USER",
+                    Id = Guid.Parse("00000004-0000-0000-0000-000000000004"),
+                    Name = "Admin",
+                    NormalizedName = "ADMIN",
                     ConcurrencyStamp = ""
                 },
                 new AppRole
                 {
-                    Id = Guid.Parse("00000004-0000-0000-0000-000000000004"),
-                    Name = "Manager",
-                    NormalizedName = "MANAGER",
+                    Id = Guid.Parse("00000005-0000-0000-0000-000000000005"),
+                    Name = "User",
+                    NormalizedName = "USER",
                     ConcurrencyStamp = ""
                 }
             );
