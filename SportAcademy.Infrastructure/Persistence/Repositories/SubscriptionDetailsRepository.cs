@@ -59,7 +59,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .ThenInclude(sp => sp.SportSubscriptionType)
                         .ThenInclude(sst => sst.Sport)
                 .Include(sd => sd.SportPrice)
-                    .ThenInclude(sp => sp.Branch)
+                    .ThenInclude(sp => sp.SportBranch)
+                        .ThenInclude(sb => sb.Branch)
                 .Include(sd => sd.Payment)
                     .ThenInclude(p => p.Branch);
 

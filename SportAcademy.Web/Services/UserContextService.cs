@@ -13,10 +13,32 @@ namespace SportAcademy.Web.Services
         {
             _accessor = accessor;
         }
+        
+        public Guid? UserId
+        {
+            get
+            {
+                var claim = User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                    ?? User?.FindFirstValue(JwtRegisteredClaimNames.Sub)!;
 
-        public string UserId =>
-            User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User?.FindFirstValue(JwtRegisteredClaimNames.Sub)!;
+                return claim is null
+                    ? null
+                    : Guid.Parse(claim);
+            }
+        }
+
+        public Guid? TenantId
+        {
+            get
+            {
+                var claim = User?.FindFirstValue("tenant_id")
+                    ?? User?.FindFirstValue(JwtRegisteredClaimNames.Sub)!;
+
+                return claim is null
+                    ? null
+                    : Guid.Parse(claim);
+            }
+        }
 
         public List<string> Role
         {

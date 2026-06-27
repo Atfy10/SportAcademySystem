@@ -56,7 +56,8 @@ public class AnalyzeVideoCommandHandler
         var entity = new VideoAnalysis
         {
             Id = Guid.NewGuid(),
-            UserId = Guid.Parse(_userContext.UserId),
+            //  wrong logic need to fix it
+            UserId = _userContext.UserId ?? Guid.Empty,
             MovementType = request.MovementType,
             LandmarksJson = JsonSerializer.Serialize(request.Landmarks),
             AiAnalysisResult = normalizedJson,

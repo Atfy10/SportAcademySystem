@@ -16,7 +16,6 @@ using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Seeders;
-using SportAcademy.Web;
 using SportAcademy.Web.Services;
 using System.Text;
 using System.Text.Json;
@@ -46,6 +45,8 @@ builder.Services.AddScoped<AuditingInterceptor>();
 
 builder.Services.AddScoped<SoftDeleteInterceptor>();
 
+builder.Services.AddScoped<TenantSaveChangesInterceptor>();
+
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
@@ -53,7 +54,8 @@ builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 
     var auditingInterceptor = sp.GetRequiredService<AuditingInterceptor>();
     var softDeleteInterceptor = sp.GetRequiredService<SoftDeleteInterceptor>();
-    options.AddInterceptors(auditingInterceptor, softDeleteInterceptor);
+    var tenantSaveChangesInterceptor = sp.GetRequiredService<TenantSaveChangesInterceptor>();
+    options.AddInterceptors(auditingInterceptor, softDeleteInterceptor, tenantSaveChangesInterceptor);
 });
 
 var jwtKey = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
@@ -177,8 +179,6 @@ builder.Services.AddSwaggerGen(c =>
 
 //builder.Services.AddOpenApi();
 
-builder.Services.AddUserSeeder();
-
 builder.Services.AddSignalR();
 
 var app = builder.Build();
@@ -192,9 +192,8 @@ if (app.Environment.IsDevelopment())
 
         //await dbContext.Database.MigrateAsync();
 
-        //await DatabaseInitializer.SeedDatabase(scope.ServiceProvider);
-
-        //await DatabaseSeeder.SeedDatabase(dbContext, scope.ServiceProvider.GetRequiredService<ILogger<Program>>());
+        var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
+        await seeder.SeedAsync();
     }
 
     app.UseSwagger();

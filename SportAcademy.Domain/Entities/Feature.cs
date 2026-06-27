@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using SportAcademy.Domain.Entities.Tenants;
 
 namespace SportAcademy.Domain.Entities
 {
@@ -9,10 +8,10 @@ namespace SportAcademy.Domain.Entities
         public required string Name { get; set; }
         public required string DisplayName { get; set; }
         public string? Description { get; set; }
-        public bool IsEnabled { get; set; }
         public DateTime CreatedAt { get; set; }
 
         // Navigation properties
-        public virtual ICollection<ClientFeature> ClientFeatures { get; set; } = [];
+        public virtual ICollection<TenantFeature> TenantFeatures { get; set; } = [];
+        public virtual ICollection<SubscriptionPlanFeature> SubscriptionPlans { get; set; } = [];
     }
 }

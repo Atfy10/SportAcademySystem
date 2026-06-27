@@ -14,7 +14,7 @@ public class MarkNotificationAsReadCommandHandlerTests
 
     public MarkNotificationAsReadCommandHandlerTests()
     {
-        _userContextMock.Setup(s => s.UserId).Returns(TestUserId.ToString());
+        _userContextMock.Setup(s => s.UserId).Returns(TestUserId);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
 
     public MarkAllNotificationsAsReadCommandHandlerTests()
     {
-        _userContextMock.Setup(s => s.UserId).Returns(TestUserId.ToString());
+        _userContextMock.Setup(s => s.UserId).Returns(TestUserId);
     }
 
     [Fact]

@@ -11,6 +11,11 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             // TableName 
             builder.ToTable("AppUsers");
 
+            builder.HasKey(x => x.Id);
+
+            builder.Property(u => u.IsPasswordReset)
+                .HasDefaultValue(false);
+
             builder.Property(u => u.IsBanned)
                 .HasDefaultValue(false);
 
@@ -18,20 +23,14 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             builder.Property(u => u.PhoneNumber)
-                .HasMaxLength(12)
+                .HasMaxLength(20)
                 .IsRequired(false);
 
-            builder.HasIndex(u => u.Email)
+            builder.HasIndex(u => new { u.TenantId, u.Email })
                 .IsUnique();
 
-            builder.HasIndex(u => u.PhoneNumber)
+            builder.HasIndex(u => new { u.TenantId, u.PhoneNumber })
                 .IsUnique();
-
-            //  Relations
-            builder.HasMany(u => u.UserRoles)
-                .WithOne(ur => ur.User)
-                .HasForeignKey(ur => ur.UserId)
-                .IsRequired();
 
             //  1:1  Emp (Optional)
             builder.HasOne(u => u.Employee)

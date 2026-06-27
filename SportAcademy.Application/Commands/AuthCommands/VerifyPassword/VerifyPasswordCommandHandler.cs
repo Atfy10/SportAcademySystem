@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -21,8 +22,12 @@ public class VerifyPasswordCommandHandler : IRequestHandler<VerifyPasswordComman
 
     public async Task<Result<bool>> Handle(VerifyPasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(Guid.Parse(_userContext.UserId), cancellationToken)
-            ?? throw new IdNotFoundException(nameof(AppUser), _userContext.UserId);
+        var userId = _userContext.UserId;
+        if (userId is null)
+            return Result<bool>.Failure(_operation, "User ID is not available in the context.", 400);
+
+        var user = await _userRepository.GetByIdAsync(userId.Value, cancellationToken)
+            ?? throw new IdNotFoundException(nameof(AppUser), userId);
 
         var isValid = await _userRepository.CheckPasswordAsync(user, request.Password);
         if (!isValid)

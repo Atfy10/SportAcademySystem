@@ -12,13 +12,11 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
 {
     public class SoftDeleteInterceptor : SaveChangesInterceptor
     {
-        private readonly IUserContextService _contextService;
         private readonly string _defaultUser;
 
         public SoftDeleteInterceptor(IUserContextService contextService)
         {
-            _contextService = contextService;
-            _defaultUser = _contextService.UserId ?? "Admin";
+            _defaultUser = contextService.UserId?.ToString() ?? "System";
         }
 
         public override InterceptionResult<int> SavingChanges(

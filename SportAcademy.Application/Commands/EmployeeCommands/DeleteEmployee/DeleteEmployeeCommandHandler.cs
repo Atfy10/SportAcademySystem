@@ -28,7 +28,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            employee.MarkAsDeleted(_userContextService.UserId ?? "System");
+            employee.MarkAsDeleted(_userContextService.UserId.ToString() ?? "System");
             await _employeeRepository.UpdateAsync(employee, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();

@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class Payment : IAuditableEntity
+    public class Payment : ITenantScoped, IAuditableEntity
     {
         public required string PaymentNumber { get; set; }
         public PaymentMethod Method { get; set; }
@@ -19,6 +20,9 @@ namespace SportAcademy.Domain.Entities
         public string? CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? UpdatedBy { get; set; }
+
+        public Guid TenantId { get; set; }
+        public Tenant Tenant { get; set; } = null!;
 
         // Navigation Property
         public virtual Branch Branch { get; set; } = null!;

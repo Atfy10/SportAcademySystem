@@ -27,7 +27,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.DeleteCoach
             var coach = await _coachRepository.GetByIdAsync(request.EmployeeId, ct)
                 ?? throw new IdNotFoundException(nameof(Coach), request.EmployeeId.ToString());
 
-            coach.MarkAsDeleted(_userContextService.UserId ?? "System");
+            coach.MarkAsDeleted(_userContextService.UserId.ToString() ?? "System");
             await _coachRepository.UpdateAsync(coach, ct);
 
             return Result<bool>.Success(true, _operationType);

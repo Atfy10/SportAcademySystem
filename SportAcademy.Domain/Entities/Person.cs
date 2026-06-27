@@ -1,10 +1,11 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class Person : IAuditableEntity, ISoftDeletable
+    public class Person : ITenantScoped, IAuditableEntity, ISoftDeletable
     {
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
@@ -23,5 +24,8 @@ namespace SportAcademy.Domain.Entities
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
         public string? DeletedBy { get; set; }
+
+        public Guid TenantId { get; set; }
+        public Tenant Tenant { get; set; } = null!;
     }
 }

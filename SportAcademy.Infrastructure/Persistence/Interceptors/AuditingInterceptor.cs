@@ -3,23 +3,16 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Infrastructure.Persistence.Interceptors
 {
     public class AuditingInterceptor : SaveChangesInterceptor
     {
-        private readonly IUserContextService _contextService;
         private readonly string _defaultUser;
 
         public AuditingInterceptor(IUserContextService contextService)
         {
-            _contextService = contextService;
-            _defaultUser = _contextService.UserId ?? "Admin";
+            _defaultUser = contextService.UserId?.ToString() ?? "System";
         }
 
         override public InterceptionResult<int> SavingChanges(

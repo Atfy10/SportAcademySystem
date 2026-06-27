@@ -1,4 +1,6 @@
-﻿using System;
+﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Tenants;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class Branch
+    public class Branch : ITenantScoped
     {
         public int Id { get; set; }
         public required string Name { get; set; }
@@ -17,6 +19,9 @@ namespace SportAcademy.Domain.Entities
         public required string CoX { get; set; }
         public required string CoY { get; set; }
         public bool IsActive { get; set; }
+
+        public Guid TenantId { get; set; }
+        public Tenant Tenant { get; set; } = null!;
 
         // Navigation properties
         public virtual ICollection<Trainee> Trainees { get; set; } = [];

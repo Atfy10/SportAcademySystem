@@ -1,4 +1,6 @@
-﻿using SportAcademy.Domain.Enums;
+﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Tenants;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {

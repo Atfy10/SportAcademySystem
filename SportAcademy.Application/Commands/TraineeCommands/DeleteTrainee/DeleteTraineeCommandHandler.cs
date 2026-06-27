@@ -29,7 +29,7 @@ namespace SportAcademy.Application.Commands.Trainees.DeleteTrainee
             var trainee = await _traineeRepository.GetFullTrainee(request.Id, cancellationToken)
                 ?? throw new TraineeNotFoundException(request.Id.ToString());
 
-            trainee.MarkAsDeleted(_userContextService.UserId ?? "System");
+            trainee.MarkAsDeleted(_userContextService.UserId.ToString() ?? "System");
 
             await _traineeRepository.UpdateAsync(trainee, cancellationToken);
 

@@ -4,6 +4,7 @@
     {
         public int SportId { get; set; }
         public int BranchId { get; set; }
+        public bool IsAvailable { get; set; } = true;
 
         // Navigation Property
         public virtual Sport Sport { get; set; } = null!;

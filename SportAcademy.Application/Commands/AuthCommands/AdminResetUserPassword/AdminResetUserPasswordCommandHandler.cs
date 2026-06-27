@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -23,8 +24,12 @@ public class AdminResetUserPasswordCommandHandler : IRequestHandler<AdminResetUs
 
     public async Task<Result<bool>> Handle(AdminResetUserPasswordCommand request, CancellationToken cancellationToken)
     {
-        var admin = await _userRepository.GetByIdAsync(Guid.Parse(_userContext.UserId), cancellationToken)
-            ?? throw new IdNotFoundException(nameof(AppUser), _userContext.UserId);
+        var userId = _userContext.UserId;
+        if (userId is null)
+            return Result<bool>.Failure(_operation, "User ID is not available in the context.", 400);
+
+        var admin = await _userRepository.GetByIdAsync(userId.Value, cancellationToken)
+            ?? throw new IdNotFoundException(nameof(AppUser), userId);
 
         var passwordValid = await _userRepository.CheckPasswordAsync(admin, request.AdminPassword);
         if (!passwordValid)

@@ -8,7 +8,8 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface IUserContextService
     {
-        public string UserId { get; }
+        public Guid? UserId { get; }
+        public Guid? TenantId { get; }
         public List<string> Role { get; }
         public bool IsAuthenticated { get; }
     }

@@ -1,10 +1,11 @@
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
-using Microsoft.AspNetCore.Identity;
 
 namespace SportAcademy.Application.Commands.AuthCommands.ChangePassword;
 
@@ -20,10 +21,14 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         _userContext = userContext;
     }
 
-        public async Task<Result<bool>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(Guid.Parse(_userContext.UserId), cancellationToken)
-            ?? throw new IdNotFoundException(nameof(AppUser), _userContext.UserId);
+        var userId = _userContext.UserId;
+        if (userId is null)
+            return Result<bool>.Failure(_operation, "User ID is not available in the context.", 400);
+
+        var user = await _userRepository.GetByIdAsync(userId.Value, cancellationToken)
+            ?? throw new IdNotFoundException(nameof(AppUser), userId);
 
         var result = await _userRepository.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
         if (!result.Succeeded)

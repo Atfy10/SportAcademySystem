@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
 using SportAcademy.Infrastructure.Persistence.Views.AdminViews;
@@ -16,7 +17,7 @@ using System.Reflection;
 
 namespace SportAcademy.Infrastructure.Persistence.DBContext
 {
-    public class ApplicationDbContext 
+    public class ApplicationDbContext
         : IdentityDbContext<AppUser, AppRole, Guid, IdentityUserClaim<Guid>, AppUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -51,6 +52,13 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
         public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<TenantFeature> TenantFeatures { get; set; }
+        public DbSet<TenantProfile> TenantProfiles { get; set; }
+        public DbSet<TenantSettings> TenantSettings { get; set; }
+        public DbSet<TenantSubscription> TenantSubscriptions { get; set; }
+        public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
+        public DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
 
         //  View for reporting purposes
         public DbSet<AdminBasicViews> AdminBasicViews { get; set; }
@@ -70,6 +78,23 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                .Where(e => typeof(ITenantScoped).IsAssignableFrom(e.ClrType) && e.ClrType != typeof(Tenant)))
+            {
+                var tenantFk = entityType.GetForeignKeys()
+                    .FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Tenant)
+                        && fk.Properties.Any(p => p.Name == "TenantId"));
+
+                if (tenantFk?.PrincipalToDependent != null)
+                    continue;
+
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasOne(typeof(Tenant), "Tenant")
+                    .WithMany()
+                    .HasForeignKey("TenantId")
+                    .OnDelete(DeleteBehavior.Restrict);
+            }
 
             modelBuilder.HasSequence<int>("FamilyCodeSequence")
                 .StartsAt(1)
@@ -190,6 +215,20 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
             }
 
             base.OnModelCreating(modelBuilder);
+
+            // Identity base configures AppUserRole relationships without navigation names,
+            // causing EF Core to discover AppUser/AppRole.UserRoles by convention and create
+            // duplicate shadow FKs (RoleId1, UserId1). Re-configure with proper navigations.
+            modelBuilder.Entity<AppUserRole>(ur =>
+            {
+                ur.HasOne(x => x.User)
+                    .WithMany(x => x.UserRoles)
+                    .HasForeignKey(x => x.UserId);
+
+                ur.HasOne(x => x.Role)
+                    .WithMany(x => x.UserRoles)
+                    .HasForeignKey(x => x.RoleId);
+            });
         }
     }
 }

@@ -63,6 +63,9 @@ namespace SportAcademy.Infrastructure
             // Register background services
             services.AddHostedService<RefreshTokenCleanupService>();
 
+            // Register seeders
+            services.AddScoped<Seeders.AppDataSeeder>();
+
             return services;
         }
     }

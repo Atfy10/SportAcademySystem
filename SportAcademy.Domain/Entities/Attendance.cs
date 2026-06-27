@@ -1,9 +1,10 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class Attendance : IAuditableEntity
+    public class Attendance : IAuditableEntity, ITenantScoped
     {
         public int Id { get; set; }
         public DateTime AttendanceDate { get; set; }
@@ -16,6 +17,9 @@ namespace SportAcademy.Domain.Entities
         public string? CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? UpdatedBy { get; set; }
+
+        public Guid TenantId { get; set; }
+        public Tenant Tenant { get; set; } = null!;
 
         // Navigation Properties
         public virtual Enrollment Enrollment { get; set; } = null!;

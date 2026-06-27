@@ -23,8 +23,12 @@ namespace SportAcademy.Application.Queries.NotificationQueries.GetUserNotificati
 
         public async Task<Result<PagedData<NotificationRecipientDto>>> Handle(GetUserNotificationsQuery request, CancellationToken cancellationToken)
         {
+            var userId = _userContext.UserId;
+            if (userId is null)
+                return Result<PagedData<NotificationRecipientDto>>.Failure(_operation, "User ID is not available in the context.", 400);
+
             var data = await _notificationRepository.GetUserNotificationsAsync(
-                Guid.Parse(_userContext.UserId),
+                userId.Value,
                 request.PageRequest,
                 cancellationToken);
 

@@ -1,4 +1,6 @@
 using MediatR;
+using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.NotificationCommands.MarkAllNotificationsAsRead
@@ -18,7 +20,11 @@ namespace SportAcademy.Application.Commands.NotificationCommands.MarkAllNotifica
 
         public async Task<int> Handle(MarkAllNotificationsAsReadCommand request, CancellationToken cancellationToken)
         {
-            return await _notificationRepository.MarkAllAsReadAsync(Guid.Parse(_userContext.UserId), cancellationToken);
+            var userId = _userContext.UserId;
+            if (userId is null)
+                return 0;
+
+            return await _notificationRepository.MarkAllAsReadAsync(userId.Value, cancellationToken);
         }
     }
 }

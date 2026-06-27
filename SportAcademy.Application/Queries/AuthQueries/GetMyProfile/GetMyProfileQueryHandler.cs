@@ -22,8 +22,13 @@ public class GetMyProfileQueryHandler : IRequestHandler<GetMyProfileQuery, Resul
 
     public async Task<Result<MyProfileDto>> Handle(GetMyProfileQuery request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(Guid.Parse(_userContext.UserId), cancellationToken)
-            ?? throw new IdNotFoundException(nameof(AppUser), _userContext.UserId);
+
+        var userId = _userContext.UserId;
+        if (userId is null)
+            return Result<MyProfileDto>.Failure(_operation, "User ID is not available in the context.", 400);
+
+        var user = await _userRepository.GetByIdAsync(userId.Value, cancellationToken)
+            ?? throw new IdNotFoundException(nameof(AppUser), userId);
 
         var roles = await _userRepository.GetUserRoleAsync(user, cancellationToken);
 

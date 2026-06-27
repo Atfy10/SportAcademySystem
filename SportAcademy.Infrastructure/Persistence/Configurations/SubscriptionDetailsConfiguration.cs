@@ -43,7 +43,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                    .WithOne(p => p.SubscriptionDetails)
                    .HasForeignKey<SubscriptionDetails>(sd => sd.PaymentNumber)
                    .HasPrincipalKey<Payment>(p => p.PaymentNumber)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.Restrict);
 
             //  1:M  Trainee
             builder.HasOne(sd => sd.Trainee)
@@ -58,13 +58,14 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                        sd.SportId,
                        sd.BranchId,
                        sd.SubscriptionTypeId,
-                   });
+                   })
+                   .OnDelete(DeleteBehavior.Restrict);
 
             // 1:1 Enrollment
             builder.HasOne(sd => sd.Enrollment)
                    .WithOne(e => e.SubscriptionDetails)
                    .HasForeignKey<Enrollment>(e => e.SubscriptionDetailsId)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

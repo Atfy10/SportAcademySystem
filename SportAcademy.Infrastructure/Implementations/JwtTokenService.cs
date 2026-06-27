@@ -28,10 +28,14 @@ namespace SportAcademy.Infrastructure.Implementations
             {
                 new(JwtRegisteredClaimNames.Sub, appUser.Id.ToString()),
                 new(ClaimTypes.NameIdentifier, appUser.Id.ToString()),
+                new("tenant_id", appUser.TenantId.ToString()),
+                new("tenant_code", appUser.Tenant.Code),
                 new(ClaimTypes.Name, appUser.UserName!),
+                new(JwtRegisteredClaimNames.UniqueName, appUser.UserName!),
                 new(JwtRegisteredClaimNames.Email, appUser.Email!),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
+
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
@@ -84,9 +88,9 @@ namespace SportAcademy.Infrastructure.Implementations
         public async Task<RefreshTokenResult?> ValidateAndRefreshTokenAsync(string plainRefreshToken, CancellationToken ct = default)
         {
             var tokenHash = HashToken(plainRefreshToken);
-            
+
             var storedToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, ct);
-            
+
             if (storedToken is null)
                 return null;
 
@@ -95,7 +99,7 @@ namespace SportAcademy.Infrastructure.Implementations
 
             var now = DateTime.UtcNow;
             var gracePeriodExpiry = storedToken.ExpiresAt.AddMinutes(GracePeriodMinutes);
-            
+
             if (gracePeriodExpiry < now)
                 return null;
 

@@ -56,7 +56,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                         sd.BranchId,
                         sd.SubscriptionTypeId,
                     })
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -29,8 +29,12 @@ public class GetUserAnalysesQueryHandler
         GetUserAnalysesQuery request,
         CancellationToken cancellationToken)
     {
+        var userId = _userContext.UserId;
+        if (userId is null)
+            return Result<List<VideoAnalysisResultDto>>.Failure(_operation, "User ID is not available in the context.", 400);
+
         var entities = await _repository.GetByUserIdAsync(
-            Guid.Parse(_userContext.UserId), cancellationToken);
+            userId.Value, cancellationToken);
 
         var dtos = _mapper.Map<List<VideoAnalysisResultDto>>(entities);
         return Result<List<VideoAnalysisResultDto>>.Success(dtos, _operation);
