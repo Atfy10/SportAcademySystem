@@ -12,6 +12,7 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure;
 using SportAcademy.Infrastructure.Implementations.OpenAi;
 using SportAcademy.Infrastructure.Implementations.OpenRouter;
+using SportAcademy.Infrastructure.Options;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
@@ -43,6 +44,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 
 builder.Services.AddSingleton<ITenantIdProvider, TenantIdProvider>();
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("Email"));
+
+builder.Services.Configure<AppUrlSettings>(
+    builder.Configuration.GetSection("AppSettings"));
 
 builder.Services.AddScoped<AuditingInterceptor>();
 

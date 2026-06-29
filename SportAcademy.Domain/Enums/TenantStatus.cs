@@ -5,5 +5,6 @@ public enum TenantStatus
     PendingSetup = 0,
     Active,
     Inactive,
-    Suspended
+    Suspended,
+    Archived
 }
