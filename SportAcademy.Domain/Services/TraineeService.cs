@@ -1,12 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using SportAcademy.Domain.Contract;
+﻿using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Domain.Services
 {

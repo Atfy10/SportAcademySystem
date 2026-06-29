@@ -16,6 +16,7 @@ using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Seeders;
+using SportAcademy.Infrastructure.Services;
 using SportAcademy.Web.Services;
 using System.Text;
 using System.Text.Json;
@@ -40,6 +41,8 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IUserContextService, UserContextService>();
+
+builder.Services.AddSingleton<ITenantIdProvider, TenantIdProvider>();
 
 builder.Services.AddScoped<AuditingInterceptor>();
 
@@ -207,6 +210,25 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.Use(async (context, next) =>
+{
+    var userContext = context.RequestServices.GetRequiredService<IUserContextService>();
+
+    if (userContext.IsAuthenticated && userContext.TenantId == null)
+    {
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Tenant identifier is missing from the authentication token."
+        });
+        return;
+    }
+
+    var tenantIdProvider = context.RequestServices.GetRequiredService<ITenantIdProvider>();
+    tenantIdProvider.SetTenantId(userContext.TenantId);
+    await next();
+});
 
 app.MapHub<NotificationHub>("/hubs/notification");
 

@@ -31,8 +31,7 @@ namespace SportAcademy.Web.Services
         {
             get
             {
-                var claim = User?.FindFirstValue("tenant_id")
-                    ?? User?.FindFirstValue(JwtRegisteredClaimNames.Sub)!;
+                var claim = User?.FindFirstValue("tenant_id");
 
                 return claim is null
                     ? null

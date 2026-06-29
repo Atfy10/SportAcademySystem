@@ -1,6 +1,9 @@
-﻿namespace SportAcademy.Domain.Entities;
+﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Tenants;
 
-public class VideoAnalysis
+namespace SportAcademy.Domain.Entities;
+
+public class VideoAnalysis : ITenantScoped
 {
     public Guid Id { get; set; }
 
@@ -22,6 +25,9 @@ public class VideoAnalysis
     public string AiAnalysisResult { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
+
+    public Guid TenantId { get; set; }
+    public Tenant Tenant { get; set; } = null!;
 
     // Navigation Property
     public AppUser? User { get; set; }

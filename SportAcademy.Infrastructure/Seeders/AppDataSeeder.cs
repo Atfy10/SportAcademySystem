@@ -582,11 +582,11 @@ namespace SportAcademy.Infrastructure.Seeders
             var sportIds = sports.Select(s => s.Id).ToList();
             var subTypeIds = subTypes.Select(st => st.Id).ToList();
 
-            var sportBranches = CreateSportBranches(sports, branches);
+            var sportBranches = CreateSportBranches(tenantId, sports, branches);
             _context.Set<SportBranch>().AddRange(sportBranches);
             await _context.SaveChangesAsync();
 
-            var sportSubTypes = CreateSportSubscriptionTypes(sports, subTypes);
+            var sportSubTypes = CreateSportSubscriptionTypes(tenantId, sports, subTypes);
             _context.Set<SportSubscriptionType>().AddRange(sportSubTypes);
             await _context.SaveChangesAsync();
 
@@ -597,7 +597,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 ["Gymnastics"] = 65m, ["Table Tennis"] = 30m
             };
             var sportPriceLookup = sports.ToDictionary(s => s.Id, s => basePrices.GetValueOrDefault(s.Name, 40m));
-            var sportPrices = CreateSportPrices(sportBranches, sportPriceLookup, subTypes);
+            var sportPrices = CreateSportPrices(tenantId, sportBranches, sportPriceLookup, subTypes);
             _context.Set<SportPrice>().AddRange(sportPrices);
             await _context.SaveChangesAsync();
 
@@ -700,7 +700,7 @@ namespace SportAcademy.Infrastructure.Seeders
             };
         }
 
-        private static List<SportBranch> CreateSportBranches(List<Sport> sports, List<Branch> branches)
+        private static List<SportBranch> CreateSportBranches(Guid tenantId, List<Sport> sports, List<Branch> branches)
         {
             var result = new List<SportBranch>();
             var random = new Random();
@@ -714,7 +714,8 @@ namespace SportAcademy.Infrastructure.Seeders
                     {
                         SportId = sport.Id,
                         BranchId = branch.Id,
-                        IsAvailable = true
+                        IsAvailable = true,
+                        TenantId = tenantId
                     });
                 }
             }
@@ -722,19 +723,20 @@ namespace SportAcademy.Infrastructure.Seeders
             return result;
         }
 
-        private static List<SportSubscriptionType> CreateSportSubscriptionTypes(List<Sport> sports, List<SubscriptionType> subTypes)
+        private static List<SportSubscriptionType> CreateSportSubscriptionTypes(Guid tenantId, List<Sport> sports, List<SubscriptionType> subTypes)
         {
             return sports.SelectMany(sport =>
                 subTypes.Select(st => new SportSubscriptionType
                 {
                     SportId = sport.Id,
-                    SubscriptionTypeId = st.Id
+                    SubscriptionTypeId = st.Id,
+                    TenantId = tenantId
                 })
             ).ToList();
         }
 
         private static List<SportPrice> CreateSportPrices(
-            List<SportBranch> sportBranches, Dictionary<int, decimal> sportPriceLookup,
+            Guid tenantId, List<SportBranch> sportBranches, Dictionary<int, decimal> sportPriceLookup,
             List<SubscriptionType> subTypes)
         {
             var priceMultipliers = new Dictionary<SubType, decimal>
@@ -757,7 +759,8 @@ namespace SportAcademy.Infrastructure.Seeders
                         SportId = sb.SportId,
                         BranchId = sb.BranchId,
                         SubsTypeId = st.Id,
-                        Price = Math.Round(basePrice * multiplier + random.Next(-5, 5), 2)
+                        Price = Math.Round(basePrice * multiplier + random.Next(-5, 5), 2),
+                        TenantId = tenantId
                     });
                 }
             }

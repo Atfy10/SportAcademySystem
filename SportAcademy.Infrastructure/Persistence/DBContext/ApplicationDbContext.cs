@@ -20,8 +20,13 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
     public class ApplicationDbContext
         : IdentityDbContext<AppUser, AppRole, Guid, IdentityUserClaim<Guid>, AppUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options) { }
+        private readonly ITenantIdProvider _tenantIdProvider;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantIdProvider tenantIdProvider)
+            : base(options)
+        {
+            _tenantIdProvider = tenantIdProvider;
+        }
 
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
@@ -94,6 +99,19 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                     .WithMany()
                     .HasForeignKey("TenantId")
                     .OnDelete(DeleteBehavior.Restrict);
+            }
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                .Where(e => typeof(ITenantScoped).IsAssignableFrom(e.ClrType) && e.ClrType != typeof(Tenant)))
+            {
+                var parameter = Expression.Parameter(entityType.ClrType, "e");
+                var tenantIdProp = Expression.Property(parameter, "TenantId");
+                var providerField = Expression.Constant(_tenantIdProvider, typeof(ITenantIdProvider));
+                var providerTenantId = Expression.Property(providerField, "TenantId");
+                var body = Expression.Equal(tenantIdProp,
+                    Expression.Property(providerTenantId, nameof(Nullable<Guid>.Value)));
+
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(Expression.Lambda(body, parameter));
             }
 
             modelBuilder.HasSequence<int>("FamilyCodeSequence")
