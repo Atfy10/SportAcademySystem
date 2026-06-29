@@ -4,6 +4,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.BackgroundServices;
 using SportAcademy.Infrastructure.Implementations;
+using SportAcademy.Infrastructure.Persistence;
 using SportAcademy.Infrastructure.Persistence.Repositories;
 
 namespace SportAcademy.Infrastructure
@@ -65,6 +66,15 @@ namespace SportAcademy.Infrastructure
 
             // Register seeders
             services.AddScoped<Seeders.AppDataSeeder>();
+
+            // Register Invitation Repository (new pattern)
+            services.AddScoped<IInvitationRepository, InvitationRepository>();
+
+            // Register Invitation Token Service
+            services.AddScoped<IInvitationTokenService, InvitationTokenService>();
+
+            // Register Unit of Work (new pattern)
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             return services;
         }
