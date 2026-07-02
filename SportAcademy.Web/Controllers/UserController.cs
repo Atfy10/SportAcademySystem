@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.UserCommands.UserCreate;
 using SportAcademy.Application.Commands.UserCommands.UserDelete;
 using SportAcademy.Application.Commands.UserCommands.UserUpdate;
@@ -9,6 +8,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetById;
+using SportAcademy.Application.Queries.UserQueries.GetMeQuery;
 using SportAcademy.Application.Queries.UserQueries.GetUnlinkedUsers;
 
 namespace SportAcademy.Web.Controllers
@@ -69,6 +69,13 @@ namespace SportAcademy.Web.Controllers
                 return BadRequest(isDeleted?.Result.Message);
 
             return NoContent();
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetMeQuery(), ct);
+            return Ok(result);
         }
     }
 }

@@ -18,6 +18,7 @@ using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Infrastructure.Services;
+using SportAcademy.Web.Middleware;
 using SportAcademy.Web.Services;
 using System.Text;
 using System.Text.Json;
@@ -213,6 +214,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
+
+app.UseMiddleware<TenantResolutionMiddleware>();
 
 app.UseAuthentication();
 
