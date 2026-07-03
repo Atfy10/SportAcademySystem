@@ -16,8 +16,8 @@ public sealed class TenantActivatedHandler : INotificationHandler<TenantActivate
     public Task Handle(TenantActivatedEvent notification, CancellationToken cancellationToken)
     {
         _logger.LogInformation(
-            "TenantActivatedEvent: Tenant {TenantId} is now Active.",
-            notification.TenantId);
+            "TenantActivatedEvent: Tenant {TenantId} transitioned from PendingSetup to Active at {ActivatedAt}.",
+            notification.TenantId, DateTime.UtcNow);
 
         return Task.CompletedTask;
     }
