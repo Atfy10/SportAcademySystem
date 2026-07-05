@@ -16,10 +16,17 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetGlobalAttendance
         public async Task<Result<int>> Handle(GetGlobalAttendanceRateQuery request, CancellationToken ct)
         {
             int attendanceRate = 0;
-            if (request.Month.HasValue)
-                attendanceRate = await _attendanceRepository.GetMonthlyAttendanceRate(request.Month.Value, ct);
-            else
-                attendanceRate = await _attendanceRepository.GetGlobalAttendanceRate(ct);
+            try
+            {
+                if (request.Month.HasValue)
+                    attendanceRate = await _attendanceRepository.GetMonthlyAttendanceRate(request.Month.Value, ct);
+                else
+                    attendanceRate = await _attendanceRepository.GetGlobalAttendanceRate(ct);
+            }
+            catch (DivideByZeroException)
+            {
+                return Result<int>.Failure(nameof(GetGlobalAttendanceRateQuery), "No attendance records found.");
+            }
 
             return Result<int>.Success(attendanceRate, nameof(GetGlobalAttendanceRateQuery));
         }

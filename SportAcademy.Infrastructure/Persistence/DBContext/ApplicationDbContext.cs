@@ -21,6 +21,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         : IdentityDbContext<AppUser, AppRole, Guid, IdentityUserClaim<Guid>, AppUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
     {
         private readonly ITenantIdProvider _tenantIdProvider;
+        public Guid? CurrentTenantId => _tenantIdProvider.TenantId;
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantIdProvider tenantIdProvider)
             : base(options)
@@ -101,19 +102,6 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                     .OnDelete(DeleteBehavior.Restrict);
             }
 
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
-                .Where(e => typeof(ITenantScoped).IsAssignableFrom(e.ClrType) && e.ClrType != typeof(Tenant)))
-            {
-                var parameter = Expression.Parameter(entityType.ClrType, "e");
-                var tenantIdProp = Expression.Property(parameter, "TenantId");
-                var providerField = Expression.Constant(_tenantIdProvider, typeof(ITenantIdProvider));
-                var providerTenantId = Expression.Property(providerField, "TenantId");
-                var body = Expression.Equal(tenantIdProp,
-                    Expression.Property(providerTenantId, nameof(Nullable<Guid>.Value)));
-
-                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(Expression.Lambda(body, parameter));
-            }
-
             modelBuilder.HasSequence<int>("FamilyCodeSequence")
                 .StartsAt(1)
                 .IncrementsBy(1)
@@ -148,19 +136,6 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
 
                 if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
                 {
-                    var parameter = Expression.Parameter(entityType.ClrType, "e");
-
-                    var filter = Expression.Lambda(
-                        Expression.Equal(
-                            Expression.Property(
-                                parameter,
-                                "IsDeleted"
-                            ),
-                            Expression.Constant(false)
-                        ),
-                        parameter
-                    );
-
                     modelBuilder
                         .Entity(entityType.ClrType)
                         .Property<bool>("IsDeleted")
@@ -176,10 +151,6 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                         .Entity(entityType.ClrType)
                         .Property<string?>("DeletedBy")
                         .IsRequired(false);
-
-                    modelBuilder
-                        .Entity(entityType.ClrType)
-                        .HasQueryFilter(filter);
                 }
 
                 if (typeof(Person).IsAssignableFrom(entityType.ClrType))
@@ -230,6 +201,44 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                         .Property<string?>("SecondPhoneNumber")
                         .HasMaxLength(12);
                 }
+            }
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var isTenantScoped = typeof(ITenantScoped).IsAssignableFrom(entityType.ClrType)
+                                     && entityType.ClrType != typeof(Tenant);
+                var isSoftDeletable = typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType);
+
+                if (!isTenantScoped && !isSoftDeletable)
+                    continue;
+
+                var parameter = Expression.Parameter(entityType.ClrType, "e");
+
+                Expression? body = null;
+
+                if (isTenantScoped)
+                {
+                    var dbContext = Expression.Constant(this);
+                    var currentTenantId = Expression.Property(dbContext, nameof(CurrentTenantId));
+
+                    body = Expression.Equal(
+                        Expression.Property(parameter, "TenantId"),
+                        Expression.Property(currentTenantId, nameof(Nullable<Guid>.Value)));
+                }
+
+                if (isSoftDeletable)
+                {
+                    var notDeleted = Expression.Equal(
+                        Expression.Property(parameter, "IsDeleted"),
+                        Expression.Constant(false));
+
+                    body = body != null
+                        ? Expression.AndAlso(body, notDeleted)
+                        : notDeleted;
+                }
+
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasQueryFilter(Expression.Lambda(body!, parameter));
             }
 
             base.OnModelCreating(modelBuilder);

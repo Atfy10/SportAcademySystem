@@ -10,7 +10,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
         {
             builder.HasKey(r => r.Id);
 
-            builder.HasIndex(r => new { r.TenantId, r.Name })
+            builder.HasIndex(r => r.Name)
                 .IsUnique();
         }
     }

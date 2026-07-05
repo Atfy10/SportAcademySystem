@@ -98,7 +98,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost("import")]
         [RequestSizeLimit(10 * 1024 * 1024)]
         public async Task<ActionResult> ImportCsv(IFormFile file, CancellationToken ct)

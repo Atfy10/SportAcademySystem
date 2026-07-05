@@ -44,7 +44,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 
-builder.Services.AddSingleton<ITenantIdProvider, TenantIdProvider>();
+builder.Services.AddScoped<ITenantIdProvider, TenantIdProvider>();
 
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("Email"));
@@ -201,7 +201,7 @@ if (app.Environment.IsDevelopment())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        //await dbContext.Database.MigrateAsync();
+        await dbContext.Database.MigrateAsync();
 
         var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
         await seeder.SeedAsync();

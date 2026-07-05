@@ -9,8 +9,9 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.AuthCommands.Login
 {
-    public record LoginCommand(
-        string UserNameOrEmail,
-        string Password
-        ) : IRequest<Result<AuthResponseDto>>;
+public record LoginCommand(
+    string UserNameOrEmail,
+    string Password,
+    string? Slug = null
+) : IRequest<Result<AuthResponseDto>>;
 }

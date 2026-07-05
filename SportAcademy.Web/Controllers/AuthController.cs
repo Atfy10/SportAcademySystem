@@ -41,7 +41,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpGet("roles")]
         public async Task<IActionResult> GetAllRoles(CancellationToken ct)
         {
@@ -49,7 +49,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost("users")]
         public async Task<IActionResult> AdminCreateUser([FromBody] AdminCreateUserCommand command, CancellationToken ct)
         {
@@ -57,7 +57,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost("users/{userId}/toggle-active")]
         public async Task<IActionResult> ToggleUserActive([FromRoute] string userId, CancellationToken ct)
         {
@@ -65,7 +65,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost("users/{userId}/roles")]
         public async Task<IActionResult> AssignRoles([FromRoute] string userId, [FromBody] List<string> roles, CancellationToken ct)
         {
@@ -73,7 +73,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost("users/{userId}/reset-password")]
         public async Task<IActionResult> AdminResetUserPassword(
             [FromRoute] string userId,
@@ -85,13 +85,13 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize]
-        [HttpGet("~/api/user/me")]
-        public async Task<IActionResult> GetMyProfile(CancellationToken ct)
-        {
-            var result = await _mediator.Send(new GetMyProfileQuery(), ct);
-            return Ok(result);
-        }
+        //[Authorize]
+        //[HttpGet("~/api/user/me")]
+        //public async Task<IActionResult> GetMyProfile(CancellationToken ct)
+        //{
+        //    var result = await _mediator.Send(new GetMyProfileQuery(), ct);
+        //    return Ok(result);
+        //}
 
         [Authorize]
         [HttpPost("change-password")]

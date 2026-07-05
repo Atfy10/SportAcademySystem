@@ -3,6 +3,7 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.UserExceptions;
@@ -15,6 +16,8 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly ITenantIdProvider _tenantIdProvider;
+        private readonly ITenantRepository _tenantRepository;
         private readonly string _operation = OperationType.Login.ToString();
         private const int RefreshTokenExpiryDays = 7;
 
@@ -23,16 +26,26 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             IUserRepository userRepository,
             IRoleRepository roleRepository,
             IRefreshTokenRepository refreshTokenRepository,
-            IMapper mapper)
+            IMapper mapper,
+            ITenantIdProvider tenantIdProvider,
+            ITenantRepository tenantRepository)
         {
             _jwtTokenService = jwtTokenService;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
             _refreshTokenRepository = refreshTokenRepository;
+            _tenantIdProvider = tenantIdProvider;
+            _tenantRepository = tenantRepository;
         }
 
         public async Task<Result<AuthResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
+            var slug = request.Slug ?? "system";
+            var tenant = await _tenantRepository.GetBySlugAsync(slug, cancellationToken);
+            if (tenant == null)
+                throw new UserLoginException();
+
+            _tenantIdProvider.SetTenantId(tenant.Id);
             var user = await _userRepository.GetByUsernameOrEmailAsync(request.UserNameOrEmail, cancellationToken)
                 ?? throw new UserLoginException();
 

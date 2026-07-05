@@ -2,6 +2,7 @@ using Bogus;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
@@ -64,17 +65,20 @@ namespace SportAcademy.Infrastructure.Seeders
         private readonly UserManager<AppUser> _userManager;
         private readonly RoleManager<AppRole> _roleManager;
         private readonly ILogger<AppDataSeeder> _logger;
+        private readonly ITenantIdProvider _tenantIdProvider;
 
         public AppDataSeeder(
             ApplicationDbContext context,
             UserManager<AppUser> userManager,
             RoleManager<AppRole> roleManager,
-            ILogger<AppDataSeeder> logger)
+            ILogger<AppDataSeeder> logger,
+            ITenantIdProvider tenantIdProvider)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
             _logger = logger;
+            _tenantIdProvider = tenantIdProvider;
         }
 
         public async Task SeedAsync()
@@ -97,13 +101,15 @@ namespace SportAcademy.Infrastructure.Seeders
                 var salmiyaTenantId = Guid.NewGuid();
                 var ownerId = Guid.NewGuid();
 
+                _tenantIdProvider.SetTenantId(systemTenantId);
+
                 await SeedUsersAsync(systemTenantId, superAdminId, salmiyaTenantId, ownerId);
                 await SeedTenantsAsync(systemTenantId, superAdminId, salmiyaTenantId, ownerId);
 
                 await EnableUserTenantFkAsync();
 
-                await SeedRolesAsync(systemTenantId, salmiyaTenantId);
-                await AssignRolesAsync(superAdminId, ownerId, salmiyaTenantId);
+                await SeedRolesAsync();
+                await AssignRolesAsync(systemTenantId, superAdminId, ownerId, salmiyaTenantId);
 
                 var featureIds = await SeedFeaturesAsync();
                 var enterprisePlanIds = await SeedSubscriptionPlansAsync(featureIds);
@@ -163,6 +169,9 @@ namespace SportAcademy.Infrastructure.Seeders
             if (!result.Succeeded)
                 throw new InvalidOperationException($"Failed to create SuperAdmin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             _context.Profiles.Add(new Profile { AppUserId = superAdmin.Id });
+            await _context.SaveChangesAsync();
+
+            _tenantIdProvider.SetTenantId(salmiyaTenantId);
 
             var owner = new AppUser
             {
@@ -303,30 +312,16 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Tenants seeded successfully.");
         }
 
-        private async Task SeedRolesAsync(Guid systemTenantId, Guid salmiyaTenantId)
+        private async Task SeedRolesAsync()
         {
             _logger.LogInformation("Seeding roles...");
 
-            if (!await _roleManager.RoleExistsAsync("SuperAdmin"))
-            {
-                var superAdminRole = new AppRole { Name = "SuperAdmin", TenantId = systemTenantId };
-                var result = await _roleManager.CreateAsync(superAdminRole);
-                if (!result.Succeeded)
-                    throw new InvalidOperationException($"Failed to create SuperAdmin role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            }
-
-            var roleNames = new[] { "Owner", "Admin", "Manager", "User", "Coach", "Accountant" };
+            var roleNames = new[] { "SuperAdmin", "Owner", "Admin", "Manager", "User", "Coach", "Accountant" };
             foreach (var roleName in roleNames)
             {
-                var exists = await _roleManager.RoleExistsAsync(roleName);
-                if (!exists)
+                if (!await _roleManager.RoleExistsAsync(roleName))
                 {
-                    var role = new AppRole
-                    {
-                        Name = roleName,
-                        TenantId = salmiyaTenantId
-                    };
-                    var result = await _roleManager.CreateAsync(role);
+                    var result = await _roleManager.CreateAsync(new AppRole { Name = roleName });
                     if (!result.Succeeded)
                         throw new InvalidOperationException($"Failed to create role {roleName}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
@@ -335,13 +330,16 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Roles seeded successfully.");
         }
 
-        private async Task AssignRolesAsync(Guid superAdminId, Guid ownerId, Guid salmiyaTenantId)
+        private async Task AssignRolesAsync(Guid systemTenantId, Guid superAdminId, Guid ownerId, Guid salmiyaTenantId)
         {
             _logger.LogInformation("Assigning roles to users...");
 
+            _tenantIdProvider.SetTenantId(systemTenantId);
             var superAdmin = await _userManager.FindByIdAsync(superAdminId.ToString());
             if (superAdmin != null)
                 await _userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
+
+            _tenantIdProvider.SetTenantId(salmiyaTenantId);
 
             var owner = await _userManager.FindByIdAsync(ownerId.ToString());
             if (owner != null)
