@@ -6,6 +6,7 @@ using SportAcademy.Application.Queries.PlatformQueries.GetPlatformDashboard;
 namespace SportAcademy.Web.Controllers.Platform;
 
 [Authorize(Roles = "SuperAdmin")]
+[EnableRateLimiting("per-tenant")]
 [Route("api/platform/dashboard")]
 [ApiController]
 public class PlatformDashboardController : ControllerBase

@@ -8,6 +8,7 @@ using SportAcademy.Application.Queries.VideoAnalysisQueries.GetUserAnalyses;
 namespace SportAcademy.Web.Controllers;
 
 [Authorize]
+[EnableRateLimiting("per-user")]
 [ApiController]
 [Route("api/[controller]")]
 public class VideoAnalysisController : ControllerBase

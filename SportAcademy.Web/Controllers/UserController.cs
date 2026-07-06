@@ -13,8 +13,9 @@ using SportAcademy.Application.Queries.UserQueries.GetUnlinkedUsers;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [ApiController]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[ApiController]
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {

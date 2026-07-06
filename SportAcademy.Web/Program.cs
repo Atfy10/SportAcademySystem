@@ -23,6 +23,8 @@ using SportAcademy.Web.Services;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +53,9 @@ builder.Services.Configure<EmailSettings>(
 
 builder.Services.Configure<AppUrlSettings>(
     builder.Configuration.GetSection("AppSettings"));
+
+builder.Services.Configure<TenantArchivalSettings>(
+    builder.Configuration.GetSection("TenantArchival"));
 
 builder.Services.AddScoped<AuditingInterceptor>();
 
@@ -113,6 +118,44 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+
+    options.AddPolicy("per-user", httpContext =>
+    {
+        var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+        return RateLimitPartition.GetTokenBucketLimiter(userId, _ => new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = 100,
+            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+            TokensPerPeriod = 100,
+            AutoReplenishment = true,
+            QueueLimit = 20,
+        });
+    });
+
+    options.AddPolicy("per-tenant", httpContext =>
+    {
+        var tenantId = httpContext.User.FindFirst("tenant_id")?.Value ?? "none";
+        return RateLimitPartition.GetTokenBucketLimiter(tenantId, _ => new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = 1000,
+            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+            TokensPerPeriod = 1000,
+            AutoReplenishment = true,
+            QueueLimit = 50,
+        });
+    });
+
+    options.AddPolicy("public", _ =>
+        RateLimitPartition.GetFixedWindowLimiter("public", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+        }));
+});
 
 builder.Services.AddCors(options =>
 {
@@ -220,6 +263,8 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.Use(async (context, next) =>
 {

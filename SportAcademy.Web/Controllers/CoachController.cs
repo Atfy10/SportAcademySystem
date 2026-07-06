@@ -13,8 +13,9 @@ using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class CoachController : ControllerBase
     {

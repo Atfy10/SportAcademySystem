@@ -222,8 +222,10 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                     var currentTenantId = Expression.Property(dbContext, nameof(CurrentTenantId));
 
                     body = Expression.Equal(
-                        Expression.Property(parameter, "TenantId"),
-                        Expression.Property(currentTenantId, nameof(Nullable<Guid>.Value)));
+                        Expression.Convert(
+                            Expression.Property(parameter, "TenantId"),
+                            typeof(Guid?)),
+                        currentTenantId);
                 }
 
                 if (isSoftDeletable)

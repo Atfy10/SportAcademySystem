@@ -28,8 +28,9 @@ using SportAcademy.Web.Features.Trainees.Mappings;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [ApiController]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[ApiController]
     [Route("api/[controller]")]
     public class TraineeController : ControllerBase
     {

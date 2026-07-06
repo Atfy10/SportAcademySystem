@@ -9,8 +9,9 @@ using SportAcademy.Application.Queries.SubscriptionTypeQueries.GetById;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class SubscriptionTypesController : ControllerBase
     {

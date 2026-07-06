@@ -17,8 +17,9 @@ using SportAcademy.Application.Queries.AuthQueries.GetMyProfile;
 
 namespace SportAcademy.Web.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
+[ApiController]
+[EnableRateLimiting("public")]
+[Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IMediator _mediator;

@@ -6,7 +6,8 @@ using SportAcademy.Application.Queries.FamilyQueries.SearchFamily;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Route("api/[controller]")]
+    [EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class FamilyController : ControllerBase
     {

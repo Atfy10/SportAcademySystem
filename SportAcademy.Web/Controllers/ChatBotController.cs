@@ -10,6 +10,7 @@ using SportAcademy.Application.Queries.ChatQueries;
 namespace SportAcademy.Web.Controllers;
 
 [Authorize]
+[EnableRateLimiting("per-user")]
 [ApiController]
 [Route("api/[controller]")]
 public class ChatController : ControllerBase

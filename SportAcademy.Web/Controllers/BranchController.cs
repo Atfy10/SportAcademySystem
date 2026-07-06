@@ -18,8 +18,9 @@ using SportAcademy.Application.Queries.BranchQueries.SearchBranches;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class BranchController : ControllerBase
     {

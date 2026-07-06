@@ -21,8 +21,9 @@ using SportAcademy.Application.Queries.EnrollmentQueries.SearchEnrollments;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class EnrollmentController : ControllerBase
     {

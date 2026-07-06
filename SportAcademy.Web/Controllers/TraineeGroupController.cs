@@ -20,8 +20,9 @@ using SportAcademy.Application.Queries.TraineeGroupQueries.Search;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class TraineeGroupController : ControllerBase
     {

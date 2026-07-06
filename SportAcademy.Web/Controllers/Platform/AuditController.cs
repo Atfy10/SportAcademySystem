@@ -8,6 +8,7 @@ using SportAcademy.Domain.Enums;
 namespace SportAcademy.Web.Controllers.Platform;
 
 [Authorize(Roles = "SuperAdmin")]
+[EnableRateLimiting("per-tenant")]
 [Route("api/platform/audit")]
 [ApiController]
 public class AuditController : ControllerBase

@@ -5,7 +5,8 @@ using SportAcademy.Application.Queries.NationalityCategoryQueries.GetAll;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Route("api/[controller]")]
+    [EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class NationalityCategoryController : ControllerBase
     {

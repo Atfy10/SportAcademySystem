@@ -5,8 +5,9 @@ using SportAcademy.Application.Queries.TenantQueries.GetCurrentTenantQuery;
 
 namespace SportAcademy.Web.Controllers
 {
-    [Authorize]
-    [Route("api/[controller]")]
+[Authorize]
+[EnableRateLimiting("per-user")]
+[Route("api/[controller]")]
     [ApiController]
     public class TenantController : ControllerBase
     {

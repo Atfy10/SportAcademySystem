@@ -7,8 +7,9 @@ using SportAcademy.Application.Queries.AuthQueries.ValidateInvitation;
 
 namespace SportAcademy.Web.Controllers
 {
-    [ApiController]
-    public class OnboardingController : ControllerBase
+[ApiController]
+[EnableRateLimiting("public")]
+public class OnboardingController : ControllerBase
     {
         private readonly IMediator _mediator;
 
