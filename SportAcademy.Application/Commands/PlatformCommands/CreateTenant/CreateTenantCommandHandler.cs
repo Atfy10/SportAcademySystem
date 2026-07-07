@@ -55,7 +55,6 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
             Code = request.Code.ToUpper(),
             Email = request.Email,
             Status = TenantStatus.PendingSetup,
-            OwnerId = Guid.Empty,
             CreatedAt = now,
             Profile = new TenantProfile
             {

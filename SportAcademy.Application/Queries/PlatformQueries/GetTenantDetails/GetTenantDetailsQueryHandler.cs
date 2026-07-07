@@ -23,6 +23,13 @@ public class GetTenantDetailsQueryHandler : IRequestHandler<GetTenantDetailsQuer
         if (tenant is null)
             return Result<TenantDetailResponse>.Failure(_operation, "Tenant not found.", 404);
 
-        return Result<TenantDetailResponse>.Success(tenant.ToDetailResponse(), _operation);
+        var userCountTask = _tenantRepository.GetUserCountByTenantAsync(request.TenantId, ct);
+        var branchCountTask = _tenantRepository.GetBranchCountByTenantAsync(request.TenantId, ct);
+        var sportCountTask = _tenantRepository.GetSportCountByTenantAsync(request.TenantId, ct);
+        await Task.WhenAll(userCountTask, branchCountTask, sportCountTask);
+
+        return Result<TenantDetailResponse>.Success(
+            tenant.ToDetailResponse(userCountTask.Result, branchCountTask.Result, sportCountTask.Result),
+            _operation);
     }
 }

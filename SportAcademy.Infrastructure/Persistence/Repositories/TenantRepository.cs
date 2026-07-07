@@ -48,6 +48,8 @@ public class TenantRepository : ITenantRepository
         var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(t => t.CreatedAt)
+            .Include(t => t.Subscription)
+                .ThenInclude(s => s.Plan)
             .Skip(skip)
             .Take(take)
             .ToListAsync(ct);
@@ -73,6 +75,15 @@ public class TenantRepository : ITenantRepository
 
     public Task<int> GetTotalBranchesAsync(CancellationToken ct = default)
         => _context.Set<Branch>().IgnoreQueryFilters().CountAsync(ct);
+
+    public Task<int> GetUserCountByTenantAsync(Guid tenantId, CancellationToken ct = default)
+        => _context.Set<AppUser>().CountAsync(u => u.TenantId == tenantId, ct);
+
+    public Task<int> GetBranchCountByTenantAsync(Guid tenantId, CancellationToken ct = default)
+        => _context.Set<Branch>().CountAsync(b => b.TenantId == tenantId, ct);
+
+    public Task<int> GetSportCountByTenantAsync(Guid tenantId, CancellationToken ct = default)
+        => _context.Set<Sport>().CountAsync(s => s.TenantId == tenantId, ct);
 
     public async Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null, CancellationToken ct = default)
     {

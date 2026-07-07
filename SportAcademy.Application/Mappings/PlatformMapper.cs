@@ -22,7 +22,7 @@ public static class PlatformMapper
             UserCount = userCount
         };
 
-    public static TenantDetailResponse ToDetailResponse(this Tenant entity)
+    public static TenantDetailResponse ToDetailResponse(this Tenant entity, int userCount = 0, int branchCount = 0, int sportCount = 0)
         => new()
         {
             Id = entity.Id,
@@ -34,6 +34,9 @@ public static class PlatformMapper
             Status = entity.Status.ToString(),
             CreatedAt = entity.CreatedAt,
             OwnerId = entity.OwnerId,
+            UserCount = userCount,
+            BranchCount = branchCount,
+            SportCount = sportCount,
             Profile = entity.Profile is not null ? new TenantProfileResponse
             {
                 OrganizationName = entity.Profile.OrganizationName,

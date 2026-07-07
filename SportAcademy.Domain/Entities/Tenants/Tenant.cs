@@ -12,8 +12,8 @@ public class Tenant
     public string Slug { get; set; } = null!;
     public TenantStatus Status { get; set; } = TenantStatus.PendingSetup;
 
-    public Guid OwnerId { get; set; }
-    public AppUser Owner { get; set; } = null!;
+    public Guid? OwnerId { get; set; }
+    public AppUser? Owner { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 

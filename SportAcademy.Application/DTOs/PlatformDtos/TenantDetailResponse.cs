@@ -10,7 +10,11 @@ public record TenantDetailResponse
     public string Email { get; init; } = default!;
     public string Status { get; init; } = default!;
     public DateTime CreatedAt { get; init; }
-    public Guid OwnerId { get; init; }
+    public Guid? OwnerId { get; init; }
+
+    public int UserCount { get; init; }
+    public int BranchCount { get; init; }
+    public int SportCount { get; init; }
 
     public TenantProfileResponse? Profile { get; init; }
     public TenantSettingsResponse? Settings { get; init; }

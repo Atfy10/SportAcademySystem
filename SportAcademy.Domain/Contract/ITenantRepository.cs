@@ -14,6 +14,9 @@ public interface ITenantRepository
     Task<Dictionary<string, int>> GetStatusCountsAsync(CancellationToken ct = default);
     Task<int> GetTotalUsersAsync(CancellationToken ct = default);
     Task<int> GetTotalBranchesAsync(CancellationToken ct = default);
+    Task<int> GetUserCountByTenantAsync(Guid tenantId, CancellationToken ct = default);
+    Task<int> GetBranchCountByTenantAsync(Guid tenantId, CancellationToken ct = default);
+    Task<int> GetSportCountByTenantAsync(Guid tenantId, CancellationToken ct = default);
     Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null, CancellationToken ct = default);
     Task<bool> IsCodeUniqueAsync(string code, Guid? excludeId = null, CancellationToken ct = default);
     Task AddAsync(Tenant tenant, CancellationToken ct = default);
