@@ -5,6 +5,9 @@ using SportAcademy.Application.Commands.PlatformCommands.ArchiveTenant;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantPlan;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantStatus;
 using SportAcademy.Application.Commands.PlatformCommands.CreateTenant;
+using SportAcademy.Application.Commands.PlatformCommands.ExpireTenantSubscription;
+using SportAcademy.Application.Commands.PlatformCommands.ExtendTenantSubscription;
+using SportAcademy.Application.Commands.PlatformCommands.SetTenantTrial;
 using SportAcademy.Application.Commands.PlatformCommands.ToggleFeature;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateTenant;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantDetails;
@@ -143,6 +146,37 @@ public class TenantsController : ControllerBase
             new ToggleFeatureCommand(id, request.FeatureId, request.IsEnabled), ct);
         return StatusCode(result.StatusCode, result);
     }
+
+    [HttpPatch("{id}/subscription")]
+    public async Task<IActionResult> ExtendSubscription(
+        [FromRoute] Guid id,
+        [FromBody] ExtendSubscriptionRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new ExtendTenantSubscriptionCommand(id, request.Days), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPost("{id}/subscription/expire")]
+    public async Task<IActionResult> ExpireSubscription(
+        [FromRoute] Guid id,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new ExpireTenantSubscriptionCommand(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPost("{id}/subscription/trial")]
+    public async Task<IActionResult> SetTrial(
+        [FromRoute] Guid id,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new SetTenantTrialCommand(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
 }
 
 public record CreateTenantRequest(
@@ -177,3 +211,5 @@ public record ChangeTenantStatusRequest(TenantStatus NewStatus);
 public record ChangeTenantPlanRequest(int NewPlanId);
 
 public record ToggleFeatureRequest(Guid FeatureId, bool IsEnabled);
+
+public record ExtendSubscriptionRequest(int Days);
