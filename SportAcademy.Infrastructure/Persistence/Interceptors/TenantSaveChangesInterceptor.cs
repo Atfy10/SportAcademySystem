@@ -2,23 +2,26 @@
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Infrastructure.Services;
 
 namespace SportAcademy.Infrastructure.Persistence.Interceptors
 {
     public class TenantSaveChangesInterceptor : SaveChangesInterceptor
     {
-        private readonly Guid _currentTenantId;
+        private Guid _currentTenantId;
+        private readonly ITenantIdProvider _tenantIdProvider;
 
-        public TenantSaveChangesInterceptor(IUserContextService userContextService)
+        public TenantSaveChangesInterceptor(ITenantIdProvider tenantIdProvider)
         {
-            _currentTenantId = userContextService.TenantId ?? Guid.Empty;
+            _tenantIdProvider = tenantIdProvider;
         }
 
         public override InterceptionResult<int> SavingChanges(
             DbContextEventData eventData,
             InterceptionResult<int> result)
         {
-            if (_currentTenantId != Guid.Empty)
+            _currentTenantId = _tenantIdProvider.TenantId ?? Guid.Empty;
+            if (_tenantIdProvider.TenantId != Guid.Empty)
                 ApplyTenantFilter(eventData);
 
             return base.SavingChanges(eventData, result);
@@ -29,7 +32,8 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
             InterceptionResult<int> result,
             CancellationToken cancellationToken = default)
         {
-            if (_currentTenantId != Guid.Empty)
+            _currentTenantId = _tenantIdProvider.TenantId ?? Guid.Empty;
+            if (_tenantIdProvider.TenantId != Guid.Empty)
                 ApplyTenantFilter(eventData);
 
             return base.SavingChangesAsync(eventData, result, cancellationToken);

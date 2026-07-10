@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.AuthCommands.AcceptInvitation;
 using SportAcademy.Application.Commands.AuthCommands.CreateInvitation;
+using SportAcademy.Application.Commands.AuthCommands.ResendInvitation;
 using SportAcademy.Application.Queries.AuthQueries.ValidateInvitation;
 
 namespace SportAcademy.Web.Controllers
@@ -36,8 +37,25 @@ public class OnboardingController : ControllerBase
             return Ok(result);
         }
 
+        [Authorize]
+        [HttpPost("/api/tenants/{tenantId}/invitations/resend")]
+        public async Task<IActionResult> ResendInvitation(
+            [FromRoute] Guid tenantId,
+            [FromBody] CreateInvitationRequest request,
+            CancellationToken ct)
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim is null || !Guid.TryParse(userIdClaim, out var userId))
+                return Unauthorized();
+
+            var command = new ResendInvitationCommand(tenantId, request.Email, userId);
+
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
         [AllowAnonymous]
-        [HttpGet("/t/{slug}/invite/{token}")]
+        [HttpGet("/api/t/{slug}/invite/{token}")]
         public async Task<IActionResult> ValidateInvitation(
             [FromRoute] string slug,
             [FromRoute] string token,
@@ -48,7 +66,7 @@ public class OnboardingController : ControllerBase
         }
 
         [AllowAnonymous]
-        [HttpPost("/t/{slug}/invite/{token}/accept")]
+        [HttpPost("/api/t/{slug}/invite/{token}/accept")]
         public async Task<IActionResult> AcceptInvitation(
             [FromRoute] string slug,
             [FromRoute] string token,
