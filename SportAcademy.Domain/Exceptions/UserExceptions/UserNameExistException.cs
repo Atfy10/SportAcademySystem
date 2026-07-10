@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Exceptions.UserExceptions
 {
     public class UserNameExistException : Exception
     {
-        static readonly string _message = "This username is not available. Please choose a different one.";
+        static readonly string _message = "This username is already taken. Please choose a different one.";
 
         public UserNameExistException() : base(_message)
         {

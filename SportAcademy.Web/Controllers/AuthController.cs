@@ -7,7 +7,6 @@ using SportAcademy.Application.Commands.AuthCommands.AssignRolesToUser;
 using SportAcademy.Application.Commands.AuthCommands.ChangePassword;
 using SportAcademy.Application.Commands.AuthCommands.Login;
 using SportAcademy.Application.Commands.AuthCommands.RefreshToken;
-using SportAcademy.Application.Commands.AuthCommands.Register;
 using SportAcademy.Application.Commands.AuthCommands.RevokeToken;
 using SportAcademy.Application.Commands.AuthCommands.ToggleUserActive;
 using SportAcademy.Application.Commands.AuthCommands.VerifyPassword;
@@ -26,13 +25,6 @@ namespace SportAcademy.Web.Controllers
         public AuthController(IMediator mediator)
         {
             _mediator = mediator;
-        }
-
-        [HttpPost("sign-up")]
-        public async Task<IActionResult> SignUp(RegisterCommand command, CancellationToken ct)
-        {
-            var result = await _mediator.Send(command, ct);
-            return Ok(result);
         }
 
         [HttpPost("login")]

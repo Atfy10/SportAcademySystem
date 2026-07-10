@@ -14,7 +14,6 @@ namespace SportAcademy.Domain.Enums
         Get,
         GetAll,
         Login,
-        Signup,
         Logout,
         Validation,
         RefreshToken,

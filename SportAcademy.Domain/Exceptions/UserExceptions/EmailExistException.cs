@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Exceptions.UserExceptions
 {
     public class EmailExistException : Exception
     {
-        static readonly string _message = "This email is already in use. Please try another one.";
+        static readonly string _message = "This email is already in use. Please use a different email address.";
 
         public EmailExistException() : base(_message)
         {
