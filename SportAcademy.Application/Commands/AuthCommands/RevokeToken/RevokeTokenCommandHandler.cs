@@ -20,19 +20,12 @@ namespace SportAcademy.Application.Commands.AuthCommands.RevokeToken
             var tokenHash = _jwtTokenService.HashToken(request.RefreshToken);
             var storedToken = await _jwtTokenService.GetRefreshTokenByHashAsync(tokenHash, ct);
 
-            if (storedToken == null)
+            if (storedToken != null && !storedToken.IsRevoked)
             {
-                return Result<bool>.Failure(_operation, "Token not found", 404);
+                storedToken.IsRevoked = true;
+                storedToken.RevokedAt = DateTime.UtcNow;
+                await _jwtTokenService.RevokeRefreshTokenAsync(storedToken, ct);
             }
-
-            if (storedToken.IsRevoked)
-            {
-                return Result<bool>.Failure(_operation, "Token already revoked", 400);
-            }
-
-            storedToken.IsRevoked = true;
-            storedToken.RevokedAt = DateTime.UtcNow;
-            await _jwtTokenService.RevokeRefreshTokenAsync(storedToken, ct);
 
             return Result<bool>.Success(true, _operation);
         }

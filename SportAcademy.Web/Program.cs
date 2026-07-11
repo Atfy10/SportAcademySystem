@@ -155,6 +155,16 @@ builder.Services.AddRateLimiter(options =>
             PermitLimit = 20,
             Window = TimeSpan.FromMinutes(1),
         }));
+
+    options.AddPolicy("token-revoke", httpContext =>
+    {
+        var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+        });
+    });
 });
 
 builder.Services.AddCors(options =>

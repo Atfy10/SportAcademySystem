@@ -110,7 +110,8 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize]
+        [AllowAnonymous]
+        [EnableRateLimiting("token-revoke")]
         [HttpPost("revoke")]
         public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
         {
