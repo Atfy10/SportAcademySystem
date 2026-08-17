@@ -97,6 +97,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost("generate")]
+        [Authorize(Policy = "Permission:traineegroup.generate_sessions")]
         public async Task<IActionResult> Generate([FromBody] GenerateSessionOccurrencesCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);

@@ -32,6 +32,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> Create([FromBody] CreateBranchCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
@@ -83,6 +84,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPut]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> Update([FromBody] UpdateBranchCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);

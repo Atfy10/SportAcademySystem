@@ -61,6 +61,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Permission:employee.manage")]
         public async Task<ActionResult> CreateAsync(CreateEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
@@ -68,6 +69,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "Permission:employee.manage")]
         public async Task<ActionResult> EditAsync(int id, UpdateEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command with { Id = id }, ct);

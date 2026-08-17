@@ -111,7 +111,7 @@ public class AcceptInvitationCommandHandlerTests
 
         _jwtTokenServiceMock
             .Setup(j => j.GenerateJwtToken(It.IsAny<AppUser>(), "Owner"))
-            .Returns("jwt-access-token");
+            .ReturnsAsync("jwt-access-token");
 
         _refreshTokenRepoMock
             .Setup(r => r.AddAsync(It.IsAny<RefreshTokenEntity>(), It.IsAny<CancellationToken>()))

@@ -10,7 +10,7 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface IJwtTokenService
     {
-        string GenerateJwtToken(AppUser appUser, params string[] roles);
+        Task<string> GenerateJwtToken(AppUser appUser, params string[] roles);
         string GenerateRefreshToken();
         string HashToken(string token);
         Task<RefreshTokenResult?> ValidateAndRefreshTokenAsync(string plainRefreshToken, CancellationToken ct = default);

@@ -19,6 +19,8 @@ using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Infrastructure.Services;
+using Microsoft.AspNetCore.Authorization;
+using SportAcademy.Web.Authorization;
 using SportAcademy.Web.Filters;
 using SportAcademy.Web.Middleware;
 using SportAcademy.Web.Services;
@@ -120,6 +122,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 builder.Services.AddRateLimiter(options =>
 {

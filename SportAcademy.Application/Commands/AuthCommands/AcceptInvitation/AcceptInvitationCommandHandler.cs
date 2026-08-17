@@ -116,7 +116,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
             await _refreshTokenRepository.AddAsync(refreshTokenEntity, ct);
             await _unitOfWork.CommitTransactionAsync(ct);
 
-            var accessToken = _jwtTokenService.GenerateJwtToken(user, "Owner");
+            var accessToken = await _jwtTokenService.GenerateJwtToken(user, "Owner");
 
             await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id), ct);
 

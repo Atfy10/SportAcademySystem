@@ -42,6 +42,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Permission:coach.manage")]
         public async Task<ActionResult> Create(CreateCoachCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
@@ -49,6 +50,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "Permission:coach.manage")]
         public async Task<ActionResult> Update(int id, UpdateCoachCommand command, CancellationToken ct)
         {
             var cmd = command with { Id = id };

@@ -27,6 +27,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPut("{paymentNumber}")]
+        [Authorize(Policy = "Permission:payment.correct")]
         public async Task<IActionResult> Update(string paymentNumber, [FromBody] UpdatePaymentCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command with { PaymentNumber = paymentNumber }, ct);

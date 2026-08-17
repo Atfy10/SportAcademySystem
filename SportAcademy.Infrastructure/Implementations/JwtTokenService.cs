@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
@@ -13,16 +14,21 @@ namespace SportAcademy.Infrastructure.Implementations
     {
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly RoleManager<AppRole> _roleManager;
         private const int RefreshTokenExpiryDays = 7;
         private const int GracePeriodMinutes = 10;
 
-        public JwtTokenService(IConfiguration configuration, IRefreshTokenRepository refreshTokenRepository)
+        public JwtTokenService(
+            IConfiguration configuration,
+            IRefreshTokenRepository refreshTokenRepository,
+            RoleManager<AppRole> roleManager)
         {
             _configuration = configuration;
             _refreshTokenRepository = refreshTokenRepository;
+            _roleManager = roleManager;
         }
 
-        public string GenerateJwtToken(AppUser appUser, params string[] roles)
+        public async Task<string> GenerateJwtToken(AppUser appUser, params string[] roles)
         {
             var claims = new List<Claim>
             {
@@ -35,9 +41,25 @@ namespace SportAcademy.Infrastructure.Implementations
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
+            var permissions = new HashSet<string>();
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
+
+                // Permission claims are resolved from the role's own claims (seeded in
+                // AppDataSeeder) at token-issue time, not stored on the user directly - this
+                // keeps a single source of truth per role and avoids a DB round-trip per
+                // authorization check later.
+                var appRole = await _roleManager.FindByNameAsync(role);
+                if (appRole is null) continue;
+                var roleClaims = await _roleManager.GetClaimsAsync(appRole);
+                foreach (var claim in roleClaims.Where(c => c.Type == "permission"))
+                    permissions.Add(claim.Value);
+            }
+
+            foreach (var permission in permissions)
+            {
+                claims.Add(new Claim("permission", permission));
             }
 
             var key = _configuration["Jwt:Key"];
@@ -106,7 +128,7 @@ namespace SportAcademy.Infrastructure.Implementations
                 return null;
 
             var roles = storedToken.User.UserRoles.Select(r => r.Role.Name ?? "").ToArray();
-            var newAccessToken = GenerateJwtToken(storedToken.User, roles);
+            var newAccessToken = await GenerateJwtToken(storedToken.User, roles);
             var newRefreshToken = GenerateRefreshToken();
             var newRefreshTokenHash = HashToken(newRefreshToken);
 

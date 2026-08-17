@@ -35,6 +35,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Permission:enrollment.create")]
         public async Task<IActionResult> Create([FromBody] CreateEnrollmentCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
@@ -62,6 +63,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = "Permission:enrollment.edit")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateEnrollmentCommand command,
             CancellationToken cancellationToken)
         {

@@ -29,6 +29,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = "Permission:attendance.mark")]
         public async Task<IActionResult> Create([FromBody] CreateAttendanceCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
@@ -101,6 +102,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost("bulk")]
+        [Authorize(Policy = "Permission:attendance.mark")]
         public async Task<IActionResult> BulkCreate(
             [FromBody] BulkCreateAttendanceCommand command,
             CancellationToken ct)

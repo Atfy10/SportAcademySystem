@@ -2,12 +2,14 @@ using Bogus;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Domain.Authorization;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using System.Security.Claims;
 
 namespace SportAcademy.Infrastructure.Seeders
 {
@@ -312,6 +314,37 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Tenants seeded successfully.");
         }
 
+        // Default permission grants per seeded role. This is what actually gives Manager/
+        // Coach/Accountant/User distinct, enforced capability boundaries - before this, the
+        // only roles checked anywhere in the API were SuperAdmin/Admin/Owner, and these four
+        // could reach the same endpoints as any other authenticated user.
+        private static readonly Dictionary<string, string[]> DefaultRolePermissions = new()
+        {
+            ["SuperAdmin"] = [.. Permissions.All],
+            ["Owner"] = [.. Permissions.All.Where(p => !p.StartsWith("platform."))],
+            ["Admin"] = [.. Permissions.All.Where(p => !p.StartsWith("platform."))],
+            ["Manager"] =
+            [
+                Permissions.Trainee.Register, Permissions.Trainee.Edit, Permissions.Trainee.Export,
+                Permissions.Enrollment.Create, Permissions.Enrollment.Edit, Permissions.Enrollment.Activate,
+                Permissions.Attendance.Mark, Permissions.Attendance.ViewRate,
+                Permissions.TraineeGroup.Manage, Permissions.TraineeGroup.GenerateSessions,
+                Permissions.Employee.Manage, Permissions.Coach.Manage, Permissions.Branch.Manage, Permissions.Sport.Manage,
+                Permissions.Payment.Record, Permissions.Payment.Correct,
+            ],
+            ["Coach"] =
+            [
+                Permissions.Attendance.Mark, Permissions.Attendance.ViewRate,
+                Permissions.TraineeGroup.GenerateSessions,
+            ],
+            ["Accountant"] =
+            [
+                Permissions.Payment.Record, Permissions.Payment.Correct,
+                Permissions.Enrollment.Edit, Permissions.Trainee.Export,
+            ],
+            ["User"] = [],
+        };
+
         private async Task SeedRolesAsync()
         {
             _logger.LogInformation("Seeding roles...");
@@ -319,15 +352,36 @@ namespace SportAcademy.Infrastructure.Seeders
             var roleNames = new[] { "SuperAdmin", "Owner", "Admin", "Manager", "User", "Coach", "Accountant" };
             foreach (var roleName in roleNames)
             {
-                if (!await _roleManager.RoleExistsAsync(roleName))
+                var role = await _roleManager.FindByNameAsync(roleName);
+                if (role is null)
                 {
-                    var result = await _roleManager.CreateAsync(new AppRole { Name = roleName });
+                    role = new AppRole { Name = roleName };
+                    var result = await _roleManager.CreateAsync(role);
                     if (!result.Succeeded)
                         throw new InvalidOperationException($"Failed to create role {roleName}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
                 }
+
+                await SeedRolePermissionsAsync(role, DefaultRolePermissions.GetValueOrDefault(roleName, []));
             }
 
             _logger.LogInformation("Roles seeded successfully.");
+        }
+
+        // Idempotent: only adds permission claims the role doesn't already have. Existing
+        // deployments that already ran the seeder before this change will pick up the new
+        // claims on next startup without duplicating anything.
+        private async Task SeedRolePermissionsAsync(AppRole role, string[] permissions)
+        {
+            var existing = (await _roleManager.GetClaimsAsync(role))
+                .Where(c => c.Type == "permission")
+                .Select(c => c.Value)
+                .ToHashSet();
+
+            foreach (var permission in permissions)
+            {
+                if (existing.Contains(permission)) continue;
+                await _roleManager.AddClaimAsync(role, new Claim("permission", permission));
+            }
         }
 
         private async Task AssignRolesAsync(Guid systemTenantId, Guid superAdminId, Guid ownerId, Guid salmiyaTenantId)
