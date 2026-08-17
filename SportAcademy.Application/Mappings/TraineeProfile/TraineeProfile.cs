@@ -56,39 +56,9 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForMember(dest => dest.MedicalConditions, o => o.MapFrom(s =>
                     s.MedicalConditions.Select(mc => mc.Condition).ToList()));
 
-            CreateMap<CreateTraineeCommand, Trainee>()
-                .ForMember(dest => dest.Address,
-                    opt => opt.MapFrom((src, dest) =>
-                    {
-                        var street = src.Street ?? "";
-                        var city = src.City ?? "";
-                        if (string.IsNullOrWhiteSpace(street) && string.IsNullOrWhiteSpace(city))
-                            street = city = "-";
-                        return Address.Create(street, city);
-                    }))
-                .ForMember(dest => dest.Sports,
-                    opt => opt.MapFrom(src => src.SportIds
-                        .Select(id => new SportTrainee { SportId = id })
-                        .ToList()))
-                .ForAllMembers(opts =>
-                    opts.Condition((src, dest, srcMember) => srcMember != null));
-
-            CreateMap<Trainee, CreateTraineeCommand>()
-                .ForPath(dest => dest.Street, opt => opt.MapFrom(src => src.Address != null ? src.Address.Street : null))
-                .ForPath(dest => dest.City, opt => opt.MapFrom(src => src.Address != null ? src.Address.City : null))
-                .ForMember(dest => dest.SportIds,
-                    opt => opt.MapFrom(src => src.Sports
-                        .Select(st => st.SportId)
-                        .ToHashSet()))
-                .ForAllMembers(opts =>
-                    opts.Condition((src, dest, srcMember) => srcMember != null));
-
-            CreateMap<Trainee, UpdateTraineePersonalCommand>();
-
-            CreateMap<UpdateTraineePersonalCommand, Trainee>()
-                .ForMember(src => src.Sports, opt => opt.Ignore())
-                .ForAllMembers(opts =>
-                    opts.Condition((src, dest, srcMember) => srcMember != null));
+            // CreateTraineeCommand/UpdateTraineePersonalCommand <-> Trainee are no longer
+            // AutoMapper mappings — CreateTraineeCommandHandler/UpdateTraineePersonalCommandHandler
+            // use Mappings/Manual/TraineeMapper.cs instead (nothing else referenced these maps).
 
             CreateMap<Trainee, TraineeDto>()
                 .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.Sport.Id,

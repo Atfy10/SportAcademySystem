@@ -34,14 +34,10 @@ namespace SportAcademy.Application.Mappings.AttendanceProfile
                     src.AttendanceStatus.ToString()
                 ));
 
-            CreateMap<Attendance, CreateAttendanceCommand>()
-                .ForMember(dest => dest.AttendanceDate, 
-                    opt => opt.MapFrom(src => DateOnly.FromDateTime(src.AttendanceDate)))
-                .ReverseMap()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.AttendanceDate,
-                    opt => opt.MapFrom(src => new DateTime(src.AttendanceDate ?? new DateOnly(),
-                                                    new TimeOnly())));
+            // CreateAttendanceCommand <-> Attendance is no longer an AutoMapper mapping:
+            // CreateAttendanceCommandHandler builds/updates the entity manually (see
+            // Mappings/Manual — it needs to resolve EnrollmentId from TraineeId first,
+            // which a declarative map can't express).
 
             CreateMap<Attendance, UpdateAttendanceCommand>()
                 .ReverseMap();
