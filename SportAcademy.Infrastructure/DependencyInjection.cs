@@ -76,6 +76,9 @@ namespace SportAcademy.Infrastructure
             // Register Tenant Repository (new pattern)
             services.AddScoped<ITenantRepository, TenantRepository>();
 
+            // Register Tenant Audit Repository
+            services.AddScoped<ITenantAuditRepository, TenantAuditRepository>();
+
             // Register Invitation Token Service
             services.AddScoped<IInvitationTokenService, InvitationTokenService>();
 

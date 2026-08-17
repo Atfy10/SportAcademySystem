@@ -10,9 +10,11 @@ using SportAcademy.Application.Commands.PlatformCommands.ExtendTenantSubscriptio
 using SportAcademy.Application.Commands.PlatformCommands.SetTenantTrial;
 using SportAcademy.Application.Commands.PlatformCommands.ToggleFeature;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateTenant;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantDetails;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantFeatures;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenants;
+using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers.Platform;
@@ -24,8 +26,25 @@ namespace SportAcademy.Web.Controllers.Platform;
 public class TenantsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITenantAuditRepository _auditRepository;
 
-    public TenantsController(IMediator mediator) => _mediator = mediator;
+    public TenantsController(IMediator mediator, ITenantAuditRepository auditRepository)
+    {
+        _mediator = mediator;
+        _auditRepository = auditRepository;
+    }
+
+    private async Task LogAsync(Guid tenantId, string eventType, string description, CancellationToken ct)
+    {
+        await _auditRepository.AddAsync(new TenantAuditEvent
+        {
+            TenantId = tenantId,
+            EventType = eventType,
+            Description = description,
+            PerformedBy = User.Identity?.Name ?? "SuperAdmin",
+            PerformedAt = DateTime.UtcNow,
+        }, ct);
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetTenants(
@@ -61,6 +80,8 @@ public class TenantsController : ControllerBase
             request.Currency);
 
         var result = await _mediator.Send(command, ct);
+        if (result.IsSuccess && result.Data is not null)
+            await LogAsync(result.Data.Id, "tenant.created", $"Tenant '{request.DisplayName}' created.", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -93,6 +114,8 @@ public class TenantsController : ControllerBase
             request.Currency);
 
         var result = await _mediator.Send(command, ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.updated", "Tenant details updated.", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -102,6 +125,8 @@ public class TenantsController : ControllerBase
         CancellationToken ct)
     {
         var result = await _mediator.Send(new ArchiveTenantCommand(id), ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.archived", "Tenant archived.", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -113,6 +138,8 @@ public class TenantsController : ControllerBase
     {
         var result = await _mediator.Send(
             new ChangeTenantStatusCommand(id, request.NewStatus), ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.status_changed", $"Status changed to {request.NewStatus}.", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -124,6 +151,8 @@ public class TenantsController : ControllerBase
     {
         var result = await _mediator.Send(
             new ChangeTenantPlanCommand(id, request.NewPlanId), ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.plan_changed", $"Plan changed to plan #{request.NewPlanId}.", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -144,6 +173,8 @@ public class TenantsController : ControllerBase
     {
         var result = await _mediator.Send(
             new ToggleFeatureCommand(id, request.FeatureId, request.IsEnabled), ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.feature_toggled", $"Feature {(request.IsEnabled ? "enabled" : "disabled")}.", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -155,6 +186,8 @@ public class TenantsController : ControllerBase
     {
         var result = await _mediator.Send(
             new ExtendTenantSubscriptionCommand(id, request.Days), ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.subscription_extended", $"Subscription extended by {request.Days} day(s).", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -165,6 +198,8 @@ public class TenantsController : ControllerBase
     {
         var result = await _mediator.Send(
             new ExpireTenantSubscriptionCommand(id), ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.subscription_expired", "Subscription manually expired.", ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -175,6 +210,8 @@ public class TenantsController : ControllerBase
     {
         var result = await _mediator.Send(
             new SetTenantTrialCommand(id), ct);
+        if (result.IsSuccess)
+            await LogAsync(id, "tenant.trial_set", "Tenant set to trial.", ct);
         return StatusCode(result.StatusCode, result);
     }
 }
