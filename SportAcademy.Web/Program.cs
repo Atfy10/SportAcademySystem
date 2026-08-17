@@ -18,6 +18,7 @@ using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Infrastructure.Services;
+using SportAcademy.Web.Filters;
 using SportAcademy.Web.Middleware;
 using SportAcademy.Web.Services;
 using System.Text;
@@ -167,17 +168,27 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// Cors:AllowedOrigins is read from configuration (appsettings.{Environment}.json or the
+// CORS__AllowedOrigins__0, CORS__AllowedOrigins__1, ... environment variables) so production
+// deployments can declare their real frontend origin(s) without editing code. Falls back to
+// the local dev ports when the setting is absent.
+var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+var allowedOrigins = configuredOrigins is { Length: > 0 }
+    ? configuredOrigins
+    :
+    [
+        "https://localhost:8080",
+        "http://localhost:8080",
+        "https://localhost:8081",
+        "http://localhost:8081",
+        "https://localhost:44306"
+    ];
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(
-            "https://localhost:8080",
-            "http://localhost:8080",
-            "https://localhost:8081",
-            "http://localhost:8081",
-            "https://localhost:44306"
-            )
+        policy.WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -194,7 +205,10 @@ builder.Services.AddInfrastructureServices();
 builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
 builder.Services.AddHttpClient<IOpenRouterClient, OpenRouterClient>();
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<ResultStatusFilter>();
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false));
