@@ -1,8 +1,9 @@
-﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings.Manual;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SportExceptions;
 
@@ -10,16 +11,16 @@ namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
 {
     public class UpdateSportCommandHandler : IRequestHandler<UpdateSportCommand, Result<SportDto>>
     {
-        private readonly IMapper _mapper;
         private readonly ISportRepository _sportRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateSportCommandHandler(
-            IMapper mapper,
-            ISportRepository sportRepository)
+            ISportRepository sportRepository,
+            IUnitOfWork unitOfWork)
         {
-            _mapper = mapper;
             _sportRepository = sportRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<SportDto>> Handle(UpdateSportCommand request, CancellationToken cancellationToken)
@@ -34,19 +35,16 @@ namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
                     throw new SportExistsException();
             }
 
-            _mapper.Map(request, sport);
+            SportMapper.ApplyUpdate(sport, request);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await _sportRepository.UpdateAsync(sport, cancellationToken);
+            await _sportRepository.UpdateAsyncWithoutSave(sport, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var sportDto = _mapper.Map<SportDto>(sport)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-            return Result<SportDto>.Success(sportDto, _operationType);
+            return Result<SportDto>.Success(SportMapper.ToDto(sport), _operationType);
         }
     }
-
 }

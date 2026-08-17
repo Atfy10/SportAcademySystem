@@ -31,8 +31,8 @@ namespace SportAcademy.Application.Mappings.SportProfile
 			    .ForMember(dest => dest.Branches, opt => opt.Ignore())
 			    .ForMember(dest => dest.Trainees, opt => opt.Ignore());
 
-            CreateMap<UpdateSportCommand, Sport>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            // UpdateSportCommand -> Sport is no longer an AutoMapper mapping -
+            // UpdateSportCommandHandler uses Mappings/Manual/SportMapper.cs instead.
 		}
 	}
 }

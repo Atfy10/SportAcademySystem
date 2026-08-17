@@ -36,11 +36,9 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
 
             CreateMap<CreateEmployeeDto, Employee>();
 
-            CreateMap<UpdateEmployeeCommand, Employee>()
-                .ForMember(dest => dest.Address,
-                    opt => opt.MapFrom(src =>
-                    Address.Create(src.Street, src.City)))
-;
+            // UpdateEmployeeCommand -> Employee is no longer an AutoMapper mapping -
+            // UpdateEmployeeCommandHandler uses Mappings/Manual/EmployeeMapper.cs instead
+            // (partial update: fields are optional and only applied when present).
         }
     }
 }

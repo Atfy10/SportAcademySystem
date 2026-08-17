@@ -36,10 +36,10 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Update(UpdateSportCommand command)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, UpdateSportCommand command)
         {
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(command with { Id = id });
             return Ok(result);
         }
 
