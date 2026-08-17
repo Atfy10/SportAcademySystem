@@ -11,6 +11,7 @@ using SportAcademy.Infrastructure.Persistence.Views.CoachViews;
 using SportAcademy.Infrastructure.Persistence.Views.EmployeeViews;
 using SportAcademy.Infrastructure.Persistence.Views.GroupViews;
 using SportAcademy.Infrastructure.Persistence.Views.ScheduleViews;
+using SportAcademy.Infrastructure.Persistence.Views.Interfaces;
 using SportAcademy.Infrastructure.Persistence.Views.TraineeViews;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -57,6 +58,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Family> Families { get; set; }
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
         public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
+        public DbSet<TraineeMedicalCondition> TraineeMedicalConditions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<TenantFeature> TenantFeatures { get; set; }
@@ -241,6 +243,22 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
 
                 modelBuilder.Entity(entityType.ClrType)
                     .HasQueryFilter(Expression.Lambda(body!, parameter));
+            }
+
+            // Apply tenant query filter to all IModelView (SQL view) entities
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                .Where(e => typeof(IModelView).IsAssignableFrom(e.ClrType)))
+            {
+                var parameter = Expression.Parameter(entityType.ClrType, "e");
+
+                var viewBody = Expression.Equal(
+                    Expression.Convert(
+                        Expression.Property(parameter, "TenantId"),
+                        typeof(Guid?)),
+                    Expression.Property(Expression.Constant(this), nameof(CurrentTenantId)));
+
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasQueryFilter(Expression.Lambda(viewBody, parameter));
             }
 
             base.OnModelCreating(modelBuilder);

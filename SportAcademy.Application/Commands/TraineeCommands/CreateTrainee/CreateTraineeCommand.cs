@@ -18,6 +18,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         public Guid? AppUserId { get; init; }
         public int BranchId { get; init; }
         public HashSet<int> SportIds { get; init; } = [];
+        public List<string>? MedicalConditions { get; init; } = [];
 
         // Person base class fields:
         public required string PhoneNumber { get; init; }

@@ -49,4 +49,7 @@ public class TraineeExportDto
     public DateOnly? LatestSubscriptionEndDate { get; set; }
     public string? LatestSubscriptionType { get; set; }
     public string? LatestSubscriptionStatus { get; set; }
+
+    // ── Medical ─────────────────────────────────────────────────────────
+    public string? MedicalConditions { get; set; }
 }

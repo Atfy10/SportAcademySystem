@@ -1795,6 +1795,29 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.ToTable("TraineeGroups", (string)null);
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.TraineeMedicalCondition", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("TraineeId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TraineeId");
+
+                    b.ToTable("TraineeMedicalConditions", (string)null);
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.VideoAnalysis", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1888,6 +1911,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("SecondPhoneNumber");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1925,6 +1952,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
                     b.Property<int>("TraineeGroupId")
                         .HasColumnType("int");
 
@@ -1945,6 +1976,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("SportName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
 
                     b.ToTable((string)null);
 
@@ -1985,6 +2020,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("SecondPhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
                     b.ToTable((string)null);
 
                     b.ToView("vw_EmployeeBasic", (string)null);
@@ -2007,6 +2046,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal>("Salary")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -2041,6 +2084,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
                     b.Property<int>("TraineeGroupId")
                         .HasColumnType("int");
 
@@ -2058,6 +2105,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
                     b.Property<int>("TraineeGroupId")
                         .HasColumnType("int");
 
@@ -2074,6 +2125,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
 
                     b.Property<int>("TraineeGroupId")
                         .HasColumnType("int");
@@ -2104,6 +2159,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
 
                     b.ToTable((string)null);
 
@@ -2145,6 +2204,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("SecondPhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
                     b.ToTable((string)null);
 
                     b.ToView("vw_TraineeBasic", (string)null);
@@ -2158,6 +2221,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
 
                     b.Property<int>("TraineeGroupId")
                         .HasColumnType("int");
@@ -2206,6 +2273,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
                     b.Property<int>("TraineeGroupId")
                         .HasColumnType("int");
 
@@ -2250,6 +2321,10 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("SubscriptionTypeName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
 
                     b.ToTable((string)null);
 
@@ -3069,6 +3144,17 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.TraineeMedicalCondition", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Trainee", "Trainee")
+                        .WithMany("MedicalConditions")
+                        .HasForeignKey("TraineeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Trainee");
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.VideoAnalysis", b =>
                 {
                     b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
@@ -3243,6 +3329,8 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SportAcademy.Domain.Entities.Trainee", b =>
                 {
                     b.Navigation("Enrollments");
+
+                    b.Navigation("MedicalConditions");
 
                     b.Navigation("Sports");
 

@@ -38,8 +38,9 @@ public class TenantIsolationTests
 
     private static ApplicationDbContext CreateContextWithInterceptor(Guid? tenantId, string dbName)
     {
-        var userContext = new TestUserContextService { TenantId = tenantId };
-        var interceptor = new TenantSaveChangesInterceptor(userContext);
+        var tenantIdProvider = new TestTenantIdProvider();
+        tenantIdProvider.SetTenantId(tenantId);
+        var interceptor = new TenantSaveChangesInterceptor(tenantIdProvider);
 
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(dbName)

@@ -1,5 +1,6 @@
 CREATE OR ALTER VIEW dbo.vw_EmployeeWork AS
 SELECT
+    E.TenantId,
     E.Id,
     E.Salary,
     E.HireDate,

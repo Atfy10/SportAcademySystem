@@ -1,5 +1,6 @@
 CREATE OR ALTER VIEW dbo.vw_TraineeSubscription AS
 SELECT
+    t.TenantId,
     t.Id,
     t.FirstName,
     CASE WHEN EXISTS (

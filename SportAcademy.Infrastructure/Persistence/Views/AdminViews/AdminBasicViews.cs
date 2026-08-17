@@ -5,6 +5,7 @@ namespace SportAcademy.Infrastructure.Persistence.Views.AdminViews
 {
     public class AdminBasicViews : IModelView
     {
+        public Guid TenantId { get; set; }
         public string UserName { get; set; } = null!;
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;

@@ -119,4 +119,46 @@ public class TenantRepository : ITenantRepository
 
     public Task<List<Feature>> GetAllFeaturesAsync(CancellationToken ct = default)
         => _context.Set<Feature>().ToListAsync(ct);
+
+    public async Task<TenantSettings?> GetSettingsAsync(Guid tenantId, CancellationToken ct = default)
+        => await _context.Set<TenantSettings>().FirstOrDefaultAsync(s => s.TenantId == tenantId, ct);
+
+    public void UpdateSettings(TenantSettings settings)
+        => _context.Set<TenantSettings>().Update(settings);
+
+    public async Task<List<Guid>> GetPlanFeaturesAsync(int planId, CancellationToken ct = default)
+        => await _context.SubscriptionPlanFeatures
+            .Where(spf => spf.SubscriptionPlanId == planId)
+            .Select(spf => spf.FeatureId)
+            .ToListAsync(ct);
+
+    public async Task BulkUpdateFeaturesAsync(Guid tenantId, Dictionary<Guid, bool> featureStates, string enabledBy, CancellationToken ct = default)
+    {
+        foreach (var (featureId, isEnabled) in featureStates)
+        {
+            var existing = await _context.Set<TenantFeature>()
+                .FirstOrDefaultAsync(tf => tf.TenantId == tenantId && tf.FeatureId == featureId, ct);
+
+            if (existing is not null)
+            {
+                if (existing.IsEnabled != isEnabled)
+                {
+                    existing.IsEnabled = isEnabled;
+                    existing.EnabledAt = DateTime.UtcNow;
+                    existing.EnabledBy = enabledBy;
+                }
+            }
+            else if (isEnabled)
+            {
+                await _context.Set<TenantFeature>().AddAsync(new TenantFeature
+                {
+                    TenantId = tenantId,
+                    FeatureId = featureId,
+                    IsEnabled = true,
+                    EnabledAt = DateTime.UtcNow,
+                    EnabledBy = enabledBy
+                }, ct);
+            }
+        }
+    }
 }

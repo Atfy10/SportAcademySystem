@@ -13,6 +13,9 @@ public class TraineeScheduleViewConfiguration
 
         builder.HasNoKey();
 
+        builder.Property(x => x.TenantId)
+            .HasColumnName("TenantId");
+
         builder.Property(x => x.TraineeGroupId);
 
         builder.Property(x => x.Day)

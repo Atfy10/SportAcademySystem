@@ -8,17 +8,20 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
 {
     public class AuditingInterceptor : SaveChangesInterceptor
     {
-        private readonly string _defaultUser;
+        private string _defaultUser;
+        private readonly IUserContextService _contextService;
 
         public AuditingInterceptor(IUserContextService contextService)
         {
-            _defaultUser = contextService.UserId?.ToString() ?? "System";
+            _contextService = contextService;
         }
 
         override public InterceptionResult<int> SavingChanges(
             DbContextEventData eventData,
             InterceptionResult<int> result)
         {
+            _defaultUser = _contextService.UserId?.ToString() ?? "System";
+
             ApplyAuditInformation(eventData);
             return base.SavingChanges(eventData, result);
         }
@@ -28,6 +31,8 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
             InterceptionResult<int> result,
             CancellationToken cancellationToken = default)
         {
+            _defaultUser = _contextService.UserId?.ToString() ?? "System";
+
             ApplyAuditInformation(eventData);
             return await base.SavingChangesAsync(eventData, result, cancellationToken);
         }

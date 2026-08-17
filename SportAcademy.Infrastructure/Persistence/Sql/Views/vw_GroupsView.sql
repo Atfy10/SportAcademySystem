@@ -1,5 +1,6 @@
 CREATE OR ALTER VIEW dbo.vw_GroupsView AS
 SELECT
+    tg.TenantId,
     tg.Id AS TraineeGroupId,
     tg.SkillLevel,
     tg.MaximumCapacity,

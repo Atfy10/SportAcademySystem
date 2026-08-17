@@ -5,6 +5,7 @@ namespace SportAcademy.Infrastructure.Persistence.Views.CoachViews;
 
 public class CoachScheduleView : IModelView
 {
+    public Guid TenantId { get; set; }
     public int TraineeGroupId { get; set; }
     public SkillLevel SkillLevel { get; set; }
     public int MaximumCapacity { get; set; }

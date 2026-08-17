@@ -60,11 +60,12 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UpdateTraineeGroupCommand command,
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, UpdateTraineeGroupCommand command,
             CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(command, cancellationToken);
+            var cmd = command with { Id = id };
+            var result = await _mediator.Send(cmd, cancellationToken);
             return Ok(result);
         }
 

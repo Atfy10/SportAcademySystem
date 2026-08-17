@@ -1,5 +1,6 @@
 CREATE OR ALTER VIEW dbo.vw_TraineeSession AS
 SELECT
+    t.TenantId,
     t.Id,
     e.EnrollmentDate,
     e.ExpiryDate,

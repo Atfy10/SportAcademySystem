@@ -54,6 +54,33 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 
             await _traineeRepository.UpdateSports(trainee, request.SportIds);
 
+            if (request.MedicalConditions != null)
+            {
+                var existingConditions = trainee.MedicalConditions.ToList();
+                var newConditions = request.MedicalConditions
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Select(c => c.Trim())
+                    .Distinct()
+                    .ToList();
+
+                var toRemove = existingConditions
+                    .Where(ec => !newConditions.Contains(ec.Condition))
+                    .ToList();
+                foreach (var rm in toRemove)
+                    trainee.MedicalConditions.Remove(rm);
+
+                var existingValues = existingConditions.Select(ec => ec.Condition).ToHashSet();
+                var toAdd = newConditions
+                    .Where(nc => !existingValues.Contains(nc))
+                    .ToList();
+                foreach (var cond in toAdd)
+                    trainee.MedicalConditions.Add(new TraineeMedicalCondition
+                    {
+                        TraineeId = trainee.Id,
+                        Condition = cond
+                    });
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
 
             await _traineeRepository.UpdateAsync(trainee, cancellationToken);

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
@@ -17,11 +18,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
 
-        public CoachRepository(ApplicationDbContext context, IMapper mapper) : base(context, mapper)
+        private readonly ITenantIdProvider _tenantIdProvider;
+
+        public CoachRepository(ApplicationDbContext context, IMapper mapper, ITenantIdProvider tenantIdProvider) : base(context, mapper)
         {
             _context = context;
             _mapper = mapper;
+            _tenantIdProvider = tenantIdProvider;
         }
+
         public async Task<int> CountAsync(CancellationToken cancellationToken)
         {
             return await _context.Coachs.CountAsync(cancellationToken);
@@ -97,6 +102,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             AND enr.IsDeleted = 0
                         GROUP BY tg.CoachId
                     ) trainee_count ON c.EmployeeId = trainee_count.CoachId
+                    WHERE e.TenantId = @tenantId
                     ORDER BY ft.RANK DESC, c.EmployeeId ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
 
@@ -107,9 +113,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         Employees,
                         (FirstName, LastName),
                         @term
-                    ) ft ON e.Id = ft.[KEY];
+                    ) ft ON e.Id = ft.[KEY]
+                    WHERE e.TenantId = @tenantId;
                 ";
-                parameters = new { term = fullTextTerm, offset, pageReq.PageSize };
+                parameters = new { term = fullTextTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId };
             }
             else
             {
@@ -142,16 +149,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             AND enr.IsDeleted = 0
                         GROUP BY tg.CoachId
                     ) trainee_count ON c.EmployeeId = trainee_count.CoachId
-                    WHERE (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
+                    WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
                     ORDER BY c.EmployeeId ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
 
                     SELECT COUNT(*)
                     FROM Coaches c
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
-                    WHERE (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
+                    WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
                 ";
-                parameters = new { likeTerm, offset, pageReq.PageSize };
+                parameters = new { likeTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId };
             }
 
             using var multi = await connection.QueryMultipleAsync(sql, parameters);

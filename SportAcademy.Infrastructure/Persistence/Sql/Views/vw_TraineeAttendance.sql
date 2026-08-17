@@ -1,5 +1,6 @@
 CREATE OR ALTER VIEW dbo.vw_TraineeAttendance AS
 SELECT
+    a.TenantId,
     so.StartDateTime,
     so.Status,
     a.AttendanceDate,

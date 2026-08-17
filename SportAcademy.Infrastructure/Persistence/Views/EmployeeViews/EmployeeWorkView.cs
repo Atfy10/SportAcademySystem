@@ -5,6 +5,7 @@ namespace SportAcademy.Infrastructure.Persistence.Views.EmployeeViews;
 
 public class EmployeeWorkView : IModelView
 {
+    public Guid TenantId { get; set; }
     public int Id { get; set; }
 
     public decimal Salary { get; set; }

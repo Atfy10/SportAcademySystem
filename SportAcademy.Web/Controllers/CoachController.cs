@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoach;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
+using SportAcademy.Application.Commands.CoachCommands.UpdateCoach;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
@@ -44,6 +45,14 @@ namespace SportAcademy.Web.Controllers
         public async Task<ActionResult> Create(CreateCoachCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> Update(int id, UpdateCoachCommand command, CancellationToken ct)
+        {
+            var cmd = command with { Id = id };
+            var result = await _mediator.Send(cmd, ct);
             return Ok(result);
         }
 

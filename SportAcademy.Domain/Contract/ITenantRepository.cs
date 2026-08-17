@@ -24,4 +24,8 @@ public interface ITenantRepository
     Task<List<TenantFeature>> GetTenantFeaturesAsync(Guid tenantId, CancellationToken ct = default);
     Task AddTenantFeatureAsync(TenantFeature feature, CancellationToken ct = default);
     Task<List<Domain.Entities.Feature>> GetAllFeaturesAsync(CancellationToken ct = default);
+    Task<TenantSettings?> GetSettingsAsync(Guid tenantId, CancellationToken ct = default);
+    void UpdateSettings(TenantSettings settings);
+    Task<List<Guid>> GetPlanFeaturesAsync(int planId, CancellationToken ct = default);
+    Task BulkUpdateFeaturesAsync(Guid tenantId, Dictionary<Guid, bool> featureStates, string enabledBy, CancellationToken ct = default);
 }

@@ -13,6 +13,9 @@ public class TraineeAttendanceViewConfiguration
 
         builder.HasNoKey();
 
+        builder.Property(x => x.TenantId)
+            .HasColumnName("TenantId");
+
         builder.Property(x => x.StartDateTime);
 
         builder.Property(x => x.Status)

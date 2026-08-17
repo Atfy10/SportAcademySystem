@@ -4,6 +4,7 @@ namespace SportAcademy.Infrastructure.Persistence.Views.ScheduleViews;
 
 public class ScheduleWeeklyView : IModelView
 {
+    public Guid TenantId { get; set; }
     public int TraineeGroupId { get; set; }
 
     public DayOfWeek Day { get; set; }

@@ -19,4 +19,5 @@ public record TraineeDetailsDto(
 )
 {
     public double AttendanceRate { get; set; }
+    public List<string> MedicalConditions { get; set; } = [];
 }

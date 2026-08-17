@@ -1,13 +1,22 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.TenantCommands.BulkUpdateTenantFeatures;
+using SportAcademy.Application.Commands.TenantCommands.ImportTenantSettings;
+using SportAcademy.Application.Commands.TenantCommands.UpdateTenantFeature;
+using SportAcademy.Application.Commands.TenantCommands.UpdateTenantSettings;
+using SportAcademy.Application.DTOs.TenantDtos;
+using SportAcademy.Application.Queries.TenantQueries.ExportTenantSettings;
+using SportAcademy.Application.Queries.TenantQueries.GetTenantFeatures;
+using SportAcademy.Application.Queries.TenantQueries.GetTenantSettings;
+using SportAcademy.Application.Queries.TenantQueries.GetTenantSettingsOptions;
 using SportAcademy.Application.Queries.TenantQueries.GetCurrentTenantQuery;
 
 namespace SportAcademy.Web.Controllers
 {
-[Authorize]
-[EnableRateLimiting("per-user")]
-[Route("api/[controller]")]
+    [Authorize]
+    [EnableRateLimiting("per-user")]
+    [Route("api/tenant")]
     [ApiController]
     public class TenantController : ControllerBase
     {
@@ -24,5 +33,72 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new GetCurrentTenantQuery(), ct);
             return Ok(result);
         }
+
+        [HttpGet("settings")]
+        public async Task<IActionResult> GetSettings(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTenantSettingsQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPut("settings")]
+        public async Task<IActionResult> UpdateSettings([FromBody] UpdateTenantSettingsCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
+        [HttpGet("features")]
+        public async Task<IActionResult> GetFeatures(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTenantFeaturesQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPut("features/{featureId}")]
+        public async Task<IActionResult> UpdateFeature(
+            [FromRoute] Guid featureId,
+            [FromBody] UpdateTenantFeatureRequest request,
+            CancellationToken ct)
+        {
+            if (request.FeatureId != featureId) return BadRequest();
+            var result = await _mediator.Send(new UpdateTenantFeatureCommand(featureId, request.IsEnabled), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("features/bulk")]
+        public async Task<IActionResult> BulkUpdateFeatures(
+            [FromBody] BulkUpdateTenantFeaturesRequest request,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new BulkUpdateTenantFeaturesCommand(request.FeatureStates), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("settings/export")]
+        public async Task<IActionResult> ExportSettings(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new ExportTenantSettingsQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("settings/import")]
+        public async Task<IActionResult> ImportSettings(
+            [FromBody] ImportTenantSettingsCommand command,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
+        [HttpGet("settings/options")]
+        public async Task<IActionResult> GetSettingsOptions(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTenantSettingsOptionsQuery(), ct);
+            return Ok(result);
+        }
     }
+
+    public record UpdateTenantFeatureRequest(Guid FeatureId, bool IsEnabled);
+    public record BulkUpdateTenantFeaturesRequest(Dictionary<Guid, bool> FeatureStates);
 }

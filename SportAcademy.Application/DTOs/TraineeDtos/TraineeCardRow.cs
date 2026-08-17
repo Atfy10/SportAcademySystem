@@ -14,4 +14,5 @@ public class TraineeCardRow
     public string? SportSkills { get; set; }
     public string? CoachName { get; set; }
     public string? BranchName { get; set; }
+    public string? MedicalConditions { get; set; }
 }

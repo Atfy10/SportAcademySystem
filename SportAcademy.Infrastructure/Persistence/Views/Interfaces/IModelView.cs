@@ -2,5 +2,6 @@
 {
     public interface IModelView
     {
+        Guid TenantId { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 CREATE OR ALTER VIEW dbo.vw_AdminBasic AS
 SELECT
+    E.TenantId,
     A.UserName,
     E.FirstName,
     E.LastName,

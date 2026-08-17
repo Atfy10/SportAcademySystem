@@ -1,6 +1,7 @@
 CREATE OR ALTER VIEW dbo.vw_TraineeSchedule AS
 SELECT
-    TraineeGroupId,
-    Day,
-    StartTime
-FROM GroupSchedules;
+    gs.TenantId,
+    gs.TraineeGroupId,
+    gs.Day,
+    gs.StartTime
+FROM GroupSchedules gs;

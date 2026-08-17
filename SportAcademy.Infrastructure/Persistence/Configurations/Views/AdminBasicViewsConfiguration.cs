@@ -12,6 +12,9 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Views
 
             builder.HasNoKey();
 
+            builder.Property(x => x.TenantId)
+                .HasColumnName("TenantId");
+
             builder.Property(x => x.UserName)
                 .HasColumnName("UserName")
                 .HasMaxLength(50);

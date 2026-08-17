@@ -1,16 +1,19 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
 {
     private readonly ApplicationDbContext _context;
+    private readonly ITenantIdProvider _tenantIdProvider;
 
-    public SqlTraineeCodeGenerator(ApplicationDbContext context)
+    public SqlTraineeCodeGenerator(ApplicationDbContext context, ITenantIdProvider tenantIdProvider)
     {
         _context = context;
+        _tenantIdProvider = tenantIdProvider;
     }
 
     public async Task<string> GenerateAsync(
@@ -34,11 +37,12 @@ public class SqlTraineeCodeGenerator : ITraineeCodeGenerator
         try
         {
             await _context.Database.ExecuteSqlRawAsync(
-                "EXEC usp_GenerateTraineeCode @FamilyId, @BranchId, @NationalityCategoryId, @AgeCode, @TraineeCode OUTPUT",
+                "EXEC usp_GenerateTraineeCode @FamilyId, @BranchId, @NationalityCategoryId, @AgeCode, @TenantId, @TraineeCode OUTPUT",
                 new SqlParameter("@FamilyId", familyId),
                 new SqlParameter("@BranchId", branchId),
                 new SqlParameter("@NationalityCategoryId", nationalityCategoryId),
                 new SqlParameter("@AgeCode", ageCharString),
+                new SqlParameter("@TenantId", _tenantIdProvider.TenantId),
                 result
             );
         }

@@ -90,10 +90,11 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             {
                 var newFamily = new Family
                 {
+                    FamilyCode = _familyRepository.SelectNextId(),
                     LastMemberNumber = 0
                 };
-                await _familyRepository.AddAsyncWithoutSave(newFamily, cancellationToken);
-                familyId = _familyRepository.SelectNextId();
+                await _familyRepository.AddAsync(newFamily, cancellationToken);
+                familyId = newFamily.Id;
             }
 
             var sportIds = request.SportIds.ToList();
@@ -139,6 +140,18 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             cancellationToken.ThrowIfCancellationRequested();
 
             await _traineeRepository.AddAsyncWithoutSave(trainee, cancellationToken);
+
+            if (request.MedicalConditions?.Count > 0)
+            {
+                foreach (var condition in request.MedicalConditions.Where(c => !string.IsNullOrWhiteSpace(c)))
+                {
+                    trainee.MedicalConditions.Add(new TraineeMedicalCondition
+                    {
+                        TraineeId = trainee.Id,
+                        Condition = condition.Trim()
+                    });
+                }
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
 

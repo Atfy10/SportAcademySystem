@@ -5,6 +5,7 @@ namespace SportAcademy.Infrastructure.Persistence.Views.TraineeViews
 {
     public class TraineeAttendanceView : IModelView
     {
+        public Guid TenantId { get; set; }
         public DateTime StartDateTime { get; set; }
 
         public SessionStatus Status { get; set; }

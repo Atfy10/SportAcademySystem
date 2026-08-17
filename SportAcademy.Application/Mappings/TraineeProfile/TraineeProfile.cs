@@ -39,6 +39,8 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                     s.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.FirstName +
                     " " + s.Enrollments.FirstOrDefault()!.TraineeGroup.Coach.Employee.LastName))
                 .ForCtorParam("BranchName", o => o.MapFrom(s => s.Branch.Name ?? string.Empty))
+                .ForMember(dest => dest.MedicalConditions, o => o.MapFrom(s =>
+                    s.MedicalConditions.Select(mc => mc.Condition).ToList()))
                 .ReverseMap();
 
             CreateMap<Trainee, TraineeDetailsDto>()
@@ -50,15 +52,19 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForCtorParam("IsSubscribed", o => o.MapFrom(s => s.SubscriptionDetails
                     .Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted)))
                 .ForCtorParam("EnrollmentCount", o => o.MapFrom(s => s.Enrollments.Count))
-                .ForCtorParam("JoinDate", o => o.MapFrom(s => s.JoinDate.ToDateTime(TimeOnly.MinValue)));
+                .ForCtorParam("JoinDate", o => o.MapFrom(s => s.JoinDate.ToDateTime(TimeOnly.MinValue)))
+                .ForMember(dest => dest.MedicalConditions, o => o.MapFrom(s =>
+                    s.MedicalConditions.Select(mc => mc.Condition).ToList()));
 
             CreateMap<CreateTraineeCommand, Trainee>()
                 .ForMember(dest => dest.Address,
                     opt => opt.MapFrom((src, dest) =>
                     {
-                        if (string.IsNullOrWhiteSpace(src.Street) && string.IsNullOrWhiteSpace(src.City))
-                            return Address.Create("", "");
-                        return Address.Create(src.Street ?? "", src.City ?? "");
+                        var street = src.Street ?? "";
+                        var city = src.City ?? "";
+                        if (string.IsNullOrWhiteSpace(street) && string.IsNullOrWhiteSpace(city))
+                            street = city = "-";
+                        return Address.Create(street, city);
                     }))
                 .ForMember(dest => dest.Sports,
                     opt => opt.MapFrom(src => src.SportIds

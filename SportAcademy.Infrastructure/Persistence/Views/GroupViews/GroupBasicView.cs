@@ -5,6 +5,7 @@ namespace SportAcademy.Infrastructure.Persistence.Views.GroupViews;
 
 public class GroupBasicView : IModelView
 {
+    public Guid TenantId { get; set; }
     public int TraineeGroupId { get; set; }
 
     public SkillLevel SkillLevel { get; set; }

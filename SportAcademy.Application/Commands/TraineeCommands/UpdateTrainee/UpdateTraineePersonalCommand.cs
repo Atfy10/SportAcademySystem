@@ -19,6 +19,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         public string? ParentNumber { get; init; }
         public int BranchId { get; init; }
         public List<int> SportIds { get; init; } = [];
+        public List<string>? MedicalConditions { get; init; } = [];
         public AppUserDto? AppUser { get; init; }
     }
 }

@@ -3,6 +3,7 @@ CREATE OR ALTER PROCEDURE usp_GenerateTraineeCode
     @BranchId INT,
     @NationalityCategoryId INT,
     @AgeCode CHAR(1),
+    @TenantId UNIQUEIDENTIFIER,
     @TraineeCode NVARCHAR(50) OUTPUT
 AS
 BEGIN
@@ -36,7 +37,7 @@ BEGIN
     SET LastMemberNumber = LastMemberNumber + 1
     OUTPUT INSERTED.LastMemberNumber, INSERTED.FamilyCode
     INTO @Family(MemberNumber, FamilyCode)
-    WHERE Id = @FamilyId
+    WHERE Id = @FamilyId AND TenantId = @TenantId
     IF @@ROWCOUNT = 0
     BEGIN
         THROW 50001, 'Family not found', 1
@@ -57,7 +58,7 @@ BEGIN
     SELECT
         @BranchCode = Id
     FROM Branches
-    WHERE Id = @BranchId
+    WHERE Id = @BranchId AND TenantId = @TenantId
 
     IF @BranchCode IS NULL
         THROW 50002, 'Branch not found', 1

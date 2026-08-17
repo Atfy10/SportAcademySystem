@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.TraineeDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
@@ -20,12 +21,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ITenantIdProvider _tenantIdProvider;
 
-        public TraineeRepository(ApplicationDbContext context, IMapper mapper)
+        public TraineeRepository(ApplicationDbContext context, IMapper mapper, ITenantIdProvider tenantIdProvider)
             : base(context, mapper)
         {
             _context = context;
             _mapper = mapper;
+            _tenantIdProvider = tenantIdProvider;
         }
 
         public async Task<List<int>> GetIdsAsync(CancellationToken ct = default)
@@ -176,7 +179,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var filterParams = new Dictionary<string, object>
             {
                 ["offset"] = offset,
-                ["pageSize"] = page.PageSize
+                ["pageSize"] = page.PageSize,
+                ["tenantId"] = _tenantIdProvider.TenantId!
             };
 
             if (hasSport)
@@ -209,14 +213,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         (FirstName, LastName, Email),
                         @term
                     ) ft ON t.Id = ft.[KEY]
-                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
-                    LEFT JOIN Sports s ON st.SportId = s.Id
-                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
-                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
-                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
-                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
                     LEFT JOIN Branches b ON t.BranchId = b.Id
-                    WHERE t.IsDeleted = 0
+                    WHERE t.IsDeleted = 0 AND t.TenantId = @tenantId
                     {filterClause}";
 
                 countSql = $"SELECT COUNT(DISTINCT t.Id) {fromJoinWhere}";
@@ -243,13 +241,25 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             WHERE st.TraineeId = t.Id
                             FOR JSON PATH
                         ) AS SportSkills,
-                        (ce.FirstName + ' ' + ce.LastName) AS CoachName,
-                        b.Name AS BranchName
+                        (SELECT TOP 1 ce.FirstName + ' ' + ce.LastName
+                            FROM Enrollments e
+                            INNER JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
+                            INNER JOIN Coaches c ON tg.CoachId = c.EmployeeId
+                            INNER JOIN Employees ce ON ce.Id = c.EmployeeId
+                            WHERE e.TraineeId = t.Id
+                        ) AS CoachName,
+                        b.Name AS BranchName,
+                        (SELECT 
+                                mc.Condition
+                            FROM TraineeMedicalConditions mc
+                            WHERE mc.TraineeId = t.Id
+                            FOR JSON PATH
+                        ) AS MedicalConditions
                     {fromJoinWhere}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate,
-                        ce.FirstName, ce.LastName, b.Name, ft.RANK
+                        b.Name, ft.RANK
                     {BuildSortClause(sortBy, sortDir, "ft.RANK DESC, t.Id ASC")}
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
                 ";
@@ -265,14 +275,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
                 var fromJoinWhere = $@"
                     FROM Trainees t
-                    LEFT JOIN SportTrainees st ON t.Id = st.TraineeId
-                    LEFT JOIN Sports s ON st.SportId = s.Id
-                    LEFT JOIN Enrollments e ON e.TraineeId = t.Id
-                    LEFT JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
-                    LEFT JOIN Coaches c ON tg.CoachId = c.EmployeeId
-                    LEFT JOIN Employees ce ON ce.Id = c.EmployeeId
                     LEFT JOIN Branches b ON t.BranchId = b.Id
-                    WHERE t.IsDeleted = 0
+                    WHERE t.IsDeleted = 0 AND t.TenantId = @tenantId
                     {filterClause}";
 
                 countSql = $"SELECT COUNT(DISTINCT t.Id) {fromJoinWhere}";
@@ -299,13 +303,25 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             WHERE st.TraineeId = t.Id
                             FOR JSON PATH
                         ) AS SportSkills,
-                        (ce.FirstName + ' ' + ce.LastName) AS CoachName,
-                        b.Name AS BranchName
+                        (SELECT TOP 1 ce.FirstName + ' ' + ce.LastName
+                            FROM Enrollments e
+                            INNER JOIN TraineeGroups tg ON tg.Id = e.TraineeGroupId
+                            INNER JOIN Coaches c ON tg.CoachId = c.EmployeeId
+                            INNER JOIN Employees ce ON ce.Id = c.EmployeeId
+                            WHERE e.TraineeId = t.Id
+                        ) AS CoachName,
+                        b.Name AS BranchName,
+                        (SELECT 
+                                mc.Condition
+                            FROM TraineeMedicalConditions mc
+                            WHERE mc.TraineeId = t.Id
+                            FOR JSON PATH
+                        ) AS MedicalConditions
                     {fromJoinWhere}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
                         t.PhoneNumber, t.JoinDate,
-                        ce.FirstName, ce.LastName, b.Name
+                        b.Name
                     {BuildSortClause(sortBy, sortDir, "t.Id ASC")}
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
                 ";
@@ -330,6 +346,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         options
                         );
 
+                var medicalConditions = string.IsNullOrWhiteSpace(r.MedicalConditions)
+                    ? new List<string>()
+                    : JsonSerializer.Deserialize<List<MedicalConditionRow>>(r.MedicalConditions)
+                        ?.Select(x => x.Condition).ToList() ?? [];
+
                 return new TraineeCardDto(
                     r.Id,
                     r.Code,
@@ -343,7 +364,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     sports ?? [],
                     r.CoachName,
                     r.BranchName
-                );
+                )
+                {
+                    MedicalConditions = medicalConditions
+                };
             }).ToList();
 
             return new PagedData<TraineeCardDto>
@@ -374,6 +398,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<TraineeDetailsDto> GetByIdAsync(int id, CancellationToken cancellationToken)
             => await _context.Trainees
                 .Where(t => t.Id == id)
+                .Include(t => t.MedicalConditions)
                 .AsNoTracking()
                 .ProjectTo<TraineeDetailsDto>(_mapper.ConfigurationProvider)
                 .SingleOrDefaultAsync(cancellationToken)
@@ -447,6 +472,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .ThenInclude(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.SportSubscriptionType)
                     .ThenInclude(sst => sst.SubscriptionType)
+                .Include(t => t.MedicalConditions)
                 .ToListAsync(ct);
 
             return trainees.Select(t => new TraineeExportDto
@@ -515,6 +541,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .OrderByDescending(sd => sd.StartDate)
                     .Select(sd => sd.Status.ToString())
                     .FirstOrDefault(),
+                MedicalConditions = t.MedicalConditions.Any()
+                    ? string.Join("|", t.MedicalConditions.Select(mc => mc.Condition))
+                    : null,
             }).ToList();
         }
 
@@ -537,6 +566,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 ? $"ORDER BY {defaultSort}"
                 : $"ORDER BY {string.Join(", ", sortColumn.Split(',', StringSplitOptions.TrimEntries).Select(c => $"{c} {dir}"))}";
         }
-    }
 
+        private class MedicalConditionRow
+        {
+            public string Condition { get; set; } = null!;
+        }
+    }
 }
