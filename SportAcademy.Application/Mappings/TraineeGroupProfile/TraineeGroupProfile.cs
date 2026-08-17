@@ -59,22 +59,12 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 opt => opt.MapFrom(src => src.Enrollments.Count)
             );
 
-        CreateMap<TraineeGroup, TraineeGroupDto>()
-            .ConstructUsing(src => new TraineeGroupDto(
-                src.Id,
-                src.SkillLevel,
-                src.MaximumCapacity,
-                src.DurationInMinutes,
-                src.Gender,
-                src.BranchId,
-                src.CoachId
-            ))
-            .ReverseMap();
+        // TraineeGroup <-> TraineeGroupDto and UpdateTraineeGroupCommand -> TraineeGroup are no
+        // longer AutoMapper mappings - UpdateTraineeGroupCommandHandler uses
+        // Mappings/Manual/TraineeGroupMapper.cs instead (it must skip BranchId during update,
+        // which a declarative map can't express without also breaking create).
 
         CreateMap<CreateTraineeGroupCommand, TraineeGroup>();
-
-        CreateMap<UpdateTraineeGroupCommand, TraineeGroup>()
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
 
         CreateMap<TraineeGroup, ListTraineeGroupDto>()
             .ConstructUsing(src => new ListTraineeGroupDto(
