@@ -10,6 +10,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure;
+using SportAcademy.Infrastructure.Implementations;
 using SportAcademy.Infrastructure.Implementations.OpenAi;
 using SportAcademy.Infrastructure.Implementations.OpenRouter;
 using SportAcademy.Infrastructure.Options;
@@ -204,6 +205,7 @@ builder.Services.AddInfrastructureServices();
 // Register external HTTP client services (web layer specific)
 builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
 builder.Services.AddHttpClient<IOpenRouterClient, OpenRouterClient>();
+builder.Services.AddHttpClient<IEmailService, SendGridEmailService>();
 
 builder.Services.AddControllers(options =>
     {

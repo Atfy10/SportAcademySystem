@@ -85,8 +85,9 @@ namespace SportAcademy.Infrastructure
             // Register Unit of Work (new pattern)
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            // Register Email Service (placeholder until SendGrid API key is configured)
-            services.AddScoped<IEmailService, SendGridEmailService>();
+            // IEmailService is registered in Program.cs via AddHttpClient<IEmailService,
+            // SendGridEmailService>() - it needs an injected HttpClient, matching the pattern
+            // used for IOpenAiChatClient/IOpenRouterClient.
 
             // Register Application URL Provider
             services.AddScoped<IAppUrlProvider, AppUrlProvider>();
