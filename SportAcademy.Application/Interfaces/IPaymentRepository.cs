@@ -1,4 +1,5 @@
-﻿using SportAcademy.Domain.Entities;
+﻿using SportAcademy.Application.DTOs.PaymentDtos;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Interfaces
@@ -8,5 +9,6 @@ namespace SportAcademy.Application.Interfaces
         Task<bool> IsRelatedToSubscriptionAsync(string paymentNumber, CancellationToken cancellationToken = default);
         Task<bool> ExistsForSubscriptionAsync(int subscriptionDetailsId, CancellationToken cancellationToken = default);
         Task<Payment> CreatePaymentAsync(string paymentNumber, PaymentMethod method, int branchId, CancellationToken cancellationToken = default);
+        Task<List<PaymentHistoryDto>> GetHistoryForTraineeAsync(int traineeId, CancellationToken cancellationToken = default);
     }
 }

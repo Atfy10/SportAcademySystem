@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.DTOs.PaymentDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -13,6 +14,39 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public PaymentRepository(ApplicationDbContext context) : base(context)
         {
             _context = context;
+        }
+
+        public async Task<List<PaymentHistoryDto>> GetHistoryForTraineeAsync(int traineeId, CancellationToken cancellationToken = default)
+        {
+            // Materialize then map in-memory rather than projecting in the query:
+            // SubscriptionType.Name is a string-converted enum and EF Core query translation
+            // for enum.ToString() inside a Select() isn't reliable enough to depend on here.
+            var subscriptions = await _context.SubscriptionDetails
+                .AsNoTracking()
+                .Include(sd => sd.Payment)
+                    .ThenInclude(p => p.Branch)
+                .Include(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.SportSubscriptionType)
+                        .ThenInclude(sst => sst.Sport)
+                .Include(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.SportSubscriptionType)
+                        .ThenInclude(sst => sst.SubscriptionType)
+                .Where(sd => sd.TraineeId == traineeId)
+                .OrderByDescending(sd => sd.Payment.PaidDate)
+                .ToListAsync(cancellationToken);
+
+            return subscriptions.Select(sd => new PaymentHistoryDto(
+                sd.Payment.PaymentNumber,
+                sd.Payment.Method,
+                sd.Payment.PaidDate,
+                sd.Payment.Branch.Name,
+                sd.Id,
+                sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
+                sd.SportPrice.SportSubscriptionType.Sport.Name,
+                sd.SportPrice.Price,
+                sd.StartDate,
+                sd.EndDate
+            )).ToList();
         }
 
         public async Task<bool> IsRelatedToSubscriptionAsync(string paymentNumber, CancellationToken cancellationToken = default)
