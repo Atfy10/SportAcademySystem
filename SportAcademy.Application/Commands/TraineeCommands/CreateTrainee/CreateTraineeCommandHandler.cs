@@ -1,9 +1,10 @@
-using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings.Manual;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -18,39 +19,38 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
     public class CreateTraineeCommandHandler : IRequestHandler<CreateTraineeCommand, Result<CreateTraineeResponse>>
     {
         private readonly ITraineeCodeGenerator _traineeCodeGenerator;
-        private readonly IMapper _mapper;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IFamilyRepository _familyRepository;
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher<AppUser> _passwordHasher;
         private readonly ISportRepository _sportRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateTraineeCommandHandler(
             ITraineeCodeGenerator traineeCodeGenerator,
-            IMapper mapper,
             ITraineeRepository traineeRepository,
             IFamilyRepository familyRepository,
             IUserRepository userRepository,
             IPasswordHasher<AppUser> passwordHasher,
             ISportRepository sportRepository,
+            IUnitOfWork unitOfWork,
             IPublisher publisher)
         {
             _traineeCodeGenerator = traineeCodeGenerator;
-            _mapper = mapper;
             _traineeRepository = traineeRepository;
             _familyRepository = familyRepository;
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _sportRepository = sportRepository;
+            _unitOfWork = unitOfWork;
             _publisher = publisher;
         }
 
         public async Task<Result<CreateTraineeResponse>> Handle(CreateTraineeCommand request, CancellationToken cancellationToken)
         {
-            var trainee = _mapper.Map<Trainee>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+            var trainee = TraineeMapper.ToEntity(request);
 
             trainee.JoinDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -93,7 +93,8 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
                     FamilyCode = _familyRepository.SelectNextId(),
                     LastMemberNumber = 0
                 };
-                await _familyRepository.AddAsync(newFamily, cancellationToken);
+                await _familyRepository.AddAsyncWithoutSave(newFamily, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 familyId = newFamily.Id;
             }
 
@@ -170,7 +171,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             await _userRepository.AddAsyncWithoutSave(appUser, cancellationToken);
 
-            await _familyRepository.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _publisher.Publish(new TraineeCreatedEvent(trainee.Id), cancellationToken);
 

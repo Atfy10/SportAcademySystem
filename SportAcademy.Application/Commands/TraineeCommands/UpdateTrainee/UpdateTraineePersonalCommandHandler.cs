@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -18,19 +18,19 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         private readonly IBranchRepository _branchRepository;
         private readonly ITraineeService _traineeService;
         private readonly ITraineeRepository _traineeRepository;
-        private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateTraineePersonalCommandHandler(
             IBranchRepository branchRepository,
             ITraineeService traineeService,
             ITraineeRepository traineeRepository,
-            IMapper mapper)
+            IUnitOfWork unitOfWork)
         {
             _branchRepository = branchRepository;
             _traineeService = traineeService;
             _traineeRepository = traineeRepository;
-            _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<UpdateTraineePersonalCommand>> Handle(UpdateTraineePersonalCommand request, CancellationToken cancellationToken)
@@ -38,7 +38,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
             var trainee = await _traineeRepository.GetFullTrainee(request.Id, cancellationToken)
                 ?? throw new TraineeNotFoundException(request.Id.ToString());
 
-            _mapper.Map(request, trainee);
+            TraineeMapper.ApplyPersonalUpdate(trainee, request);
 
             var isPhoneNumberExist = await _traineeRepository
                 .IsPhoneNumberExistAsync(trainee.PhoneNumber, trainee.Id, cancellationToken);
@@ -83,7 +83,8 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await _traineeRepository.UpdateAsync(trainee, cancellationToken);
+            await _traineeRepository.UpdateAsyncWithoutSave(trainee, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
