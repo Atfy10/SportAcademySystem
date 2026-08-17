@@ -30,11 +30,13 @@ public class ToggleFeatureCommandHandler : IRequestHandler<ToggleFeatureCommand,
 
         if (tenantFeature is not null)
         {
-            if (tenantFeature.IsEnabled == request.IsEnabled)
+            if (tenantFeature.IsEnabled == request.IsEnabled && tenantFeature.LockedBySuperAdmin)
                 return Result.Failure(_operation, $"Feature is already {(request.IsEnabled ? "enabled" : "disabled")}.", 400);
 
             tenantFeature.IsEnabled = request.IsEnabled;
             tenantFeature.EnabledAt = DateTime.UtcNow;
+            tenantFeature.EnabledBy = "SuperAdmin";
+            tenantFeature.LockedBySuperAdmin = true;
         }
         else
         {
@@ -44,7 +46,8 @@ public class ToggleFeatureCommandHandler : IRequestHandler<ToggleFeatureCommand,
                 FeatureId = request.FeatureId,
                 IsEnabled = request.IsEnabled,
                 EnabledAt = DateTime.UtcNow,
-                EnabledBy = "SuperAdmin"
+                EnabledBy = "SuperAdmin",
+                LockedBySuperAdmin = true
             }, ct);
         }
 

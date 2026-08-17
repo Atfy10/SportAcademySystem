@@ -47,6 +47,9 @@ public class UpdateTenantFeatureCommandHandler : IRequestHandler<UpdateTenantFea
 
         if (tenantFeature is not null)
         {
+            if (tenantFeature.LockedBySuperAdmin)
+                return Result.Failure(_operation, "This feature is managed by your plan and can't be changed here.", 403);
+
             if (tenantFeature.IsEnabled == request.IsEnabled)
                 return Result.Failure(_operation, $"Feature is already {(request.IsEnabled ? "enabled" : "disabled")}.", 400);
 

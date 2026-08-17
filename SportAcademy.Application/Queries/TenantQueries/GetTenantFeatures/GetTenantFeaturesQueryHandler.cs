@@ -87,7 +87,8 @@ public class GetTenantFeaturesQueryHandler : IRequestHandler<GetTenantFeaturesQu
                 Description = f.Description,
                 Category = FeatureCategoryMap.GetValueOrDefault(f.Name, "Management"),
                 IsEnabled = tf?.IsEnabled ?? false,
-                CanToggle = allowedFeatureIds.Contains(f.Id),
+                CanToggle = allowedFeatureIds.Contains(f.Id) && !(tf?.LockedBySuperAdmin ?? false),
+                LockedBySuperAdmin = tf?.LockedBySuperAdmin ?? false,
                 EnabledAt = tf?.EnabledAt
             };
         }).ToList();

@@ -28,6 +28,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasMaxLength(100)
                 .HasDefaultValue("System");
 
+            builder.Property(tf => tf.LockedBySuperAdmin)
+                .IsRequired()
+                .HasDefaultValue(false);
+
             builder.HasOne(tf => tf.Tenant)
                 .WithMany(t => t.Features)
                 .HasForeignKey(tf => tf.TenantId)

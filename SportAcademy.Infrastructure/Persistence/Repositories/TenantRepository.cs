@@ -141,6 +141,11 @@ public class TenantRepository : ITenantRepository
 
             if (existing is not null)
             {
+                // Super-Admin-locked features are skipped, not failed: a bulk save covers many
+                // features at once and one locked entry shouldn't block the rest from saving.
+                if (existing.LockedBySuperAdmin)
+                    continue;
+
                 if (existing.IsEnabled != isEnabled)
                 {
                     existing.IsEnabled = isEnabled;
