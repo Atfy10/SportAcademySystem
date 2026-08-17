@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -16,5 +17,8 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
         int TraineeId,
         int TraineeGroupId,
         int SubscriptionDetailsId
-    ) : IRequest<Result<int>>;
+    ) : IRequest<Result<int>>, IRequiresFeature
+    {
+        public string FeatureKey => "enrollment-management";
+    }
 }

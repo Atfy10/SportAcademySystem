@@ -29,6 +29,7 @@ namespace SportAcademy.Application
             // Register pipeline behaviors (cross-cutting concerns)
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(FeatureGateBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PaginationNormalizationBehavior<,>));
 
             // Register FluentValidation validators

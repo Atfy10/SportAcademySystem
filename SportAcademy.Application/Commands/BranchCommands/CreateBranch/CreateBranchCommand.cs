@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 {
@@ -16,6 +17,9 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 		string? Email,
 		string CoX,
 		string CoY
-		) : IRequest<Result<int>>;
+		) : IRequest<Result<int>>, IRequiresFeature
+	{
+		public string FeatureKey => "branch-management";
+	}
 
 }

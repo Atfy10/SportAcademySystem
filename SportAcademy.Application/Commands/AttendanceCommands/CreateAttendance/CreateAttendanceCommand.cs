@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
@@ -12,5 +13,8 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
         int TraineeId,
         AttendanceStatus Status,
         string? CheckInTime
-        ) : IRequest<Result<int>>;
+        ) : IRequest<Result<int>>, IRequiresFeature
+    {
+        public string FeatureKey => "attendance-tracking";
+    }
 }

@@ -114,6 +114,10 @@ public class TenantRepository : ITenantRepository
             .Where(tf => tf.TenantId == tenantId)
             .ToListAsync(ct);
 
+    public Task<bool> IsFeatureEnabledAsync(Guid tenantId, string featureName, CancellationToken ct = default)
+        => _context.Set<TenantFeature>()
+            .AnyAsync(tf => tf.TenantId == tenantId && tf.Feature.Name == featureName && tf.IsEnabled, ct);
+
     public async Task AddTenantFeatureAsync(TenantFeature feature, CancellationToken ct = default)
         => await _context.Set<TenantFeature>().AddAsync(feature, ct);
 

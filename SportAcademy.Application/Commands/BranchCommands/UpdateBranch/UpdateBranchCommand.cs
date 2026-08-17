@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.BranchDtos;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 {
@@ -19,5 +20,8 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 		string CoX,
 		string CoY,
 		bool IsActive
-		) : IRequest<Result<BranchDto>>;
+		) : IRequest<Result<BranchDto>>, IRequiresFeature
+	{
+		public string FeatureKey => "branch-management";
+	}
 }

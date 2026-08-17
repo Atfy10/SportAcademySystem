@@ -5,4 +5,8 @@ using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Queries.AttendanceQueries.GetBySessionOccurrence;
 
-public record GetAttendanceBySessionOccurrenceQuery(int SessionOccurrenceId) : IRequest<Result<List<AttendanceRecordDto>>>;
+public record GetAttendanceBySessionOccurrenceQuery(int SessionOccurrenceId)
+    : IRequest<Result<List<AttendanceRecordDto>>>, IRequiresFeature
+{
+    public string FeatureKey => "attendance-tracking";
+}

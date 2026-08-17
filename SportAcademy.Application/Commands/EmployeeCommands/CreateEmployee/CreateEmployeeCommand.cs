@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
@@ -18,5 +19,8 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         string PhoneNumber,
         string? SecondNumber,
         Position Position,
-        int BranchId) : IRequest<Result<int>>;
+        int BranchId) : IRequest<Result<int>>, IRequiresFeature
+    {
+        public string FeatureKey => "employee-management";
+    }
 }

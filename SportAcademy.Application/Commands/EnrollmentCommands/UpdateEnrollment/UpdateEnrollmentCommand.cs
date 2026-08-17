@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
 {
@@ -9,5 +10,8 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
         DateTime? ExpiryDate,
         int? SessionRemaining,
         bool? IsActive
-    ) : IRequest<Result<EnrollmentDto>>;
+    ) : IRequest<Result<EnrollmentDto>>, IRequiresFeature
+    {
+        public string FeatureKey => "enrollment-management";
+    }
 }

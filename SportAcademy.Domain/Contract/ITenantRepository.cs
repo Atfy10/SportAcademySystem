@@ -28,4 +28,8 @@ public interface ITenantRepository
     void UpdateSettings(TenantSettings settings);
     Task<List<Guid>> GetPlanFeaturesAsync(int planId, CancellationToken ct = default);
     Task BulkUpdateFeaturesAsync(Guid tenantId, Dictionary<Guid, bool> featureStates, string enabledBy, CancellationToken ct = default);
+    // Single targeted check for FeatureGateBehavior - avoids loading the tenant's full feature
+    // list on every gated request. Matches GetTenantFeaturesQueryHandler's semantics: no row
+    // for this tenant+feature counts as disabled, not enabled-by-default.
+    Task<bool> IsFeatureEnabledAsync(Guid tenantId, string featureName, CancellationToken ct = default);
 }
