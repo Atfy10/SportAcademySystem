@@ -45,10 +45,12 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAll(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] string? status,
+            [FromQuery] string? paymentStatus,
             CancellationToken ct)
         {
             var result = await _mediator.Send(
-                new GetAllEnrollmentsQuery(PageRequest.Create(page, pageSize)), ct);
+                new GetAllEnrollmentsQuery(PageRequest.Create(page, pageSize), status, paymentStatus), ct);
             return Ok(result);
         }
 
@@ -59,11 +61,11 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UpdateEnrollmentCommand command,
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateEnrollmentCommand command,
             CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(command, cancellationToken);
+            var result = await _mediator.Send(command with { Id = id }, cancellationToken);
             return Ok(result);
         }
 
@@ -132,10 +134,12 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] string term,
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] string? status,
+            [FromQuery] string? paymentStatus,
             CancellationToken ct)
         {
             var result = await _mediator.Send(
-                new SearchEnrollmentsQuery(term, PageRequest.Create(page, pageSize)), ct);
+                new SearchEnrollmentsQuery(term, PageRequest.Create(page, pageSize), status, paymentStatus), ct);
             return Ok(result);
         }
 

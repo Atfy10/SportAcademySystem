@@ -110,7 +110,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(e => (int?)e.Id)
                 .FirstOrDefaultAsync(ct);
 
-        public async Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, CancellationToken ct = default)
+        public async Task<int> GetActiveEnrollmentCountForGroupAsync(int traineeGroupId, CancellationToken ct = default)
+            => await _context.Enrollments
+                .CountAsync(e => e.TraineeGroupId == traineeGroupId && e.IsActive, ct);
+
+        public async Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default)
         {
             var query = _context.Enrollments
                 .Where(e => e.Trainee.FirstName.Contains(term)
@@ -120,11 +124,47 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     || e.TraineeGroup.Coach.Employee.LastName.Contains(term)
                     || (e.TraineeGroup.Coach.Employee.FirstName + " " + e.TraineeGroup.Coach.Employee.LastName).Contains(term)
                     || e.TraineeGroup.Branch!.Name.Contains(term)
-                    || e.TraineeGroup.Coach.Sport!.Name.Contains(term))
+                    || e.TraineeGroup.Coach.Sport!.Name.Contains(term));
+
+            query = ApplyStatusFilters(query, status, paymentStatus);
+
+            var projected = query
                 .AsNoTracking()
                 .ProjectTo<EnrollmentCardDto>(_mapper.ConfigurationProvider);
 
-            return await query.ToPagedDataAsync(page, ct);
+            return await projected.ToPagedDataAsync(page, ct);
+        }
+
+        // Mirrors Enrollment.GetStatus()/GetPaymentStatus() as query-translatable predicates so
+        // filtering happens server-side, before pagination/count, instead of the UI receiving an
+        // unfiltered page and (previously) silently ignoring the status/paymentStatus params.
+        private static IQueryable<Enrollment> ApplyStatusFilters(IQueryable<Enrollment> query, string? status, string? paymentStatus)
+        {
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = status switch
+                {
+                    "Expired" => query.Where(e => e.ExpiryDate < DateTime.UtcNow),
+                    "Suspended" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow && !e.IsActive),
+                    "Active" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow && e.IsActive),
+                    _ => query.Where(e => false),
+                };
+            }
+
+            if (!string.IsNullOrWhiteSpace(paymentStatus))
+            {
+                query = paymentStatus switch
+                {
+                    "Overdue" => query.Where(e => e.ExpiryDate < DateTime.UtcNow),
+                    "Paid" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow
+                        && e.SubscriptionDetails != null && e.SubscriptionDetails.Payment != null),
+                    "Pending" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow
+                        && (e.SubscriptionDetails == null || e.SubscriptionDetails.Payment == null)),
+                    _ => query.Where(e => false),
+                };
+            }
+
+            return query;
         }
 
         public async Task<int> CountAllAsync(CancellationToken ct = default)
@@ -138,13 +178,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(e => e.SubscriptionDetails != null && e.SubscriptionDetails.Payment == null)
                 .CountAsync(ct);
 
-        public async Task<PagedData<EnrollmentCardDto>> GetAllAsync(PageRequest page, CancellationToken ct = default)
+        public async Task<PagedData<EnrollmentCardDto>> GetAllAsync(PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default)
         {
-            var query = _context.Enrollments
+            IQueryable<Enrollment> query = _context.Enrollments;
+            query = ApplyStatusFilters(query, status, paymentStatus);
+
+            var projected = query
                 .AsNoTracking()
                 .ProjectTo<EnrollmentCardDto>(_mapper.ConfigurationProvider);
 
-            return await query.ToPagedDataAsync(page, ct);
+            return await projected.ToPagedDataAsync(page, ct);
         }
 
         public async Task<EnrollmentDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default)

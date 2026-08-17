@@ -6,8 +6,9 @@ using SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscr
 using SportAcademy.Application.Commands.SubscriptionDetailsCommands.DeleteSubscriptionDetails;
 using SportAcademy.Application.Commands.SubscriptionDetailsCommands.SuspendSubscription;
 using SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSubscriptionDetails;
-using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAll;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAllForDropdown;
+using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAllPaginated;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetById;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetLatest;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetRenewInfo;
@@ -29,9 +30,14 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            [FromQuery] string? term,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllSubDetailsQuery());
+            var result = await _mediator.Send(
+                new GetAllSubDetailsPaginatedQuery(PageRequest.Create(page, pageSize), term), ct);
             return Ok(result);
         }
 

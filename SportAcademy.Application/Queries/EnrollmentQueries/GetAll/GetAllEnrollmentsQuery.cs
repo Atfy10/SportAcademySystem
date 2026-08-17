@@ -5,5 +5,9 @@ using SportAcademy.Application.DTOs.EnrollmentDtos;
 
 namespace SportAcademy.Application.Queries.EnrollmentQueries.GetAll
 {
-    public record GetAllEnrollmentsQuery(PageRequest Page) : IRequest<Result<PagedData<EnrollmentCardDto>>>;
+    public record GetAllEnrollmentsQuery(
+        PageRequest Page,
+        string? Status = null,
+        string? PaymentStatus = null
+    ) : IRequest<Result<PagedData<EnrollmentCardDto>>>;
 }

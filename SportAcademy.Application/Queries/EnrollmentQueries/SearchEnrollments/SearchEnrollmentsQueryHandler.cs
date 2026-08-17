@@ -15,7 +15,7 @@ public class SearchEnrollmentsQueryHandler(
         SearchEnrollmentsQuery request,
         CancellationToken cancellationToken)
     {
-        var result = await enrollmentRepository.SearchAsync(request.Term, request.Page, cancellationToken);
+        var result = await enrollmentRepository.SearchAsync(request.Term, request.Page, request.Status, request.PaymentStatus, cancellationToken);
         return Result<PagedData<EnrollmentCardDto>>.Success(result, OperationType.Get.ToString());
     }
 }

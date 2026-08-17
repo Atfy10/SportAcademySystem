@@ -3,7 +3,6 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAll;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SubscriptonExceptions;

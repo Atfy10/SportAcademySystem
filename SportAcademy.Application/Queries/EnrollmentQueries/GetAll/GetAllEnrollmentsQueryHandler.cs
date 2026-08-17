@@ -15,7 +15,7 @@ namespace SportAcademy.Application.Queries.EnrollmentQueries.GetAll
             GetAllEnrollmentsQuery request,
             CancellationToken cancellationToken)
         {
-            var result = await enrollmentRepository.GetAllAsync(request.Page, cancellationToken);
+            var result = await enrollmentRepository.GetAllAsync(request.Page, request.Status, request.PaymentStatus, cancellationToken);
             return Result<PagedData<EnrollmentCardDto>>.Success(result, OperationType.GetAll.ToString());
         }
     }

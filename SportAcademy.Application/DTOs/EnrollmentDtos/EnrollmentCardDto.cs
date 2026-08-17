@@ -15,5 +15,6 @@ public record EnrollmentCardDto(
     string? PaymentStatus,
     string Status,
     int SessionsCompleted,
-    int TotalSessions
+    int TotalSessions,
+    int SessionRemaining
 );

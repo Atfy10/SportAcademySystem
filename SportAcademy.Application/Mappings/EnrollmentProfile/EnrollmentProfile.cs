@@ -10,13 +10,9 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
     {
         public EnrollmentMappingProfile()
         {
-            CreateMap<Enrollment, EnrollmentDto>()
-                .ReverseMap();
-
-            CreateMap<CreateEnrollmentCommand, Enrollment>();
-
-            CreateMap<UpdateEnrollmentCommand, Enrollment>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+            // Enrollment <-> EnrollmentDto and CreateEnrollmentCommand/UpdateEnrollmentCommand ->
+            // Enrollment are no longer AutoMapper mappings - CreateEnrollmentCommandHandler and
+            // UpdateEnrollmentCommandHandler use Mappings/Manual/EnrollmentMapper.cs instead.
 
             CreateMap<Enrollment, EnrollmentDataDto>()
                 .ConstructUsing(src => new EnrollmentDataDto(
@@ -47,7 +43,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     src.GetPaymentStatus(),
                     src.GetStatus(),
                     GetSessionsCompleted(src.Attendances),
-                    src.SessionAllowed
+                    src.SessionAllowed,
+                    src.SessionRemaining
                 ));
 
             CreateMap<Enrollment, EnrollmentDetailDto>()
@@ -69,7 +66,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                     GetSessionsCompleted(src.Attendances),
                     src.SessionAllowed - src.SessionRemaining,
                     src.SessionAllowed,
-                    src.SubscriptionDetailsId
+                    src.SubscriptionDetailsId,
+                    src.SessionRemaining
                 ));
         }
 

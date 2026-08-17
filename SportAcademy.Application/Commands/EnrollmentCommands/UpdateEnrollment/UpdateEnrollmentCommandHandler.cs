@@ -1,9 +1,9 @@
-﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
 using SportAcademy.Application.Interfaces;
-using SportAcademy.Domain.Entities;
+using SportAcademy.Application.Mappings.Manual;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 
@@ -11,16 +11,16 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
 {
     public class UpdateEnrollmentCommandHandler : IRequestHandler<UpdateEnrollmentCommand, Result<EnrollmentDto>>
     {
-        private readonly IMapper _mapper;
         private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateEnrollmentCommandHandler(
-            IMapper mapper,
-            IEnrollmentRepository enrollmentRepository)
+            IEnrollmentRepository enrollmentRepository,
+            IUnitOfWork unitOfWork)
         {
-            _mapper = mapper;
             _enrollmentRepository = enrollmentRepository;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<EnrollmentDto>> Handle(UpdateEnrollmentCommand request, CancellationToken cancellationToken)
@@ -29,18 +29,16 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
                 .GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new EnrollmentNotFoundException($"{request.Id}");
 
-            _mapper.Map(request, enrollment);
+            EnrollmentMapper.ApplyUpdate(enrollment, request);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await _enrollmentRepository.UpdateAsync(enrollment, cancellationToken);
+            await _enrollmentRepository.UpdateAsyncWithoutSave(enrollment, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var enrollmentDto = _mapper.Map<EnrollmentDto>(enrollment)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
-
-            return Result<EnrollmentDto>.Success(enrollmentDto, _operationType);
+            return Result<EnrollmentDto>.Success(EnrollmentMapper.ToDto(enrollment), _operationType);
         }
     }
 }

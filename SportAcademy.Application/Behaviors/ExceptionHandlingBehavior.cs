@@ -6,6 +6,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
+using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
 using System.Reflection;
 using DomainValidationException = SportAcademy.Domain.Exceptions.GeneralExceptions.ValidationException;
@@ -157,6 +158,17 @@ namespace SportAcademy.Application.Behaviors
 
                 _logger.LogWarning(ex,
                     "Session gap too large for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (GroupAtCapacityException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Trainee group at capacity for {RequestType}. Message: {Message}",
                     requestType,
                     ex.Message);
 

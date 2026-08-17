@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -18,6 +20,51 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             _context = context;
             _mapper = mapper;
+        }
+
+        public async Task<PagedData<SubscriptionDetailsDto>> GetAllPaginatedAsync(PageRequest page, string? term = null, CancellationToken ct = default)
+        {
+            IQueryable<SubscriptionDetails> query = _context.SubscriptionDetails
+                .Include(sd => sd.Trainee)
+                .Include(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.Branch)
+                .Include(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.SportSubscriptionType)
+                        .ThenInclude(sst => sst.Sport)
+                .Include(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.SportSubscriptionType)
+                        .ThenInclude(sst => sst.SubscriptionType)
+                .Include(sd => sd.Payment)
+                    .ThenInclude(p => p.Branch)
+                .AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                // SubscriptionType.Name is an enum (string-converted column) - EF Core can't
+                // translate ToString()/Contains() on it into SQL, so it's left out of search
+                // here (trainee/sport name cover the common case; subscription-type search
+                // would need its own DB-side string comparison to be added safely).
+                query = query.Where(sd =>
+                    sd.Trainee.FirstName.Contains(term)
+                    || sd.Trainee.LastName.Contains(term)
+                    || (sd.Trainee.FirstName + " " + sd.Trainee.LastName).Contains(term)
+                    || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term));
+            }
+
+            var totalCount = await query.CountAsync(ct);
+            var pageEntities = await query
+                .OrderByDescending(sd => sd.Id)
+                .Skip(page.Skip)
+                .Take(page.PageSize)
+                .ToListAsync(ct);
+
+            return new PagedData<SubscriptionDetailsDto>
+            {
+                Items = pageEntities.Select(SubscriptionDetailsMapper.ToDto).ToList(),
+                TotalCount = totalCount,
+                Page = page.Page,
+                PageSize = page.PageSize,
+            };
         }
 
         public async Task<List<SubscriptionDetails>?> GetAllFullSubDetailsAsync(CancellationToken cancellationToken = default)

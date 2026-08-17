@@ -18,5 +18,6 @@ public record EnrollmentDetailDto(
     int? SessionsCompleted,
     int? TotalSessions,
     int? SessionAllowed,
-    int? SubscriptionDetailsId
+    int? SubscriptionDetailsId,
+    int? SessionRemaining
 );
