@@ -21,7 +21,7 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
             InterceptionResult<int> result)
         {
             _currentTenantId = _tenantIdProvider.TenantId ?? Guid.Empty;
-            if (_tenantIdProvider.TenantId != Guid.Empty)
+            if (_currentTenantId != Guid.Empty)
                 ApplyTenantFilter(eventData);
 
             return base.SavingChanges(eventData, result);
@@ -33,7 +33,7 @@ namespace SportAcademy.Infrastructure.Persistence.Interceptors
             CancellationToken cancellationToken = default)
         {
             _currentTenantId = _tenantIdProvider.TenantId ?? Guid.Empty;
-            if (_tenantIdProvider.TenantId != Guid.Empty)
+            if (_currentTenantId != Guid.Empty)
                 ApplyTenantFilter(eventData);
 
             return base.SavingChangesAsync(eventData, result, cancellationToken);
