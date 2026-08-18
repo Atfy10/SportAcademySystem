@@ -100,6 +100,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
             tenant.OwnerId = user.Id;
             invitation.Accept();
+            tenant.Status = TenantStatus.Active;
 
             var plainRefreshToken = _jwtTokenService.GenerateRefreshToken();
             var refreshTokenHash = _jwtTokenService.HashToken(plainRefreshToken);
