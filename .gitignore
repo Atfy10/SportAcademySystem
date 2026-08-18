@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Dev-only invitation link log (never used in production)
+SportAcademy.Web/dev-invitation-links.txt

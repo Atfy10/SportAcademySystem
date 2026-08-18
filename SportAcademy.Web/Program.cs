@@ -209,7 +209,17 @@ builder.Services.AddInfrastructureServices();
 // Register external HTTP client services (web layer specific)
 builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
 builder.Services.AddHttpClient<IOpenRouterClient, OpenRouterClient>();
-builder.Services.AddHttpClient<IEmailService, SendGridEmailService>();
+builder.Services.AddHttpClient<SendGridEmailService>();
+if (builder.Environment.IsDevelopment())
+{
+    var devInvitationLinksPath = Path.Combine(builder.Environment.ContentRootPath, "dev-invitation-links.txt");
+    builder.Services.AddScoped<IEmailService>(sp =>
+        new FileLoggingEmailServiceDecorator(sp.GetRequiredService<SendGridEmailService>(), devInvitationLinksPath));
+}
+else
+{
+    builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<SendGridEmailService>());
+}
 
 builder.Services.AddControllers(options =>
     {
