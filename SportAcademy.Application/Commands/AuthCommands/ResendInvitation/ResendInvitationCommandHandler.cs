@@ -17,6 +17,7 @@ public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCo
     private readonly IInvitationRepository _invitationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediator _mediator;
+    private readonly ITenantIdProvider _tenantIdProvider;
     private readonly string _operation = OperationType.Add.ToString();
 
     public ResendInvitationCommandHandler(
@@ -24,13 +25,15 @@ public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCo
         IInvitationTokenService tokenService,
         IInvitationRepository invitationRepository,
         IUnitOfWork unitOfWork,
-        IMediator mediator)
+        IMediator mediator,
+        ITenantIdProvider tenantIdProvider)
     {
         _tenantRepository = tenantRepository;
         _tokenService = tokenService;
         _invitationRepository = invitationRepository;
         _unitOfWork = unitOfWork;
         _mediator = mediator;
+        _tenantIdProvider = tenantIdProvider;
     }
 
     public async Task<Result<InvitationResponse>> Handle(ResendInvitationCommand request, CancellationToken ct)
@@ -59,8 +62,22 @@ public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCo
             old.ReplacedByInvitationId = newInvitation.Id;
         }
 
-        await _invitationRepository.AddAsync(newInvitation, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
+        // The caller (typically Super Admin, resending an owner invitation) may belong to a
+        // different tenant than request.TenantId. Without switching context here,
+        // TenantSaveChangesInterceptor would either stamp the wrong TenantId onto the new
+        // invitation or throw when revoking the old one ("Cannot change the TenantId of an
+        // existing entity"), since it compares against the caller's own current tenant.
+        var previousTenantId = _tenantIdProvider.TenantId;
+        _tenantIdProvider.SetTenantId(request.TenantId);
+        try
+        {
+            await _invitationRepository.AddAsync(newInvitation, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
+        finally
+        {
+            _tenantIdProvider.SetTenantId(previousTenantId);
+        }
 
         await _mediator.Publish(
             new InvitationCreatedEvent(newInvitation.Id, rawToken, tenant.Slug, request.Email), ct);

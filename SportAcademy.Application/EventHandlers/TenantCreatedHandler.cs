@@ -12,6 +12,7 @@ public sealed class TenantCreatedHandler : INotificationHandler<TenantCreatedEve
     private readonly IInvitationRepository _invitationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediator _mediator;
+    private readonly ITenantIdProvider _tenantIdProvider;
     private readonly ILogger<TenantCreatedHandler> _logger;
 
     public TenantCreatedHandler(
@@ -19,12 +20,14 @@ public sealed class TenantCreatedHandler : INotificationHandler<TenantCreatedEve
         IInvitationRepository invitationRepository,
         IUnitOfWork unitOfWork,
         IMediator mediator,
+        ITenantIdProvider tenantIdProvider,
         ILogger<TenantCreatedHandler> logger)
     {
         _tokenService = tokenService;
         _invitationRepository = invitationRepository;
         _unitOfWork = unitOfWork;
         _mediator = mediator;
+        _tenantIdProvider = tenantIdProvider;
         _logger = logger;
     }
 
@@ -44,8 +47,21 @@ public sealed class TenantCreatedHandler : INotificationHandler<TenantCreatedEve
             tokenHash,
             DateTime.UtcNow.AddDays(7));
 
-        await _invitationRepository.AddAsync(invitation, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // The caller (Super Admin, provisioning a brand-new tenant) belongs to the SYSTEM
+        // tenant, not this one. Without switching context, TenantSaveChangesInterceptor would
+        // silently stamp this Invitation with the caller's own TenantId instead of the new
+        // tenant's, which later makes AcceptInvitationCommandHandler resolve the wrong tenant.
+        var previousTenantId = _tenantIdProvider.TenantId;
+        _tenantIdProvider.SetTenantId(notification.TenantId);
+        try
+        {
+            await _invitationRepository.AddAsync(invitation, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        finally
+        {
+            _tenantIdProvider.SetTenantId(previousTenantId);
+        }
 
         await _mediator.Publish(
             new InvitationCreatedEvent(
