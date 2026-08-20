@@ -2,6 +2,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SessionOccurrenceDtos;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
@@ -12,14 +13,17 @@ namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSess
     {
         private readonly IMapper _mapper;
         private readonly ISessionOccurrenceRepository _sessionOccurrenceRepository;
+        private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateSessionOccurrenceCommandHandler(
             IMapper mapper,
-            ISessionOccurrenceRepository sessionOccurrenceRepository)
+            ISessionOccurrenceRepository sessionOccurrenceRepository,
+            IPublisher publisher)
         {
             _mapper = mapper;
             _sessionOccurrenceRepository = sessionOccurrenceRepository;
+            _publisher = publisher;
         }
 
         public async Task<Result<SessionOccurrenceDto>> Handle(UpdateSessionOccurrenceCommand request, CancellationToken cancellationToken)
@@ -34,6 +38,8 @@ namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSess
             await _sessionOccurrenceRepository.UpdateAsync(sessionOccurrence, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            await _publisher.Publish(new SessionOccurrenceUpdatedEvent(sessionOccurrence.Id), cancellationToken);
 
             var sessionOccurrenceDto = _mapper.Map<SessionOccurrenceDto>(sessionOccurrence)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");

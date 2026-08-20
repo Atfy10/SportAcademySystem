@@ -116,7 +116,13 @@ namespace SportAcademy.Infrastructure.Implementations
                 return null;
 
             if (storedToken.IsRevoked)
+            {
+                // Reuse of an already-rotated refresh token is a strong signal that the token
+                // was stolen: an attacker who captured it before the legitimate rotation could
+                // otherwise keep using the live child token forever. Revoke the whole family.
+                await _refreshTokenRepository.RevokeAllUserTokensAsync(storedToken.UserId, ct);
                 return null;
+            }
 
             var now = DateTime.UtcNow;
             var gracePeriodExpiry = storedToken.ExpiresAt.AddMinutes(GracePeriodMinutes);
@@ -127,14 +133,27 @@ namespace SportAcademy.Infrastructure.Implementations
             if (storedToken.User is null)
                 return null;
 
+            // GetByTokenHashAsync bypasses query filters (see its comment) to resolve identity
+            // before any tenant context exists, so the soft-delete filter that would normally
+            // exclude a deleted user never runs here either - enforce both checks explicitly,
+            // mirroring what LoginCommandHandler already enforces for the same user.
+            if (storedToken.User.IsDeleted || storedToken.User.IsBanned)
+                return null;
+
+            // Atomically revoke only if still unrevoked. If a concurrent request already won
+            // this exact rotation between the read above and here, this call returns false and
+            // we bail out instead of both requests minting a "new" token from the same parent.
+            var wonRotation = await _refreshTokenRepository.TryRevokeAsync(storedToken.Id, now, ct);
+            if (!wonRotation)
+                return null;
+
+            storedToken.IsRevoked = true;
+            storedToken.RevokedAt = now;
+
             var roles = storedToken.User.UserRoles.Select(r => r.Role.Name ?? "").ToArray();
             var newAccessToken = await GenerateJwtToken(storedToken.User, roles);
             var newRefreshToken = GenerateRefreshToken();
             var newRefreshTokenHash = HashToken(newRefreshToken);
-
-            storedToken.IsRevoked = true;
-            storedToken.RevokedAt = now;
-            await _refreshTokenRepository.UpdateAsync(storedToken, ct);
 
             var newToken = new RefreshToken
             {

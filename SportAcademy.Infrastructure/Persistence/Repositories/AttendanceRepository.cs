@@ -28,11 +28,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct) * 100 /
                 await _context.Attendances.CountAsync(ct);
 
-        public async Task<int> GetMonthlyAttendanceRate(Month month, CancellationToken ct = default)
-            => await _context.Attendances
-                .Where(a => a.AttendanceDate.Month == (int)month)
-                .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct) * 100 /
-                await _context.Attendances.CountAsync(ct);
+        public async Task<int> GetMonthlyAttendanceRate(Month month, int? year, CancellationToken ct = default)
+        {
+            var query = _context.Attendances.Where(a => a.AttendanceDate.Month == (int)month);
+            if (year.HasValue)
+            {
+                query = query.Where(a => a.AttendanceDate.Year == year.Value);
+            }
+
+            var total = await query.CountAsync(ct);
+            var present = await query.CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct);
+            return present * 100 / total;
+        }
 
         public async Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Attendances

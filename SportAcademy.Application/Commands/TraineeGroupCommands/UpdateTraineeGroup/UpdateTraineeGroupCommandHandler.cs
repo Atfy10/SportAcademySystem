@@ -1,6 +1,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Contract;
@@ -13,14 +14,17 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
     {
         private readonly ITraineeGroupRepository _traineeGroupRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateTraineeGroupCommandHandler(
             ITraineeGroupRepository traineeGroupRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPublisher publisher)
         {
             _traineeGroupRepository = traineeGroupRepository;
             _unitOfWork = unitOfWork;
+            _publisher = publisher;
         }
 
         public async Task<Result<TraineeGroupDto>> Handle(UpdateTraineeGroupCommand request, CancellationToken cancellationToken)
@@ -36,6 +40,8 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            await _publisher.Publish(new TraineeGroupUpdatedEvent(traineeGroup.Id), cancellationToken);
 
             return Result<TraineeGroupDto>.Success(TraineeGroupMapper.ToDto(traineeGroup), _operationType);
         }

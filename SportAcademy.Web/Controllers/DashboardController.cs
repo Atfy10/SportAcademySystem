@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.TenantCommands.ActivateTenant;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Queries.DashboardQueries.GetDashboardSummary;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -30,11 +31,8 @@ namespace SportAcademy.Web.Controllers
                 await _mediator.Send(new ActivateTenantCommand(tenantId.Value), ct);
             }
 
-            return Ok(new
-            {
-                status = "ok",
-                message = "Dashboard loaded successfully."
-            });
+            var result = await _mediator.Send(new GetDashboardSummaryQuery(), ct);
+            return Ok(result);
         }
     }
 }

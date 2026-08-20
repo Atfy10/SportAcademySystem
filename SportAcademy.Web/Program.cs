@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -28,7 +27,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,11 +35,11 @@ builder.Host.UseSerilog((context, cfg) =>
 
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
-    // Example password settings (optional)
-    options.Password.RequiredLength = 4;
+    options.Password.RequiredLength = 8;
     options.Password.RequireDigit = true;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
@@ -155,12 +153,17 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
-    options.AddPolicy("public", _ =>
-        RateLimitPartition.GetFixedWindowLimiter("public", _ => new FixedWindowRateLimiterOptions
+    options.AddPolicy("public", httpContext =>
+    {
+        // Partitioned per-IP (like "token-revoke" below) so one noisy/abusive client can't
+        // exhaust a shared bucket and lock every other client out of login/refresh.
+        var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 20,
             Window = TimeSpan.FromMinutes(1),
-        }));
+        });
+    });
 
     options.AddPolicy("token-revoke", httpContext =>
     {
@@ -177,7 +180,21 @@ builder.Services.AddRateLimiter(options =>
 // CORS__AllowedOrigins__0, CORS__AllowedOrigins__1, ... environment variables) so production
 // deployments can declare their real frontend origin(s) without editing code. Falls back to
 // the local dev ports when the setting is absent.
-var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+var configuredOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?.Where(o => !o.Contains("REPLACE_WITH", StringComparison.OrdinalIgnoreCase))
+    .ToArray();
+
+if (builder.Environment.IsProduction() && configuredOrigins is not { Length: > 0 })
+{
+    // Fail fast instead of silently falling back to the localhost dev origins below, which
+    // would leave the real production frontend unable to call the API (or worse, mask a
+    // misconfiguration as a mysterious CORS error at runtime).
+    throw new InvalidOperationException(
+        "Cors:AllowedOrigins is not configured for Production. Set it via the " +
+        "CORS__AllowedOrigins__0 (and __1, __2, ...) environment variable(s) to the real " +
+        "frontend origin(s) before starting the app.");
+}
+
 var allowedOrigins = configuredOrigins is { Length: > 0 }
     ? configuredOrigins
     :
@@ -293,6 +310,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

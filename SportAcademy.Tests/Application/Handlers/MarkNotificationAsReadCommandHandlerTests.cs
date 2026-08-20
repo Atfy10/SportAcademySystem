@@ -11,6 +11,7 @@ public class MarkNotificationAsReadCommandHandlerTests
     private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private readonly Mock<INotificationRepository> _notificationRepoMock = new();
     private readonly Mock<IUserContextService> _userContextMock = new();
+    private readonly Mock<INotificationService> _notificationServiceMock = new();
 
     public MarkNotificationAsReadCommandHandlerTests()
     {
@@ -21,7 +22,7 @@ public class MarkNotificationAsReadCommandHandlerTests
     public async Task Handle_ValidNotification_MarksAsRead()
     {
         var command = new MarkNotificationAsReadCommand(NotificationId: 1);
-        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object);
+        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
 
         _notificationRepoMock.Setup(r => r.MarkAsReadAsync(1, TestUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -33,10 +34,24 @@ public class MarkNotificationAsReadCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ValidNotification_PushesNotificationReadOverSignalR()
+    {
+        var command = new MarkNotificationAsReadCommand(NotificationId: 1);
+        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
+
+        _notificationRepoMock.Setup(r => r.MarkAsReadAsync(1, TestUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        await handler.Handle(command, CancellationToken.None);
+
+        _notificationServiceMock.Verify(s => s.NotifyNotificationReadAsync(TestUserId.ToString(), 1), Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_NotificationNotFound_ReturnsFalse()
     {
         var command = new MarkNotificationAsReadCommand(NotificationId: 999);
-        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object);
+        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
 
         _notificationRepoMock.Setup(r => r.MarkAsReadAsync(999, TestUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
@@ -46,6 +61,20 @@ public class MarkNotificationAsReadCommandHandlerTests
         result.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task Handle_NotificationNotFound_DoesNotPushNotificationRead()
+    {
+        var command = new MarkNotificationAsReadCommand(NotificationId: 999);
+        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
+
+        _notificationRepoMock.Setup(r => r.MarkAsReadAsync(999, TestUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        await handler.Handle(command, CancellationToken.None);
+
+        _notificationServiceMock.Verify(s => s.NotifyNotificationReadAsync(It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(5)]
@@ -53,7 +82,7 @@ public class MarkNotificationAsReadCommandHandlerTests
     public async Task Handle_DifferentNotificationIds_MarksCorrectNotification(int notificationId)
     {
         var command = new MarkNotificationAsReadCommand(NotificationId: notificationId);
-        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object);
+        var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
 
         _notificationRepoMock.Setup(r => r.MarkAsReadAsync(notificationId, TestUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -70,6 +99,7 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
     private static readonly Guid TestUserId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private readonly Mock<INotificationRepository> _notificationRepoMock = new();
     private readonly Mock<IUserContextService> _userContextMock = new();
+    private readonly Mock<INotificationService> _notificationServiceMock = new();
 
     public MarkAllNotificationsAsReadCommandHandlerTests()
     {
@@ -80,7 +110,7 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
     public async Task Handle_ValidUser_MarksAllAsRead()
     {
         var command = new MarkAllNotificationsAsReadCommand();
-        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object);
+        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
 
         _notificationRepoMock.Setup(r => r.MarkAllAsReadAsync(TestUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
@@ -92,10 +122,24 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ValidUser_PushesAllNotificationsReadOverSignalR()
+    {
+        var command = new MarkAllNotificationsAsReadCommand();
+        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
+
+        _notificationRepoMock.Setup(r => r.MarkAllAsReadAsync(TestUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(5);
+
+        await handler.Handle(command, CancellationToken.None);
+
+        _notificationServiceMock.Verify(s => s.NotifyAllNotificationsReadAsync(TestUserId.ToString()), Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_NoNotifications_ReturnsZero()
     {
         var command = new MarkAllNotificationsAsReadCommand();
-        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object);
+        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
 
         _notificationRepoMock.Setup(r => r.MarkAllAsReadAsync(TestUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
@@ -105,6 +149,20 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
         result.Should().Be(0);
     }
 
+    [Fact]
+    public async Task Handle_NoNotifications_DoesNotPushAllNotificationsRead()
+    {
+        var command = new MarkAllNotificationsAsReadCommand();
+        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
+
+        _notificationRepoMock.Setup(r => r.MarkAllAsReadAsync(TestUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        await handler.Handle(command, CancellationToken.None);
+
+        _notificationServiceMock.Verify(s => s.NotifyAllNotificationsReadAsync(It.IsAny<string>()), Times.Never);
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(5)]
@@ -112,7 +170,7 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
     public async Task Handle_VariousNotificationCounts_ReturnsCorrectCount(int count)
     {
         var command = new MarkAllNotificationsAsReadCommand();
-        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object);
+        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
 
         _notificationRepoMock.Setup(r => r.MarkAllAsReadAsync(TestUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(count);
@@ -126,7 +184,7 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
     public async Task Handle_UsesCorrectUserIdFromContext()
     {
         var command = new MarkAllNotificationsAsReadCommand();
-        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object);
+        var handler = new MarkAllNotificationsAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
 
         _notificationRepoMock.Setup(r => r.MarkAllAsReadAsync(TestUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(3);

@@ -5,6 +5,8 @@ namespace SportAcademy.Application.Interfaces
     public interface INotificationClient
     {
         Task ReceiveNotification(NotificationRecipientDto notification);
+        Task NotificationRead(int notificationId);
+        Task AllNotificationsRead();
         Task AttendanceUpdated(int sessionOccurrenceId);
         Task SessionOccurrenceUpdated(int sessionOccurrenceId);
         Task EnrollmentUpdated(int enrollmentId);

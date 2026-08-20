@@ -1,13 +1,13 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Commands.EnrollmentCommands.ActivateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.SuspendEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdatePaymentStatus;
-using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.EnrollmentQueries.CountActive;
 using SportAcademy.Application.Queries.EnrollmentQueries.CountAll;
 using SportAcademy.Application.Queries.EnrollmentQueries.CountPendingPayment;
@@ -21,9 +21,9 @@ using SportAcademy.Application.Queries.EnrollmentQueries.SearchEnrollments;
 
 namespace SportAcademy.Web.Controllers
 {
-[Authorize]
-[EnableRateLimiting("per-user")]
-[Route("api/[controller]")]
+    [Authorize]
+    [EnableRateLimiting("per-user")]
+    [Route("api/[controller]")]
     [ApiController]
     public class EnrollmentController : ControllerBase
     {
@@ -72,6 +72,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "Permission:enrollment.edit")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _mediator.Send(new DeleteEnrollmentCommand(id));

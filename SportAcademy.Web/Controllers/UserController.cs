@@ -47,6 +47,9 @@ namespace SportAcademy.Web.Controllers
             return Ok(user);
         }
 
+        // Mutating actions are Admin/Owner-only, matching AuthController's admin-user endpoints
+        // (which is what the frontend actually calls for user creation - these are otherwise unused).
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPost]
         [ProducesResponseType(typeof(Result<string>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateAsync(CreateUserCommand command)
@@ -55,6 +58,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(user);
         }
 
+        [Authorize(Roles = "Admin,Owner")]
         [HttpPut]
         public async Task<IActionResult> EditAsync(UpdateUserCommand command)
         {
@@ -62,12 +66,13 @@ namespace SportAcademy.Web.Controllers
             return Ok(user);
         }
 
+        [Authorize(Roles = "Admin,Owner")]
         [HttpDelete]
-        public IActionResult Delete(DeleteUserCommand command)
+        public async Task<IActionResult> Delete(DeleteUserCommand command, CancellationToken ct)
         {
-            var isDeleted = _mediator.Send(command);
-            if (isDeleted is null || !isDeleted.Result.IsSuccess)
-                return BadRequest(isDeleted?.Result.Message);
+            var result = await _mediator.Send(command, ct);
+            if (!result.IsSuccess)
+                return BadRequest(result.Message);
 
             return NoContent();
         }

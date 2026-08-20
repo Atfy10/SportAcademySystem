@@ -41,6 +41,12 @@ public class AnalyzeVideoCommandHandler
         AnalyzeVideoCommand request,
         CancellationToken cancellationToken)
     {
+        if (_userContext.UserId is not { } userId)
+        {
+            return Result<VideoAnalysisResultDto>.Failure(
+                _operation, "User must be authenticated to run a video analysis.", 401);
+        }
+
         var systemPrompt = BuildSystemPrompt();
         var userMessage = BuildUserMessage(request);
 
@@ -56,8 +62,7 @@ public class AnalyzeVideoCommandHandler
         var entity = new VideoAnalysis
         {
             Id = Guid.NewGuid(),
-            //  wrong logic need to fix it
-            UserId = _userContext.UserId ?? Guid.Empty,
+            UserId = userId,
             MovementType = request.MovementType,
             LandmarksJson = JsonSerializer.Serialize(request.Landmarks),
             AiAnalysisResult = normalizedJson,

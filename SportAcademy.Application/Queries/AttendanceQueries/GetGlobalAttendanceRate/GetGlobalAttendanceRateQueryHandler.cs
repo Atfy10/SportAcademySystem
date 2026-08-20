@@ -19,7 +19,7 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetGlobalAttendance
             try
             {
                 if (request.Month.HasValue)
-                    attendanceRate = await _attendanceRepository.GetMonthlyAttendanceRate(request.Month.Value, ct);
+                    attendanceRate = await _attendanceRepository.GetMonthlyAttendanceRate(request.Month.Value, request.Year, ct);
                 else
                     attendanceRate = await _attendanceRepository.GetGlobalAttendanceRate(ct);
             }

@@ -9,13 +9,16 @@ namespace SportAcademy.Application.Commands.NotificationCommands.MarkNotificatio
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly IUserContextService _userContext;
+        private readonly INotificationService _notificationService;
 
         public MarkNotificationAsReadCommandHandler(
             INotificationRepository notificationRepository,
-            IUserContextService userContext)
+            IUserContextService userContext,
+            INotificationService notificationService)
         {
             _notificationRepository = notificationRepository;
             _userContext = userContext;
+            _notificationService = notificationService;
         }
 
         public async Task<bool> Handle(MarkNotificationAsReadCommand request, CancellationToken cancellationToken)
@@ -24,10 +27,15 @@ namespace SportAcademy.Application.Commands.NotificationCommands.MarkNotificatio
             if (userId is null)
                 return false;
 
-            return await _notificationRepository.MarkAsReadAsync(
+            var marked = await _notificationRepository.MarkAsReadAsync(
                 request.NotificationId,
                 userId.Value,
                 cancellationToken);
+
+            if (marked)
+                await _notificationService.NotifyNotificationReadAsync(userId.Value.ToString(), request.NotificationId);
+
+            return marked;
         }
     }
 }

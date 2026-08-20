@@ -85,9 +85,10 @@ namespace SportAcademy.Web.Controllers
         [HttpGet("rate")]
         public async Task<IActionResult> GetAttendanceRate(
             [FromQuery] Month? month,
+            [FromQuery] int? year,
             CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetGlobalAttendanceRateQuery(month), ct);
+            var result = await _mediator.Send(new GetGlobalAttendanceRateQuery(month, year), ct);
             return Ok(result);
         }
 

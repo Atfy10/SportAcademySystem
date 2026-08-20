@@ -27,7 +27,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken ct = default)
         {
+            // IgnoreQueryFilters(): this runs from the anonymous /auth/refresh endpoint, where
+            // no tenant claim exists yet - ITenantIdProvider.TenantId is null at this point,
+            // which makes the global tenant query filter (e.TenantId == CurrentTenantId)
+            // silently null out the Included AppUser navigation for every row, since a null
+            // CurrentTenantId can never match a real TenantId. Identity has to be resolved from
+            // the token itself before any tenant context exists, so the filter must be
+            // bypassed here - see the explicit IsDeleted/IsBanned checks in
+            // JwtTokenService.ValidateAndRefreshTokenAsync, which take over what the
+            // (also-bypassed) soft-delete filter would otherwise have enforced.
             return await _context.RefreshTokens
+                .IgnoreQueryFilters()
                 .Include(rt => rt.User)
                     .ThenInclude(u => u.UserRoles)
                         .ThenInclude(ur => ur.Role)
@@ -36,7 +46,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<RefreshToken?> GetByIdAsync(int id, CancellationToken ct = default)
         {
+            // See GetByTokenHashAsync above - same anonymous-context tenant-filter bypass.
             return await _context.RefreshTokens
+                .IgnoreQueryFilters()
                 .Include(rt => rt.User)
                 .FirstOrDefaultAsync(rt => rt.Id == id, ct);
         }
@@ -68,6 +80,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             }
 
             await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task<bool> TryRevokeAsync(int tokenId, DateTime revokedAt, CancellationToken ct = default)
+        {
+            var rowsAffected = await _context.RefreshTokens
+                .Where(rt => rt.Id == tokenId && !rt.IsRevoked)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(rt => rt.IsRevoked, true)
+                    .SetProperty(rt => rt.RevokedAt, revokedAt), ct);
+
+            return rowsAffected > 0;
         }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Queries.NationalityCategoryQueries.GetAll;
 
 namespace SportAcademy.Web.Controllers
 {
+    [Authorize]
     [EnableRateLimiting("per-user")]
 [Route("api/[controller]")]
     [ApiController]
