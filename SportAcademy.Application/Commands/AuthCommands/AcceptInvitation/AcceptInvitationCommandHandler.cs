@@ -8,6 +8,7 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
+using System.Security.Claims;
 using RefreshTokenEntity = SportAcademy.Domain.Entities.RefreshToken;
 
 namespace SportAcademy.Application.Commands.AuthCommands.AcceptInvitation;
@@ -67,8 +68,19 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         if (tenant is null)
             return Result<AuthResponseDto>.Failure(Operation, "Tenant not found.", 404);
 
-        if (tenant.Status is not TenantStatus.PendingSetup)
+        var isStaffOnboarding = invitation.Purpose == InvitationPurpose.StaffOnboarding;
+
+        if (isStaffOnboarding)
+        {
+            if (tenant.Status is not TenantStatus.Active)
+                return Result<AuthResponseDto>.Failure(Operation, "This tenant is not currently active.", 400);
+        }
+        else if (tenant.Status is not TenantStatus.PendingSetup)
+        {
             return Result<AuthResponseDto>.Failure(Operation, "Tenant is not in a setup state.", 400);
+        }
+
+        var role = isStaffOnboarding ? invitation.Role! : "Owner";
 
         await _unitOfWork.BeginTransactionAsync(ct);
         try
@@ -91,16 +103,33 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
                 return Result<AuthResponseDto>.Failure(Operation, string.Join("; ", errors), 400);
             }
 
-            var roleResult = await _userManager.AddToRoleAsync(user, "Owner");
+            var roleResult = await _userManager.AddToRoleAsync(user, role);
             if (!roleResult.Succeeded)
             {
                 await _unitOfWork.RollbackTransactionAsync(ct);
-                return Result<AuthResponseDto>.Failure(Operation, "Failed to assign Owner role.", 400);
+                return Result<AuthResponseDto>.Failure(Operation, $"Failed to assign {role} role.", 400);
             }
 
-            tenant.OwnerId = user.Id;
+            if (isStaffOnboarding && !string.IsNullOrWhiteSpace(invitation.Permissions))
+            {
+                var permissionClaims = invitation.Permissions
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => new Claim("permission", p));
+                var claimsResult = await _userManager.AddClaimsAsync(user, permissionClaims);
+                if (!claimsResult.Succeeded)
+                {
+                    await _unitOfWork.RollbackTransactionAsync(ct);
+                    return Result<AuthResponseDto>.Failure(Operation, "Failed to grant invited permissions.", 400);
+                }
+            }
+
+            if (!isStaffOnboarding)
+            {
+                tenant.OwnerId = user.Id;
+                tenant.Status = TenantStatus.Active;
+            }
+
             invitation.Accept();
-            tenant.Status = TenantStatus.Active;
 
             var plainRefreshToken = _jwtTokenService.GenerateRefreshToken();
             var refreshTokenHash = _jwtTokenService.HashToken(plainRefreshToken);
@@ -117,7 +146,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
             await _refreshTokenRepository.AddAsync(refreshTokenEntity, ct);
             await _unitOfWork.CommitTransactionAsync(ct);
 
-            var accessToken = await _jwtTokenService.GenerateJwtToken(user, "Owner");
+            var accessToken = await _jwtTokenService.GenerateJwtToken(user, role);
 
             await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id), ct);
 

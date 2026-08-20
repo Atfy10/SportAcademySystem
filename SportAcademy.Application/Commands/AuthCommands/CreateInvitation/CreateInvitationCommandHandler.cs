@@ -3,6 +3,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.InvitationDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings;
+using SportAcademy.Domain.Authorization;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
@@ -12,6 +13,11 @@ namespace SportAcademy.Application.Commands.AuthCommands.CreateInvitation;
 
 public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCommand, Result<InvitationResponse>>
 {
+    // Owner and SuperAdmin are deliberately excluded: Owner is unique per tenant (set once
+    // at OwnerSetup acceptance) and SuperAdmin is a platform-only role, never assignable
+    // within a tenant.
+    private static readonly string[] InvitableStaffRoles = ["Admin", "Manager", "Coach", "Accountant", "User"];
+
     private readonly IBaseRepository<Tenant, Guid> _tenantRepository;
     private readonly IInvitationTokenService _tokenService;
     private readonly IInvitationRepository _invitationRepository;
@@ -42,6 +48,28 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
         if (tenant is null)
             return Result<InvitationResponse>.Failure(_operation, "Tenant not found.", 404);
 
+        if (request.Role is null)
+        {
+            if (tenant.Status is not TenantStatus.PendingSetup)
+                return Result<InvitationResponse>.Failure(
+                    _operation, "This tenant has already been set up. Specify a role to invite additional staff.", 400);
+        }
+        else
+        {
+            if (!InvitableStaffRoles.Contains(request.Role, StringComparer.OrdinalIgnoreCase))
+                return Result<InvitationResponse>.Failure(
+                    _operation, $"'{request.Role}' is not a role that can be assigned via invitation.", 400);
+
+            if (tenant.Status is not TenantStatus.Active)
+                return Result<InvitationResponse>.Failure(
+                    _operation, "Staff can only be invited into an active tenant.", 400);
+
+            if (request.Permissions is { Count: > 0 } &&
+                request.Permissions.Any(p => !Permissions.All.Contains(p)))
+                return Result<InvitationResponse>.Failure(
+                    _operation, "One or more requested permissions are not valid.", 400);
+        }
+
         var rawToken = _tokenService.GenerateRawToken();
         var tokenHash = _tokenService.HashToken(rawToken);
 
@@ -52,7 +80,9 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
             request.Email,
             request.InvitedByUserId,
             tokenHash,
-            expiresAt);
+            expiresAt,
+            request.Role,
+            request.Permissions);
 
         // See ResendInvitationCommandHandler for why this context switch is required: the
         // caller may not belong to request.TenantId (e.g. Super Admin inviting into a tenant

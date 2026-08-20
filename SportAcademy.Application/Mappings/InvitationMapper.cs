@@ -7,7 +7,8 @@ namespace SportAcademy.Application.Mappings;
 public static class InvitationMapper
 {
     public static Invitation ToEntity(
-        Guid tenantId, string email, Guid invitedByUserId, string tokenHash, DateTime expiresAt)
+        Guid tenantId, string email, Guid invitedByUserId, string tokenHash, DateTime expiresAt,
+        string? role = null, IReadOnlyList<string>? permissions = null)
     {
         return new Invitation
         {
@@ -15,10 +16,12 @@ public static class InvitationMapper
             TenantId = tenantId,
             Email = email,
             TokenHash = tokenHash,
-            Purpose = InvitationPurpose.OwnerSetup,
+            Purpose = role is null ? InvitationPurpose.OwnerSetup : InvitationPurpose.StaffOnboarding,
             Status = InvitationStatus.Pending,
             ExpiresAt = expiresAt,
-            InvitedByUserId = invitedByUserId
+            InvitedByUserId = invitedByUserId,
+            Role = role,
+            Permissions = permissions is { Count: > 0 } ? string.Join(",", permissions) : null
         };
     }
 

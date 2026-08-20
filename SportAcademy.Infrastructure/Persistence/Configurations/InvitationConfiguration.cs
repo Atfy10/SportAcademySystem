@@ -32,6 +32,14 @@ public sealed class InvitationConfiguration : IEntityTypeConfiguration<Invitatio
         builder.Property(i => i.ExpiresAt)
             .IsRequired();
 
+        builder.Property(i => i.Role)
+            .HasMaxLength(64);
+
+        // Comma-separated permission keys - simple scalar column, avoids a join table for
+        // a handful of strings that are only ever read/written as a whole set.
+        builder.Property(i => i.Permissions)
+            .HasMaxLength(2000);
+
         builder.HasIndex(i => i.TokenHash)
             .IsUnique();
 

@@ -223,11 +223,21 @@ builder.Services.AddApplicationServices();
 // Add Infrastructure layer services (Repositories, External Clients, JWT)
 builder.Services.AddInfrastructureServices();
 
+// Seeding stays opt-in outside Development via Seeding:Enabled (Seeding__Enabled env var) so
+// a real production deploy never gets demo data unless someone explicitly asks for it - e.g.
+// a local IIS test box that needs a login-capable account and wants the demo dataset to test
+// against. Computed here (not just at the migration/seed call site below) because it also
+// decides whether the file-logging email fallback applies - a box seeding demo data is a
+// local test box, not a real deployment, and shouldn't need a real SendGrid key just to read
+// an invitation link.
+var seedingEnabled = builder.Environment.IsDevelopment()
+    || builder.Configuration.GetValue<bool>("Seeding:Enabled");
+
 // Register external HTTP client services (web layer specific)
 builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
 builder.Services.AddHttpClient<IOpenRouterClient, OpenRouterClient>();
 builder.Services.AddHttpClient<SendGridEmailService>();
-if (builder.Environment.IsDevelopment())
+if (seedingEnabled)
 {
     var devInvitationLinksPath = Path.Combine(builder.Environment.ContentRootPath, "dev-invitation-links.txt");
     builder.Services.AddScoped<IEmailService>(sp =>
@@ -295,18 +305,22 @@ builder.Services.AddSignalR();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Migrations run in every environment (single-instance IIS deploys have no migration
+// step of their own). seedingEnabled was computed above, before builder.Build().
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.MigrateAsync();
+
+    if (seedingEnabled)
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-        await dbContext.Database.MigrateAsync();
-
         var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
         await seeder.SeedAsync();
     }
+}
 
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI();
 }

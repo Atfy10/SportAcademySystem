@@ -117,11 +117,33 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
-        public async Task<List<SubscriptionDetails>?> GetLatestSubscriptionsAsync(CancellationToken cancellationToken = default)
-            => await GetFullSubDetails()
+        public async Task<(List<SubscriptionDetails> Items, int TotalCount)> GetLatestSubscriptionsAsync(
+            PageRequest page, string? term = null, CancellationToken cancellationToken = default)
+        {
+            var query = GetFullSubDetails()
                 .GroupBy(sd => new { sd.TraineeId, sd.SportPrice.SportId, sd.SportPrice.BranchId })
-                .Select(g => g.OrderByDescending(sd => sd.Id).First())
+                .Select(g => g.OrderByDescending(sd => sd.Id).First());
+
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                // SubscriptionType.Name is an enum (string-converted column) - EF Core can't
+                // translate it into SQL, same limitation as GetAllPaginatedAsync above.
+                query = query.Where(sd =>
+                    sd.Trainee.FirstName.Contains(term)
+                    || sd.Trainee.LastName.Contains(term)
+                    || (sd.Trainee.FirstName + " " + sd.Trainee.LastName).Contains(term)
+                    || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term));
+            }
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query
+                .OrderByDescending(sd => sd.Id)
+                .Skip(page.Skip)
+                .Take(page.PageSize)
                 .ToListAsync(cancellationToken);
+
+            return (items, totalCount);
+        }
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)
         {

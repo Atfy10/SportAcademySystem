@@ -81,6 +81,15 @@ public class JwtTokenServiceTests
     private static Mock<RoleManager<AppRole>> CreateRoleManagerMock() =>
         new(Mock.Of<IRoleStore<AppRole>>(), null!, null!, null!, null!);
 
+    private static Mock<UserManager<AppUser>> CreateUserManagerMock()
+    {
+        var mock = new Mock<UserManager<AppUser>>(
+            Mock.Of<IUserStore<AppUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+        mock.Setup(m => m.GetClaimsAsync(It.IsAny<AppUser>()))
+            .ReturnsAsync(new List<System.Security.Claims.Claim>());
+        return mock;
+    }
+
     private static AppUser CreateUser(Guid tenantId) => new()
     {
         Id = Guid.NewGuid(),
@@ -100,7 +109,7 @@ public class JwtTokenServiceTests
         var user = CreateUser(tenantId);
         user.IsBanned = true;
         var repository = new FakeRefreshTokenRepository();
-        var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object);
+        var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
 
         const string plainToken = "plain-refresh-token-banned";
         await repository.AddAsync(new RefreshToken
@@ -124,7 +133,7 @@ public class JwtTokenServiceTests
         var tenantId = Guid.NewGuid();
         var user = CreateUser(tenantId);
         var repository = new FakeRefreshTokenRepository();
-        var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object);
+        var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
 
         const string plainTokenA = "plain-refresh-token-A";
         await repository.AddAsync(new RefreshToken
@@ -194,7 +203,7 @@ public class JwtTokenServiceTests
             .Setup(r => r.UpdateAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var service = new JwtTokenService(CreateConfiguration(), repositoryMock.Object, CreateRoleManagerMock().Object);
+        var service = new JwtTokenService(CreateConfiguration(), repositoryMock.Object, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
 
         var firstRefresh = await service.ValidateAndRefreshTokenAsync("plain-A");
         Assert.NotNull(firstRefresh);
@@ -265,7 +274,7 @@ public class JwtTokenServiceTests
             .Setup(r => r.TryRevokeAsync(It.IsAny<int>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var service = new JwtTokenService(CreateConfiguration(), repositoryMock.Object, CreateRoleManagerMock().Object);
+        var service = new JwtTokenService(CreateConfiguration(), repositoryMock.Object, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
 
         var result = await service.ValidateAndRefreshTokenAsync("plain-A");
 

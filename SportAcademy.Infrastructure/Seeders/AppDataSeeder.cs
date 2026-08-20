@@ -445,11 +445,11 @@ namespace SportAcademy.Infrastructure.Seeders
                 CreateFeature("enrollment-management", "Enrollment Management", "Manage trainee enrollments"),
                 CreateFeature("family-management", "Family Management", "Manage family accounts and billing"),
                 CreateFeature("nationality-categories", "Nationality Categories", "Configure nationality classifications"),
-                CreateFeature("financial-reports", "Financial Reports", "Revenue and payment analytics"),
-                CreateFeature("trainee-reports", "Trainee Reports", "Progress and performance reports"),
-                CreateFeature("coach-reports", "Coach Reports", "Coach evaluation and analytics"),
-                CreateFeature("operational-reports", "Operational Reports", "Daily operations reporting"),
-                CreateFeature("attendance-reports", "Attendance Reports", "Attendance analytics and insights"),
+                // financial-reports / trainee-reports / coach-reports / operational-reports /
+                // attendance-reports are intentionally NOT seeded: there is no ReportsController,
+                // no report-generation logic, and no frontend page for any of them. Seeding them
+                // let a SuperAdmin toggle a feature on for a real tenant that doesn't exist.
+                // Re-add once a real Reports implementation lands.
                 CreateFeature("notifications", "Notification System", "Send and manage system notifications"),
                 CreateFeature("chat-system", "In-App Chat", "Internal messaging and communication"),
                 CreateFeature("video-analysis", "AI Video Analysis", "AI-powered sports video analysis"),

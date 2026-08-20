@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
@@ -7,7 +8,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetLatest
 {
-    public class GetLatestSubDetailsQueryHandler : IRequestHandler<GetLatestSubDetailsQuery, Result<List<SubscriptionDetailsDto>>>
+    public class GetLatestSubDetailsQueryHandler : IRequestHandler<GetLatestSubDetailsQuery, Result<PagedData<SubscriptionDetailsDto>>>
     {
         private readonly string _operation = OperationType.GetAll.ToString();
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
@@ -21,19 +22,22 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetLatest
             _mapper = mapper;
         }
 
-        public async Task<Result<List<SubscriptionDetailsDto>>> Handle(GetLatestSubDetailsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PagedData<SubscriptionDetailsDto>>> Handle(GetLatestSubDetailsQuery request, CancellationToken cancellationToken)
         {
-            var subDetailsList = await _subscriptionDetailsRepository.GetLatestSubscriptionsAsync(cancellationToken)
-                ?? [];
+            var (items, totalCount) = await _subscriptionDetailsRepository.GetLatestSubscriptionsAsync(
+                request.Page, request.Term, cancellationToken);
 
-            cancellationToken.ThrowIfCancellationRequested();
+            var dtoItems = _mapper.Map<List<SubscriptionDetailsDto>>(items) ?? [];
 
-            var subDetailsDtoList = _mapper.Map<List<SubscriptionDetailsDto>>(subDetailsList)
-                ?? [];
+            var pagedData = new PagedData<SubscriptionDetailsDto>
+            {
+                Items = dtoItems,
+                TotalCount = totalCount,
+                Page = request.Page.Page,
+                PageSize = request.Page.PageSize,
+            };
 
-            cancellationToken.ThrowIfCancellationRequested();
-
-            return Result<List<SubscriptionDetailsDto>>.Success(subDetailsDtoList, _operation);
+            return Result<PagedData<SubscriptionDetailsDto>>.Success(pagedData, _operation);
         }
     }
 }

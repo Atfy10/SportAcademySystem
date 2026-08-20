@@ -10,6 +10,7 @@ using SportAcademy.Application.Commands.AuthCommands.RefreshToken;
 using SportAcademy.Application.Commands.AuthCommands.RevokeToken;
 using SportAcademy.Application.Commands.AuthCommands.ToggleUserActive;
 using SportAcademy.Application.Commands.AuthCommands.VerifyPassword;
+using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Queries.AuthQueries.GetAllRoles;
 using SportAcademy.Application.Queries.AuthQueries.GetMyProfile;
@@ -34,7 +35,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpGet("roles")]
         public async Task<IActionResult> GetAllRoles(CancellationToken ct)
         {
@@ -42,7 +43,16 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
+        [HttpGet("permissions")]
+        public IActionResult GetAllPermissions()
+        {
+            return Ok(Result<IReadOnlyList<string>>.Success(
+                SportAcademy.Domain.Authorization.Permissions.All.Where(p => !p.StartsWith("platform.")).ToList(),
+                "GetAllPermissions"));
+        }
+
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPost("users")]
         public async Task<IActionResult> AdminCreateUser([FromBody] AdminCreateUserCommand command, CancellationToken ct)
         {
@@ -50,7 +60,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPost("users/{userId}/toggle-active")]
         public async Task<IActionResult> ToggleUserActive([FromRoute] string userId, CancellationToken ct)
         {
@@ -58,7 +68,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPost("users/{userId}/roles")]
         public async Task<IActionResult> AssignRoles([FromRoute] string userId, [FromBody] List<string> roles, CancellationToken ct)
         {
@@ -66,7 +76,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPost("users/{userId}/reset-password")]
         public async Task<IActionResult> AdminResetUserPassword(
             [FromRoute] string userId,

@@ -15,17 +15,20 @@ namespace SportAcademy.Infrastructure.Implementations
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly RoleManager<AppRole> _roleManager;
+        private readonly UserManager<AppUser> _userManager;
         private const int RefreshTokenExpiryDays = 7;
         private const int GracePeriodMinutes = 10;
 
         public JwtTokenService(
             IConfiguration configuration,
             IRefreshTokenRepository refreshTokenRepository,
-            RoleManager<AppRole> roleManager)
+            RoleManager<AppRole> roleManager,
+            UserManager<AppUser> userManager)
         {
             _configuration = configuration;
             _refreshTokenRepository = refreshTokenRepository;
             _roleManager = roleManager;
+            _userManager = userManager;
         }
 
         public async Task<string> GenerateJwtToken(AppUser appUser, params string[] roles)
@@ -56,6 +59,14 @@ namespace SportAcademy.Infrastructure.Implementations
                 foreach (var claim in roleClaims.Where(c => c.Type == "permission"))
                     permissions.Add(claim.Value);
             }
+
+            // Individual grants layered on top of whatever the user's role(s) already give -
+            // this is what lets a permission be handed to one specific user (e.g. a Coach
+            // granted tenant.users.manage) without changing their role, and what lets
+            // "strict permission" checks actually be independent of role membership.
+            var userClaims = await _userManager.GetClaimsAsync(appUser);
+            foreach (var claim in userClaims.Where(c => c.Type == "permission"))
+                permissions.Add(claim.Value);
 
             foreach (var permission in permissions)
             {

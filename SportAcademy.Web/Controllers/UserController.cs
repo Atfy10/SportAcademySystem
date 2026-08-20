@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions;
 using SportAcademy.Application.Commands.UserCommands.UserCreate;
 using SportAcademy.Application.Commands.UserCommands.UserDelete;
 using SportAcademy.Application.Commands.UserCommands.UserUpdate;
@@ -47,9 +48,11 @@ namespace SportAcademy.Web.Controllers
             return Ok(user);
         }
 
-        // Mutating actions are Admin/Owner-only, matching AuthController's admin-user endpoints
-        // (which is what the frontend actually calls for user creation - these are otherwise unused).
-        [Authorize(Roles = "Admin,Owner")]
+        // Mutating actions require the tenant.users.manage permission rather than a hardcoded
+        // role list - that permission is granted to Admin/Owner by default, but can also be
+        // handed to an individual user (see UpdateUserPermissionsCommand) without promoting
+        // them to Admin.
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPost]
         [ProducesResponseType(typeof(Result<string>), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateAsync(CreateUserCommand command)
@@ -58,7 +61,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(user);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPut]
         public async Task<IActionResult> EditAsync(UpdateUserCommand command)
         {
@@ -66,7 +69,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(user);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpDelete]
         public async Task<IActionResult> Delete(DeleteUserCommand command, CancellationToken ct)
         {
@@ -75,6 +78,18 @@ namespace SportAcademy.Web.Controllers
                 return BadRequest(result.Message);
 
             return NoContent();
+        }
+
+        [Authorize(Policy = "Permission:tenant.users.manage")]
+        [HttpPut("{id}/permissions")]
+        public async Task<IActionResult> UpdatePermissions(
+            Guid id, [FromBody] List<string> permissions, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new UpdateUserPermissionsCommand(id, permissions), ct);
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpGet("me")]

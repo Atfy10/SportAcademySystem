@@ -17,6 +17,12 @@ public class Invitation : ITenantScoped, IAuditableEntity
     public DateTime? RevokedAt { get; set; }
     public Guid InvitedByUserId { get; set; }
     public Guid? ReplacedByInvitationId { get; set; }
+
+    // Only set for Purpose == StaffOnboarding - the role/permissions the invited tenant
+    // staff member should receive on acceptance. OwnerSetup invitations leave these null
+    // and keep their hardcoded "Owner" behavior.
+    public string? Role { get; set; }
+    public string? Permissions { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }

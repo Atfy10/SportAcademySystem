@@ -66,11 +66,11 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete]
-        public IActionResult Delete(DeleteSubscriptionDetailsCommand command)
+        public async Task<IActionResult> Delete(DeleteSubscriptionDetailsCommand command, CancellationToken ct)
         {
-            var result = _mediator.Send(command);
-            if (result is null || !result.Result.IsSuccess)
-                return BadRequest(result?.Result.Message);
+            var result = await _mediator.Send(command, ct);
+            if (!result.IsSuccess)
+                return BadRequest(result.Message);
 
             return NoContent();
         }
@@ -94,9 +94,14 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("latest")]
-        public async Task<IActionResult> GetLatest(CancellationToken ct)
+        public async Task<IActionResult> GetLatest(
+            [FromQuery] int? page,
+            [FromQuery] int? pageSize,
+            [FromQuery] string? term,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetLatestSubDetailsQuery(), ct);
+            var result = await _mediator.Send(
+                new GetLatestSubDetailsQuery(PageRequest.Create(page, pageSize), term), ct);
             return Ok(result);
         }
 

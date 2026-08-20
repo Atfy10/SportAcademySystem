@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -16,13 +18,17 @@ namespace SportAcademy.Application.Queries.UserQueries.GetAll
     {
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
+        private readonly UserManager<AppUser> _userManager;
         private readonly string _operation = OperationType.GetAll.ToString();
 
-        public GetAllUsersQueryHandler(IUserRepository userRepository,
+        public GetAllUsersQueryHandler(
+            IUserRepository userRepository,
+            UserManager<AppUser> userManager,
             IMapper mapper)
         {
             _mapper = mapper;
             _userRepository = userRepository;
+            _userManager = userManager;
         }
 
         public async Task<Result<List<AppUserCardDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
@@ -37,12 +43,16 @@ namespace SportAcademy.Application.Queries.UserQueries.GetAll
                 var roles = await _userRepository.GetUserRoleAsync(user, cancellationToken)
                     ?? [];
 
+                var claims = await _userManager.GetClaimsAsync(user);
+                var permissions = claims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+
                 usersDto.Add(new AppUserCardDto
                 {
                     Id = user.Id,
                     UserName = user.UserName!,
                     Email = user.Email!,
                     Roles = (List<string>)(roles ?? []),
+                    Permissions = permissions,
                     IsActive = !user.IsBanned
                 });
             }
