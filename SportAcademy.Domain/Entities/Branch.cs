@@ -16,8 +16,8 @@ namespace SportAcademy.Domain.Entities
         public required string Country { get; set; }
         public required string PhoneNumber { get; set; }
         public string? Email { get; set; }
-        public required string CoX { get; set; }
-        public required string CoY { get; set; }
+        public string? CoX { get; set; }
+        public string? CoY { get; set; }
         public bool IsActive { get; set; }
 
         public Guid TenantId { get; set; }

@@ -33,10 +33,10 @@ namespace SportAcademy.Application.Validators.BranchValidators
 				.WithMessage("Invalid email format.");
 
 			RuleFor(x => x.CoX)
-				.NotEmpty().WithMessage("CoX is required.");
+				.MaximumLength(50).When(x => !string.IsNullOrEmpty(x.CoX));
 
 			RuleFor(x => x.CoY)
-				.NotEmpty().WithMessage("CoY is required.");
+				.MaximumLength(50).When(x => !string.IsNullOrEmpty(x.CoY));
 		}
 
 		}

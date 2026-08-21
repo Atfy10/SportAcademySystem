@@ -15,8 +15,8 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 		string Country,
 		string PhoneNumber,
 		string? Email,
-		string CoX,
-		string CoY
+		string? CoX,
+		string? CoY
 		) : IRequest<Result<int>>, IRequiresFeature
 	{
 		public string FeatureKey => "branch-management";

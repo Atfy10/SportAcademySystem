@@ -14,7 +14,7 @@ namespace SportAcademy.Application.Interfaces
 		Task<List<BranchDropDownListDto>> GetAllBranchsBase(CancellationToken cancellationToken = default);
 		Task<int> GetBranchesCountAsync(CancellationToken cancellationToken = default);
         Task<bool> IsEmailExistAsync(string email, CancellationToken cancellationToken = default);
-		Task<bool> IsCoordinatesExistAsync(string coX, string coY, CancellationToken cancellationToken = default);
+		Task<bool> IsCoordinatesExistAsync(string? coX, string? coY, CancellationToken cancellationToken = default);
 		Task<bool> IsPhoneNumberExistAsync(string phoneNumber, CancellationToken cancellationToken = default);
         Task<int> GetBranchTotalCapacityAsync(int branchId, CancellationToken cancellationToken = default);
         Task<PagedData<BranchCardDto>> GetAllPaginatedAsync(PageRequest page, CancellationToken cancellationToken = default);

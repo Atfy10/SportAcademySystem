@@ -29,11 +29,11 @@ namespace SportAcademy.Application.Validators.BranchValidators
 				.MaximumLength(100).WithMessage("Email cannot exceed 100 characters.")
 				.When(b => !string.IsNullOrEmpty(b.Email));
 			RuleFor(b => b.CoX)
-				.NotEmpty().WithMessage("Coordinate X is required.")
-				.MaximumLength(20).WithMessage("Coordinate X cannot exceed 20 characters.");
+				.MaximumLength(20).WithMessage("Coordinate X cannot exceed 20 characters.")
+				.When(b => !string.IsNullOrEmpty(b.CoX));
 			RuleFor(b => b.CoY)
-				.NotEmpty().WithMessage("Coordinate Y is required.")
-				.MaximumLength(20).WithMessage("Coordinate Y cannot exceed 20 characters.");
+				.MaximumLength(20).WithMessage("Coordinate Y cannot exceed 20 characters.")
+				.When(b => !string.IsNullOrEmpty(b.CoY));
 		}
 }
 }

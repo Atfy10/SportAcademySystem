@@ -25,13 +25,22 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 			var branch = _mapper.Map<Branch>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
+			// Store blank coordinates as null, not "" - the (CoX, CoY) unique index would
+			// otherwise treat every branch left without coordinates as a duplicate of the
+			// first one (SQL Server's unique index allows multiple NULLs, not multiple "").
+			branch.CoX = string.IsNullOrWhiteSpace(branch.CoX) ? null : branch.CoX;
+			branch.CoY = string.IsNullOrWhiteSpace(branch.CoY) ? null : branch.CoY;
+
 			var emailExists = await _branchRepository.IsEmailExistAsync(branch.Email ?? "", cancellationToken);
 			if (emailExists)
 				throw new EmailExistException();
-			
-			var isCoordinatesUsed = await _branchRepository.IsCoordinatesExistAsync(branch.CoX, branch.CoY, cancellationToken);
-			if (isCoordinatesUsed)
-				throw new CoordinateExistException();
+
+			if (branch.CoX is not null && branch.CoY is not null)
+			{
+				var isCoordinatesUsed = await _branchRepository.IsCoordinatesExistAsync(branch.CoX, branch.CoY, cancellationToken);
+				if (isCoordinatesUsed)
+					throw new CoordinateExistException();
+			}
 
 			var phoneExists = await _branchRepository.IsPhoneNumberExistAsync(branch.PhoneNumber, cancellationToken);
 			if (phoneExists)

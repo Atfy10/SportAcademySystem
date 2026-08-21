@@ -44,11 +44,11 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasFilter("[Email] IS NOT NULL");
 
             builder.Property(b => b.CoX)
-                .IsRequired()
+                .IsRequired(false)
                 .HasMaxLength(50);
 
             builder.Property(b => b.CoY)
-                .IsRequired()
+                .IsRequired(false)
                 .HasMaxLength(50);
 
             //  The index will be useful for serching with (CoX) or (CoX, CoY)

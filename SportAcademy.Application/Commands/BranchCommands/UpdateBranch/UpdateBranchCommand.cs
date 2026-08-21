@@ -17,8 +17,8 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 		string Country,
 		string PhoneNumber,
 		string? Email,
-		string CoX,
-		string CoY,
+		string? CoX,
+		string? CoY,
 		bool IsActive
 		) : IRequest<Result<BranchDto>>, IRequiresFeature
 	{

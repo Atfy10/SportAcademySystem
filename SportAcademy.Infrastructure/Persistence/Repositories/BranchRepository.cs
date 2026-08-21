@@ -39,7 +39,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<int> GetBranchesCountAsync(CancellationToken cancellationToken = default)
             => await _context.Branchs.CountAsync(cancellationToken);
 
-        public async Task<bool> IsCoordinatesExistAsync(string coX, string coY, CancellationToken cancellationToken = default)
+        public async Task<bool> IsCoordinatesExistAsync(string? coX, string? coY, CancellationToken cancellationToken = default)
             => await _context.Branchs
                 .AnyAsync(b => b.CoX == coX && b.CoY == coY, cancellationToken);
 
