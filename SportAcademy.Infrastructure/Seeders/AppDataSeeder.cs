@@ -113,6 +113,20 @@ namespace SportAcademy.Infrastructure.Seeders
                 await SeedRolesAsync();
                 await AssignRolesAsync(systemTenantId, superAdminId, ownerId, salmiyaTenantId);
 
+                // AssignRolesAsync (like SeedUsersAsync earlier) flips the ambient tenant to
+                // salmiyaTenantId internally via _tenantIdProvider.SetTenantId - but that's an
+                // AsyncLocal mutation scoped to AssignRolesAsync's OWN call stack. It does not
+                // propagate back to this method once AssignRolesAsync returns: from here on,
+                // the ambient tenant is still whatever it was before that call (systemTenantId,
+                // set at the top of this method). Everything below this point creates
+                // tenant-scoped entities for Salmiya Academy (features/settings/subscription
+                // enablement, then the full domain dataset) - TenantSaveChangesInterceptor
+                // stamps every newly-added ITenantScoped entity with the ambient tenant on
+                // SaveChanges regardless of what was explicitly set on the entity itself, so
+                // getting this wrong silently reassigns the entire seeded dataset to the wrong
+                // tenant. Must be set directly in this method's own scope to actually stick.
+                _tenantIdProvider.SetTenantId(salmiyaTenantId);
+
                 var featureIds = await SeedFeaturesAsync();
                 var enterprisePlanIds = await SeedSubscriptionPlansAsync(featureIds);
 
