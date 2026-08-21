@@ -194,81 +194,10 @@ namespace SportAcademy.Infrastructure.Seeders
                 throw new InvalidOperationException($"Failed to create Owner: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             _context.Profiles.Add(new Profile { AppUserId = owner.Id });
 
-            var adminUser = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = "admin.salmiya",
-                Email = "admin@salmiya-academy.com.kw",
-                TenantId = salmiyaTenantId,
-                IsPasswordReset = false,
-                IsBanned = false,
-                EmailConfirmed = true,
-                PhoneNumberConfirmed = false,
-                TwoFactorEnabled = false,
-                LockoutEnabled = true
-            };
-            result = await _userManager.CreateAsync(adminUser, DefaultPassword);
-            if (!result.Succeeded)
-                throw new InvalidOperationException($"Failed to create Admin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            _context.Profiles.Add(new Profile { AppUserId = adminUser.Id });
-
-            var managerUser = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = "manager.salmiya",
-                Email = "manager@salmiya-academy.com.kw",
-                TenantId = salmiyaTenantId,
-                IsPasswordReset = false,
-                IsBanned = false,
-                EmailConfirmed = true,
-                PhoneNumberConfirmed = true,
-                TwoFactorEnabled = false,
-                LockoutEnabled = true
-            };
-            result = await _userManager.CreateAsync(managerUser, DefaultPassword);
-            if (!result.Succeeded)
-                throw new InvalidOperationException($"Failed to create Manager: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            _context.Profiles.Add(new Profile { AppUserId = managerUser.Id });
-
-            var accountantUser = new AppUser
-            {
-                Id = Guid.NewGuid(),
-                UserName = "accountant.salmiya",
-                Email = "accountant@salmiya-academy.com.kw",
-                TenantId = salmiyaTenantId,
-                IsPasswordReset = false,
-                IsBanned = false,
-                EmailConfirmed = true,
-                PhoneNumberConfirmed = true,
-                TwoFactorEnabled = false,
-                LockoutEnabled = true
-            };
-            result = await _userManager.CreateAsync(accountantUser, DefaultPassword);
-            if (!result.Succeeded)
-                throw new InvalidOperationException($"Failed to create Accountant: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-            _context.Profiles.Add(new Profile { AppUserId = accountantUser.Id });
-
-            var coachEmails = new[] { "ahmed.ali", "khaled.omar", "sultan.hamad", "fahad.naser", "nawaf.mutairi" };
-            for (int i = 0; i < coachEmails.Length; i++)
-            {
-                var coachUser = new AppUser
-                {
-                    Id = Guid.NewGuid(),
-                    UserName = coachEmails[i],
-                    Email = $"{coachEmails[i]}@salmiya-academy.com.kw",
-                    TenantId = salmiyaTenantId,
-                    IsPasswordReset = false,
-                    IsBanned = false,
-                    EmailConfirmed = true,
-                    PhoneNumberConfirmed = true,
-                    TwoFactorEnabled = false,
-                    LockoutEnabled = true
-                };
-                result = await _userManager.CreateAsync(coachUser, DefaultPassword);
-                if (!result.Succeeded)
-                    throw new InvalidOperationException($"Failed to create Coach {coachEmails[i]}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-                _context.Profiles.Add(new Profile { AppUserId = coachUser.Id });
-            }
+            // Intentionally only SuperAdmin + Owner are seeded - no demo Admin/Manager/
+            // Accountant/Coach accounts. SeedSalmiyaDataAsync's tenantUsers lookup (used to
+            // link demo employees to a login) already tolerates running out of users and
+            // falls back to AppUserId = null, so this is safe on its own.
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Users seeded successfully.");
@@ -398,26 +327,6 @@ namespace SportAcademy.Infrastructure.Seeders
             var owner = await _userManager.FindByIdAsync(ownerId.ToString());
             if (owner != null)
                 await _userManager.AddToRoleAsync(owner, "Owner");
-
-            var admin = await _userManager.FindByEmailAsync("admin@salmiya-academy.com.kw");
-            if (admin != null)
-                await _userManager.AddToRoleAsync(admin, "Admin");
-
-            var manager = await _userManager.FindByEmailAsync("manager@salmiya-academy.com.kw");
-            if (manager != null)
-                await _userManager.AddToRoleAsync(manager, "Manager");
-
-            var accountant = await _userManager.FindByEmailAsync("accountant@salmiya-academy.com.kw");
-            if (accountant != null)
-                await _userManager.AddToRoleAsync(accountant, "Accountant");
-
-            var coachEmails = new[] { "ahmed.ali", "khaled.omar", "sultan.hamad", "fahad.naser", "nawaf.mutairi" };
-            foreach (var email in coachEmails)
-            {
-                var coachUser = await _userManager.FindByEmailAsync($"{email}@salmiya-academy.com.kw");
-                if (coachUser != null)
-                    await _userManager.AddToRoleAsync(coachUser, "Coach");
-            }
 
             _logger.LogInformation("Roles assigned successfully.");
         }
