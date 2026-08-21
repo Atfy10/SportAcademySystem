@@ -32,13 +32,18 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                 .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Sport.Name))
                 .ReverseMap();
 
-            CreateMap<CreateCoachCommand, Coach>();
+            // New coaches default to a Rate of 3 (not 0 - CLR default - which would read as
+            // "worst possible rating" rather than "not yet rated"). Adjustable afterward via
+            // RateCoachCommand / PATCH api/coach/{id}/rate.
+            CreateMap<CreateCoachCommand, Coach>()
+                .ForMember(dest => dest.Rate, opt => opt.MapFrom(src => 3));
 
             CreateMap<CreateCoachWithEmployeeCommand, Coach>()
                 .ForMember(
                     dest => dest.Employee,
                     opt => opt.Ignore()
-                );
+                )
+                .ForMember(dest => dest.Rate, opt => opt.MapFrom(src => 3));
 
             CreateMap<Coach, CoachSummaryDto>().ReverseMap();
 

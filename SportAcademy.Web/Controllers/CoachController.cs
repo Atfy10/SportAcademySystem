@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoach;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
+using SportAcademy.Application.Commands.CoachCommands.RateCoach;
 using SportAcademy.Application.Commands.CoachCommands.UpdateCoach;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetAllForDropdown;
@@ -57,6 +58,16 @@ namespace SportAcademy.Web.Controllers
         {
             var cmd = command with { Id = id };
             var result = await _mediator.Send(cmd, ct);
+            return Ok(result);
+        }
+
+        // Backend-only for now: adjusts a coach's star rating (1-5) after the initial
+        // Rate = 3 default set at creation. No frontend UI calls this yet.
+        [HttpPatch("{id}/rate")]
+        [Authorize(Policy = "Permission:coach.manage")]
+        public async Task<ActionResult> Rate(int id, [FromBody] int rate, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new RateCoachCommand(id, rate), ct);
             return Ok(result);
         }
 
