@@ -59,15 +59,16 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                     src.Rate
                 ));
 
+            // .ForMember() here, not .ConstructUsing() - ConstructUsing opts a mapping out of
+            // AutoMapper's LINQ expression-tree translation, which ProjectTo relies on to turn
+            // this into a SQL projection. Left as ConstructUsing, this was throwing
+            // InvalidCastException at runtime on the coach dropdown endpoint.
             CreateMap<Coach, CoachDropdownItemDto>()
-                .ConstructUsing(src => new CoachDropdownItemDto
-                {
-                    Id = src.EmployeeId,
-                    EmployeeFirstName = src.Employee.FirstName,
-                    EmployeeLastName = src.Employee.LastName,
-                    BranchId = src.Employee.BranchId,
-                    BranchName = src.Employee.Branch.Name
-                });
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.EmployeeId))
+                .ForMember(dest => dest.EmployeeFirstName, opt => opt.MapFrom(src => src.Employee.FirstName))
+                .ForMember(dest => dest.EmployeeLastName, opt => opt.MapFrom(src => src.Employee.LastName))
+                .ForMember(dest => dest.BranchId, opt => opt.MapFrom(src => src.Employee.BranchId))
+                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Employee.Branch.Name));
         }
     }
 }
