@@ -30,20 +30,21 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
     {
         var today = DateTime.UtcNow.Date;
 
-        var sportsTask = _mediator.Send(new GetAllSportsQuery(), ct);
-        var todayGroupsTask = _mediator.Send(
+        // Sequential, not Task.WhenAll: every one of these _mediator.Send calls ultimately
+        // shares the same scoped ApplicationDbContext (same request scope), and DbContext is
+        // not thread-safe for concurrent operations. Running them in parallel intermittently
+        // threw "A second operation was started on this context instance before a previous
+        // operation completed" depending on exact timing - the dashboard's random failures.
+        var sportsResult = await _mediator.Send(new GetAllSportsQuery(), ct);
+        var todayGroupsResult = await _mediator.Send(
             new GetAllSessionsOfSpecificDayQuery(today, PageRequest.Create(1, 4)), ct);
-        var activeCoachesTask = _mediator.Send(new GetActiveCoachesCountQuery(), ct);
-        var overallAttendanceTask = _mediator.Send(new GetGlobalAttendanceRateQuery(null, null), ct);
-        var todayTraineesTask = _mediator.Send(new GetTraineesCountOfSpecificDayQuery(today), ct);
-        var notificationsTask = _mediator.Send(
+        var activeCoachesResult = await _mediator.Send(new GetActiveCoachesCountQuery(), ct);
+        var overallAttendanceResult = await _mediator.Send(new GetGlobalAttendanceRateQuery(null, null), ct);
+        var todayTraineesResult = await _mediator.Send(new GetTraineesCountOfSpecificDayQuery(today), ct);
+        var notificationsResult = await _mediator.Send(
             new GetUserNotificationsQuery(PageRequest.Create(1, 10)), ct);
 
-        await Task.WhenAll(
-            sportsTask, todayGroupsTask, activeCoachesTask,
-            overallAttendanceTask, todayTraineesTask, notificationsTask);
-
-        var sports = (await sportsTask).Data ?? [];
+        var sports = sportsResult.Data ?? [];
 
         var enrollmentCounts = new List<SportEnrollmentCountDto>();
         foreach (var sport in sports)
@@ -64,13 +65,13 @@ public class GetDashboardSummaryQueryHandler : IRequestHandler<GetDashboardSumma
 
         var summary = new DashboardSummaryDto(
             sports,
-            (await todayGroupsTask).Data!,
-            (await activeCoachesTask).Data,
-            (await overallAttendanceTask).Data,
-            (await todayTraineesTask).Data,
+            todayGroupsResult.Data!,
+            activeCoachesResult.Data,
+            overallAttendanceResult.Data,
+            todayTraineesResult.Data,
             enrollmentCounts,
             attendanceTrend,
-            (await notificationsTask).Data!
+            notificationsResult.Data!
         );
 
         return Result<DashboardSummaryDto>.Success(summary, Operation);
