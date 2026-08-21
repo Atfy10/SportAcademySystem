@@ -29,7 +29,7 @@ public class CreateEmployeeCommandHandlerTests
             _userRepoMock.Object);
     }
 
-    private static CreateEmployeeCommand CreateValidCommand() => new(
+    private static CreateEmployeeCommand CreateValidCommand(bool createUserAccount = true) => new(
         FirstName: "Mohammad",
         LastName: "Al-Sabah",
         SSN: "294051512345",
@@ -43,7 +43,8 @@ public class CreateEmployeeCommandHandlerTests
         PhoneNumber: "51234567",
         SecondNumber: "65234567",
         Position: Position.Manager,
-        BranchId: 1
+        BranchId: 1,
+        CreateUserAccount: createUserAccount
     );
 
     private static Employee CreateMappedEmployee() => new()
@@ -63,7 +64,7 @@ public class CreateEmployeeCommandHandlerTests
         IsWork = true
     };
 
-    private static AppUser CreateMappedAppUser(string userId = "test-user-123") => new()
+    private static AppUser CreateMappedAppUser(string userId = "11111111-1111-1111-1111-111111111111") => new()
     {
         Id = new Guid(userId),
         UserName = "mohammad.al-sabah",
@@ -96,9 +97,38 @@ public class CreateEmployeeCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().BeGreaterThan(0);
+        result.Data!.EmployeeId.Should().BeGreaterThan(0);
+        result.Data.GeneratedUserName.Should().Be("mohammad.al-sabah");
+        result.Data.GeneratedPassword.Should().Be("TempPass123!");
         _employeeRepoMock.Verify(r => r.AddAsync(It.IsAny<Employee>(), It.IsAny<CancellationToken>()), Times.Once);
         _userRepoMock.Verify(r => r.Register(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_CreateUserAccountFalse_DoesNotCreateUser()
+    {
+        // Arrange
+        var command = CreateValidCommand(createUserAccount: false);
+        var employee = CreateMappedEmployee();
+
+        _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
+        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
+        _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+        _employeeRepoMock.Setup(r => r.AddAsync(It.IsAny<Employee>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.EmployeeId.Should().BeGreaterThan(0);
+        result.Data.GeneratedUserName.Should().BeNull();
+        result.Data.GeneratedPassword.Should().BeNull();
+        employee.AppUser.Should().BeNull();
+        _userRepoMock.Verify(r => r.Register(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
+        _personServiceMock.Verify(s => s.GeneratePassword(), Times.Never);
+        _employeeRepoMock.Verify(r => r.AddAsync(It.IsAny<Employee>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -242,7 +272,7 @@ public class CreateEmployeeCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().BeGreaterThan(0);
+        result.Data!.EmployeeId.Should().BeGreaterThan(0);
     }
 
     [Fact]
