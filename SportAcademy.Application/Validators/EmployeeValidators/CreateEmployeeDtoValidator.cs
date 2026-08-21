@@ -24,6 +24,13 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
                 .NotEmpty().WithMessage("National ID (SSN) is required.")
                 .Matches(@"^\d{10,14}$").WithMessage("SSN must be between 10 and 14 digits.");
 
+            RuleFor(x => x.Email)
+                .NotEmpty()
+                .EmailAddress();
+
+            RuleFor(x => x.Nationality)
+                .NotEmpty();
+
             RuleFor(x => x.Salary)
                 .GreaterThan(0).WithMessage("Salary must be greater than zero.")
                 .LessThanOrEqualTo(100000).WithMessage("Salary seems unusually high, please double-check.");

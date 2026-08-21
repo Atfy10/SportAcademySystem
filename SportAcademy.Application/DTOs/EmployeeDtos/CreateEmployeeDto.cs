@@ -13,6 +13,8 @@ namespace SportAcademy.Application.DTOs.EmployeeDtos
         public string FirstName { get; init; } = null!;
         public string LastName { get; init; } = null!;
         public string SSN { get; init; } = null!;
+        public string Email { get; init; } = null!;
+        public string Nationality { get; init; } = null!;
         public decimal Salary { get; init; }
         public Gender Gender { get; init; }
         public DateOnly BirthDate { get; init; }

@@ -39,7 +39,28 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
                 .ForMember(dest => dest.HireDate,
                     opt => opt.MapFrom(src => DateTime.Now));
 
-            CreateMap<CreateEmployeeDto, Employee>();
+            // No ForMember overrides here previously - meant Address (string -> value object)
+            // failed to map at all, and HireDate/Nationality/Email were silently left at CLR
+            // defaults (0001-01-01, invalid enum 0, null respectively - the latter causing a
+            // latent NullReferenceException in CoachCardDto's Email.ToString()). Same fix shape
+            // as the sibling CreateEmployeeCommand mapping above; CreateEmployeeDto.Address is a
+            // single free-text field rather than Street/City, so it maps to Address.Create with
+            // an empty city.
+            CreateMap<CreateEmployeeDto, Employee>()
+                .ForMember(dest => dest.Address,
+                    opt => opt.MapFrom(src =>
+                    Address.Create(src.Address, string.Empty)))
+                .ForMember(dest => dest.Email,
+                    opt => opt.MapFrom(src =>
+                    Email.Create(src.Email)))
+                .ForMember(dest => dest.SecondPhoneNumber,
+                    opt => opt.MapFrom(src =>
+                    src.SecondNumber))
+                .ForMember(dest => dest.Nationality,
+                    opt => opt.MapFrom(src =>
+                    Enum.Parse<Nationality>(src.Nationality)))
+                .ForMember(dest => dest.HireDate,
+                    opt => opt.MapFrom(src => DateTime.Now));
 
             // UpdateEmployeeCommand -> Employee is no longer an AutoMapper mapping -
             // UpdateEmployeeCommandHandler uses Mappings/Manual/EmployeeMapper.cs instead
