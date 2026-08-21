@@ -32,7 +32,12 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
                     src.SecondNumber))
                 .ForMember(dest => dest.Nationality,
                     opt => opt.MapFrom(src =>
-                    Enum.Parse<Nationality>(src.Nationality)));
+                    Enum.Parse<Nationality>(src.Nationality)))
+                // CreateEmployeeCommand has no HireDate field (it's not user-entered) -
+                // without this, AutoMapper leaves it unmapped and it defaults to
+                // DateTime.MinValue (0001-01-01), which is the "joined date" bug.
+                .ForMember(dest => dest.HireDate,
+                    opt => opt.MapFrom(src => DateTime.Now));
 
             CreateMap<CreateEmployeeDto, Employee>();
 
