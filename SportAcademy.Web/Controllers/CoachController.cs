@@ -11,6 +11,8 @@ using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
 using SportAcademy.Application.Queries.CoachQueries.GetById;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
+using SportAcademy.Application.Common.Result;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -84,6 +86,16 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(new GetCoachsCountQuery());
             return Ok(result);
+        }
+
+        [HttpGet("skill-levels")]
+        public IActionResult GetSkillLevels()
+        {
+            var options = Enum.GetValues<SkillLevel>()
+                .Where(s => s != SkillLevel.NotSpecified)
+                .Select(s => new { value = s, label = s.ToString() })
+                .ToList();
+            return Ok(Result<object>.Success(options, "GetSkillLevels"));
         }
 
         [HttpGet("search")]

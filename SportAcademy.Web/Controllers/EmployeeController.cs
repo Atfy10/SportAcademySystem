@@ -16,6 +16,8 @@ using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 using SportAcademy.Application.Queries.EmployeeQueries.GetCoachEmployeesWithoutCoachRecord;
 using SportAcademy.Application.Queries.EmployeeQueries.GetEmployeesCount;
 using SportAcademy.Application.Queries.EmployeeQueries.SearchEmployeess;
+using SportAcademy.Application.Common.Result;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -154,6 +156,15 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new SearchEmployeeQuery(
                                         searchTerm, PageRequest.Create(page, pageSize)), ct);
             return Ok(result);
+        }
+
+        [HttpGet("positions")]
+        public IActionResult GetPositions()
+        {
+            var options = Enum.GetValues<Position>()
+                .Select(p => new { value = p, label = p.ToString() })
+                .ToList();
+            return Ok(Result<object>.Success(options, "GetAllPositions"));
         }
 
         [HttpGet("coaches")]
