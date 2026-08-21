@@ -18,8 +18,8 @@ public sealed class AppUrlProvider : IAppUrlProvider
     public string InvitationUrl(string slug, string rawToken)
         => $"{BaseUrl}/t/{slug}/invite/{rawToken}";
 
-    public string PasswordResetUrl(string token)
-        => $"{BaseUrl}/reset-password?token={token}";
+    public string PasswordResetUrl(Guid userId, string token)
+        => $"{BaseUrl}/reset-password?userId={userId}&token={Uri.EscapeDataString(token)}";
 
     public string EmailVerificationUrl(string token)
         => $"{BaseUrl}/verify-email?token={token}";

@@ -24,5 +24,20 @@ namespace SportAcademy.Application.Interfaces
         Task<List<AppUser>> GetUnlinkedUsers(CancellationToken cancellationToken = default);
         Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword);
         Task<IdentityResult> AdminResetPasswordAsync(AppUser user, string newPassword);
+
+        // Cross-tenant lookups for the Platform/SuperAdmin console - the EF global query
+        // filter scopes every normal query to the caller's own tenant, but a SuperAdmin
+        // (whose own tenant is the platform-only "System" tenant) needs to see and act on
+        // AppUsers that belong to OTHER tenants. IgnoreQueryFilters() is required here, same
+        // pattern as TenantRepository's cross-tenant count methods.
+        Task<AppUser?> GetByIdIgnoringTenantAsync(Guid id, CancellationToken ct = default);
+        Task<(List<AppUser> Items, int TotalCount)> GetOwnersPagedAsync(int skip, int take, string? search, CancellationToken ct = default);
+        Task<AppUser?> GetOwnerByIdAsync(Guid id, CancellationToken ct = default);
+
+        // Split out of AdminResetPasswordAsync (which generates a token and immediately
+        // consumes it in one call) so a "send a reset link" flow can generate the token now
+        // and consume it later, from an unauthenticated request when the link is clicked.
+        Task<string> GeneratePasswordResetTokenAsync(AppUser user);
+        Task<IdentityResult> ConsumePasswordResetTokenAsync(AppUser user, string token, string newPassword);
     }
 }

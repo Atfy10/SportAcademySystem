@@ -7,6 +7,7 @@ using SportAcademy.Application.Commands.AuthCommands.AssignRolesToUser;
 using SportAcademy.Application.Commands.AuthCommands.ChangePassword;
 using SportAcademy.Application.Commands.AuthCommands.Login;
 using SportAcademy.Application.Commands.AuthCommands.RefreshToken;
+using SportAcademy.Application.Commands.AuthCommands.ResetPassword;
 using SportAcademy.Application.Commands.AuthCommands.RevokeToken;
 using SportAcademy.Application.Commands.AuthCommands.ToggleUserActive;
 using SportAcademy.Application.Commands.AuthCommands.VerifyPassword;
@@ -33,6 +34,16 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(command, ct);
             return Ok(result);
+        }
+
+        // Public: consumes the token from a "send reset link" email (see
+        // SendOwnerPasswordResetLinkCommand / Platform/OwnersController). No [Authorize] here,
+        // same as Login above - the whole point is the caller isn't signed in yet.
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]

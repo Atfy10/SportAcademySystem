@@ -162,5 +162,48 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             return await _userManager.ResetPasswordAsync(user, token, newPassword);
         }
+
+        public async Task<AppUser?> GetByIdIgnoringTenantAsync(Guid id, CancellationToken ct = default)
+            => await _context.AppUsers.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id, ct);
+
+        public async Task<(List<AppUser> Items, int TotalCount)> GetOwnersPagedAsync(
+            int skip, int take, string? search, CancellationToken ct = default)
+        {
+            var query = _context.AppUsers
+                .IgnoreQueryFilters()
+                .Include(u => u.Tenant)
+                .Where(u => u.UserRoles.Any(ur => ur.Role.Name == "Owner"));
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.ToLower();
+                query = query.Where(u =>
+                    (u.UserName != null && u.UserName.ToLower().Contains(term)) ||
+                    (u.Email != null && u.Email.ToLower().Contains(term)) ||
+                    u.Tenant.DisplayName.ToLower().Contains(term));
+            }
+
+            var totalCount = await query.CountAsync(ct);
+            var items = await query
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip(skip)
+                .Take(take)
+                .ToListAsync(ct);
+
+            return (items, totalCount);
+        }
+
+        public async Task<AppUser?> GetOwnerByIdAsync(Guid id, CancellationToken ct = default)
+            => await _context.AppUsers
+                .IgnoreQueryFilters()
+                .Include(u => u.Tenant)
+                .Where(u => u.UserRoles.Any(ur => ur.Role.Name == "Owner"))
+                .FirstOrDefaultAsync(u => u.Id == id, ct);
+
+        public async Task<string> GeneratePasswordResetTokenAsync(AppUser user)
+            => await _userManager.GeneratePasswordResetTokenAsync(user);
+
+        public async Task<IdentityResult> ConsumePasswordResetTokenAsync(AppUser user, string token, string newPassword)
+            => await _userManager.ResetPasswordAsync(user, token, newPassword);
     }
 }
