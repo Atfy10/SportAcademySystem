@@ -14,7 +14,7 @@ public class NotificationGroupMemberConfiguration : IEntityTypeConfiguration<Not
 
         builder.Property(m => m.GroupName)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(100);
 
         builder.HasOne(m => m.User)
             .WithMany(u => u.GroupMemberships)

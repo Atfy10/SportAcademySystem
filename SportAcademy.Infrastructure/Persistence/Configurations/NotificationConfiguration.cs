@@ -17,9 +17,13 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Message)
                 .IsRequired();
 
+            // NotificationGroupNames.ForTenant produces "tenant:{32-char-guid}:{baseName}",
+            // 40+ chars - 30 truncated it mid-value (SqlException on insert). Matches the
+            // 50-char limit already used on NotificationGroupMember.GroupName for the same
+            // kind of value, with headroom for longer baseName values.
             builder.Property(x => x.GroupName)
                 .IsRequired(false)
-                .HasMaxLength(30);
+                .HasMaxLength(100);
 
             builder.Property(x => x.Title)
                 .IsRequired(false)
