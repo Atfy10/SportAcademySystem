@@ -9,24 +9,27 @@ namespace SportAcademy.Application.Mappings.CoachProfile
     {
         public CoachProfile()
         {
+            // .ForCtorParam() here, not .ConstructUsing() - see note on CoachDropdownItemDto
+            // below; this is the exact same InvalidCastException-on-ProjectTo root cause. Plain
+            // .ForMember() doesn't work either: CoachCardDto is a positional record with no
+            // parameterless constructor, so AutoMapper must be told how to fill constructor
+            // parameters explicitly via ForCtorParam.
             CreateMap<Coach, CoachCardDto>()
-                .ConstructUsing(src => new CoachCardDto(
-                    src.EmployeeId,
-                    src.Employee.FirstName,
-                    src.Employee.LastName,
-                    src.Employee.Position.ToString(),
-                    src.Employee.Branch.Name,
-                    src.Employee.Email.ToString(),
-                    src.Employee.IsWork,
-                    src.Employee.PhoneNumber,
-                    src.Employee.Address.ToString(),
-                    src.Employee.HireDate,
-                    src.TraineeGroups
-                        .SelectMany(tg => tg.Enrollments)
-                        .Count(e => e.IsActive && !e.IsDeleted),
-                    src.SkillLevel,
-                    src.Sport.Name
-                ))
+                .ForCtorParam("Id", opt => opt.MapFrom(src => src.EmployeeId))
+                .ForCtorParam("FirstName", opt => opt.MapFrom(src => src.Employee.FirstName))
+                .ForCtorParam("LastName", opt => opt.MapFrom(src => src.Employee.LastName))
+                .ForCtorParam("Position", opt => opt.MapFrom(src => src.Employee.Position.ToString()))
+                .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Employee.Branch.Name))
+                .ForCtorParam("Email", opt => opt.MapFrom(src => src.Employee.Email.ToString()))
+                .ForCtorParam("IsWork", opt => opt.MapFrom(src => src.Employee.IsWork))
+                .ForCtorParam("PhoneNumber", opt => opt.MapFrom(src => src.Employee.PhoneNumber))
+                .ForCtorParam("Address", opt => opt.MapFrom(src => src.Employee.Address.ToString()))
+                .ForCtorParam("HireDate", opt => opt.MapFrom(src => src.Employee.HireDate))
+                .ForCtorParam("TotalTrainees", opt => opt.MapFrom(src => src.TraineeGroups
+                    .SelectMany(tg => tg.Enrollments)
+                    .Count(e => e.IsActive && !e.IsDeleted)))
+                .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel))
+                .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Sport.Name))
                 .ReverseMap();
 
             CreateMap<CreateCoachCommand, Coach>();

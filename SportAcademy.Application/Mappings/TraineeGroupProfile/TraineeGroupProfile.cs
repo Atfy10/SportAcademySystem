@@ -66,28 +66,28 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
 
         CreateMap<CreateTraineeGroupCommand, TraineeGroup>();
 
+        // .ForCtorParam() here, not .ConstructUsing() - ConstructUsing opts a mapping out of
+        // AutoMapper's LINQ expression-tree translation, which ProjectTo relies on to turn
+        // this into a SQL projection (same root cause as the Coach dropdown fix). Plain
+        // .ForMember() doesn't work either: both DTOs below are positional records with no
+        // parameterless constructor, so AutoMapper must be told how to fill constructor
+        // parameters explicitly via ForCtorParam.
         CreateMap<TraineeGroup, ListTraineeGroupDto>()
-            .ConstructUsing(src => new ListTraineeGroupDto(
-                src.Id,
-                src.Coach.Sport.Name,
-                src.Coach.Employee.FirstName,
-                src.Branch.Name,
-                src.DurationInMinutes,
-                src.Enrollments.Count,
-                src.GroupSchedules
-                    .Select(gs => new GroupScheduleItemDto
-                    {
-                        DayOfWeek = gs.Day.ToString(),
-                        StartTime = gs.StartTime.ToString("HH:mm:ss")
-                    }).ToList()))
-            .ForMember(dest => dest.SportName, opt => opt.Ignore())
-            .ForMember(dest => dest.CoachName, opt => opt.Ignore())
-            .ForMember(dest => dest.BranchName, opt => opt.Ignore())
-            .ForMember(dest => dest.DurationInMinutes, opt => opt.Ignore())
-            .ForMember(dest => dest.TraineesCount, opt => opt.Ignore())
-            .ForMember(dest => dest.Schedules, opt => opt.Ignore());
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Coach.Sport.Name))
+            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+            .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
+            .ForCtorParam("DurationInMinutes", opt => opt.MapFrom(src => src.DurationInMinutes))
+            .ForCtorParam("TraineesCount", opt => opt.MapFrom(src => src.Enrollments.Count))
+            .ForCtorParam("Schedules", opt => opt.MapFrom(src => src.GroupSchedules
+                .Select(gs => new GroupScheduleItemDto
+                {
+                    DayOfWeek = gs.Day.ToString(),
+                    StartTime = gs.StartTime.ToString("HH:mm:ss")
+                }).ToList()));
 
         CreateMap<TraineeGroup, TraineeGroupDropdownDto>()
-            .ConstructUsing(src => new TraineeGroupDropdownDto(src.Id, src.Name));
+            .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name));
     }
 }

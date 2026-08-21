@@ -79,11 +79,15 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                     opt => opt.Condition((src, dest, srcMember) => srcMember != null)
                 );
 
+            // .ForCtorParam() here, not .ConstructUsing() - ConstructUsing opts a mapping out of
+            // AutoMapper's LINQ expression-tree translation, which ProjectTo relies on to turn
+            // this into a SQL projection (same root cause as the Coach dropdown fix). Plain
+            // .ForMember() doesn't work either: SubscriptionDetailsDropdownDto is a positional
+            // record with no parameterless constructor, so AutoMapper must be told how to fill
+            // constructor parameters explicitly via ForCtorParam.
             CreateMap<SubscriptionDetails, SubscriptionDetailsDropdownDto>()
-                .ConstructUsing(src => new SubscriptionDetailsDropdownDto(
-                    src.Id,
-                    src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString()
-                ));
+                .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+                .ForCtorParam("Name", opt => opt.MapFrom(src => src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString()));
         }
     }
 }

@@ -14,25 +14,27 @@ namespace SportAcademy.Application.Mappings.AttendanceProfile
     {
         public AttendanceProfile()
         {
+            // .ForCtorParam() here, not .ConstructUsing() - ConstructUsing opts a mapping out of
+            // AutoMapper's LINQ expression-tree translation, which ProjectTo relies on to turn
+            // this into a SQL projection (same root cause as the earlier Coach dropdown fix).
+            // Plain .ForMember() doesn't work either: these are positional records with no
+            // parameterless constructor, so AutoMapper must be told how to fill constructor
+            // parameters explicitly via ForCtorParam.
             CreateMap<Attendance, AttendanceDto>()
-                .ConstructUsing(src => new AttendanceDto(
-                    src.Id,
-                    src.AttendanceDate,
-                    src.AttendanceStatus.ToString(),
-                    src.CheckInTime.ToString("HH:mm:ss"),
-                    src.CoachNote ?? string.Empty,
-                    src.EnrollmentId,
-                    src.SessionOccurrenceId
-                ));
+                .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+                .ForCtorParam("AttendanceDate", opt => opt.MapFrom(src => src.AttendanceDate))
+                .ForCtorParam("AttendanceStatus", opt => opt.MapFrom(src => src.AttendanceStatus.ToString()))
+                .ForCtorParam("CheckInTime", opt => opt.MapFrom(src => src.CheckInTime.ToString("HH:mm:ss")))
+                .ForCtorParam("CoachNote", opt => opt.MapFrom(src => src.CoachNote ?? string.Empty))
+                .ForCtorParam("EnrollmentId", opt => opt.MapFrom(src => src.EnrollmentId))
+                .ForCtorParam("SessionOccurrenceId", opt => opt.MapFrom(src => src.SessionOccurrenceId));
 
             CreateMap<Attendance, AttendanceRecordDto>()
-                .ConstructUsing(src => new AttendanceRecordDto(
-                    src.Id,
-                    src.Enrollment!.TraineeId,
-                    $"{src.Enrollment.Trainee.FirstName} {src.Enrollment.Trainee.LastName}",
-                    src.CheckInTime.ToString("HH:mm:ss"),
-                    src.AttendanceStatus.ToString()
-                ));
+                .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+                .ForCtorParam("TraineeId", opt => opt.MapFrom(src => src.Enrollment!.TraineeId))
+                .ForCtorParam("TraineeName", opt => opt.MapFrom(src => src.Enrollment!.Trainee.FirstName + " " + src.Enrollment.Trainee.LastName))
+                .ForCtorParam("CheckInTime", opt => opt.MapFrom(src => src.CheckInTime.ToString("HH:mm:ss")))
+                .ForCtorParam("Status", opt => opt.MapFrom(src => src.AttendanceStatus.ToString()));
 
             // CreateAttendanceCommand <-> Attendance is no longer an AutoMapper mapping:
             // CreateAttendanceCommandHandler builds/updates the entity manually (see

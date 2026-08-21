@@ -7,10 +7,15 @@ namespace SportAcademy.Application.Mappings.FamilyProfile
     {
         public FamilyProfile()
         {
+            // .ForCtorParam() here, not .ConstructUsing() - ConstructUsing opts a mapping out
+            // of AutoMapper's LINQ expression-tree translation, which ProjectTo relies on to
+            // turn this into a SQL projection (same root cause as the Coach dropdown fix). Plain
+            // .ForMember() doesn't work either: FamilyDto is a positional record with no
+            // parameterless constructor, so AutoMapper must be told how to fill constructor
+            // parameters explicitly via ForCtorParam.
             CreateMap<Family, FamilyDto>()
-                .ConstructUsing(src => new FamilyDto(src.Id, src.FamilyCode))
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.Code, opt => opt.MapFrom(src => src.FamilyCode))
+                .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+                .ForCtorParam("Code", opt => opt.MapFrom(src => src.FamilyCode))
                 .ReverseMap();
         }
     }
