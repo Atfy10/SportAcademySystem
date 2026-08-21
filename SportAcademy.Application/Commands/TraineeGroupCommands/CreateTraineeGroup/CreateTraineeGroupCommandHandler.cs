@@ -35,6 +35,17 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
             var tgName = await _traineeGroupService.GenerateTraineeGroupNameAsync(request);
             traineeGroup.Name = tgName;
 
+            // Schedule must be decided at creation time - GroupSchedule rows are added to the
+            // TraineeGroup's navigation collection here so EF cascade-inserts them in the same
+            // AddAsync/SaveChanges call as the group itself.
+            traineeGroup.GroupSchedules = request.Schedules
+                .Select(s => new GroupSchedule
+                {
+                    Day = s.Day,
+                    StartTime = TimeOnly.Parse(s.StartTime)
+                })
+                .ToList();
+
             await _traineeGroupRepository.AddAsync(traineeGroup, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
