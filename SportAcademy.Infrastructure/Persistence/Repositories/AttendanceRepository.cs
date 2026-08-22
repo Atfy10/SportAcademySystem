@@ -71,12 +71,39 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return (total, attended);
         }
 
+        // The roster to mark is the trainee group's active enrollments, not the Attendances
+        // table - a session that has never been marked yet has zero Attendance rows, and
+        // querying Attendances directly (the previous implementation) returned an empty roster
+        // for every unmarked session instead of the trainees waiting to be marked. Existing
+        // Attendance rows (already marked/re-marked) are merged in below; enrollments with none
+        // yet default to Absent, matching the frontend's own default for an unmarked trainee.
         public async Task<List<AttendanceRecordDto>> GetBySessionOccurrenceAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default)
-            => await _context.Attendances
-                .Where(a => a.SessionOccurrenceId == sessionOccurrenceId)
+        {
+            var traineeGroupId = await _context.SessionOccurrences
+                .Where(s => s.Id == sessionOccurrenceId)
+                .Select(s => (int?)s.GroupSchedule!.TraineeGroupId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (traineeGroupId == null) return [];
+
+            var roster = await _context.Enrollments
+                .Where(e => e.TraineeGroupId == traineeGroupId.Value && e.IsActive)
+                .Select(e => new { e.TraineeId, TraineeName = e.Trainee.FirstName + " " + e.Trainee.LastName })
                 .AsNoTracking()
-                .ProjectTo<AttendanceRecordDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
+
+            var existing = await _context.Attendances
+                .Where(a => a.SessionOccurrenceId == sessionOccurrenceId)
+                .Select(a => new { a.Id, a.Enrollment.TraineeId, a.CheckInTime, a.AttendanceStatus })
+                .AsNoTracking()
+                .ToDictionaryAsync(a => a.TraineeId, cancellationToken);
+
+            return roster
+                .Select(r => existing.TryGetValue(r.TraineeId, out var a)
+                    ? new AttendanceRecordDto(a.Id, r.TraineeId, r.TraineeName, a.CheckInTime.ToString("HH:mm:ss"), a.AttendanceStatus.ToString())
+                    : new AttendanceRecordDto(0, r.TraineeId, r.TraineeName, null, AttendanceStatus.Absent.ToString()))
+                .ToList();
+        }
 
         public async Task<Attendance?> GetBySessionAndTraineeAsync(int sessionOccurrenceId, int traineeId, CancellationToken cancellationToken = default)
             => await _context.Attendances
