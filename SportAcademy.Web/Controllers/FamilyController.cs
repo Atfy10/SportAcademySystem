@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.FamilyCommands.AddTraineeToFamily;
 using SportAcademy.Application.Commands.FamilyCommands.UpdateFamily;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.FamilyQueries.GetAllFamilies;
@@ -63,6 +64,17 @@ namespace SportAcademy.Web.Controllers
                 return BadRequest();
 
             var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPost("{id:int}/members")]
+        [Authorize(Policy = "Permission:trainee.edit")]
+        public async Task<IActionResult> AddTraineeToFamily(
+            int id,
+            [FromBody] AddTraineeToFamilyCommand command,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(command with { FamilyId = id }, cancellationToken);
             return Ok(result);
         }
     }
