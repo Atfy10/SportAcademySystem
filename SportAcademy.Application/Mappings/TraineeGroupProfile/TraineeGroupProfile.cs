@@ -39,8 +39,10 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 opt => opt.MapFrom(src => src.Enrollments.Count)
             )
             .ForMember(dest => dest.Members,
+                // Same enrollment set as TraineesCount above (no IsActive filter) - a
+                // suspended/expired enrollment is still a trainee on this group's roster, just
+                // with a status the SubscriptionStatus badge already conveys.
                 opt => opt.MapFrom(src => src.Enrollments
-                    .Where(e => e.IsActive)
                     .Select(e => new TraineeGroupMemberDto(
                         e.TraineeId,
                         e.Trainee.FirstName + " " + e.Trainee.LastName,
