@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
@@ -16,16 +17,19 @@ public class SendOwnerPasswordResetLinkCommandHandler : IRequestHandler<SendOwne
     private readonly IUserRepository _userRepository;
     private readonly IEmailService _emailService;
     private readonly IAppUrlProvider _appUrlProvider;
+    private readonly ILogger<SendOwnerPasswordResetLinkCommandHandler> _logger;
     private readonly string _operation = OperationType.Update.ToString();
 
     public SendOwnerPasswordResetLinkCommandHandler(
         IUserRepository userRepository,
         IEmailService emailService,
-        IAppUrlProvider appUrlProvider)
+        IAppUrlProvider appUrlProvider,
+        ILogger<SendOwnerPasswordResetLinkCommandHandler> logger)
     {
         _userRepository = userRepository;
         _emailService = emailService;
         _appUrlProvider = appUrlProvider;
+        _logger = logger;
     }
 
     public async Task<Result<bool>> Handle(SendOwnerPasswordResetLinkCommand request, CancellationToken ct)
@@ -50,7 +54,23 @@ public class SendOwnerPasswordResetLinkCommandHandler : IRequestHandler<SendOwne
             not change unless you open the link above and set a new one.</p>
             """;
 
-        await _emailService.SendAsync(owner.Email, subject, body, ct);
+        // Token generation + the resulting link are already durable at this point (Identity's
+        // reset token is derived from the user's security stamp, not stored separately, and
+        // FileLoggingEmailServiceDecorator writes the link to the dev-invitation-links.txt
+        // fallback file before ever attempting the real send). A SendGrid failure (bad/expired
+        // API key, outage, etc.) must not turn this into a reported failure - the SuperAdmin
+        // can still retrieve the link from that file and pass it along manually.
+        try
+        {
+            await _emailService.SendAsync(owner.Email, subject, body, ct);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex,
+                "Failed to email password reset link to owner {OwnerId} ({Email}) - " +
+                "the reset link is still valid and was logged to the dev-invitation-links.txt fallback file.",
+                owner.Id, owner.Email);
+        }
 
         return Result<bool>.Success(true, _operation);
     }
