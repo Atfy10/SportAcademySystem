@@ -35,7 +35,9 @@ namespace SportAcademy.Domain.Entities
         public string GetPaymentStatus()
         {
             if (ExpiryDate < DateTime.UtcNow) return "Overdue";
-            if (SubscriptionDetails != null && SubscriptionDetails.Payment != null) return "Paid";
+            if (SubscriptionDetails != null &&
+                SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid))
+                return "Paid";
             return "Pending";
         }
 

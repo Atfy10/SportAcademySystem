@@ -48,6 +48,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscription.manage")]
         [HttpPost]
         public async Task<IActionResult> CreateAsync(CreateSubscriptionDetailsCommand command)
         {
@@ -58,6 +59,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscription.manage")]
         [HttpPut]
         public async Task<IActionResult> EditAsync(UpdateSubscriptionDetailsCommand command)
         {
@@ -65,6 +67,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscription.manage")]
         [HttpDelete]
         public async Task<IActionResult> Delete(DeleteSubscriptionDetailsCommand command, CancellationToken ct)
         {
@@ -116,6 +119,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscription.manage")]
         [HttpPatch("{id}/suspend")]
         public async Task<IActionResult> Suspend(int id, CancellationToken ct)
         {
@@ -127,6 +131,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscription.manage")]
         [HttpPatch("{id}/activate")]
         public async Task<IActionResult> Activate(int id, CancellationToken ct)
         {

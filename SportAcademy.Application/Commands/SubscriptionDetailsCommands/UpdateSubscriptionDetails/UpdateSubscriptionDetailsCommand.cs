@@ -13,7 +13,6 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
         int Id,
         DateOnly? StartDate,
         DateOnly? EndDate,
-        string? PaymentNumber,
         int? TraineeId,
         int? SubscriptionTypeId,
         int? SportId,

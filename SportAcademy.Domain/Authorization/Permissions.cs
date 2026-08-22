@@ -34,6 +34,28 @@ namespace SportAcademy.Domain.Authorization
             public const string GenerateSessions = "traineegroup.generate_sessions";
         }
 
+        public static class Subscription
+        {
+            public const string Manage = "subscription.manage";
+        }
+
+        public static class SubscriptionType
+        {
+            // Subscription types and sport pricing are an Owner/Admin-only concern - Employee
+            // can sell against them (Subscription.Manage) but not define or change them.
+            public const string Manage = "subscriptiontype.manage";
+        }
+
+        public static class Session
+        {
+            public const string Manage = "session.manage";
+        }
+
+        public static class Profile
+        {
+            public const string Manage = "profile.manage";
+        }
+
         public static class Employee
         {
             public const string Manage = "employee.manage";
@@ -58,6 +80,19 @@ namespace SportAcademy.Domain.Authorization
         {
             public const string Record = "payment.record";
             public const string Correct = "payment.correct";
+            public const string Refund = "payment.refund";
+            public const string View = "payment.view";
+        }
+
+        public static class Finance
+        {
+            public const string View = "finance.view";
+        }
+
+        public static class Report
+        {
+            public const string View = "report.view";
+            public const string Export = "report.export";
         }
 
         public static class Tenant
@@ -79,11 +114,17 @@ namespace SportAcademy.Domain.Authorization
             Enrollment.Create, Enrollment.Edit, Enrollment.Activate,
             Attendance.Mark, Attendance.ViewRate,
             TraineeGroup.Manage, TraineeGroup.GenerateSessions,
+            Subscription.Manage,
+            SubscriptionType.Manage,
+            Session.Manage,
+            Profile.Manage,
             Employee.Manage,
             Coach.Manage,
             Branch.Manage,
             Sport.Manage,
-            Payment.Record, Payment.Correct,
+            Payment.Record, Payment.Correct, Payment.Refund, Payment.View,
+            Finance.View,
+            Report.View, Report.Export,
             Tenant.ManageSettings, Tenant.ManageUsers,
             Platform.ManageTenants,
         ];

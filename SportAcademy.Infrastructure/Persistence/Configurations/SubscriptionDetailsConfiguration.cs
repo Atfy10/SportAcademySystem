@@ -22,10 +22,6 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.HasKey(sd => sd.Id);
 
             // Props
-            builder.Property(sd => sd.PaymentNumber)
-                .IsRequired()
-                .HasMaxLength(50);
-
             builder.Property(sd => sd.StartDate)
                 .IsRequired();
 
@@ -38,12 +34,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasDefaultValue(SubscriptionStatus.Active);
 
             // Relationships
-            // 1:1 Payment
-            builder.HasOne(sd => sd.Payment)
-                   .WithOne(p => p.SubscriptionDetails)
-                   .HasForeignKey<SubscriptionDetails>(sd => sd.PaymentNumber)
-                   .HasPrincipalKey<Payment>(p => p.PaymentNumber)
-                   .OnDelete(DeleteBehavior.Restrict);
+            // Billed via an InvoiceLine (see Finance.InvoiceLine.SubscriptionDetailsId) rather
+            // than a fixed 1:1 Payment - money now lives in the Finance.* model.
 
             //  1:M  Trainee
             builder.HasOne(sd => sd.Trainee)

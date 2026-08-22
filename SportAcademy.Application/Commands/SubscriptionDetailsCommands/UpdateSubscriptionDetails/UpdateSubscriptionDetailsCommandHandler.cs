@@ -39,9 +39,6 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
             cancellationToken.ThrowIfCancellationRequested();
 
             await _subscriptionDetailsMangeService
-                .ValidatePaymentAsync(request.PaymentNumber, cancellationToken);
-
-            await _subscriptionDetailsMangeService
                 .ValidateSubscriptionAsync(subDetails, cancellationToken);
 
             var isSubActive = SubscriptionDetailsService.IsSubscriptionActive(subDetails);

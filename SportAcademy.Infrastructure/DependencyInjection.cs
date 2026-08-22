@@ -39,6 +39,9 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IProfileRepository, ProfileRepository>();
             services.AddScoped<IRoleRepository, RoleRepository>();
+            services.AddScoped<IUserPermissionOverrideRepository, UserPermissionOverrideRepository>();
+            services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IFinancialDocumentNumberGenerator, SqlFinancialDocumentNumberGenerator>();
             services.AddScoped<IFamilyRepository, FamilyRepository>();
             services.AddScoped<INationalityCategoryRepository, NationalityCategoryRepository>();
             services.AddScoped<ICoachRepository, CoachRepository>();
@@ -49,6 +52,15 @@ namespace SportAcademy.Infrastructure
 
             // Register JWT token service
             services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+            // Register permission resolver (deny-capable, server-side authorization source of
+            // truth - see PermissionResolver for the resolution order). Registered as both
+            // interfaces against the same singleton-scoped-cache-backed instance so the
+            // authorization handler and the write paths that must invalidate it share one cache.
+            services.AddMemoryCache();
+            services.AddScoped<PermissionResolver>();
+            services.AddScoped<IPermissionResolver>(sp => sp.GetRequiredService<PermissionResolver>());
+            services.AddScoped<IPermissionCacheInvalidator>(sp => sp.GetRequiredService<PermissionResolver>());
 
             // Register Notification Service
             services.AddScoped<INotificationService, NotificationService>();

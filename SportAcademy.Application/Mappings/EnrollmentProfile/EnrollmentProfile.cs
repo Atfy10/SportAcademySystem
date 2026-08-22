@@ -48,7 +48,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
                 .ForCtorParam("PaymentStatus", opt => opt.MapFrom(src =>
                     src.ExpiryDate < DateTime.UtcNow ? "Overdue" :
-                    (src.SubscriptionDetails != null && src.SubscriptionDetails.Payment != null) ? "Paid" :
+                    (src.SubscriptionDetails != null &&
+                        src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
                     src.ExpiryDate < DateTime.UtcNow ? "Expired" :
@@ -74,7 +75,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
                 .ForCtorParam("PaymentStatus", opt => opt.MapFrom(src =>
                     src.ExpiryDate < DateTime.UtcNow ? "Overdue" :
-                    (src.SubscriptionDetails != null && src.SubscriptionDetails.Payment != null) ? "Paid" :
+                    (src.SubscriptionDetails != null &&
+                        src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
                     src.ExpiryDate < DateTime.UtcNow ? "Expired" :

@@ -17,8 +17,6 @@ namespace SportAcademy.Infrastructure.Persistence.Views.TraineeViews
 
         public DateOnly EndDate { get; set; }
 
-        public int PaymentNumber { get; set; }
-
         public string SubscriptionTypeName { get; set; } = null!;
 
         public string SportName { get; set; } = null!;

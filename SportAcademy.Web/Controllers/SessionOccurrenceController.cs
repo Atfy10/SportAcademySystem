@@ -26,6 +26,7 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
+        [Authorize(Policy = "Permission:session.manage")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSessionOccurrenceCommand command, CancellationToken cancellationToken)
         {
@@ -75,6 +76,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:session.manage")]
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateSessionOccurrenceCommand command, CancellationToken cancellationToken)
         {
@@ -82,6 +84,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:session.manage")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -14,6 +14,7 @@ using SportAcademy.Application.Commands.AuthCommands.VerifyPassword;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Queries.AuthQueries.GetAllRoles;
+using SportAcademy.Application.Queries.AuthQueries.GetMyPermissions;
 using SportAcademy.Application.Queries.AuthQueries.GetMyProfile;
 
 namespace SportAcademy.Web.Controllers
@@ -106,6 +107,18 @@ namespace SportAcademy.Web.Controllers
         //    var result = await _mediator.Send(new GetMyProfileQuery(), ct);
         //    return Ok(result);
         //}
+
+        // Fresh, server-resolved roles/permissions for the caller - the frontend polls this
+        // instead of trusting the access token's "permission" claims, which can be up to
+        // Jwt:ExpireMinutes stale and would otherwise make an admin's Deny invisible in the UI
+        // until the caller's token happens to refresh.
+        [Authorize]
+        [HttpGet("me/permissions")]
+        public async Task<IActionResult> GetMyPermissions(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetMyPermissionsQuery(), ct);
+            return Ok(result);
+        }
 
         [Authorize]
         [HttpPost("change-password")]

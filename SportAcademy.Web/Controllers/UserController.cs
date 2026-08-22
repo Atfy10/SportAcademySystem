@@ -11,6 +11,7 @@ using SportAcademy.Application.Queries.UserQueries.GetAll;
 using SportAcademy.Application.Queries.UserQueries.GetById;
 using SportAcademy.Application.Queries.UserQueries.GetMeQuery;
 using SportAcademy.Application.Queries.UserQueries.GetUnlinkedUsers;
+using SportAcademy.Application.Queries.UserQueries.GetUserPermissions;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -28,7 +29,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         public async Task<IActionResult> Index()
         {
             var users = await _mediator.Send(new GetAllUsersQuery());
@@ -36,7 +37,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("unlinked")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         public async Task<IActionResult> GetUnlinked()
         {
             var users = await _mediator.Send(new GetUnlinkedUsersQuery());
@@ -44,7 +45,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:tenant.users.manage")]
         public async Task<IActionResult> Details(string id)
         {
             var user = await _mediator.Send(new GetUserByIdQuery(Guid.Parse(id)));
@@ -83,12 +84,23 @@ namespace SportAcademy.Web.Controllers
             return NoContent();
         }
 
+        // Owner-only: tenant.users.manage is granted to Owner but not Admin (see
+        // AppDataSeeder.DefaultRolePermissions), which is what keeps "manage users & their
+        // permission overrides" as the one capability Admin does not share with Owner.
+        [Authorize(Policy = "Permission:tenant.users.manage")]
+        [HttpGet("{id}/permissions")]
+        public async Task<IActionResult> GetPermissions(Guid id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetUserPermissionsQuery(id), ct);
+            return Ok(result);
+        }
+
         [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPut("{id}/permissions")]
         public async Task<IActionResult> UpdatePermissions(
-            Guid id, [FromBody] List<string> permissions, CancellationToken ct)
+            Guid id, [FromBody] List<PermissionOverrideInput> overrides, CancellationToken ct)
         {
-            var result = await _mediator.Send(new UpdateUserPermissionsCommand(id, permissions), ct);
+            var result = await _mediator.Send(new UpdateUserPermissionsCommand(id, overrides), ct);
             if (!result.IsSuccess)
                 return BadRequest(result);
 

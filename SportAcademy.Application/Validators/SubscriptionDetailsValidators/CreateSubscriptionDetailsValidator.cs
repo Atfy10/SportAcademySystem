@@ -21,10 +21,6 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
                 .GreaterThan(x => x.StartDate)
                 .WithMessage("End date should be after the start date.");
 
-            RuleFor(x => x.PaymentNumber)
-                .MaximumLength(50)
-                .WithMessage("Payment number can’t be longer than 50 characters.");
-
             RuleFor(x => x.TraineeId)
                 .ApplyIdRuleFor("Trainee");
 

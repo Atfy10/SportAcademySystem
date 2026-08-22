@@ -1,22 +1,29 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Authorization;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
-using System.Security.Claims;
 
 namespace SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions
 {
     public class UpdateUserPermissionsCommandHandler : IRequestHandler<UpdateUserPermissionsCommand, Result<bool>>
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly IUserPermissionOverrideRepository _overrideRepository;
+        private readonly IPermissionCacheInvalidator _cacheInvalidator;
         private readonly string _operation = OperationType.Update.ToString();
 
-        public UpdateUserPermissionsCommandHandler(UserManager<AppUser> userManager)
+        public UpdateUserPermissionsCommandHandler(
+            UserManager<AppUser> userManager,
+            IUserPermissionOverrideRepository overrideRepository,
+            IPermissionCacheInvalidator cacheInvalidator)
         {
             _userManager = userManager;
+            _overrideRepository = overrideRepository;
+            _cacheInvalidator = cacheInvalidator;
         }
 
         public async Task<Result<bool>> Handle(UpdateUserPermissionsCommand request, CancellationToken cancellationToken)
@@ -24,27 +31,21 @@ namespace SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions
             var user = await _userManager.FindByIdAsync(request.UserId.ToString())
                 ?? throw new IdNotFoundException(nameof(AppUser), request.UserId);
 
-            var invalid = request.Permissions.Where(p => !Permissions.All.Contains(p)).ToList();
+            var invalid = request.Overrides
+                .Where(o => !Permissions.All.Contains(o.Permission) || o.Permission.StartsWith("platform."))
+                .Select(o => o.Permission)
+                .ToList();
             if (invalid.Count > 0)
-                return Result<bool>.Failure(_operation, $"Unknown permission(s): {string.Join(", ", invalid)}", 400);
+                return Result<bool>.Failure(_operation, $"Unknown or unassignable permission(s): {string.Join(", ", invalid)}", 400);
 
-            var existingClaims = await _userManager.GetClaimsAsync(user);
-            var existingPermissionClaims = existingClaims.Where(c => c.Type == "permission").ToList();
+            var overrides = request.Overrides
+                .DistinctBy(o => o.Permission)
+                .Select(o => new UserPermissionOverride { Permission = o.Permission, Effect = o.Effect })
+                .ToList();
 
-            if (existingPermissionClaims.Count > 0)
-            {
-                var removeResult = await _userManager.RemoveClaimsAsync(user, existingPermissionClaims);
-                if (!removeResult.Succeeded)
-                    return Result<bool>.Failure(_operation, "Failed to update permissions.", 400);
-            }
+            await _overrideRepository.ReplaceForUserAsync(user.Id, user.TenantId, overrides, cancellationToken);
 
-            var newClaims = request.Permissions.Distinct().Select(p => new Claim("permission", p)).ToList();
-            if (newClaims.Count > 0)
-            {
-                var addResult = await _userManager.AddClaimsAsync(user, newClaims);
-                if (!addResult.Succeeded)
-                    return Result<bool>.Failure(_operation, "Failed to update permissions.", 400);
-            }
+            _cacheInvalidator.Invalidate(user.Id);
 
             return Result<bool>.Success(true, _operation);
         }

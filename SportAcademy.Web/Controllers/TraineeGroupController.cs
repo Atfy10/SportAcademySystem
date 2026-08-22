@@ -33,6 +33,7 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
+        [Authorize(Policy = "Permission:traineegroup.manage")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTraineeGroupCommand command, CancellationToken cancellationToken)
         {
@@ -60,6 +61,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:traineegroup.manage")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UpdateTraineeGroupCommand command,
             CancellationToken cancellationToken)
@@ -69,6 +71,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:traineegroup.manage")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

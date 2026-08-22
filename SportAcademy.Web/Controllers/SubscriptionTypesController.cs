@@ -36,6 +36,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscriptiontype.manage")]
         [HttpPost]
         public async Task<IActionResult> CreateAsync(CreateSubscriptionTypeCommand command)
         {
@@ -43,6 +44,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscriptiontype.manage")]
         [HttpPut]
         public async Task<IActionResult> EditAsync(UpdateSubscriptionTypeCommand command)
         {
@@ -50,6 +52,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:subscriptiontype.manage")]
         [HttpDelete]
         public IActionResult Delete(DeleteSubscriptionTypeCommand command)
         {

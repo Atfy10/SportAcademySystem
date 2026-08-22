@@ -34,8 +34,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.SportSubscriptionType)
                         .ThenInclude(sst => sst.SubscriptionType)
-                .Include(sd => sd.Payment)
-                    .ThenInclude(p => p.Branch)
+                .Include(sd => sd.InvoiceLines)
+                    .ThenInclude(l => l.Invoice)
+                        .ThenInclude(i => i.Allocations)
+                            .ThenInclude(a => a.Payment)
+                                .ThenInclude(p => p.Branch)
                 .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(term))
@@ -109,8 +112,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.SportBranch)
                         .ThenInclude(sb => sb.Branch)
-                .Include(sd => sd.Payment)
-                    .ThenInclude(p => p.Branch);
+                .Include(sd => sd.InvoiceLines)
+                    .ThenInclude(l => l.Invoice)
+                        .ThenInclude(i => i.Allocations)
+                            .ThenInclude(a => a.Payment)
+                                .ThenInclude(p => p.Branch);
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
             => await _context.SubscriptionDetails

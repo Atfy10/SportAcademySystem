@@ -33,7 +33,6 @@ namespace SportAcademy.Web.Controllers
 
         [HttpPost]
         [Authorize(Policy = "Permission:branch.manage")]
-        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Create([FromBody] CreateBranchCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
@@ -41,7 +40,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> GetAll(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -53,7 +52,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("search")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> Search(
             [FromQuery] string term,
             [FromQuery] int? page,
@@ -73,7 +72,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _mediator.Send(new GetBranchByIdQuery(id));
@@ -81,7 +80,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}/stats")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> GetStats(int id, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetBranchStatsQuery(id), cancellationToken);
@@ -90,7 +89,6 @@ namespace SportAcademy.Web.Controllers
 
         [HttpPut]
         [Authorize(Policy = "Permission:branch.manage")]
-        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Update([FromBody] UpdateBranchCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
@@ -98,7 +96,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPatch("{id}/toggle-status")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new ToggleBranchStatusCommand(id), cancellationToken);
@@ -106,7 +104,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _mediator.Send(new DeleteBranchCommand(id));
@@ -114,7 +112,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost("branch-sports")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> AddSportToBranch([FromBody] AddSportToBranchCommand command, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(command, cancellationToken);
@@ -122,7 +120,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete("branch-sports")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:branch.manage")]
         public async Task<IActionResult> RemoveSportFromBranch([FromQuery] int sportId, [FromQuery] int branchId, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new RemoveSportFromBranchCommand(sportId, branchId), cancellationToken);

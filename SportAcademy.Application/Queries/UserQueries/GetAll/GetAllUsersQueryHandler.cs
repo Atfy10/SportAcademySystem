@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
@@ -18,17 +17,17 @@ namespace SportAcademy.Application.Queries.UserQueries.GetAll
     {
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
-        private readonly UserManager<AppUser> _userManager;
+        private readonly IPermissionResolver _permissionResolver;
         private readonly string _operation = OperationType.GetAll.ToString();
 
         public GetAllUsersQueryHandler(
             IUserRepository userRepository,
-            UserManager<AppUser> userManager,
+            IPermissionResolver permissionResolver,
             IMapper mapper)
         {
             _mapper = mapper;
             _userRepository = userRepository;
-            _userManager = userManager;
+            _permissionResolver = permissionResolver;
         }
 
         public async Task<Result<List<AppUserCardDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
@@ -43,8 +42,10 @@ namespace SportAcademy.Application.Queries.UserQueries.GetAll
                 var roles = await _userRepository.GetUserRoleAsync(user, cancellationToken)
                     ?? [];
 
-                var claims = await _userManager.GetClaimsAsync(user);
-                var permissions = claims.Where(c => c.Type == "permission").Select(c => c.Value).ToList();
+                // Effective permissions (role defaults + this user's Allow/Deny overrides), not
+                // raw claims - AspNetUserClaims no longer carries per-user grants, see
+                // PermissionResolver.
+                var permissions = (await _permissionResolver.GetEffectivePermissionsAsync(user.Id, cancellationToken)).ToList();
 
                 usersDto.Add(new AppUserCardDto
                 {

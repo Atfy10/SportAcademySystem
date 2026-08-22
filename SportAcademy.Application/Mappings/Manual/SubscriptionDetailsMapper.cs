@@ -10,29 +10,38 @@ namespace SportAcademy.Application.Mappings.Manual
     // the existing unpaginated GetAllSubDetailsQuery keeps using AutoMapper untouched.
     public static class SubscriptionDetailsMapper
     {
-        public static SubscriptionDetailsDto ToDto(SubscriptionDetails sd) => new()
+        public static SubscriptionDetailsDto ToDto(SubscriptionDetails sd)
         {
-            Id = sd.Id,
-            Trainee = new TraineeSubDetailsDto
+            var latestPayment = sd.InvoiceLines
+                .SelectMany(l => l.Invoice.Allocations)
+                .Select(a => a.Payment)
+                .OrderByDescending(p => p.PaidDate)
+                .FirstOrDefault();
+
+            return new SubscriptionDetailsDto
             {
-                Id = sd.Trainee.Id,
-                FullName = $"{sd.Trainee.FirstName} {sd.Trainee.LastName}",
-                PhoneNumber = sd.Trainee.PhoneNumber,
-            },
-            SportName = sd.SportPrice.SportSubscriptionType.Sport.Name,
-            BranchName = sd.SportPrice.Branch.Name,
-            SubscriptionTypeName = sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
-            Price = sd.SportPrice.Price,
-            StartDate = sd.StartDate,
-            EndDate = sd.EndDate,
-            Payment = new PaymentSubDetailsDto
-            {
-                PaymentNumber = sd.Payment.PaymentNumber,
-                PaidDate = sd.Payment.PaidDate,
-                BranchName = sd.Payment.Branch.Name,
-                PaymentMethod = sd.Payment.Method,
-            },
-            Status = sd.Status,
-        };
+                Id = sd.Id,
+                Trainee = new TraineeSubDetailsDto
+                {
+                    Id = sd.Trainee.Id,
+                    FullName = $"{sd.Trainee.FirstName} {sd.Trainee.LastName}",
+                    PhoneNumber = sd.Trainee.PhoneNumber,
+                },
+                SportName = sd.SportPrice.SportSubscriptionType.Sport.Name,
+                BranchName = sd.SportPrice.Branch.Name,
+                SubscriptionTypeName = sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
+                Price = sd.SportPrice.Price,
+                StartDate = sd.StartDate,
+                EndDate = sd.EndDate,
+                Payment = latestPayment is null ? null : new PaymentSubDetailsDto
+                {
+                    PaymentNumber = latestPayment.PaymentNumber,
+                    PaidDate = latestPayment.PaidDate,
+                    BranchName = latestPayment.Branch.Name,
+                    PaymentMethod = latestPayment.Method,
+                },
+                Status = sd.Status,
+            };
+        }
     }
 }

@@ -30,5 +30,6 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<SportBranch> Sports { get; set; } = [];
         public virtual ICollection<SportPrice> SportPrices { get; set; } = [];
         public virtual ICollection<Payment> Payments { get; set; } = [];
+        public virtual ICollection<Finance.Invoice> Invoices { get; set; } = [];
     }
 }

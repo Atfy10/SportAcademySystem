@@ -1,5 +1,6 @@
 ﻿using SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscriptionDetails;
 using SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSubscriptionDetails;
+using SportAcademy.Application.DTOs.PaymentDtos;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Domain.Entities;
 using System;
@@ -31,21 +32,24 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                     dest => dest.Trainee.PhoneNumber,
                     opt => opt.MapFrom(src => src.Trainee.PhoneNumber)
                 )
-                .ForPath(
-                    dest => dest.Payment.BranchName,
-                    opt => opt.MapFrom(src => src.Payment.Branch.Name)
-                )
-                .ForPath(
-                    dest => dest.Payment.PaymentNumber,
-                    opt => opt.MapFrom(src => src.Payment.PaymentNumber)
-                )
-                .ForPath(
-                    dest => dest.Payment.PaymentMethod,
-                    opt => opt.MapFrom(src => src.Payment.Method)
-                )
-                .ForPath(
-                    dest => dest.Payment.PaidDate,
-                    opt => opt.MapFrom(src => src.Payment.PaidDate)
+                .ForMember(
+                    // The most recently received payment allocated to this subscription's
+                    // invoice, or null if none has been recorded yet - a subscription is no
+                    // longer guaranteed a Payment the instant it's created (see
+                    // Finance.Invoice/PaymentAllocation).
+                    dest => dest.Payment,
+                    opt => opt.MapFrom(src => src.InvoiceLines
+                        .SelectMany(l => l.Invoice.Allocations)
+                        .Select(a => a.Payment)
+                        .OrderByDescending(p => p.PaidDate)
+                        .Select(p => new PaymentSubDetailsDto
+                        {
+                            PaymentNumber = p.PaymentNumber,
+                            PaidDate = p.PaidDate,
+                            BranchName = p.Branch.Name,
+                            PaymentMethod = p.Method,
+                        })
+                        .FirstOrDefault())
                 )
                 .ForMember(
                     dest => dest.SportName,

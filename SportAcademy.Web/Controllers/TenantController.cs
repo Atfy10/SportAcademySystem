@@ -49,6 +49,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:tenant.settings.manage")]
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateTenantProfileCommand command, CancellationToken ct)
         {
@@ -56,6 +57,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:tenant.settings.manage")]
         [HttpPut("settings")]
         public async Task<IActionResult> UpdateSettings([FromBody] UpdateTenantSettingsCommand command, CancellationToken ct)
         {
@@ -70,6 +72,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:tenant.settings.manage")]
         [HttpPut("features/{featureId}")]
         public async Task<IActionResult> UpdateFeature(
             [FromRoute] Guid featureId,
@@ -81,6 +84,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:tenant.settings.manage")]
         [HttpPost("features/bulk")]
         public async Task<IActionResult> BulkUpdateFeatures(
             [FromBody] BulkUpdateTenantFeaturesRequest request,
@@ -97,6 +101,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:tenant.settings.manage")]
         [HttpPost("settings/import")]
         public async Task<IActionResult> ImportSettings(
             [FromBody] ImportTenantSettingsCommand command,

@@ -5,6 +5,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.EnrollmentDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
@@ -157,9 +158,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 {
                     "Overdue" => query.Where(e => e.ExpiryDate < DateTime.UtcNow),
                     "Paid" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow
-                        && e.SubscriptionDetails != null && e.SubscriptionDetails.Payment != null),
+                        && e.SubscriptionDetails != null
+                        && e.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)),
                     "Pending" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow
-                        && (e.SubscriptionDetails == null || e.SubscriptionDetails.Payment == null)),
+                        && (e.SubscriptionDetails == null
+                            || !e.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid))),
                     _ => query.Where(e => false),
                 };
             }
@@ -175,7 +178,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<int> CountPendingPaymentAsync(CancellationToken ct = default)
             => await _context.Enrollments
-                .Where(e => e.SubscriptionDetails != null && e.SubscriptionDetails.Payment == null)
+                .Where(e => e.SubscriptionDetails != null
+                    && !e.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid))
                 .CountAsync(ct);
 
         public async Task<PagedData<EnrollmentCardDto>> GetAllAsync(PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default)

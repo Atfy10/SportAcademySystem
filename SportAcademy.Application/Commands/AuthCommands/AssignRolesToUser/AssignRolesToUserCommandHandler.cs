@@ -10,11 +10,13 @@ namespace SportAcademy.Application.Commands.AuthCommands.AssignRolesToUser;
 public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUserCommand, Result<bool>>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IPermissionCacheInvalidator _cacheInvalidator;
     private readonly string _operation = OperationType.Update.ToString();
 
-    public AssignRolesToUserCommandHandler(IUserRepository userRepository)
+    public AssignRolesToUserCommandHandler(IUserRepository userRepository, IPermissionCacheInvalidator cacheInvalidator)
     {
         _userRepository = userRepository;
+        _cacheInvalidator = cacheInvalidator;
     }
 
     public async Task<Result<bool>> Handle(AssignRolesToUserCommand request, CancellationToken cancellationToken)
@@ -32,6 +34,11 @@ public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUser
 
             return Result<bool>.Failure(_operation, "Failed to assign roles.", 400, errors);
         }
+
+        // A role change directly changes the resolved permission set - without this, a
+        // just-demoted user would keep their old effective permissions for up to the cache's
+        // sliding window.
+        _cacheInvalidator.Invalidate(request.UserId);
 
         return Result<bool>.Success(true, _operation);
     }

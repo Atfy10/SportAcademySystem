@@ -31,7 +31,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:coach.manage")]
         public async Task<ActionResult> GetById(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetCoachByIdQuery(id), ct);
@@ -47,7 +47,6 @@ namespace SportAcademy.Web.Controllers
 
         [HttpPost]
         [Authorize(Policy = "Permission:coach.manage")]
-        [Authorize(Roles = "Owner,Admin")]
         public async Task<ActionResult> Create(CreateCoachCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
@@ -56,7 +55,6 @@ namespace SportAcademy.Web.Controllers
 
         [HttpPut("{id}")]
         [Authorize(Policy = "Permission:coach.manage")]
-        [Authorize(Roles = "Owner,Admin")]
         public async Task<ActionResult> Update(int id, UpdateCoachCommand command, CancellationToken ct)
         {
             var cmd = command with { Id = id };
@@ -68,7 +66,6 @@ namespace SportAcademy.Web.Controllers
         // Rate = 3 default set at creation. No frontend UI calls this yet.
         [HttpPatch("{id}/rate")]
         [Authorize(Policy = "Permission:coach.manage")]
-        [Authorize(Roles = "Owner,Admin")]
         public async Task<ActionResult> Rate(int id, [FromBody] int rate, CancellationToken ct)
         {
             var result = await _mediator.Send(new RateCoachCommand(id, rate), ct);
@@ -76,7 +73,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost("with-employee")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:coach.manage")]
         public async Task<ActionResult> CreateFromEmployee(CreateCoachWithEmployeeCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
@@ -84,7 +81,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:coach.manage")]
         public async Task<ActionResult> Delete(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteCoachCommand(id), ct);
@@ -116,7 +113,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("search")]
-        [Authorize(Roles = "Owner,Admin")]
+        [Authorize(Policy = "Permission:coach.manage")]
         public async Task<IActionResult> SearchCoaches(
             [FromQuery] string searchTerm,
             [FromQuery] int? page,

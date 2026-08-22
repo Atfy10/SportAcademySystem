@@ -60,6 +60,10 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
         public DbSet<TraineeMedicalCondition> TraineeMedicalConditions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<UserPermissionOverride> UserPermissionOverrides { get; set; }
+        public DbSet<Domain.Entities.Finance.Invoice> Invoices { get; set; }
+        public DbSet<Domain.Entities.Finance.InvoiceLine> InvoiceLines { get; set; }
+        public DbSet<Domain.Entities.Finance.PaymentAllocation> PaymentAllocations { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<TenantFeature> TenantFeatures { get; set; }
         public DbSet<TenantProfile> TenantProfiles { get; set; }

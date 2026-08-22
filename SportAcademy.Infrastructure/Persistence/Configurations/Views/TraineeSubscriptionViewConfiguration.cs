@@ -22,7 +22,6 @@ public class TraineeSubscriptionViewConfiguration
         builder.Property(x => x.GuardianName);
         builder.Property(x => x.StartDate);
         builder.Property(x => x.EndDate);
-        builder.Property(x => x.PaymentNumber);
         builder.Property(x => x.SubscriptionTypeName);
         builder.Property(x => x.SportName);
         builder.Property(x => x.BranchName);

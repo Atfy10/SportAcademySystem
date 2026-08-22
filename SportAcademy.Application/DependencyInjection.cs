@@ -44,6 +44,7 @@ namespace SportAcademy.Application
             // Register Application Services
             services.AddScoped<IChatBotService, ChatBotService>();
             services.AddScoped<SubDetailsManagementService>();
+            services.AddScoped<IFinanceLedgerService, FinanceLedgerService>();
             services.AddScoped<TraineeGroupService>();
 
             return services;

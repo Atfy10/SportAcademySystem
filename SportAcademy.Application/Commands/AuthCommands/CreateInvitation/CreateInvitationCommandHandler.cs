@@ -16,7 +16,7 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
     // Owner and SuperAdmin are deliberately excluded: Owner is unique per tenant (set once
     // at OwnerSetup acceptance) and SuperAdmin is a platform-only role, never assignable
     // within a tenant.
-    private static readonly string[] InvitableStaffRoles = ["Admin", "Manager", "Coach", "Accountant", "User"];
+    private static readonly string[] InvitableStaffRoles = ["Admin", "Employee", "Accountant"];
 
     private readonly IBaseRepository<Tenant, Guid> _tenantRepository;
     private readonly IInvitationTokenService _tokenService;

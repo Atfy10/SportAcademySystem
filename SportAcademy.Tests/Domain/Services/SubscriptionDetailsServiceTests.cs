@@ -58,7 +58,6 @@ public class SubscriptionDetailsServiceTests
         {
             StartDate = DateOnly.Parse("2026-01-01"),
             EndDate = DateOnly.Parse("2026-01-31"),
-            PaymentNumber = "PAY-001",
             SportPrice = new SportPrice
             {
                 SportSubscriptionType = new SportSubscriptionType
@@ -81,6 +80,5 @@ public class SubscriptionDetailsServiceTests
             SportId = sportId,
             StartDate = DateOnly.Parse(start),
             EndDate = DateOnly.Parse(end),
-            PaymentNumber = "PAY-TEST"
         };
 }

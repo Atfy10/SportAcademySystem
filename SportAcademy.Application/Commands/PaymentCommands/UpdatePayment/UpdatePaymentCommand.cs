@@ -4,10 +4,9 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.PaymentCommands.UpdatePayment
 {
-    // Payment is created automatically alongside SubscriptionDetails (1:1 by schema) - there's
-    // no "create a standalone payment" operation. This lets staff correct how an existing
-    // payment was recorded (e.g. wrong method, or backdating the paid date) as its own,
-    // auditable action instead of only ever being set at subscription-creation time.
+    // Corrects how an already-recorded payment was entered (e.g. wrong method, or backdating
+    // the paid date) - amount/allocations are immutable once recorded and go through
+    // IFinanceLedgerService.RefundPaymentAsync/VoidPaymentAsync instead.
     public record UpdatePaymentCommand(
         string PaymentNumber,
         PaymentMethod Method,

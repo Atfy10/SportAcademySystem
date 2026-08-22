@@ -10,7 +10,6 @@ namespace SportAcademy.Domain.Entities
         public required DateOnly StartDate { get; set; }
         public required DateOnly EndDate { get; set; }
         public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Active;
-        public required string PaymentNumber { get; set; }
         public int TraineeId { get; set; }
         public int SubscriptionTypeId { get; set; }
         public int SportId { get; set; }
@@ -27,9 +26,14 @@ namespace SportAcademy.Domain.Entities
         public Tenant Tenant { get; set; } = null!;
 
         // Navigation Property
-        public virtual Payment Payment { get; set; } = null!;
         public virtual Trainee Trainee { get; set; } = null!;
         public virtual SportPrice SportPrice { get; set; } = null!;
         public virtual Enrollment Enrollment { get; set; } = null!;
+
+        // Inverse of Finance.InvoiceLine.SubscriptionDetails - lets "is this subscription
+        // paid" be expressed as a query-translatable predicate
+        // (InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) instead of a live
+        // join written out at every call site.
+        public virtual ICollection<Finance.InvoiceLine> InvoiceLines { get; set; } = [];
     }
 }

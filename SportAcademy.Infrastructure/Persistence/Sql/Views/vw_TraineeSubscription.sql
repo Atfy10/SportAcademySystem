@@ -10,7 +10,6 @@ SELECT
     t.GuardianName,
     SD.StartDate,
     SD.EndDate,
-    SD.PaymentNumber,
     ST.Name AS SubscriptionTypeName,
     S.Name AS SportName,
     B.Name AS BranchName

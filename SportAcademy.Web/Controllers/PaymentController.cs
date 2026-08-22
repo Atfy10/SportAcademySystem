@@ -19,6 +19,7 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
+        [Authorize(Policy = "Permission:payment.view")]
         [HttpGet("trainee/{traineeId}/history")]
         public async Task<IActionResult> GetHistoryForTrainee(int traineeId, CancellationToken ct)
         {

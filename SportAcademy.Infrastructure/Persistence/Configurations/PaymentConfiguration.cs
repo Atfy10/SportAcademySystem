@@ -27,6 +27,23 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                    .IsRequired()
                    .HasConversion<string>();
 
+            builder.Property(p => p.Status)
+                   .IsRequired()
+                   .HasConversion<string>()
+                   .HasMaxLength(20);
+
+            builder.Property(p => p.Currency)
+                   .IsRequired()
+                   .HasMaxLength(3);
+
+            builder.Property(p => p.Reference).HasMaxLength(100);
+            builder.Property(p => p.Notes).HasMaxLength(1000);
+
+            // KWD (and several other Gulf currencies) has 3 decimal places - decimal(18,2)
+            // would silently truncate fils.
+            builder.Property(p => p.Amount).HasPrecision(18, 3);
+            builder.Property(p => p.RefundedAmount).HasPrecision(18, 3);
+
             builder.Property(p => p.PaidDate)
                    .IsRequired();
 
@@ -38,12 +55,9 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                    .HasForeignKey(p => p.BranchId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:1 SubscriptionDetails
-            builder.HasOne(p => p.SubscriptionDetails)
-                   .WithOne(sd => sd.Payment)
-                   .HasForeignKey<SubscriptionDetails>(sd => sd.PaymentNumber)
-                   .OnDelete(DeleteBehavior.Restrict);
-
+            // A payment settles whatever it's allocated to (see PaymentAllocation) rather than
+            // one fixed SubscriptionDetails - that 1:1 shape couldn't express partial payments,
+            // instalments, or one payment covering several invoices.
         }
     }
 }

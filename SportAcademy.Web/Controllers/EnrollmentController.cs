@@ -167,6 +167,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:enrollment.activate")]
         [HttpPatch("{id}/activate")]
         public async Task<IActionResult> Activate(
             [FromRoute] int id,
@@ -176,6 +177,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:enrollment.activate")]
         [HttpPatch("{id}/suspend")]
         public async Task<IActionResult> Suspend(
             [FromRoute] int id,

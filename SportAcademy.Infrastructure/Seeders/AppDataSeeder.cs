@@ -257,42 +257,41 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Tenants seeded successfully.");
         }
 
-        // Default permission grants per seeded role. This is what actually gives Manager/
-        // Coach/Accountant/User distinct, enforced capability boundaries - before this, the
-        // only roles checked anywhere in the API were SuperAdmin/Admin/Owner, and these four
-        // could reach the same endpoints as any other authenticated user.
+        // Default permission grants per seeded role - the tenant business model has exactly
+        // four roles (Owner, Admin, Employee, Accountant) plus the platform-only SuperAdmin.
+        // Owner and Admin share every tenant-business permission except tenant.users.manage,
+        // which is Owner-only (see ConsolidateRolesToFour migration for why: Admin managing
+        // its own permission ceiling would be a privilege-escalation hole). Kept in sync with
+        // the identical list baked into that migration's SQL, since the seeder below is a
+        // no-op on any database that already has a tenant (see SeedAsync's early return) and
+        // so cannot be relied on to fix an existing deployment's role claims.
         private static readonly Dictionary<string, string[]> DefaultRolePermissions = new()
         {
             ["SuperAdmin"] = [.. Permissions.All],
             ["Owner"] = [.. Permissions.All.Where(p => !p.StartsWith("platform."))],
-            ["Admin"] = [.. Permissions.All.Where(p => !p.StartsWith("platform."))],
-            ["Manager"] =
+            ["Admin"] = [.. Permissions.All.Where(p => !p.StartsWith("platform.") && p != Permissions.Tenant.ManageUsers)],
+            ["Employee"] =
             [
                 Permissions.Trainee.Register, Permissions.Trainee.Edit, Permissions.Trainee.Export,
                 Permissions.Enrollment.Create, Permissions.Enrollment.Edit, Permissions.Enrollment.Activate,
+                Permissions.Subscription.Manage,
+                Permissions.TraineeGroup.Manage, Permissions.TraineeGroup.GenerateSessions, Permissions.Session.Manage,
                 Permissions.Attendance.Mark, Permissions.Attendance.ViewRate,
-                Permissions.TraineeGroup.Manage, Permissions.TraineeGroup.GenerateSessions,
-                Permissions.Employee.Manage, Permissions.Coach.Manage, Permissions.Branch.Manage, Permissions.Sport.Manage,
-                Permissions.Payment.Record, Permissions.Payment.Correct,
-            ],
-            ["Coach"] =
-            [
-                Permissions.Attendance.Mark, Permissions.Attendance.ViewRate,
-                Permissions.TraineeGroup.GenerateSessions,
             ],
             ["Accountant"] =
             [
-                Permissions.Payment.Record, Permissions.Payment.Correct,
-                Permissions.Enrollment.Edit, Permissions.Trainee.Export,
+                Permissions.Payment.Record, Permissions.Payment.Correct, Permissions.Payment.Refund, Permissions.Payment.View,
+                Permissions.Finance.View,
+                Permissions.Report.View, Permissions.Report.Export,
+                Permissions.Trainee.Export,
             ],
-            ["User"] = [],
         };
 
         private async Task SeedRolesAsync()
         {
             _logger.LogInformation("Seeding roles...");
 
-            var roleNames = new[] { "SuperAdmin", "Owner", "Admin", "Manager", "User", "Coach", "Accountant" };
+            var roleNames = new[] { "SuperAdmin", "Owner", "Admin", "Employee", "Accountant" };
             foreach (var roleName in roleNames)
             {
                 var role = await _roleManager.FindByNameAsync(roleName);
@@ -310,21 +309,27 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Roles seeded successfully.");
         }
 
-        // Idempotent: only adds permission claims the role doesn't already have. Existing
-        // deployments that already ran the seeder before this change will pick up the new
-        // claims on next startup without duplicating anything.
+        // Reconciles rather than just adds: also removes any "permission" claim the role
+        // carries that is no longer in its default set. Without this, a permission once
+        // granted to a role (e.g. Admin's old tenant.users.manage) would never be revocable by
+        // changing DefaultRolePermissions and restarting - it would linger on every role that
+        // was ever seeded with it. (In practice this only matters for a fresh database that
+        // runs SeedAsync more than once in its lifetime with different code, e.g. tests; a real
+        // deployment's roles are fixed up by the ConsolidateRolesToFour migration instead,
+        // since SeedAsync itself is a no-op once a tenant exists.)
         private async Task SeedRolePermissionsAsync(AppRole role, string[] permissions)
         {
-            var existing = (await _roleManager.GetClaimsAsync(role))
+            var desired = permissions.ToHashSet();
+            var existingClaims = (await _roleManager.GetClaimsAsync(role))
                 .Where(c => c.Type == "permission")
-                .Select(c => c.Value)
-                .ToHashSet();
+                .ToList();
+            var existing = existingClaims.Select(c => c.Value).ToHashSet();
 
-            foreach (var permission in permissions)
-            {
-                if (existing.Contains(permission)) continue;
+            foreach (var permission in desired.Except(existing))
                 await _roleManager.AddClaimAsync(role, new Claim("permission", permission));
-            }
+
+            foreach (var claim in existingClaims.Where(c => !desired.Contains(c.Value)))
+                await _roleManager.RemoveClaimAsync(role, claim);
         }
 
         private async Task AssignRolesAsync(Guid systemTenantId, Guid superAdminId, Guid ownerId, Guid salmiyaTenantId)
@@ -368,11 +373,12 @@ namespace SportAcademy.Infrastructure.Seeders
                 CreateFeature("enrollment-management", "Enrollment Management", "Manage trainee enrollments"),
                 CreateFeature("family-management", "Family Management", "Manage family accounts and billing"),
                 CreateFeature("nationality-categories", "Nationality Categories", "Configure nationality classifications"),
-                // financial-reports / trainee-reports / coach-reports / operational-reports /
-                // attendance-reports are intentionally NOT seeded: there is no ReportsController,
-                // no report-generation logic, and no frontend page for any of them. Seeding them
-                // let a SuperAdmin toggle a feature on for a real tenant that doesn't exist.
-                // Re-add once a real Reports implementation lands.
+                CreateFeature("financial-reports", "Financial Reports", "Revenue, outstanding, and payment-method reports"),
+                // trainee-reports / coach-reports / operational-reports / attendance-reports
+                // remain unseeded: there is no ReportsController support for them yet (only
+                // the financial reports above are implemented), and seeding them would let a
+                // SuperAdmin toggle on a feature no tenant can actually use. Re-add each once
+                // its report implementation lands.
                 CreateFeature("notifications", "Notification System", "Send and manage system notifications"),
                 CreateFeature("chat-system", "In-App Chat", "Internal messaging and communication"),
                 CreateFeature("video-analysis", "AI Video Analysis", "AI-powered sports video analysis"),
@@ -607,6 +613,18 @@ namespace SportAcademy.Infrastructure.Seeders
 
             var subscriptionDetails = CreateSubscriptionDetails(tenantId, trainees, subTypes, sportBranches, payments, random);
             _context.Set<SubscriptionDetails>().AddRange(subscriptionDetails);
+            await _context.SaveChangesAsync();
+
+            // Every seeded subscription is billed via an Invoice (see Finance.Invoice) rather
+            // than fabricating a Payment for it - money is now a deliberate, separate act, and
+            // roughly half of these demo invoices are left unpaid so the Accountant console has
+            // something to show under "outstanding".
+            var invoices = CreateSeedInvoices(tenantId, subscriptionDetails, random);
+            _context.Set<Domain.Entities.Finance.Invoice>().AddRange(invoices);
+            await _context.SaveChangesAsync();
+
+            var allocations = AllocateSeedPayments(subscriptionDetails, invoices, payments, random);
+            _context.Set<Domain.Entities.Finance.PaymentAllocation>().AddRange(allocations);
             await _context.SaveChangesAsync();
 
             var enrollments = CreateEnrollments(tenantId, trainees, traineeGroups, subscriptionDetails, random);
@@ -966,6 +984,7 @@ namespace SportAcademy.Infrastructure.Seeders
                     Method = random.Next(2) == 0 ? PaymentMethod.Cash : PaymentMethod.Online,
                     PaidDate = DateTime.Now.AddDays(-random.Next(1, 180)),
                     BranchId = branches[random.Next(branches.Count)].Id,
+                    Amount = random.Next(20, 80),
                     TenantId = tenantId
                 };
             }).ToList();
@@ -991,7 +1010,6 @@ namespace SportAcademy.Infrastructure.Seeders
                     StartDate = startDate,
                     EndDate = startDate.AddMonths(1),
                     Status = SubscriptionStatus.Active,
-                    PaymentNumber = payment.PaymentNumber,
                     TraineeId = trainee.Id,
                     SubscriptionTypeId = subTypes[random.Next(subTypes.Count)].Id,
                     SportId = sb.SportId,
@@ -1001,6 +1019,84 @@ namespace SportAcademy.Infrastructure.Seeders
             }
 
             return details;
+        }
+
+        // One Invoice (with one SubscriptionFee line) per seeded subscription - billing is now
+        // a deliberate act separate from payment, so every subscription owes something even
+        // before AllocateSeedPayments below decides which of them have actually been paid.
+        private static List<Domain.Entities.Finance.Invoice> CreateSeedInvoices(
+            Guid tenantId, List<SubscriptionDetails> subscriptionDetails, Random random)
+        {
+            var invoices = new List<Domain.Entities.Finance.Invoice>();
+
+            for (int i = 0; i < subscriptionDetails.Count; i++)
+            {
+                var sd = subscriptionDetails[i];
+                var price = random.Next(20, 80);
+
+                var invoice = new Domain.Entities.Finance.Invoice
+                {
+                    InvoiceNumber = $"INV-{DateTime.UtcNow.Year}-{i + 1:D5}",
+                    Status = InvoiceStatus.Issued,
+                    IssueDate = sd.StartDate,
+                    DueDate = sd.StartDate.AddDays(7),
+                    TraineeId = sd.TraineeId,
+                    BranchId = sd.BranchId,
+                    Currency = "KWD",
+                    SubTotal = price,
+                    GrandTotal = price,
+                    AmountPaid = 0,
+                    TenantId = tenantId,
+                };
+                invoice.Lines.Add(new Domain.Entities.Finance.InvoiceLine
+                {
+                    Type = InvoiceLineType.SubscriptionFee,
+                    Description = "Subscription fee",
+                    Quantity = 1,
+                    UnitPrice = price,
+                    LineTotal = price,
+                    SubscriptionDetailsId = sd.Id,
+                });
+
+                invoices.Add(invoice);
+            }
+
+            return invoices;
+        }
+
+        // Allocates ~70% of the seeded payments against their paired invoice (mirroring
+        // CreateSubscriptionDetails' index-based payment pairing), leaving the rest unpaid so
+        // the Accountant console's outstanding/overdue views have real data to show.
+        private static List<Domain.Entities.Finance.PaymentAllocation> AllocateSeedPayments(
+            List<SubscriptionDetails> subscriptionDetails,
+            List<Domain.Entities.Finance.Invoice> invoices,
+            List<Payment> payments,
+            Random random)
+        {
+            var allocations = new List<Domain.Entities.Finance.PaymentAllocation>();
+
+            for (int i = 0; i < subscriptionDetails.Count && i < payments.Count; i++)
+            {
+                if (random.NextDouble() >= 0.7) continue;
+
+                var invoice = invoices[i];
+                var payment = payments[i];
+                var amount = Math.Min(payment.Amount, invoice.GrandTotal);
+
+                allocations.Add(new Domain.Entities.Finance.PaymentAllocation
+                {
+                    PaymentNumber = payment.PaymentNumber,
+                    InvoiceId = invoice.Id,
+                    Amount = amount,
+                });
+
+                invoice.AmountPaid += amount;
+                invoice.Status = invoice.AmountPaid >= invoice.GrandTotal
+                    ? InvoiceStatus.Paid
+                    : InvoiceStatus.PartiallyPaid;
+            }
+
+            return allocations;
         }
 
         private static List<Enrollment> CreateEnrollments(

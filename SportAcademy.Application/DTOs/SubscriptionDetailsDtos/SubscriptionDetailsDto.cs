@@ -15,7 +15,11 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public string EmployeeName { get; set; } = null!;
-        public PaymentSubDetailsDto Payment { get; set; } = null!;
+        // Null until at least one payment has been recorded against this subscription's
+        // invoice - previously a Payment row was fabricated synchronously at subscription
+        // creation regardless of whether money had actually changed hands, which this
+        // corrects. Reflects the most recently received payment when several exist.
+        public PaymentSubDetailsDto? Payment { get; set; }
         public SubscriptionStatus Status { get; set; }
     }
 }

@@ -8,7 +8,6 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
-using System.Security.Claims;
 using RefreshTokenEntity = SportAcademy.Domain.Entities.RefreshToken;
 
 namespace SportAcademy.Application.Commands.AuthCommands.AcceptInvitation;
@@ -22,6 +21,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<AppUser> _userManager;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IUserPermissionOverrideRepository _userPermissionOverrideRepository;
     private readonly IMediator _mediator;
     private const string Operation = "Accept";
     private const int RefreshTokenExpiryDays = 7;
@@ -34,6 +34,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         IUnitOfWork unitOfWork,
         UserManager<AppUser> userManager,
         IJwtTokenService jwtTokenService,
+        IUserPermissionOverrideRepository userPermissionOverrideRepository,
         IMediator mediator)
     {
         _tokenService = tokenService;
@@ -43,6 +44,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _jwtTokenService = jwtTokenService;
+        _userPermissionOverrideRepository = userPermissionOverrideRepository;
         _mediator = mediator;
     }
 
@@ -112,15 +114,19 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
             if (isStaffOnboarding && !string.IsNullOrWhiteSpace(invitation.Permissions))
             {
-                var permissionClaims = invitation.Permissions
+                // Extra grants beyond the invited role's defaults are expressed as Allow
+                // overrides in UserPermissionOverride, not AspNetUserClaims - PermissionResolver
+                // (the sole authorization source of truth) only ever reads that table.
+                var permissionOverrides = invitation.Permissions
                     .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(p => new Claim("permission", p));
-                var claimsResult = await _userManager.AddClaimsAsync(user, permissionClaims);
-                if (!claimsResult.Succeeded)
-                {
-                    await _unitOfWork.RollbackTransactionAsync(ct);
-                    return Result<AuthResponseDto>.Failure(Operation, "Failed to grant invited permissions.", 400);
-                }
+                    .Select(p => new UserPermissionOverride
+                    {
+                        UserId = user.Id,
+                        TenantId = user.TenantId,
+                        Permission = p,
+                        Effect = PermissionEffect.Allow,
+                    });
+                await _userPermissionOverrideRepository.AddRangeAsync(permissionOverrides, ct);
             }
 
             if (!isStaffOnboarding)

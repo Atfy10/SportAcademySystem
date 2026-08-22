@@ -71,6 +71,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:trainee.register")]
         [HttpPost]
         public async Task<ActionResult> CreateAsync(CreateTraineeRequest request,
             CancellationToken ct)
@@ -84,6 +85,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(trainee);
         }
 
+        [Authorize(Policy = "Permission:trainee.edit")]
         [HttpPut("{id}")]
         public async Task<ActionResult> EditAsync(int id, UpdateTraineeRequest request, CancellationToken ct)
         {
@@ -92,6 +94,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(trainee);
         }
 
+        [Authorize(Policy = "Permission:trainee.delete")]
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken)
         {
@@ -99,7 +102,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Admin,Owner")]
+        [Authorize(Policy = "Permission:trainee.register")]
         [HttpPost("import")]
         [RequestSizeLimit(10 * 1024 * 1024)]
         public async Task<ActionResult> ImportCsv(IFormFile file, CancellationToken ct)
@@ -241,6 +244,7 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:trainee.export")]
         [HttpPost("export")]
         public async Task<ActionResult> Export(
             ExportTraineesRequest request,

@@ -3,6 +3,7 @@ using Moq;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdatePaymentStatus;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Finance;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 
@@ -11,12 +12,15 @@ namespace SportAcademy.Tests.Application.Handlers;
 public class UpdatePaymentStatusCommandHandlerTests
 {
     private readonly Mock<IEnrollmentRepository> _enrollmentRepoMock = new();
-    private readonly Mock<IPaymentRepository> _paymentRepoMock = new();
+    private readonly Mock<IInvoiceRepository> _invoiceRepoMock = new();
+    private readonly Mock<IFinanceLedgerService> _financeLedgerServiceMock = new();
+    private readonly Mock<IUserContextService> _userContextMock = new();
     private readonly UpdatePaymentStatusCommandHandler _handler;
 
     public UpdatePaymentStatusCommandHandlerTests()
     {
-        _handler = new UpdatePaymentStatusCommandHandler(_enrollmentRepoMock.Object, _paymentRepoMock.Object);
+        _handler = new UpdatePaymentStatusCommandHandler(
+            _enrollmentRepoMock.Object, _invoiceRepoMock.Object, _financeLedgerServiceMock.Object, _userContextMock.Object);
     }
 
     private static UpdatePaymentStatusCommand CreateValidCommand(int enrollmentId = 1, string status = "Paid") =>
@@ -35,69 +39,93 @@ public class UpdatePaymentStatusCommandHandlerTests
         IsActive = true
     };
 
+    private static Invoice CreateInvoice(int id = 5, int branchId = 3, decimal grandTotal = 50m, decimal amountPaid = 0m) => new()
+    {
+        Id = id,
+        InvoiceNumber = $"INV-2026-{id:D5}",
+        Status = amountPaid >= grandTotal ? InvoiceStatus.Paid : InvoiceStatus.Issued,
+        IssueDate = DateOnly.FromDateTime(DateTime.UtcNow),
+        DueDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(7),
+        BranchId = branchId,
+        Currency = "KWD",
+        GrandTotal = grandTotal,
+        AmountPaid = amountPaid,
+    };
+
     [Fact]
     public async Task Handle_EnrollmentNotFound_ThrowsIdNotFoundException()
     {
-        // Arrange
         var command = CreateValidCommand(999);
 
         _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
             .GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Enrollment?)null);
 
-        // Act & Assert
         var act = () => _handler.Handle(command, CancellationToken.None);
         await act.Should().ThrowAsync<IdNotFoundException>();
     }
 
     [Fact]
-    public async Task Handle_PaidStatusWithNoExistingPayment_CreatesNewPayment()
+    public async Task Handle_PaidStatusWithOutstandingBalance_RecordsPaymentForFullOutstanding()
     {
-        // Arrange
         var command = CreateValidCommand(1, "Paid");
         var enrollment = CreateEnrollment(1, 5);
+        var invoice = CreateInvoice(id: 5, branchId: 3, grandTotal: 50m, amountPaid: 0m);
 
         _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
             .GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
-        _paymentRepoMock.Setup(r => r.ExistsForSubscriptionAsync(5, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        _paymentRepoMock.Setup(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+        _invoiceRepoMock.Setup(r => r.GetBySubscriptionDetailsIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invoice);
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        _paymentRepoMock.Verify(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()), Times.Once);
+        _financeLedgerServiceMock.Verify(s => s.RecordPaymentAsync(
+            It.Is<RecordPaymentInput>(i => i.Amount == 50m && i.BranchId == 3
+                && i.Allocations.Count == 1 && i.Allocations[0].InvoiceId == 5 && i.Allocations[0].Amount == 50m),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_PaidStatusWithExistingPayment_DoesNotCreateDuplicate()
+    public async Task Handle_PaidStatusWithNoOutstandingBalance_DoesNotRecordPayment()
     {
-        // Arrange
+        var command = CreateValidCommand(1, "Paid");
+        var enrollment = CreateEnrollment(1, 5);
+        var invoice = CreateInvoice(id: 5, grandTotal: 50m, amountPaid: 50m);
+
+        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
+            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(enrollment);
+        _invoiceRepoMock.Setup(r => r.GetBySubscriptionDetailsIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invoice);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _financeLedgerServiceMock.Verify(s => s.RecordPaymentAsync(
+            It.IsAny<RecordPaymentInput>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_PaidStatusWithNoInvoice_ThrowsIdNotFoundException()
+    {
         var command = CreateValidCommand(1, "Paid");
         var enrollment = CreateEnrollment(1, 5);
 
         _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
             .GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
-        _paymentRepoMock.Setup(r => r.ExistsForSubscriptionAsync(5, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+        _invoiceRepoMock.Setup(r => r.GetBySubscriptionDetailsIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Invoice?)null);
 
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        _paymentRepoMock.Verify(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()), Times.Never);
+        var act = () => _handler.Handle(command, CancellationToken.None);
+        await act.Should().ThrowAsync<IdNotFoundException>();
     }
 
     [Fact]
     public async Task Handle_NonPaidStatus_SkipsPaymentLogic()
     {
-        // Arrange
         var command = CreateValidCommand(1, "Pending");
         var enrollment = CreateEnrollment(1, 5);
 
@@ -105,62 +133,28 @@ public class UpdatePaymentStatusCommandHandlerTests
             .GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
-        _paymentRepoMock.Verify(r => r.ExistsForSubscriptionAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_CreatedPaymentHasCorrectFormat()
-    {
-        // Arrange
-        var command = CreateValidCommand(1, "Paid");
-        var enrollment = CreateEnrollment(1, 5);
-        Payment? capturedPayment = null;
-
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(enrollment);
-        _paymentRepoMock.Setup(r => r.ExistsForSubscriptionAsync(5, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        _paymentRepoMock.Setup(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
-            .Callback<Payment, CancellationToken>((p, ct) => capturedPayment = p)
-            .Returns(Task.CompletedTask);
-
-        // Act
-        await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        capturedPayment.Should().NotBeNull();
-        capturedPayment!.PaymentNumber.Should().StartWith("PAY-");
-        capturedPayment.BranchId.Should().Be(1);
+        _invoiceRepoMock.Verify(r => r.GetBySubscriptionDetailsIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        _financeLedgerServiceMock.Verify(s => s.RecordPaymentAsync(
+            It.IsAny<RecordPaymentInput>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Theory]
-    [InlineData("Paid")]
     [InlineData("Pending")]
     [InlineData("Overdue")]
-    public async Task Handle_VariousPaymentStatuses_ReturnsSuccess(string status)
+    public async Task Handle_NonPaidStatuses_ReturnSuccess(string status)
     {
-        // Arrange
         var command = CreateValidCommand(1, status);
         var enrollment = CreateEnrollment(1, 5);
 
         _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
             .GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
-        _paymentRepoMock.Setup(r => r.ExistsForSubscriptionAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-        _paymentRepoMock.Setup(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
 
-        // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
         result.IsSuccess.Should().BeTrue();
     }
 }

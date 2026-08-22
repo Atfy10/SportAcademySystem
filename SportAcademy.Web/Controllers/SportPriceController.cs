@@ -22,6 +22,7 @@ namespace SportAcademy.Web.Controllers
 			_mediator = mediator;
 		}
 
+		[Authorize(Policy = "Permission:subscriptiontype.manage")]
 		[HttpPost]
 		public async Task<IActionResult> CreateSportPrice(CreateSportPriceCommand command, CancellationToken cancellationToken)
 		{
@@ -29,6 +30,7 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
+		[Authorize(Policy = "Permission:subscriptiontype.manage")]
 		[HttpPut]
 		public async Task<IActionResult> UpdateSportPrice(UpdateSportPriceCommand command, CancellationToken cancellationToken)
 		{
@@ -36,6 +38,7 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
+		[Authorize(Policy = "Permission:subscriptiontype.manage")]
 		[HttpDelete]
 		public async Task<IActionResult> DeleteSportPrice(DeleteSportPriceCommand command, CancellationToken cancellationToken)
 		{
