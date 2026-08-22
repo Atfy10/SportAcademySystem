@@ -326,6 +326,39 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     table.PrimaryKey("PK_DocumentNumberCounters", x => new { x.TenantId, x.DocumentType, x.Year });
                 });
 
+            // 5b. The backfilled invoices above were numbered directly from
+            //     SubscriptionDetails.Id (e.g. "INV-2026-00001"), not through
+            //     usp_GenerateDocumentNumber, so DocumentNumberCounters starts this migration
+            //     empty regardless of how many invoices were just backfilled. Without this, the
+            //     first real invoice issued after the migration re-generates "INV-2026-00001"
+            //     and collides with the backfilled row of the same number. Seed each tenant's
+            //     counter from the highest number actually present in its backfilled invoices.
+            migrationBuilder.Sql(@"
+                ;WITH InvoiceNumbers AS (
+                    SELECT
+                        [TenantId],
+                        CAST(SUBSTRING([InvoiceNumber], 5, 4) AS INT) AS [Year],
+                        CAST(RIGHT([InvoiceNumber], 5) AS INT) AS [Number]
+                    FROM [Invoices]
+                    WHERE [InvoiceNumber] LIKE N'INV-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9]'
+                ),
+                MaxPerTenantYear AS (
+                    SELECT [TenantId], [Year], MAX([Number]) AS [MaxNumber]
+                    FROM InvoiceNumbers
+                    GROUP BY [TenantId], [Year]
+                )
+                MERGE [DocumentNumberCounters] AS target
+                USING (SELECT [TenantId], N'INV' AS [DocumentType], [Year], [MaxNumber] FROM MaxPerTenantYear) AS src
+                    ON target.[TenantId] = src.[TenantId]
+                       AND target.[DocumentType] = src.[DocumentType]
+                       AND target.[Year] = src.[Year]
+                WHEN MATCHED AND target.[LastNumber] < src.[MaxNumber] THEN
+                    UPDATE SET [LastNumber] = src.[MaxNumber]
+                WHEN NOT MATCHED THEN
+                    INSERT ([TenantId], [DocumentType], [Year], [LastNumber])
+                    VALUES (src.[TenantId], src.[DocumentType], src.[Year], src.[MaxNumber]);
+            ");
+
             migrationBuilder.Sql(
                 SqlFileReader.Read("Procedures/usp_GenerateDocumentNumber.sql"),
                 suppressTransaction: true);
