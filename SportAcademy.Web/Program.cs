@@ -335,10 +335,13 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 
 app.UseAuthentication();
 
-app.UseAuthorization();
-
-app.UseRateLimiter();
-
+// Must run between authentication and authorization, not after: PermissionAuthorizationHandler
+// (invoked by UseAuthorization() below) resolves permissions through a tenant-scoped DB query
+// (see PermissionResolver), so ITenantIdProvider has to be populated before authorization runs
+// or every tenant-scoped lookup silently sees no tenant and resolves to zero permissions -
+// which only surfaced once the resolver stopped being a pure JWT-claim check. This block used
+// to run after UseAuthorization() (harmless back when the permission handler only inspected
+// the token's claims directly), and was left there when the resolver changed.
 app.Use(async (context, next) =>
 {
     var userContext = context.RequestServices.GetRequiredService<IUserContextService>();
@@ -357,6 +360,10 @@ app.Use(async (context, next) =>
     tenantIdProvider.SetTenantId(userContext.TenantId);
     await next();
 });
+
+app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapHub<NotificationHub>("/hubs/notification");
 

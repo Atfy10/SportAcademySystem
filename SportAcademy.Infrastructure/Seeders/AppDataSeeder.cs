@@ -627,6 +627,20 @@ namespace SportAcademy.Infrastructure.Seeders
             _context.Set<Domain.Entities.Finance.PaymentAllocation>().AddRange(allocations);
             await _context.SaveChangesAsync();
 
+            // CreateSeedInvoices assigns InvoiceNumbers directly (INV-{year}-00001, 00002, ...)
+            // rather than going through usp_GenerateDocumentNumber, so the counter it backs
+            // (DocumentNumberCounters) doesn't know those numbers were ever handed out. Without
+            // this, the first real invoice issued after seeding starts back at 00001 and
+            // collides with the seed data's own INV-{year}-00001. Advance the counter to match
+            // what was actually seeded so real usage picks up cleanly after it.
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                MERGE DocumentNumberCounters AS target
+                USING (SELECT {tenantId} AS TenantId, N'INV' AS DocumentType, {DateTime.UtcNow.Year} AS [Year]) AS src
+                    ON target.TenantId = src.TenantId AND target.DocumentType = src.DocumentType AND target.[Year] = src.[Year]
+                WHEN MATCHED THEN UPDATE SET LastNumber = {invoices.Count}
+                WHEN NOT MATCHED THEN INSERT (TenantId, DocumentType, [Year], LastNumber) VALUES (src.TenantId, src.DocumentType, src.[Year], {invoices.Count});
+            ");
+
             var enrollments = CreateEnrollments(tenantId, trainees, traineeGroups, subscriptionDetails, random);
             _context.Enrollments.AddRange(enrollments);
             await _context.SaveChangesAsync();
