@@ -30,6 +30,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Create(CreateSportCommand command)
         {
             var result = await _mediator.Send(command);
@@ -37,6 +38,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Update(int id, UpdateSportCommand command)
         {
             var result = await _mediator.Send(command with { Id = id });
@@ -44,6 +46,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete("{sportId}")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Delete(int sportId)
         {
             var result = await _mediator.Send(new DeleteSportCommand(sportId));
@@ -51,6 +54,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetById(int Id)
         {
             var result = await _mediator.Send(new GetSportByIdQuery(Id));
@@ -58,6 +62,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("paginated")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetAllPaginated(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -92,6 +97,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("search")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Search(
             [FromQuery] string searchTerm,
             [FromQuery] int? page,
@@ -114,6 +120,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPost("{sportId}/skill-level")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> AddSkillLevel(int sportId, [FromBody] AddSkillLevelCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(new AddSkillLevelCommand(sportId, command.Name, command.Description), ct);

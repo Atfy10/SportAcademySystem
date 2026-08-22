@@ -35,6 +35,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<ActionResult> Index(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -56,6 +57,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<ActionResult> Details(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetEmployeeByIdQuery(id), ct);
@@ -79,6 +81,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<ActionResult> Delete(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteEmployeeCommand(id), ct);
@@ -86,6 +89,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpPatch("{id}/toggle-status")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new ToggleEmployeeStatusCommand(id), ct);
@@ -93,6 +97,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("active")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetActiveEmployees(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -118,6 +123,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("coaches/active")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetActiveCoaches(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -136,6 +142,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("coaches/employee")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetCoachEmployeesWithoutCoachRecord(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
@@ -147,6 +154,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("search")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> SearchEmployees(
             [FromQuery] string searchTerm,
             [FromQuery] int? page,
@@ -168,6 +176,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("coaches")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetAllCoaches(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,

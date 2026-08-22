@@ -28,6 +28,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Index()
         {
             var users = await _mediator.Send(new GetAllUsersQuery());
@@ -35,6 +36,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("unlinked")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> GetUnlinked()
         {
             var users = await _mediator.Send(new GetUnlinkedUsersQuery());
@@ -42,6 +44,7 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Owner,Admin")]
         public async Task<IActionResult> Details(string id)
         {
             var user = await _mediator.Send(new GetUserByIdQuery(Guid.Parse(id)));
