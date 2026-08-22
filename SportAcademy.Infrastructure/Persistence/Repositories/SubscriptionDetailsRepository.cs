@@ -82,7 +82,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<int> GetTotalSessionsAllowed(int subDetailsId, CancellationToken cancellationToken)
             => await _context.SubscriptionDetails
                 .Where(sd => sd.Id == subDetailsId)
-                .Select(sd => sd.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth)
+                .Select(sd => sd.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth
+                    * sd.SportPrice.SportSubscriptionType.SubscriptionType.NumberOfMonths)
                 .SingleOrDefaultAsync(cancellationToken);
 
         public async Task<List<SubscriptionDetails>?> GetSubscriptionDetailsForTraineeAsync(int traineeId, CancellationToken cancellationToken = default)
@@ -120,9 +121,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<(List<SubscriptionDetails> Items, int TotalCount)> GetLatestSubscriptionsAsync(
             PageRequest page, string? term = null, CancellationToken cancellationToken = default)
         {
-            var query = GetFullSubDetails()
+            // GroupBy(...).Select(g => g.OrderBy(...).First()) does not translate to SQL Server
+            // ("could not be translated") - EF Core can't turn "order the group then take the
+            // first row" into a correlated APPLY for this shape, so this endpoint threw on every
+            // call. Rewritten as "ids of the max row per group, then re-query by those ids" -
+            // GroupBy+Max and Where+Contains(subquery) are both well within EF's supported
+            // translation set.
+            var latestIdsQuery = GetFullSubDetails()
                 .GroupBy(sd => new { sd.TraineeId, sd.SportPrice.SportId, sd.SportPrice.BranchId })
-                .Select(g => g.OrderByDescending(sd => sd.Id).First());
+                .Select(g => g.Max(sd => sd.Id));
+
+            var query = GetFullSubDetails().Where(sd => latestIdsQuery.Contains(sd.Id));
 
             if (!string.IsNullOrWhiteSpace(term))
             {
