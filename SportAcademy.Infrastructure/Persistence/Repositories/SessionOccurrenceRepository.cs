@@ -48,7 +48,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<SessionOccurrenceDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
         {
             var query = _context.SessionOccurrences
-                .Where(s => s.GroupSchedule!.TraineeGroup!.Coach!.Sport!.Name.Contains(term)
+                .Where(s => s.GroupSchedule!.TraineeGroup!.Name.Contains(term)
+                    || s.GroupSchedule.TraineeGroup.Coach!.Sport!.Name.Contains(term)
                     || (s.GroupSchedule.TraineeGroup.Coach.Employee!.FirstName + " " + s.GroupSchedule.TraineeGroup.Coach.Employee.LastName).Contains(term)
                     || s.GroupSchedule.TraineeGroup.Branch!.Name.Contains(term))
                 .AsNoTracking()

@@ -4,6 +4,7 @@ public record SessionOccurrenceDto(
     int Id,
     int TraineeGroupId,
     DateOnly Date,
+    string TraineeGroupName,
     string SportName,
     string CoachName,
     string BranchName,

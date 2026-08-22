@@ -19,6 +19,7 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
                 .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
                 .ForCtorParam("TraineeGroupId", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup.Id))
                 .ForCtorParam("Date", opt => opt.MapFrom(src => DateOnly.FromDateTime(src.StartDateTime)))
+                .ForCtorParam("TraineeGroupName", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Name))
                 .ForCtorParam("SportName", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Coach!.Sport!.Name))
                 .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Coach.Employee!.FirstName + " " + src.GroupSchedule!.TraineeGroup!.Coach.Employee.LastName))
                 .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Branch!.Name))
