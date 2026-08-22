@@ -21,6 +21,15 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasColumnType("int");
 
+            builder.Property(f => f.Name)
+                .HasMaxLength(200);
+
+            builder.Property(f => f.GuardianName)
+                .HasMaxLength(200);
+
+            builder.Property(f => f.GuardianPhone)
+                .HasMaxLength(30);
+
             builder.HasMany(f => f.Members)
                 .WithOne(t => t.Family)
                 .HasForeignKey("FamilyId")

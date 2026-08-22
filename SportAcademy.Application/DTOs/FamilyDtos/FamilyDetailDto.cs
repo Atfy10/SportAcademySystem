@@ -1,10 +1,10 @@
 namespace SportAcademy.Application.DTOs.FamilyDtos;
 
-public record FamilyDto(
+public record FamilyDetailDto(
     int Id,
     int Code,
     string? Name,
     string? GuardianName,
     string? GuardianPhone,
-    int MemberCount
+    IReadOnlyList<FamilyMemberDto> Members
 );

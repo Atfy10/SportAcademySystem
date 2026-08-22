@@ -27,6 +27,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ProjectTo<TFamilyDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);
 
+        public async Task<TFamilyDto?> GetByIdProjectedAsync<TFamilyDto>(int id, CancellationToken cancellationToken = default) where TFamilyDto : class
+            => await _context.Families
+                .Where(f => f.Id == id)
+                .ProjectTo<TFamilyDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(cancellationToken);
+
         public int SelectNextId()
         {
             var nextId = _context.Database

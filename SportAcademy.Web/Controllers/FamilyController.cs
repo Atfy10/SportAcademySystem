@@ -1,8 +1,10 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.FamilyCommands.UpdateFamily;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.FamilyQueries.GetAllFamilies;
+using SportAcademy.Application.Queries.FamilyQueries.GetFamilyById;
 using SportAcademy.Application.Queries.FamilyQueries.SearchFamily;
 
 namespace SportAcademy.Web.Controllers
@@ -40,6 +42,27 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(
                 new SearchFamilyQuery(searchTerm),
                 cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetFamilyById(int id, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetFamilyByIdQuery(id), cancellationToken);
+            return Ok(result);
+        }
+
+        [HttpPut("{id:int}")]
+        [Authorize(Policy = "Permission:trainee.edit")]
+        public async Task<IActionResult> UpdateFamily(
+            int id,
+            [FromBody] UpdateFamilyCommand command,
+            CancellationToken cancellationToken)
+        {
+            if (id != command.Id)
+                return BadRequest();
+
+            var result = await _mediator.Send(command, cancellationToken);
             return Ok(result);
         }
     }

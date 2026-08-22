@@ -1,5 +1,6 @@
-﻿using SportAcademy.Application.DTOs.FamilyDtos;
+using SportAcademy.Application.DTOs.FamilyDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Mappings.FamilyProfile
 {
@@ -16,7 +17,33 @@ namespace SportAcademy.Application.Mappings.FamilyProfile
             CreateMap<Family, FamilyDto>()
                 .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
                 .ForCtorParam("Code", opt => opt.MapFrom(src => src.FamilyCode))
-                .ReverseMap();
+                .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
+                .ForCtorParam("GuardianName", opt => opt.MapFrom(src => src.GuardianName))
+                .ForCtorParam("GuardianPhone", opt => opt.MapFrom(src => src.GuardianPhone))
+                .ForCtorParam("MemberCount", opt => opt.MapFrom(src => src.Members.Count));
+
+            CreateMap<Family, FamilyDetailDto>()
+                .ForCtorParam("Code", opt => opt.MapFrom(src => src.FamilyCode))
+                .ForCtorParam("Members", opt => opt.MapFrom(src => src.Members));
+
+            CreateMap<Trainee, FamilyMemberDto>()
+                .ForCtorParam("Code", opt => opt.MapFrom(s => s.TraineeCode.Value))
+                .ForCtorParam("Age", opt => opt.MapFrom(s => GetAge(s)))
+                .ForCtorParam("IsSubscribed", opt => opt.MapFrom(s => s.SubscriptionDetails
+                    .Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted)))
+                .ForCtorParam("BranchName", opt => opt.MapFrom(s => s.Branch.Name ?? string.Empty));
+        }
+
+        private static int GetAge(Trainee trainee)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var birthDate = (DateOnly)trainee.BirthDate;
+            var age = today.Year - birthDate.Year;
+
+            if (birthDate > today.AddYears(-age))
+                age--;
+
+            return age;
         }
     }
 }
