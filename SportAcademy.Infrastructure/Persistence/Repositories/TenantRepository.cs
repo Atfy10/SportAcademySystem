@@ -130,6 +130,12 @@ public class TenantRepository : ITenantRepository
     public void UpdateSettings(TenantSettings settings)
         => _context.Set<TenantSettings>().Update(settings);
 
+    public async Task<TenantProfile?> GetProfileAsync(Guid tenantId, CancellationToken ct = default)
+        => await _context.Set<TenantProfile>().FirstOrDefaultAsync(p => p.TenantId == tenantId, ct);
+
+    public void UpdateProfile(TenantProfile profile)
+        => _context.Set<TenantProfile>().Update(profile);
+
     public async Task<List<Guid>> GetPlanFeaturesAsync(int planId, CancellationToken ct = default)
         => await _context.SubscriptionPlanFeatures
             .Where(spf => spf.SubscriptionPlanId == planId)

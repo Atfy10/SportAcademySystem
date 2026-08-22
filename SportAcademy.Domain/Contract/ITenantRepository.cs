@@ -26,6 +26,8 @@ public interface ITenantRepository
     Task<List<Domain.Entities.Feature>> GetAllFeaturesAsync(CancellationToken ct = default);
     Task<TenantSettings?> GetSettingsAsync(Guid tenantId, CancellationToken ct = default);
     void UpdateSettings(TenantSettings settings);
+    Task<TenantProfile?> GetProfileAsync(Guid tenantId, CancellationToken ct = default);
+    void UpdateProfile(TenantProfile profile);
     Task<List<Guid>> GetPlanFeaturesAsync(int planId, CancellationToken ct = default);
     Task BulkUpdateFeaturesAsync(Guid tenantId, Dictionary<Guid, bool> featureStates, string enabledBy, CancellationToken ct = default);
     // Single targeted check for FeatureGateBehavior - avoids loading the tenant's full feature

@@ -46,6 +46,11 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
 
         var now = DateTime.UtcNow;
 
+        // A new tenant should start with whatever features its chosen plan includes, not with
+        // everything disabled - otherwise SuperAdmin has to manually toggle every single
+        // feature on right after creating the tenant, and the tenant is unusable until then.
+        var planFeatureIds = await _tenantRepository.GetPlanFeaturesAsync(plan.Id, ct);
+
         var tenant = new Tenant
         {
             Id = Guid.NewGuid(),
@@ -77,7 +82,14 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
                 IsTrial = true,
                 AutoRenew = true,
                 SubscriptionPlanId = plan.Id
-            }
+            },
+            Features = planFeatureIds.Select(featureId => new TenantFeature
+            {
+                FeatureId = featureId,
+                IsEnabled = true,
+                EnabledAt = now,
+                EnabledBy = "System"
+            }).ToList()
         };
 
         await _tenantRepository.AddAsync(tenant, ct);

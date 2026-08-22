@@ -8,6 +8,7 @@ using SportAcademy.Application.Commands.TenantCommands.UpdateTenantSettings;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Queries.TenantQueries.ExportTenantSettings;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantFeatures;
+using SportAcademy.Application.Queries.TenantQueries.GetTenantProfile;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantSettings;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantSettingsOptions;
 using SportAcademy.Application.Queries.TenantQueries.GetCurrentTenantQuery;
@@ -38,6 +39,20 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetSettings(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetTenantSettingsQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTenantProfileQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateTenantProfileCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
 
