@@ -19,6 +19,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         private readonly ISportPriceRepository _sportPriceRepository;
         private readonly IFinanceLedgerService _financeLedgerService;
         private readonly ITraineeRepository _traineeRepository;
+        private readonly IUserContextService _userContext;
         private readonly IMapper _mapper;
         private readonly IPublisher _publisher;
 
@@ -28,6 +29,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             ISportPriceRepository sportPriceRepository,
             IFinanceLedgerService financeLedgerService,
             ITraineeRepository traineeRepository,
+            IUserContextService userContext,
             IMapper mapper,
             IPublisher publisher)
         {
@@ -36,6 +38,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             _sportPriceRepository = sportPriceRepository;
             _financeLedgerService = financeLedgerService;
             _traineeRepository = traineeRepository;
+            _userContext = userContext;
             _mapper = mapper;
             _publisher = publisher;
         }
@@ -60,11 +63,24 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
 
             await _subscriptionDetailsRepository.AddAsync(subDetails, cancellationToken);
 
-            // Billing is a deliberate, separate act from money changing hands - creating a
-            // subscription issues an Invoice; recording an actual Payment against it is done
-            // later through the Accountant console (see FinanceController.RecordPayment).
-            await _financeLedgerService.IssueSubscriptionInvoiceAsync(
+            // Subscriptions are typically paid for at the point of sale (a parent registering
+            // and paying the same day), so creation issues an Invoice and immediately records a
+            // full payment against it via the chosen method - not a deferred Accountant-only
+            // step. Recording additional/partial payments later still goes through the
+            // Accountant console (see FinanceController.RecordPayment).
+            var invoice = await _financeLedgerService.IssueSubscriptionInvoiceAsync(
                 subDetails, sportPrice.Price, "KWD", cancellationToken);
+
+            await _financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
+                Amount: sportPrice.Price,
+                Method: request.PaymentMethod,
+                BranchId: request.BranchId,
+                Currency: "KWD",
+                Reference: null,
+                Notes: null,
+                RecordedByUserId: _userContext.UserId,
+                Allocations: [new PaymentAllocationInput(invoice.Id, sportPrice.Price)]
+            ), cancellationToken);
 
             await _publisher.Publish(new SubscriptionCreatedEvent(subDetails.Id, subDetails.TraineeId), cancellationToken);
 
