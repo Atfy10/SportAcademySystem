@@ -37,6 +37,19 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             )
             .ForMember(dest => dest.TraineesCount,
                 opt => opt.MapFrom(src => src.Enrollments.Count)
+            )
+            .ForMember(dest => dest.Members,
+                opt => opt.MapFrom(src => src.Enrollments
+                    .Where(e => e.IsActive)
+                    .Select(e => new TraineeGroupMemberDto(
+                        e.TraineeId,
+                        e.Trainee.FirstName + " " + e.Trainee.LastName,
+                        GetAge(e.Trainee),
+                        DateOnly.FromDateTime(e.EnrollmentDate),
+                        e.SubscriptionDetails.Status.ToString(),
+                        e.SubscriptionDetails.EndDate
+                    ))
+                )
             );
 
         CreateMap<TraineeGroup, TraineeGroupCardDto>()
@@ -89,5 +102,17 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
         CreateMap<TraineeGroup, TraineeGroupDropdownDto>()
             .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
             .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name));
+    }
+
+    private static int GetAge(Trainee trainee)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var birthDate = trainee.BirthDate;
+        var age = today.Year - birthDate.Year;
+
+        if (birthDate > today.AddYears(-age))
+            age--;
+
+        return age;
     }
 }

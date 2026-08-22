@@ -16,4 +16,5 @@ public record TraineeGroupDetailDto
     public string BranchName { get; init; } = null!;
     public int TraineesCount { get; init; }
     public List<GroupScheduleDto>? Schedules { get; init; }
+    public List<TraineeGroupMemberDto> Members { get; init; } = [];
 }
