@@ -48,7 +48,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
 
         public async Task<Result<int>> Handle(CreateSubscriptionDetailsCommand request, CancellationToken cancellationToken)
         {
-            var sportPrice = await _sportPriceRepository.GetByKeyAsync(
+            var sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(
                 request.BranchId, request.SportId, request.SubscriptionTypeId, cancellationToken)
                 ?? throw new IdNotFoundException(nameof(SportPrice), $"{request.BranchId}/{request.SportId}/{request.SubscriptionTypeId}");
 
@@ -78,8 +78,12 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             {
                 var oldSubscriptionDetailsId = existingEnrollment.SubscriptionDetailsId;
 
+                // Not SubscriptionDetailsService.CalculateAllowedSessions(subDetails) - that
+                // reads subDetails.SportPrice.SportSubscriptionType.SubscriptionType, which is
+                // null on this freshly-mapped-and-added entity (no navigations loaded/attached).
+                // sportPrice was fetched with includes specifically for this.
                 existingEnrollment.SubscriptionDetailsId = subDetails.Id;
-                existingEnrollment.SessionAllowed = SubscriptionDetailsService.CalculateAllowedSessions(subDetails);
+                existingEnrollment.SessionAllowed = sportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth;
                 existingEnrollment.SessionRemaining = existingEnrollment.SessionAllowed;
                 existingEnrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
                 existingEnrollment.IsActive = true;

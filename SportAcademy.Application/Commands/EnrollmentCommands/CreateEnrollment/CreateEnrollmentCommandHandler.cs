@@ -67,6 +67,14 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                 ?? throw new SubscriptionDetailsNotFoundException(request.SubscriptionDetailsId
                 .ToString());
 
+            // The subscription being tied to this enrollment must be for the same sport as the
+            // group - otherwise renewing that subscription later has no matching enrollment to
+            // carry forward (GetCurrentEnrollmentForSportAsync matches by the group's sport),
+            // and the group/subscription pairing is nonsensical anyway (nothing else validates
+            // this: the subscription and group pickers in the UI are independent dropdowns).
+            if (sportId is not null && subDetails.SportId != sportId.Value)
+                throw new SubscriptionGroupSportMismatchException(request.SubscriptionDetailsId, request.TraineeGroupId);
+
             var daysPerMonth = SubscriptionDetailsService.CalculateAllowedSessions(subDetails);
             enrollment.SessionAllowed = daysPerMonth;
             enrollment.SessionRemaining = enrollment.SessionAllowed;
