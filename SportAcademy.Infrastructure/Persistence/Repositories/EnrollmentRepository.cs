@@ -115,6 +115,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Enrollments
                 .CountAsync(e => e.TraineeGroupId == traineeGroupId && e.IsActive, ct);
 
+        public async Task<Enrollment?> GetCurrentEnrollmentForSportAsync(int traineeId, int sportId, CancellationToken ct = default)
+            => await _context.Enrollments
+                .Where(e => e.TraineeId == traineeId && e.TraineeGroup.Coach.SportId == sportId)
+                .OrderByDescending(e => e.EnrollmentDate)
+                .FirstOrDefaultAsync(ct);
+
         public async Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default)
         {
             var query = _context.Enrollments

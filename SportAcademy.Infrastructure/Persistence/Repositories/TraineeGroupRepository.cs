@@ -45,8 +45,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<int> GetCountAsync(CancellationToken cancellation = default)
             => await _context.TraineeGroups.CountAsync(cancellation);
 
-        public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
+        public async Task<int?> GetSportIdAsync(int traineeGroupId, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
+                .Where(tg => tg.Id == traineeGroupId)
+                .Select(tg => (int?)tg.Coach.SportId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+        public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(int? sportId = null, CancellationToken cancellationToken = default)
+            => await _context.TraineeGroups
+                .Where(tg => sportId == null || tg.Coach.SportId == sportId.Value)
                 .AsNoTracking()
                 .ProjectTo<TraineeGroupDropdownDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(cancellationToken);

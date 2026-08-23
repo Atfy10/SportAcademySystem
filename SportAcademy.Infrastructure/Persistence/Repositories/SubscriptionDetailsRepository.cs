@@ -163,7 +163,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)
         {
             var query = _context.SubscriptionDetails
-                .Where(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted);
+                .Where(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted
+                    // A subscription already claimed by an enrollment (its required 1:1 FK)
+                    // can't be picked for a new one - the unique constraint would reject it.
+                    && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id));
 
             if (traineeId.HasValue)
             {

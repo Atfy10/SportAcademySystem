@@ -28,6 +28,13 @@ namespace SportAcademy.Application.Interfaces
             CancellationToken ct = default);
         Task<int?> GetEnrollmentIdAsync(int traineeId, int traineeGroupId, CancellationToken ct = default);
         Task<int> GetActiveEnrollmentCountForGroupAsync(int traineeGroupId, CancellationToken ct = default);
+        /// <summary>
+        /// The trainee's current enrollment for the given sport, if any - a trainee may have at
+        /// most one (enforced at creation), but this is defensive against pre-existing data from
+        /// before that rule existed, picking the most recently created one. Returns the tracked
+        /// entity, not a DTO, since callers mutate and save it.
+        /// </summary>
+        Task<Enrollment?> GetCurrentEnrollmentForSportAsync(int traineeId, int sportId, CancellationToken ct = default);
         Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default);
         Task<int> CountAllAsync(CancellationToken ct = default);
         Task<int> CountActiveAsync(CancellationToken ct = default);

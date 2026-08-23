@@ -22,7 +22,7 @@ namespace SportAcademy.Domain.Services
                 foreach (var activeSub in activeSubscriptions)
                 {
                     if ((subDetails.StartDate <= activeSub.EndDate
-                        || subDetails.EndDate >= activeSub.StartDate)
+                        && subDetails.EndDate >= activeSub.StartDate)
                         && subDetails.SportId == activeSub.SportId)
                     {
                         return true;

@@ -5,6 +5,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
 using SportAcademy.Domain.Services;
@@ -45,6 +46,20 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                 request.TraineeGroupId, cancellationToken);
             if (activeCount >= group.MaximumCapacity)
                 throw new GroupAtCapacityException(request.TraineeGroupId, group.MaximumCapacity);
+
+            // A trainee may only be enrolled in one group per sport - renewing a subscription
+            // carries the existing enrollment forward automatically (see
+            // CreateSubscriptionDetailsCommandHandler), and moving groups goes through
+            // ChangeEnrollmentGroupCommand, so a second CreateEnrollment for a sport the trainee
+            // is already in is always either a duplicate or the wrong tool for the job.
+            var sportId = await _traineeGroupRepository.GetSportIdAsync(request.TraineeGroupId, cancellationToken);
+            if (sportId is not null)
+            {
+                var existingEnrollment = await _enrollmentRepository.GetCurrentEnrollmentForSportAsync(
+                    request.TraineeId, sportId.Value, cancellationToken);
+                if (existingEnrollment is not null)
+                    throw new TraineeAlreadyEnrolledInSportException(request.TraineeId, sportId.Value);
+            }
 
             // Set initial values
             var subDetails = await _subRepository.GetSubscriptionDetailsWithSubTypeAsync(

@@ -19,6 +19,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         private readonly ISportPriceRepository _sportPriceRepository;
         private readonly IFinanceLedgerService _financeLedgerService;
         private readonly ITraineeRepository _traineeRepository;
+        private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly IUserContextService _userContext;
         private readonly IMapper _mapper;
         private readonly IPublisher _publisher;
@@ -29,6 +30,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             ISportPriceRepository sportPriceRepository,
             IFinanceLedgerService financeLedgerService,
             ITraineeRepository traineeRepository,
+            IEnrollmentRepository enrollmentRepository,
             IUserContextService userContext,
             IMapper mapper,
             IPublisher publisher)
@@ -38,6 +40,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             _sportPriceRepository = sportPriceRepository;
             _financeLedgerService = financeLedgerService;
             _traineeRepository = traineeRepository;
+            _enrollmentRepository = enrollmentRepository;
             _userContext = userContext;
             _mapper = mapper;
             _publisher = publisher;
@@ -62,6 +65,36 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             cancellationToken.ThrowIfCancellationRequested();
 
             await _subscriptionDetailsRepository.AddAsync(subDetails, cancellationToken);
+
+            // A trainee can only be enrolled in one group per sport - if they already have a
+            // group enrollment for this sport (i.e. this is a renewal, not a first-time
+            // sign-up), carry that enrollment forward onto the new subscription instead of
+            // leaving it pointing at the now-superseded one. No manual re-enrollment step
+            // needed. First-time subscriptions (no existing enrollment) are untouched - a
+            // trainee is still enrolled into a specific group as a separate, deliberate step.
+            var existingEnrollment = await _enrollmentRepository.GetCurrentEnrollmentForSportAsync(
+                request.TraineeId, request.SportId, cancellationToken);
+            if (existingEnrollment is not null)
+            {
+                var oldSubscriptionDetailsId = existingEnrollment.SubscriptionDetailsId;
+
+                existingEnrollment.SubscriptionDetailsId = subDetails.Id;
+                existingEnrollment.SessionAllowed = SubscriptionDetailsService.CalculateAllowedSessions(subDetails);
+                existingEnrollment.SessionRemaining = existingEnrollment.SessionAllowed;
+                existingEnrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
+                existingEnrollment.IsActive = true;
+                await _enrollmentRepository.UpdateAsync(existingEnrollment, cancellationToken);
+
+                // Expire the superseded subscription immediately rather than waiting for the
+                // lazy status flip in GetSubDetailsStatsAsync - otherwise it keeps showing as
+                // Active until something else happens to query subscription stats.
+                var oldSubscription = await _subscriptionDetailsRepository.GetByIdAsync(oldSubscriptionDetailsId, cancellationToken);
+                if (oldSubscription is not null && oldSubscription.Status != SubscriptionStatus.Expired)
+                {
+                    oldSubscription.Status = SubscriptionStatus.Expired;
+                    await _subscriptionDetailsRepository.UpdateAsync(oldSubscription, cancellationToken);
+                }
+            }
 
             // Subscriptions are typically paid for at the point of sale (a parent registering
             // and paying the same day), so creation issues an Invoice and immediately records a
