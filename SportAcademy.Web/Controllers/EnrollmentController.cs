@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Commands.EnrollmentCommands.ActivateEnrollment;
+using SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentGroup;
 using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.SuspendEnrollment;
@@ -184,6 +185,17 @@ namespace SportAcademy.Web.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(new SuspendEnrollmentCommand(id), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:enrollment.edit")]
+        [HttpPatch("{id}/group")]
+        public async Task<IActionResult> ChangeGroup(
+            [FromRoute] int id,
+            [FromBody] ChangeEnrollmentGroupCommand command,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { EnrollmentId = id }, ct);
             return Ok(result);
         }
 

@@ -16,5 +16,7 @@ public record EnrollmentCardDto(
     string Status,
     int SessionsCompleted,
     int TotalSessions,
-    int SessionRemaining
+    int SessionRemaining,
+    int TraineeGroupId,
+    int SportId
 );

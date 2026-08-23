@@ -19,5 +19,7 @@ public record EnrollmentDetailDto(
     int? TotalSessions,
     int? SessionAllowed,
     int? SubscriptionDetailsId,
-    int? SessionRemaining
+    int? SessionRemaining,
+    int? TraineeGroupId,
+    int? SportId
 );

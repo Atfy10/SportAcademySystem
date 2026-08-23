@@ -103,7 +103,10 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
 
         CreateMap<TraineeGroup, TraineeGroupDropdownDto>()
             .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
-            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name));
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
+            .ForCtorParam("SportId", opt => opt.MapFrom(src => src.Coach.SportId))
+            .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
+            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName));
     }
 
     private static int GetAge(Trainee trainee)

@@ -58,7 +58,9 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("SessionsCompleted", opt => opt.MapFrom(src => src.Attendances.Count(a =>
                     a.AttendanceStatus == AttendanceStatus.Present || a.AttendanceStatus == AttendanceStatus.Late)))
                 .ForCtorParam("TotalSessions", opt => opt.MapFrom(src => src.SessionAllowed))
-                .ForCtorParam("SessionRemaining", opt => opt.MapFrom(src => src.SessionRemaining));
+                .ForCtorParam("SessionRemaining", opt => opt.MapFrom(src => src.SessionRemaining))
+                .ForCtorParam("TraineeGroupId", opt => opt.MapFrom(src => src.TraineeGroupId))
+                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.TraineeGroup.Coach.SportId));
 
             CreateMap<Enrollment, EnrollmentDetailDto>()
                 .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
@@ -87,7 +89,9 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("TotalSessions", opt => opt.MapFrom(src => src.SessionAllowed - src.SessionRemaining))
                 .ForCtorParam("SessionAllowed", opt => opt.MapFrom(src => src.SessionAllowed))
                 .ForCtorParam("SubscriptionDetailsId", opt => opt.MapFrom(src => src.SubscriptionDetailsId))
-                .ForCtorParam("SessionRemaining", opt => opt.MapFrom(src => src.SessionRemaining));
+                .ForCtorParam("SessionRemaining", opt => opt.MapFrom(src => src.SessionRemaining))
+                .ForCtorParam("TraineeGroupId", opt => opt.MapFrom(src => src.TraineeGroupId))
+                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.TraineeGroup.Coach.SportId));
         }
     }
 }
