@@ -41,8 +41,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
             await _subscriptionDetailsMangeService
                 .ValidateSubscriptionAsync(subDetails, cancellationToken);
 
-            var isSubActive = SubscriptionDetailsService.IsSubscriptionActive(subDetails);
-            if (!isSubActive)
+            if (SubscriptionDetailsService.HasExpired(subDetails))
                 subDetails.Status = SubscriptionStatus.Expired;
 
             cancellationToken.ThrowIfCancellationRequested();
