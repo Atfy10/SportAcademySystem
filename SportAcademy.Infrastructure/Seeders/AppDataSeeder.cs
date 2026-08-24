@@ -322,7 +322,53 @@ namespace SportAcademy.Infrastructure.Seeders
                 await SeedRolePermissionsAsync(role, DefaultRolePermissions.GetValueOrDefault(roleName, []));
             }
 
+            await RemoveObsoleteRolesAsync(roleNames);
+
             _logger.LogInformation("Roles seeded successfully.");
+        }
+
+        // Mirrors SeedRolePermissionsAsync's reconciliation, but for roles themselves - that
+        // method only ever adds a role from roleNames, so a role dropped from that list (e.g.
+        // the old Manager/Coach/User roles the ConsolidateRolesToFour migration once collapsed)
+        // would otherwise linger in the database forever with no automatic cleanup. Only ever
+        // deletes a role that currently has nobody assigned to it: reassigning real users out of
+        // a role being removed is a business decision (see ConsolidateRolesToFour's explicit
+        // Manager->Admin / Coach->Employee / User->Employee mapping) that this generic
+        // reconciliation has no safe way to make on its own, so an obsolete role still in use is
+        // left in place with a warning instead of guessed at.
+        private async Task RemoveObsoleteRolesAsync(string[] desiredRoleNames)
+        {
+            var desired = desiredRoleNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var obsoleteRoles = await _roleManager.Roles
+                .Where(r => r.Name != null && !desired.Contains(r.Name))
+                .ToListAsync();
+
+            foreach (var role in obsoleteRoles)
+            {
+                // Not _userManager.GetUsersInRoleAsync - it joins through AppUser, which is
+                // ITenantScoped, and the ambient tenant is never set to anything at this point
+                // in startup (SeedRolesAsync runs before any SetTenantId call), so that join's
+                // global query filter would silently see zero users in EVERY tenant regardless
+                // of the truth, defeating this entire safety check. AppUserRole itself carries
+                // no TenantId, so querying it directly is unaffected by that filter.
+                var usersInRoleCount = await _context.UserRoles.CountAsync(ur => ur.RoleId == role.Id);
+                if (usersInRoleCount > 0)
+                {
+                    _logger.LogWarning(
+                        "Role {RoleName} is no longer in the seeded role list but still has {UserCount} " +
+                        "user(s) assigned - leaving it in place. Reassign those users to a current role and " +
+                        "it will be removed automatically on the next startup.",
+                        role.Name, usersInRoleCount);
+                    continue;
+                }
+
+                var result = await _roleManager.DeleteAsync(role);
+                if (result.Succeeded)
+                    _logger.LogInformation("Removed obsolete, unused role {RoleName}.", role.Name);
+                else
+                    _logger.LogWarning("Failed to remove obsolete role {RoleName}: {Errors}",
+                        role.Name, string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
         }
 
         // Reconciles rather than just adds: also removes any "permission" claim the role
