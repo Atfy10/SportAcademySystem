@@ -45,7 +45,11 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrai
 			if (!traineeExists)
 				throw new TraineeNotFoundException(request.TraineeId.ToString());
 
-			if (!Enum.IsDefined(typeof(SkillLevel), request.SkillLevel))
+			// Enum.IsDefined on a string does an exact, case-sensitive match against the member
+			// name ("Beginner"), but SkillLevel enum values are serialized camelCase over the
+			// wire ("beginner") everywhere else in this system - a request built from that same
+			// wire value would always fail this check. TryParse(ignoreCase: true) accepts both.
+			if (!Enum.TryParse<SkillLevel>(request.SkillLevel, ignoreCase: true, out _))
 				throw new InvalidSkillLevelException();
 
 			cancellationToken.ThrowIfCancellationRequested();

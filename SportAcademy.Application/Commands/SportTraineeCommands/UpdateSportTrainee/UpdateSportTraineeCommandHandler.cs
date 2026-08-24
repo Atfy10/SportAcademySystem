@@ -30,7 +30,8 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrai
 			if (!exists)
 				throw new SportTraineeNotFoundException($"{request.SportId}, {request.TraineeId}");
 
-            if (!Enum.IsDefined(typeof(SkillLevel), request.SkillLevel))
+            // See CreateSportTraineeCommandHandler for why this must be a case-insensitive parse.
+            if (!Enum.TryParse<SkillLevel>(request.SkillLevel, ignoreCase: true, out _))
 				throw new InvalidSkillLevelException();
 
 			cancellationToken.ThrowIfCancellationRequested();

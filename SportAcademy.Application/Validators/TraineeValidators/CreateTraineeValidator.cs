@@ -18,8 +18,9 @@ namespace SportAcademy.Application.Validators.TraineeValidators
                 .NoDigits()
                 .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters.");
 
+            // SSN is optional - the trailing .When() already scopes every check in this chain
+            // (including a NotEmpty(), if one were added) to "only when a value was provided".
             RuleFor(t => t.SSN)
-                .NotEmpty().WithMessage("SSN is required.")
                 .Length(12).WithMessage("SSN must be exactly 12 digits.")
                 .Matches(@"^\d{12}$").WithMessage("SSN must contain only numeric digits.")
                 .Must((cmd, ssn) => PersonValidationHelper.IsValidSSN(ssn, cmd.BirthDate))

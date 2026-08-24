@@ -54,13 +54,18 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             trainee.JoinDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            if (!PersonValidationHelper.IsValidSSN(trainee.SSN, trainee.BirthDate))
-                throw new SSNSyntaxErrorException();
+            // SSN is optional at creation (e.g. trainee doesn't have one issued yet) - only
+            // validate format/uniqueness when one was actually entered.
+            if (!string.IsNullOrWhiteSpace(trainee.SSN))
+            {
+                if (!PersonValidationHelper.IsValidSSN(trainee.SSN, trainee.BirthDate))
+                    throw new SSNSyntaxErrorException();
 
-            var isSSNExist = await _traineeRepository
-                .IsSSNExistAsync(trainee.SSN, cancellationToken);
-            if (isSSNExist)
-                throw new SSNNotUniqueException();
+                var isSSNExist = await _traineeRepository
+                    .IsSSNExistAsync(trainee.SSN, cancellationToken);
+                if (isSSNExist)
+                    throw new SSNNotUniqueException();
+            }
 
             var isPhoneNumberExist = await _traineeRepository
                 .IsPhoneNumberExistAsync(trainee.PhoneNumber, cancellationToken: cancellationToken);

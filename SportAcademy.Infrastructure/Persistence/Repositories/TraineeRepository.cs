@@ -162,7 +162,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var offset = (page.Page - 1) * page.PageSize;
             var fullTextTerm = BuildFullTextTerm(term);
-            var likeTerm = $"%{term}%";
 
             var connection = _context.Database.GetDbConnection();
 
@@ -185,7 +184,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             if (hasSport)
             {
-                filterConditions.Add("s.Name = @sport");
+                // Not a plain "s.Name = @sport" join condition - neither fromJoinWhere below
+                // declares a Sports alias "s" (that letter is only used inside the SportSkills
+                // subquery), so that used to fail at execution with "multi-part identifier
+                // 's.Name' could not be bound." An EXISTS subquery needs no outer join/alias
+                // and also correctly matches "has this sport among possibly several", not just
+                // a single joined row.
+                filterConditions.Add(@"EXISTS (
+                    SELECT 1 FROM SportTrainees st_filter
+                    INNER JOIN Sports s_filter ON s_filter.Id = st_filter.SportId
+                    WHERE st_filter.TraineeId = t.Id AND s_filter.Name = @sport)");
                 filterParams["sport"] = sport!;
             }
 
@@ -268,8 +276,24 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             {
                 if (hasTerm)
                 {
-                    filterConditions.Add($"(t.FirstName LIKE @likeTerm OR t.LastName LIKE @likeTerm OR t.Email LIKE @likeTerm)");
-                    filterParams["likeTerm"] = likeTerm;
+                    // A single "%term%" against each column separately (the old behavior) only
+                    // matched a search string that happened to sit entirely inside one column -
+                    // typing "Bandar Man" against FirstName="Bandar"/LastName="Mansour" never
+                    // matched anything, since neither column alone contains "Bandar Man". Split
+                    // into whitespace tokens and require each token to appear somewhere (first
+                    // name, last name, their concatenation, or email) - order- and
+                    // column-independent, so "Bandar Man", "Man Bandar", or just "Man" all match.
+                    var tokens = term.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var tokenConditions = new List<string>();
+                    for (var i = 0; i < tokens.Length; i++)
+                    {
+                        var p = $"likeTerm{i}";
+                        tokenConditions.Add(
+                            $"(t.FirstName LIKE @{p} OR t.LastName LIKE @{p} OR (t.FirstName + ' ' + t.LastName) LIKE @{p} OR t.Email LIKE @{p})");
+                        filterParams[p] = $"%{tokens[i]}%";
+                    }
+                    if (tokenConditions.Count > 0)
+                        filterConditions.Add(string.Join(" AND ", tokenConditions));
                 }
                 var filterClause = filterConditions.Count > 0 ? "AND " + string.Join(" AND ", filterConditions) : "";
 
