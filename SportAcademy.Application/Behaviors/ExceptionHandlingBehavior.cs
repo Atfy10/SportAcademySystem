@@ -4,6 +4,8 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
+using SportAcademy.Domain.Exceptions.PaymentTypeExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
@@ -169,6 +171,105 @@ namespace SportAcademy.Application.Behaviors
 
                 _logger.LogWarning(ex,
                     "Trainee group at capacity for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (TraineeAlreadyEnrolledInSportException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Trainee already enrolled in this sport for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (EnrollmentGroupSportMismatchException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Enrollment/group sport mismatch for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (SubscriptionGroupSportMismatchException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Subscription/group sport mismatch for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (TraineeGenderMismatchException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Trainee/group gender mismatch for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (TraineeSkillLevelTooLowException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Trainee skill level too low for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (CoachSkillLevelTooLowException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Coach skill level too low for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (CoachSportMismatchException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Coach sport mismatch for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (PaymentTypeInUseException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Payment type in use for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (NoDefaultPaymentTypeException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "No default payment type configured for {RequestType}. Message: {Message}",
                     requestType,
                     ex.Message);
 

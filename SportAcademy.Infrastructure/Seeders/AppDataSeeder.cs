@@ -85,9 +85,26 @@ namespace SportAcademy.Infrastructure.Seeders
 
         public async Task SeedAsync()
         {
+            // Roles and their permission claims are global (not tenant-scoped) and
+            // SeedRolePermissionsAsync fully reconciles them (adds newly-granted permissions,
+            // removes revoked ones) - it must run on every startup, not just when seeding a
+            // brand-new database, or a permission added to Permissions.All/
+            // DefaultRolePermissions after go-live would never reach an already-seeded
+            // deployment (SeedAsync as a whole is a no-op once any tenant exists - see below).
+            await SeedRolesAsync();
+
+            // Same problem, same fix, for the Feature catalog: a Feature added to FeatureCatalog
+            // after go-live must reach every already-seeded tenant too, not just a brand-new
+            // database - see ReconcileFeaturesAsync. This fully replaces the old
+            // "SeedFeaturesAsync always inserts everything, only ever runs once" approach - on
+            // a genuinely fresh database this is what populates Features now (existingNames is
+            // empty, so everything is "missing"); featureIds is reused below instead of
+            // re-seeding the same rows a second time.
+            var featureIds = await ReconcileFeaturesAsync();
+
             if (await _context.Tenants.IgnoreQueryFilters().AnyAsync())
             {
-                _logger.LogInformation("Database already seeded. Skipping.");
+                _logger.LogInformation("Database already seeded. Skipping tenant/business-data seeding.");
                 return;
             }
 
@@ -110,7 +127,6 @@ namespace SportAcademy.Infrastructure.Seeders
 
                 await EnableUserTenantFkAsync();
 
-                await SeedRolesAsync();
                 await AssignRolesAsync(systemTenantId, superAdminId, ownerId, salmiyaTenantId);
 
                 // AssignRolesAsync (like SeedUsersAsync earlier) flips the ambient tenant to
@@ -127,7 +143,6 @@ namespace SportAcademy.Infrastructure.Seeders
                 // tenant. Must be set directly in this method's own scope to actually stick.
                 _tenantIdProvider.SetTenantId(salmiyaTenantId);
 
-                var featureIds = await SeedFeaturesAsync();
                 var enterprisePlanIds = await SeedSubscriptionPlansAsync(featureIds);
 
                 var natCatIds = await SeedNationalityCategoriesAsync();
@@ -277,6 +292,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 Permissions.Subscription.Manage,
                 Permissions.TraineeGroup.Manage, Permissions.TraineeGroup.GenerateSessions, Permissions.Session.Manage,
                 Permissions.Attendance.Mark, Permissions.Attendance.ViewRate,
+                Permissions.Report.ViewAttendance, Permissions.Report.ViewSubscriptions,
             ],
             ["Accountant"] =
             [
@@ -350,55 +366,104 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Roles assigned successfully.");
         }
 
-        private async Task<List<Guid>> SeedFeaturesAsync()
+        // Single source of truth for the Feature catalog, shared by SeedFeaturesAsync (fresh
+        // database) and ReconcileFeaturesAsync (already-seeded database) so the two paths can
+        // never drift apart. trainee-reports / coach-reports / operational-reports remain
+        // absent: there is no ReportsController support for them yet (only the financial/
+        // attendance/subscription reports below are implemented), and listing them here would
+        // let a SuperAdmin toggle on a feature no tenant can actually use. Add each once its
+        // report implementation lands.
+        private static readonly (string Name, string DisplayName, string Description)[] FeatureCatalog =
+        [
+            ("user-management", "User Management", "Create, edit, and manage system users"),
+            ("role-management", "Role & Permission Management", "Define roles and assign permissions"),
+            ("tenant-settings", "Tenant Configuration", "Configure tenant-wide settings"),
+            ("branch-management", "Branch Management", "Manage academy branches and locations"),
+            ("trainee-management", "Trainee Management", "Register and manage trainee profiles"),
+            ("employee-management", "Employee Management", "Manage staff and employee records"),
+            ("coach-management", "Coach Management", "Assign and manage coaches"),
+            ("sport-management", "Sports Management", "Define sports and training activities"),
+            ("subscription-plan", "Subscription Plans", "Create and manage subscription offerings"),
+            ("pricing-management", "Pricing Management", "Set sport and branch pricing"),
+            ("payment-processing", "Payment Processing", "Process and track payments"),
+            ("group-management", "Group Management", "Form and manage training groups"),
+            ("schedule-management", "Schedule Management", "Create class schedules and timetables"),
+            ("attendance-tracking", "Attendance Tracking", "Record and report attendance"),
+            ("enrollment-management", "Enrollment Management", "Manage trainee enrollments"),
+            ("family-management", "Family Management", "Manage family accounts and billing"),
+            ("nationality-categories", "Nationality Categories", "Configure nationality classifications"),
+            ("financial-reports", "Financial Reports", "Revenue, outstanding, and payment-method reports"),
+            ("attendance-reports", "Attendance Reports", "Full attendance history, filterable and printable"),
+            ("subscription-reports", "Subscription Reports", "Full subscription history, filterable and printable"),
+            ("notifications", "Notification System", "Send and manage system notifications"),
+            ("chat-system", "In-App Chat", "Internal messaging and communication"),
+            ("video-analysis", "AI Video Analysis", "AI-powered sports video analysis"),
+            ("health-test-mgmt", "Health Test Management", "Track health assessments and tests"),
+            ("discount-offers", "Discounts & Offers", "Manage promotions and discounts"),
+            ("session-management", "Session Management", "Manage training sessions"),
+            ("audit-trail", "Audit Trail", "System activity logging"),
+            ("system-settings", "System Settings", "Global system configuration"),
+            ("profile-mgmt", "Profile Management", "User profile and preferences"),
+            ("ai-assistant", "AI Assistant", "AI-powered help and insights"),
+            ("api-access", "API Access", "External API integration management"),
+            ("backup-restore", "Backup & Restore", "Data backup and restoration"),
+            ("trainee-codes", "Trainee Code Management", "Custom trainee code assignment"),
+        ];
+
+        // Fully replaces the old "SeedFeaturesAsync always inserts everything, assumes it only
+        // ever runs once" approach. Adds any Feature this catalog defines that the database
+        // doesn't have yet (on a genuinely fresh database, that's every feature - this is what
+        // populates Features now) and enables each newly-added one by default for every
+        // pre-existing tenant, matching what a fresh seed of that tenant would already produce.
+        // A tenant seeded later in this same call (the fresh-DB path) is deliberately excluded
+        // from that enablement loop - it gets every current feature via its own
+        // EnableTenantFeaturesAsync call further down in SeedAsync, using the ids returned here.
+        // Must run unconditionally on every startup (see the call site in SeedAsync), or a
+        // feature added to FeatureCatalog after go-live would never reach an already-seeded
+        // deployment without a full drop/recreate - the same problem SeedRolePermissionsAsync
+        // already solves for permissions.
+        private async Task<List<Guid>> ReconcileFeaturesAsync()
         {
-            _logger.LogInformation("Seeding system features...");
+            var existing = await _context.Set<Feature>().ToListAsync();
+            var existingNames = existing.Select(f => f.Name).ToHashSet();
 
-            var features = new List<Feature>
+            var missing = FeatureCatalog
+                .Where(f => !existingNames.Contains(f.Name))
+                .Select(f => CreateFeature(f.Name, f.DisplayName, f.Description))
+                .ToList();
+
+            if (missing.Count > 0)
             {
-                CreateFeature("user-management", "User Management", "Create, edit, and manage system users"),
-                CreateFeature("role-management", "Role & Permission Management", "Define roles and assign permissions"),
-                CreateFeature("tenant-settings", "Tenant Configuration", "Configure tenant-wide settings"),
-                CreateFeature("branch-management", "Branch Management", "Manage academy branches and locations"),
-                CreateFeature("trainee-management", "Trainee Management", "Register and manage trainee profiles"),
-                CreateFeature("employee-management", "Employee Management", "Manage staff and employee records"),
-                CreateFeature("coach-management", "Coach Management", "Assign and manage coaches"),
-                CreateFeature("sport-management", "Sports Management", "Define sports and training activities"),
-                CreateFeature("subscription-plan", "Subscription Plans", "Create and manage subscription offerings"),
-                CreateFeature("pricing-management", "Pricing Management", "Set sport and branch pricing"),
-                CreateFeature("payment-processing", "Payment Processing", "Process and track payments"),
-                CreateFeature("group-management", "Group Management", "Form and manage training groups"),
-                CreateFeature("schedule-management", "Schedule Management", "Create class schedules and timetables"),
-                CreateFeature("attendance-tracking", "Attendance Tracking", "Record and report attendance"),
-                CreateFeature("enrollment-management", "Enrollment Management", "Manage trainee enrollments"),
-                CreateFeature("family-management", "Family Management", "Manage family accounts and billing"),
-                CreateFeature("nationality-categories", "Nationality Categories", "Configure nationality classifications"),
-                CreateFeature("financial-reports", "Financial Reports", "Revenue, outstanding, and payment-method reports"),
-                // trainee-reports / coach-reports / operational-reports / attendance-reports
-                // remain unseeded: there is no ReportsController support for them yet (only
-                // the financial reports above are implemented), and seeding them would let a
-                // SuperAdmin toggle on a feature no tenant can actually use. Re-add each once
-                // its report implementation lands.
-                CreateFeature("notifications", "Notification System", "Send and manage system notifications"),
-                CreateFeature("chat-system", "In-App Chat", "Internal messaging and communication"),
-                CreateFeature("video-analysis", "AI Video Analysis", "AI-powered sports video analysis"),
-                CreateFeature("health-test-mgmt", "Health Test Management", "Track health assessments and tests"),
-                CreateFeature("discount-offers", "Discounts & Offers", "Manage promotions and discounts"),
-                CreateFeature("session-management", "Session Management", "Manage training sessions"),
-                CreateFeature("audit-trail", "Audit Trail", "System activity logging"),
-                CreateFeature("system-settings", "System Settings", "Global system configuration"),
-                CreateFeature("profile-mgmt", "Profile Management", "User profile and preferences"),
-                CreateFeature("ai-assistant", "AI Assistant", "AI-powered help and insights"),
-                CreateFeature("api-access", "API Access", "External API integration management"),
-                CreateFeature("backup-restore", "Backup & Restore", "Data backup and restoration"),
-                CreateFeature("trainee-codes", "Trainee Code Management", "Custom trainee code assignment")
-            };
+                _logger.LogInformation("Reconciling {Count} new feature(s) into the catalog: {Names}",
+                    missing.Count, string.Join(", ", missing.Select(f => f.Name)));
+                _context.Set<Feature>().AddRange(missing);
+                await _context.SaveChangesAsync();
 
-            _context.Set<Feature>().AddRange(features);
-            await _context.SaveChangesAsync();
+                var tenantIds = await _context.Tenants.IgnoreQueryFilters().Select(t => t.Id).ToListAsync();
+                if (tenantIds.Count > 0)
+                {
+                    var now = DateTime.UtcNow;
+                    foreach (var tenantId in tenantIds)
+                    {
+                        foreach (var feature in missing)
+                        {
+                            _context.TenantFeatures.Add(new TenantFeature
+                            {
+                                TenantId = tenantId,
+                                FeatureId = feature.Id,
+                                IsEnabled = true,
+                                EnabledAt = now,
+                                EnabledBy = "System",
+                            });
+                        }
+                    }
 
-            _logger.LogInformation("Features seeded successfully.");
-            return features.Select(f => f.Id).ToList();
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("New feature(s) enabled for {Count} existing tenant(s).", tenantIds.Count);
+                }
+            }
+
+            return existing.Select(f => f.Id).Concat(missing.Select(f => f.Id)).ToList();
         }
 
         private static Feature CreateFeature(string name, string displayName, string description)
@@ -573,9 +638,14 @@ namespace SportAcademy.Infrastructure.Seeders
 
             var basePrices = new Dictionary<string, decimal>
             {
-                ["Swimming"] = 60m, ["Football"] = 45m, ["Basketball"] = 40m,
-                ["Volleyball"] = 35m, ["Tennis"] = 55m, ["Martial Arts"] = 50m,
-                ["Gymnastics"] = 65m, ["Table Tennis"] = 30m
+                ["Swimming"] = 60m,
+                ["Football"] = 45m,
+                ["Basketball"] = 40m,
+                ["Volleyball"] = 35m,
+                ["Tennis"] = 55m,
+                ["Martial Arts"] = 50m,
+                ["Gymnastics"] = 65m,
+                ["Table Tennis"] = 30m
             };
             var sportPriceLookup = sports.ToDictionary(s => s.Id, s => basePrices.GetValueOrDefault(s.Name, 40m));
             var sportPrices = CreateSportPrices(tenantId, sportBranches, sportPriceLookup, subTypes);
@@ -607,7 +677,11 @@ namespace SportAcademy.Infrastructure.Seeders
             _context.Set<GroupSchedule>().AddRange(groupSchedules);
             await _context.SaveChangesAsync();
 
-            var payments = CreatePayments(tenantId, branches, random);
+            var paymentTypes = CreatePaymentTypes(tenantId);
+            _context.Set<PaymentType>().AddRange(paymentTypes);
+            await _context.SaveChangesAsync();
+
+            var payments = CreatePayments(tenantId, branches, paymentTypes, random);
             _context.Set<Payment>().AddRange(payments);
             await _context.SaveChangesAsync();
 
@@ -641,7 +715,8 @@ namespace SportAcademy.Infrastructure.Seeders
                 WHEN NOT MATCHED THEN INSERT (TenantId, DocumentType, [Year], LastNumber) VALUES (src.TenantId, src.DocumentType, src.[Year], {invoices.Count});
             ");
 
-            var enrollments = CreateEnrollments(tenantId, trainees, traineeGroups, subscriptionDetails, random);
+            var (enrollments, sportTrainees) = CreateEnrollments(tenantId, trainees, traineeGroups, coaches, subscriptionDetails, random);
+            _context.Set<SportTrainee>().AddRange(sportTrainees);
             _context.Enrollments.AddRange(enrollments);
             await _context.SaveChangesAsync();
 
@@ -748,8 +823,11 @@ namespace SportAcademy.Infrastructure.Seeders
         {
             var priceMultipliers = new Dictionary<SubType, decimal>
             {
-                [SubType.Monthly] = 1.0m, [SubType.Quarterly] = 2.8m,
-                [SubType.Silver] = 1.4m, [SubType.Gold] = 1.8m, [SubType.Platinum] = 2.5m
+                [SubType.Monthly] = 1.0m,
+                [SubType.Quarterly] = 2.8m,
+                [SubType.Silver] = 1.4m,
+                [SubType.Gold] = 1.8m,
+                [SubType.Platinum] = 2.5m
             };
 
             var random = new Random();
@@ -951,16 +1029,27 @@ namespace SportAcademy.Infrastructure.Seeders
                 "Elite Squad", "Weekend Warriors", "Morning Session", "Evening Session"
             };
 
-            return groupNames.Select(name => new TraineeGroup
+            return groupNames.Select(name =>
             {
-                Name = name,
-                SkillLevel = (SkillLevel)random.Next(0, 4),
-                MaximumCapacity = random.Next(10, 15),
-                DurationInMinutes = random.Next(2, 4) * 15 + 30,
-                Gender = random.Next(2) == 0 ? Gender.Male : Gender.Female,
-                BranchId = branches[random.Next(branches.Count)].Id,
-                CoachId = coaches[random.Next(coaches.Count)].EmployeeId,
-                TenantId = tenantId
+                // Pick the coach first, then bound the group's required skill level by the
+                // coach's own - a coach can only lead a group at or below their own level.
+                var coach = coaches[random.Next(coaches.Count)];
+                return new TraineeGroup
+                {
+                    Name = name,
+                    SkillLevel = (SkillLevel)random.Next(0, (int)coach.SkillLevel + 1),
+                    MaximumCapacity = random.Next(10, 15),
+                    DurationInMinutes = random.Next(2, 4) * 15 + 30,
+                    Gender = random.Next(3) switch
+                    {
+                        0 => TraineeGroupGender.Male,
+                        1 => TraineeGroupGender.Female,
+                        _ => TraineeGroupGender.Mixed
+                    },
+                    BranchId = branches[random.Next(branches.Count)].Id,
+                    CoachId = coach.EmployeeId,
+                    TenantId = tenantId
+                };
             }).ToList();
         }
 
@@ -987,15 +1076,24 @@ namespace SportAcademy.Infrastructure.Seeders
             return schedules;
         }
 
+        private static List<PaymentType> CreatePaymentTypes(Guid tenantId)
+        {
+            return
+            [
+                new PaymentType { Name = "Cash", IsActive = true, IsDefault = true, TenantId = tenantId },
+                new PaymentType { Name = "Online", IsActive = true, IsDefault = false, TenantId = tenantId },
+            ];
+        }
+
         private static List<Payment> CreatePayments(
-            Guid tenantId, List<Branch> branches, Random random)
+            Guid tenantId, List<Branch> branches, List<PaymentType> paymentTypes, Random random)
         {
             return Enumerable.Range(0, 60).Select(i =>
             {
                 return new Payment
                 {
                     PaymentNumber = $"PAY-{DateTime.UtcNow.Year}-{random.Next(10000, 99999)}",
-                    Method = random.Next(2) == 0 ? PaymentMethod.Cash : PaymentMethod.Online,
+                    PaymentTypeId = paymentTypes[random.Next(paymentTypes.Count)].Id,
                     PaidDate = DateTime.Now.AddDays(-random.Next(1, 180)),
                     BranchId = branches[random.Next(branches.Count)].Id,
                     Amount = random.Next(20, 80),
@@ -1113,14 +1211,52 @@ namespace SportAcademy.Infrastructure.Seeders
             return allocations;
         }
 
-        private static List<Enrollment> CreateEnrollments(
-            Guid tenantId, List<Trainee> trainees, List<TraineeGroup> groups,
+        // Also derives the SportTrainee skill record each enrollment implies - none were
+        // seeded before, so there's no prior truth to preserve; a group is picked to satisfy
+        // the app's own placement rules (same sport, compatible gender, and skill at-or-below
+        // whatever this trainee is recorded at for that sport so far), and the recorded skill
+        // is raised to match if no group at their current level is available.
+        private static (List<Enrollment> Enrollments, List<SportTrainee> SportTrainees) CreateEnrollments(
+            Guid tenantId, List<Trainee> trainees, List<TraineeGroup> groups, List<Coach> coaches,
             List<SubscriptionDetails> subscriptionDetails, Random random)
         {
-            return subscriptionDetails.Select(sd =>
+            var coachSportById = coaches.ToDictionary(c => c.EmployeeId, c => c.SportId);
+            var traineeById = trainees.ToDictionary(t => t.Id);
+            var skillByTraineeSport = new Dictionary<(int TraineeId, int SportId), SkillLevel>();
+            var enrollments = new List<Enrollment>();
+
+            foreach (var sd in subscriptionDetails)
             {
-                var group = groups[random.Next(groups.Count)];
-                return new Enrollment
+                var trainee = traineeById[sd.TraineeId];
+
+                // Mandatory: same sport as the subscription (the app itself rejects a
+                // mismatch - see SubscriptionGroupSportMismatchException) and a compatible
+                // gender (Mixed accepts anyone, Male/Female groups don't accept the other).
+                var candidates = groups
+                    .Where(g => coachSportById[g.CoachId] == sd.SportId)
+                    .Where(g => g.Gender == TraineeGroupGender.Mixed
+                        || (g.Gender == TraineeGroupGender.Male) == (trainee.Gender == Gender.Male))
+                    .ToList();
+
+                if (candidates.Count == 0)
+                    continue; // no compatible group seeded for this sport/gender - leave the subscription unclaimed, same as a real not-yet-enrolled trainee
+
+                var key = (sd.TraineeId, sd.SportId);
+                var recordedSkill = skillByTraineeSport.TryGetValue(key, out var s) ? s : (SkillLevel?)null;
+
+                var fitting = recordedSkill.HasValue
+                    ? candidates.Where(g => g.SkillLevel <= recordedSkill.Value).ToList()
+                    : candidates;
+
+                var group = fitting.Count > 0
+                    ? fitting[random.Next(fitting.Count)]
+                    : candidates[random.Next(candidates.Count)];
+
+                skillByTraineeSport[key] = recordedSkill.HasValue && recordedSkill.Value > group.SkillLevel
+                    ? recordedSkill.Value
+                    : group.SkillLevel;
+
+                enrollments.Add(new Enrollment
                 {
                     EnrollmentDate = sd.StartDate.ToDateTime(TimeOnly.MinValue),
                     ExpiryDate = sd.EndDate.ToDateTime(TimeOnly.MinValue),
@@ -1131,8 +1267,18 @@ namespace SportAcademy.Infrastructure.Seeders
                     TraineeGroupId = group.Id,
                     SubscriptionDetailsId = sd.Id,
                     TenantId = tenantId
-                };
+                });
+            }
+
+            var sportTrainees = skillByTraineeSport.Select(kv => new SportTrainee
+            {
+                TraineeId = kv.Key.TraineeId,
+                SportId = kv.Key.SportId,
+                SkillLevel = kv.Value,
+                TenantId = tenantId
             }).ToList();
+
+            return (enrollments, sportTrainees);
         }
 
         private static string GenerateKuwaitiSSN(Random random, int minYear, int maxYear)

@@ -1,6 +1,5 @@
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Finance;
-using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Interfaces
 {
@@ -8,7 +7,7 @@ namespace SportAcademy.Application.Interfaces
 
     public record RecordPaymentInput(
         decimal Amount,
-        PaymentMethod Method,
+        int PaymentTypeId,
         int BranchId,
         string Currency,
         string? Reference,

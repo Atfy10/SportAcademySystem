@@ -26,7 +26,7 @@ public class GetPaymentReceiptQueryHandler : IRequestHandler<GetPaymentReceiptQu
             payment.PaymentNumber,
             payment.Amount,
             payment.RefundedAmount,
-            payment.Method,
+            payment.PaymentType.Name,
             payment.Status,
             payment.PaidDate,
             payment.Branch.Name,

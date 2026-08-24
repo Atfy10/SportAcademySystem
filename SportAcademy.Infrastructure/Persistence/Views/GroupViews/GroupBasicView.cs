@@ -14,7 +14,7 @@ public class GroupBasicView : IModelView
 
     public int DurationInMinutes { get; set; }
 
-    public Gender Gender { get; set; }
+    public TraineeGroupGender Gender { get; set; }
 
     public string BranchName { get; set; } = null!;
 

@@ -12,7 +12,7 @@ namespace SportAcademy.Domain.Entities
     public class Payment : ITenantScoped, IAuditableEntity
     {
         public required string PaymentNumber { get; set; }
-        public PaymentMethod Method { get; set; }
+        public int PaymentTypeId { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.Completed;
         public DateTime PaidDate { get; set; } = DateTime.Now;
         public int BranchId { get; set; }
@@ -36,6 +36,7 @@ namespace SportAcademy.Domain.Entities
 
         // Navigation Property
         public virtual Branch Branch { get; set; } = null!;
+        public virtual PaymentType PaymentType { get; set; } = null!;
         public ICollection<PaymentAllocation> Allocations { get; set; } = [];
     }
 }

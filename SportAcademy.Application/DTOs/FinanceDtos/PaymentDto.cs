@@ -6,7 +6,7 @@ public record PaymentDto(
     string PaymentNumber,
     decimal Amount,
     decimal RefundedAmount,
-    PaymentMethod Method,
+    string PaymentTypeName,
     PaymentStatus Status,
     DateTime PaidDate,
     string BranchName,

@@ -11,8 +11,8 @@ namespace SportAcademy.Application.Validators.PaymentValidators
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("Payment number is required.");
 
-            RuleFor(p => p.Method)
-                .IsInEnum().WithMessage("Invalid payment method.");
+            RuleFor(p => p.PaymentTypeId)
+                .GreaterThan(0).WithMessage("A payment type must be selected.");
 
             RuleFor(p => p.PaidDate)
                 .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))

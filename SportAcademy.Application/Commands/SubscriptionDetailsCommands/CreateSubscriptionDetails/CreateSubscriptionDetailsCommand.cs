@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
-using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +15,6 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         int SubscriptionTypeId,
         int SportId,
         int BranchId,
-        PaymentMethod PaymentMethod
+        int PaymentTypeId
         ) : IRequest<Result<int>>;
 }

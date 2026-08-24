@@ -47,7 +47,7 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                             PaymentNumber = p.PaymentNumber,
                             PaidDate = p.PaidDate,
                             BranchName = p.Branch.Name,
-                            PaymentMethod = p.Method,
+                            PaymentTypeName = p.PaymentType.Name,
                         })
                         .FirstOrDefault())
                 )
@@ -91,7 +91,8 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
             // constructor parameters explicitly via ForCtorParam.
             CreateMap<SubscriptionDetails, SubscriptionDetailsDropdownDto>()
                 .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
-                .ForCtorParam("Name", opt => opt.MapFrom(src => src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString()));
+                .ForCtorParam("Name", opt => opt.MapFrom(src => src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString()))
+                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.SportId));
         }
     }
 }

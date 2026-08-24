@@ -24,7 +24,7 @@ namespace SportAcademy.Application.Commands.PaymentCommands.UpdatePayment
             var payment = await _paymentRepository.GetByIdAsync(request.PaymentNumber, cancellationToken)
                 ?? throw new PaymentNotFoundException(request.PaymentNumber);
 
-            payment.Method = request.Method;
+            payment.PaymentTypeId = request.PaymentTypeId;
             payment.PaidDate = request.PaidDate;
 
             await _paymentRepository.UpdateAsyncWithoutSave(payment, cancellationToken);

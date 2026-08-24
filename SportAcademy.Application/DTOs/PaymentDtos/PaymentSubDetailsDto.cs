@@ -1,5 +1,4 @@
-﻿using SportAcademy.Domain.Enums;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +11,6 @@ namespace SportAcademy.Application.DTOs.PaymentDtos
         public string PaymentNumber { get; init; } = null!;
         public DateTime PaidDate { get; init; }
         public string BranchName { get; init; } = null!;
-        public PaymentMethod PaymentMethod { get; init; }
+        public string PaymentTypeName { get; init; } = null!;
     }
 }

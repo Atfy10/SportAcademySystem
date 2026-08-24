@@ -95,7 +95,7 @@ namespace SportAcademy.Application.Services
             var payment = new Payment
             {
                 PaymentNumber = paymentNumber,
-                Method = input.Method,
+                PaymentTypeId = input.PaymentTypeId,
                 Status = PaymentStatus.Completed,
                 PaidDate = DateTime.UtcNow,
                 BranchId = input.BranchId,

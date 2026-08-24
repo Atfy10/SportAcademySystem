@@ -1,6 +1,5 @@
 ﻿using SportAcademy.Application.DTOs.PaymentDtos;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Interfaces
 {
@@ -10,7 +9,7 @@ namespace SportAcademy.Application.Interfaces
         Task<Payment?> GetWithAllocationsAsync(string paymentNumber, CancellationToken ct = default);
 
         Task<(List<Payment> Items, int TotalCount)> GetPagedAsync(
-            Common.Pagination.PageRequest page, int? branchId, string? method, string? status,
+            Common.Pagination.PageRequest page, int? branchId, int? paymentTypeId, string? status,
             DateTime? from, DateTime? to, CancellationToken ct = default);
 
         Task<List<(string GroupKey, decimal Gross, decimal Refunded, int Count)>> GetRevenueByMonthAsync(
@@ -19,7 +18,7 @@ namespace SportAcademy.Application.Interfaces
         Task<List<(string GroupKey, decimal Gross, decimal Refunded, int Count)>> GetRevenueByBranchAsync(
             DateTime? from, DateTime? to, int? branchId, CancellationToken ct = default);
 
-        Task<List<(PaymentMethod Method, decimal Total, int Count)>> GetPaymentMethodBreakdownAsync(
+        Task<List<(string PaymentTypeName, decimal Total, int Count)>> GetPaymentMethodBreakdownAsync(
             DateTime? from, DateTime? to, int? branchId, CancellationToken ct = default);
     }
 }

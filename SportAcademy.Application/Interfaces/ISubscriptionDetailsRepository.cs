@@ -1,12 +1,16 @@
 ﻿using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Interfaces
 {
     public interface ISubscriptionDetailsRepository : IBaseRepository<SubscriptionDetails, int>
     {
         Task<PagedData<SubscriptionDetailsDto>> GetAllPaginatedAsync(PageRequest page, string? term = null, CancellationToken ct = default);
+        Task<PagedData<SubscriptionDetailsDto>> GetReportAsync(
+            DateTime? from, DateTime? to, int? branchId, int? sportId, SubscriptionStatus? status,
+            PageRequest? page, CancellationToken ct = default);
         Task<SubscriptionDetails?> GetSubscriptionDetailsWithSubTypeAsync(int subscriptionId, CancellationToken cancellationToken = default);
         Task<int> GetTotalSessionsAllowed(int subDetailsId, CancellationToken cancellationToken = default);
         Task<List<SubscriptionDetails>?> GetSubscriptionDetailsForTraineeAsync(int traineeId, CancellationToken cancellationToken = default);

@@ -109,7 +109,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
 
             await _financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
                 Amount: sportPrice.Price,
-                Method: request.PaymentMethod,
+                PaymentTypeId: request.PaymentTypeId,
                 BranchId: request.BranchId,
                 Currency: "KWD",
                 Reference: null,

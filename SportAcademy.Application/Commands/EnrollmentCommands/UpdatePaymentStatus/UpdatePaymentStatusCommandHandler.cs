@@ -4,6 +4,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.PaymentTypeExceptions;
 
 namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdatePaymentStatus;
 
@@ -11,6 +12,7 @@ public class UpdatePaymentStatusCommandHandler(
     IEnrollmentRepository enrollmentRepository,
     IInvoiceRepository invoiceRepository,
     IFinanceLedgerService financeLedgerService,
+    IPaymentTypeRepository paymentTypeRepository,
     IUserContextService userContext)
     : IRequestHandler<UpdatePaymentStatusCommand, Result<bool>>
 {
@@ -31,9 +33,17 @@ public class UpdatePaymentStatusCommandHandler(
             var outstanding = invoice.GrandTotal - invoice.AmountPaid;
             if (outstanding > 0)
             {
+                // The tenant's flagged-default payment type stands in for the old hardcoded
+                // PaymentMethod.Cash - falls back to the first active type if none is flagged
+                // default (shouldn't normally happen: PaymentType creation always keeps exactly
+                // one default), and only 409s if the tenant has configured none at all yet.
+                var defaultPaymentType = await paymentTypeRepository.GetDefaultAsync(cancellationToken)
+                    ?? await paymentTypeRepository.GetFirstActiveAsync(cancellationToken)
+                    ?? throw new NoDefaultPaymentTypeException();
+
                 await financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
                     Amount: outstanding,
-                    Method: PaymentMethod.Cash,
+                    PaymentTypeId: defaultPaymentType.Id,
                     BranchId: invoice.BranchId,
                     Currency: invoice.Currency,
                     Reference: null,

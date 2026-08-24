@@ -31,7 +31,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(x => new
                 {
                     x.Allocation.Payment.PaymentNumber,
-                    x.Allocation.Payment.Method,
+                    PaymentTypeName = x.Allocation.Payment.PaymentType.Name,
                     x.Allocation.Payment.PaidDate,
                     BranchName = x.Allocation.Payment.Branch.Name,
                     SubscriptionDetailsId = x.Line.SubscriptionDetailsId!.Value,
@@ -45,7 +45,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return rows.Select(r => new PaymentHistoryDto(
                 r.PaymentNumber,
-                r.Method,
+                r.PaymentTypeName,
                 r.PaidDate,
                 r.BranchName,
                 r.SubscriptionDetailsId,
@@ -60,23 +60,25 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<Payment?> GetWithAllocationsAsync(string paymentNumber, CancellationToken ct = default)
             => await _context.Payments
                 .Include(p => p.Branch)
+                .Include(p => p.PaymentType)
                 .Include(p => p.Allocations)
                     .ThenInclude(a => a.Invoice)
                 .SingleOrDefaultAsync(p => p.PaymentNumber == paymentNumber, ct);
 
         public async Task<(List<Payment> Items, int TotalCount)> GetPagedAsync(
-            PageRequest page, int? branchId, string? method, string? status,
+            PageRequest page, int? branchId, int? paymentTypeId, string? status,
             DateTime? from, DateTime? to, CancellationToken ct = default)
         {
             IQueryable<Payment> query = _context.Payments
                 .Include(p => p.Branch)
+                .Include(p => p.PaymentType)
                 .AsNoTracking();
 
             if (branchId.HasValue)
                 query = query.Where(p => p.BranchId == branchId.Value);
 
-            if (!string.IsNullOrWhiteSpace(method) && Enum.TryParse<PaymentMethod>(method, true, out var parsedMethod))
-                query = query.Where(p => p.Method == parsedMethod);
+            if (paymentTypeId.HasValue)
+                query = query.Where(p => p.PaymentTypeId == paymentTypeId.Value);
 
             if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<PaymentStatus>(status, true, out var parsedStatus))
                 query = query.Where(p => p.Status == parsedStatus);
@@ -138,18 +140,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return rows.Select(r => (r.BranchName, r.Gross, r.Refunded, r.Count)).ToList();
         }
 
-        public async Task<List<(PaymentMethod Method, decimal Total, int Count)>> GetPaymentMethodBreakdownAsync(
+        public async Task<List<(string PaymentTypeName, decimal Total, int Count)>> GetPaymentMethodBreakdownAsync(
             DateTime? from, DateTime? to, int? branchId, CancellationToken ct = default)
         {
             var query = FilteredPayments(from, to, branchId);
 
             var rows = await query
-                .GroupBy(p => p.Method)
-                .Select(g => new { Method = g.Key, Total = g.Sum(p => p.Amount), Count = g.Count() })
+                .GroupBy(p => p.PaymentType.Name)
+                .Select(g => new { PaymentTypeName = g.Key, Total = g.Sum(p => p.Amount), Count = g.Count() })
                 .OrderByDescending(g => g.Total)
                 .ToListAsync(ct);
 
-            return rows.Select(r => (r.Method, r.Total, r.Count)).ToList();
+            return rows.Select(r => (r.PaymentTypeName, r.Total, r.Count)).ToList();
         }
 
         private IQueryable<Payment> FilteredPayments(DateTime? from, DateTime? to, int? branchId)

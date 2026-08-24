@@ -1,3 +1,5 @@
+using SportAcademy.Domain.Enums;
+
 namespace SportAcademy.Application.DTOs.CoachDtos;
 
 public record CoachDropdownItemDto
@@ -7,4 +9,6 @@ public record CoachDropdownItemDto
     public string EmployeeLastName { get; init; } = default!;
     public int BranchId { get; init; }
     public string BranchName { get; init; } = default!;
+    public int SportId { get; init; }
+    public SkillLevel SkillLevel { get; init; }
 }

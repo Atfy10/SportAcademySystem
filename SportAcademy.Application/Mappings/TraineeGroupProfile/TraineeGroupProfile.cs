@@ -18,6 +18,8 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ConvertUsing(typeof(PagedDataConverter<,>));
 
         CreateMap<TraineeGroup, TraineeGroupDetailDto>()
+            .ForMember(dest => dest.SportId,
+                opt => opt.MapFrom(src => src.Coach.SportId))
             .ForMember(dest => dest.SportName,
                 opt => opt.MapFrom(src => src.Coach.Sport.Name))
             .ForMember(dest => dest.CoachName,
@@ -106,7 +108,9 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
             .ForCtorParam("SportId", opt => opt.MapFrom(src => src.Coach.SportId))
             .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
-            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName));
+            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+            .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel))
+            .ForCtorParam("Gender", opt => opt.MapFrom(src => src.Gender));
     }
 
     private static int GetAge(Trainee trainee)

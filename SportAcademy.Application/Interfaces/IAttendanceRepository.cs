@@ -1,5 +1,6 @@
 ﻿using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.AttendanceDtos;
+using SportAcademy.Application.DTOs.ReportDtos;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using System;
@@ -23,5 +24,8 @@ namespace SportAcademy.Application.Interfaces
         );
         Task<List<AttendanceRecordDto>> GetBySessionOccurrenceAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default);
         Task<Attendance?> GetBySessionAndTraineeAsync(int sessionOccurrenceId, int traineeId, CancellationToken cancellationToken = default);
+        Task<PagedData<AttendanceSessionGroupDto>> GetReportAsync(
+            DateTime? from, DateTime? to, int? branchId, int? traineeGroupId, int? traineeId,
+            int? coachId, AttendanceStatus? status, PageRequest? page, CancellationToken ct = default);
     }
 }

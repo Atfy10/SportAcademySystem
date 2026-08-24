@@ -1,10 +1,8 @@
-using SportAcademy.Domain.Enums;
-
 namespace SportAcademy.Application.DTOs.PaymentDtos
 {
     public record PaymentHistoryDto(
         string PaymentNumber,
-        PaymentMethod Method,
+        string PaymentTypeName,
         DateTime PaidDate,
         string BranchName,
         int SubscriptionDetailsId,

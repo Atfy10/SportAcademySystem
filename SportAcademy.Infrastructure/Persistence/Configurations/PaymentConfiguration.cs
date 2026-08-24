@@ -23,10 +23,6 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                    .IsRequired()
                    .HasMaxLength(50); 
 
-            builder.Property(p => p.Method)
-                   .IsRequired()
-                   .HasConversion<string>();
-
             builder.Property(p => p.Status)
                    .IsRequired()
                    .HasConversion<string>()
@@ -54,6 +50,11 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                    .WithMany(b => b.Payments)
                    .HasForeignKey(p => p.BranchId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            // 1:M PaymentType - configured on PaymentTypeConfiguration's side (HasMany), this
+            // just needs the FK to exist; DeleteBehavior.Restrict there blocks deleting a
+            // PaymentType still referenced by a Payment at the DB level as a backstop, though
+            // DeletePaymentTypeCommandHandler already checks and returns a friendly 409 first.
 
             // A payment settles whatever it's allocated to (see PaymentAllocation) rather than
             // one fixed SubscriptionDetails - that 1:1 shape couldn't express partial payments,

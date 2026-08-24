@@ -8,9 +8,10 @@ public record TraineeGroupDetailDto
     public int Id { get; init; }
     public string Name { get; init; } = null!;
     public SkillLevel SkillLevel { get; init; }
-    public Gender Gender { get; init; }
+    public TraineeGroupGender Gender { get; init; }
     public int MaximumCapacity { get; init; }
     public int DurationInMinutes { get; init; }
+    public int SportId { get; init; }
     public string SportName { get; init; } = null!;
     public string CoachName { get; init; } = null!;
     public string BranchName { get; init; } = null!;

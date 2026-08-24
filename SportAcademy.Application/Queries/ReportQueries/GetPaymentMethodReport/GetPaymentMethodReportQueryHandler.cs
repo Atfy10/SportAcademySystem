@@ -20,7 +20,7 @@ public class GetPaymentMethodReportQueryHandler : IRequestHandler<GetPaymentMeth
     {
         var rows = await _paymentRepository.GetPaymentMethodBreakdownAsync(request.From, request.To, request.BranchId, ct);
 
-        var dtos = rows.Select(r => new PaymentMethodReportRow(r.Method.ToString(), r.Total, r.Count)).ToList();
+        var dtos = rows.Select(r => new PaymentMethodReportRow(r.PaymentTypeName, r.Total, r.Count)).ToList();
 
         return Result<List<PaymentMethodReportRow>>.Success(dtos, _operation);
     }

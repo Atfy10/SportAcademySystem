@@ -73,7 +73,10 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
             CreateMap<Trainee, TraineeDropdownDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
-                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName));
+                .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
+                .ForMember(dest => dest.SportSkills, opt => opt.MapFrom(src => src.Sports
+                    .Select(s => new TraineeSportSkillItemDto(s.SportId, s.SkillLevel))));
 
         }
 

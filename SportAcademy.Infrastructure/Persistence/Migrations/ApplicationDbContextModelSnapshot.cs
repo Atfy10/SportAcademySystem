@@ -1146,16 +1146,15 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)");
 
-                    b.Property<string>("Method")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("PaidDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("PaymentTypeId")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("RecordedByUserId")
                         .HasColumnType("uniqueidentifier");
@@ -1186,9 +1185,57 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BranchId");
 
+                    b.HasIndex("PaymentTypeId");
+
                     b.HasIndex("TenantId");
 
                     b.ToTable("Payments", (string)null);
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.PaymentType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("PaymentTypes", (string)null);
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.Profile", b =>
@@ -3058,6 +3105,12 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SportAcademy.Domain.Entities.PaymentType", "PaymentType")
+                        .WithMany("Payments")
+                        .HasForeignKey("PaymentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
@@ -3065,6 +3118,19 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Branch");
+
+                    b.Navigation("PaymentType");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.PaymentType", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Tenant");
                 });
@@ -3657,6 +3723,11 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SportAcademy.Domain.Entities.Payment", b =>
                 {
                     b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.PaymentType", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.SessionOccurrence", b =>

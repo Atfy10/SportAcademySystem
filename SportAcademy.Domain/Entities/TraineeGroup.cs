@@ -11,7 +11,7 @@ namespace SportAcademy.Domain.Entities
         public SkillLevel SkillLevel { get; set; }
         public int MaximumCapacity { get; set; } = 15;
         public int DurationInMinutes { get; set; } = 55;
-        public Gender Gender { get; set; }
+        public TraineeGroupGender Gender { get; set; }
         public int BranchId { get; set; }
         public int CoachId { get; set; }
         public DateTime CreatedAt { get; set; }

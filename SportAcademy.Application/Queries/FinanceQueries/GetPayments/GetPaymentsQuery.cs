@@ -6,5 +6,5 @@ using SportAcademy.Application.DTOs.FinanceDtos;
 namespace SportAcademy.Application.Queries.FinanceQueries.GetPayments;
 
 public record GetPaymentsQuery(
-    PageRequest Page, int? BranchId, string? Method, string? Status, DateTime? From, DateTime? To
+    PageRequest Page, int? BranchId, int? PaymentTypeId, string? Status, DateTime? From, DateTime? To
 ) : IRequest<Result<PagedData<PaymentDto>>>;

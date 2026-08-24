@@ -21,7 +21,7 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
     {
         var payment = await _financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
             Amount: request.Amount,
-            Method: request.Method,
+            PaymentTypeId: request.PaymentTypeId,
             BranchId: request.BranchId,
             Currency: string.IsNullOrWhiteSpace(request.Currency) ? "KWD" : request.Currency,
             Reference: request.Reference,

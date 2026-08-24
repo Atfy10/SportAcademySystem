@@ -17,6 +17,8 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ISubscriptionDetailsRepository _subRepository;
         private readonly ITraineeGroupRepository _traineeGroupRepository;
+        private readonly ITraineeRepository _traineeRepository;
+        private readonly ISportTraineeRepository _sportTraineeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Add.ToString();
@@ -25,12 +27,16 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             IEnrollmentRepository enrollmentRepository,
             ISubscriptionDetailsRepository subscriptionDetailsRepository,
             ITraineeGroupRepository traineeGroupRepository,
+            ITraineeRepository traineeRepository,
+            ISportTraineeRepository sportTraineeRepository,
             IUnitOfWork unitOfWork,
             IPublisher publisher)
         {
             _enrollmentRepository = enrollmentRepository;
             _subRepository = subscriptionDetailsRepository;
             _traineeGroupRepository = traineeGroupRepository;
+            _traineeRepository = traineeRepository;
+            _sportTraineeRepository = sportTraineeRepository;
             _unitOfWork = unitOfWork;
             _publisher = publisher;
         }
@@ -74,6 +80,27 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             // this: the subscription and group pickers in the UI are independent dropdowns).
             if (sportId is not null && subDetails.SportId != sportId.Value)
                 throw new SubscriptionGroupSportMismatchException(request.SubscriptionDetailsId, request.TraineeGroupId);
+
+            // A trainee can only join a group whose gender policy accepts them (Mixed accepts
+            // anyone) and whose required skill level is at or below their own for this sport.
+            var trainee = await _traineeRepository.GetFullTrainee(request.TraineeId, cancellationToken);
+            var genderOk = trainee is null || group.Gender switch
+            {
+                TraineeGroupGender.Mixed => true,
+                TraineeGroupGender.Male => trainee.Gender == Gender.Male,
+                TraineeGroupGender.Female => trainee.Gender == Gender.Female,
+                _ => true
+            };
+            if (!genderOk)
+                throw new TraineeGenderMismatchException(request.TraineeId, request.TraineeGroupId);
+
+            if (sportId is not null)
+            {
+                var sportTrainee = await _sportTraineeRepository.GetByIdWithIncludesAsync(
+                    sportId.Value, request.TraineeId, cancellationToken);
+                if (sportTrainee is not null && group.SkillLevel > sportTrainee.SkillLevel)
+                    throw new TraineeSkillLevelTooLowException(request.TraineeId, request.TraineeGroupId);
+            }
 
             var daysPerMonth = SubscriptionDetailsService.CalculateAllowedSessions(subDetails);
             enrollment.SessionAllowed = daysPerMonth;

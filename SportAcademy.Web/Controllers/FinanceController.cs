@@ -38,12 +38,12 @@ namespace SportAcademy.Web.Controllers
         [HttpGet("payments")]
         public async Task<IActionResult> GetPayments(
             [FromQuery] int? page, [FromQuery] int? pageSize,
-            [FromQuery] int? branchId, [FromQuery] string? method, [FromQuery] string? status,
+            [FromQuery] int? branchId, [FromQuery] int? paymentTypeId, [FromQuery] string? status,
             [FromQuery] DateTime? from, [FromQuery] DateTime? to,
             CancellationToken ct)
         {
             var result = await _mediator.Send(
-                new GetPaymentsQuery(PageRequest.Create(page, pageSize), branchId, method, status, from, to), ct);
+                new GetPaymentsQuery(PageRequest.Create(page, pageSize), branchId, paymentTypeId, status, from, to), ct);
             return Ok(result);
         }
 

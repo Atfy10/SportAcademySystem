@@ -2,6 +2,7 @@
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSessionOccurrence;
 using SportAcademy.Application.DTOs.SessionOccurrenceDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
 {
@@ -26,9 +27,16 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
                 .ForCtorParam("StartTime", opt => opt.MapFrom(src => src.StartDateTime.ToString("HH:mm:ss")))
                 .ForCtorParam("DurationInMinutes", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.DurationInMinutes))
                 .ForCtorParam("TotalEnrolled", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Enrollments.Count(e => e.IsActive)))
-                .ForCtorParam("TotalPresent", opt => opt.MapFrom(src => 0))
-                .ForCtorParam("TotalLate", opt => opt.MapFrom(src => 0))
-                .ForCtorParam("TotalAbsent", opt => opt.MapFrom(src => 0))
+                // Previously hardcoded to 0 - these never reflected actual marks, so the
+                // session summary counters never moved no matter what a coach marked. Counting
+                // straight off this session's own Attendances (not the roster/Enrollments) is
+                // correct even for a partially-marked session: an unmarked trainee simply isn't
+                // counted anywhere yet, matching the "who's been marked so far" meaning of these
+                // counters (GetBySessionOccurrenceAsync's own roster still defaults an unmarked
+                // trainee to Absent for the marking UI, which is a separate, UI-only default).
+                .ForCtorParam("TotalPresent", opt => opt.MapFrom(src => src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present)))
+                .ForCtorParam("TotalLate", opt => opt.MapFrom(src => src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Late)))
+                .ForCtorParam("TotalAbsent", opt => opt.MapFrom(src => src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Absent)))
                 .ReverseMap();
 
             CreateMap<CreateSessionOccurrenceCommand, SessionOccurrence>();

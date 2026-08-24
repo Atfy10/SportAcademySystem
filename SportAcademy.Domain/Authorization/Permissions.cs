@@ -84,6 +84,14 @@ namespace SportAcademy.Domain.Authorization
             public const string View = "payment.view";
         }
 
+        public static class PaymentType
+        {
+            // Deliberately not granted to Employee/Accountant in AppDataSeeder - the list of
+            // accepted payment types is an Admin-only configuration concern, distinct from
+            // Payment.Record/View which any role that handles money still needs.
+            public const string Manage = "paymenttype.manage";
+        }
+
         public static class Finance
         {
             public const string View = "finance.view";
@@ -93,6 +101,8 @@ namespace SportAcademy.Domain.Authorization
         {
             public const string View = "report.view";
             public const string Export = "report.export";
+            public const string ViewAttendance = "report.view.attendance";
+            public const string ViewSubscriptions = "report.view.subscriptions";
         }
 
         public static class Tenant
@@ -123,8 +133,9 @@ namespace SportAcademy.Domain.Authorization
             Branch.Manage,
             Sport.Manage,
             Payment.Record, Payment.Correct, Payment.Refund, Payment.View,
+            PaymentType.Manage,
             Finance.View,
-            Report.View, Report.Export,
+            Report.View, Report.Export, Report.ViewAttendance, Report.ViewSubscriptions,
             Tenant.ManageSettings, Tenant.ManageUsers,
             Platform.ManageTenants,
         ];

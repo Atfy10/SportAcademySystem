@@ -14,13 +14,18 @@ public class UpdatePaymentStatusCommandHandlerTests
     private readonly Mock<IEnrollmentRepository> _enrollmentRepoMock = new();
     private readonly Mock<IInvoiceRepository> _invoiceRepoMock = new();
     private readonly Mock<IFinanceLedgerService> _financeLedgerServiceMock = new();
+    private readonly Mock<IPaymentTypeRepository> _paymentTypeRepoMock = new();
     private readonly Mock<IUserContextService> _userContextMock = new();
     private readonly UpdatePaymentStatusCommandHandler _handler;
 
     public UpdatePaymentStatusCommandHandlerTests()
     {
+        _paymentTypeRepoMock.Setup(r => r.GetDefaultAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PaymentType { Id = 1, Name = "Cash", IsDefault = true });
+
         _handler = new UpdatePaymentStatusCommandHandler(
-            _enrollmentRepoMock.Object, _invoiceRepoMock.Object, _financeLedgerServiceMock.Object, _userContextMock.Object);
+            _enrollmentRepoMock.Object, _invoiceRepoMock.Object, _financeLedgerServiceMock.Object,
+            _paymentTypeRepoMock.Object, _userContextMock.Object);
     }
 
     private static UpdatePaymentStatusCommand CreateValidCommand(int enrollmentId = 1, string status = "Paid") =>

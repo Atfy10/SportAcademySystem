@@ -38,7 +38,7 @@ namespace SportAcademy.Application.Mappings.Manual
                     PaymentNumber = latestPayment.PaymentNumber,
                     PaidDate = latestPayment.PaidDate,
                     BranchName = latestPayment.Branch.Name,
-                    PaymentMethod = latestPayment.Method,
+                    PaymentTypeName = latestPayment.PaymentType.Name,
                 },
                 Status = sd.Status,
             };

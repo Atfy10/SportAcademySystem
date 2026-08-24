@@ -76,7 +76,9 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                 .ForMember(dest => dest.EmployeeFirstName, opt => opt.MapFrom(src => src.Employee.FirstName))
                 .ForMember(dest => dest.EmployeeLastName, opt => opt.MapFrom(src => src.Employee.LastName))
                 .ForMember(dest => dest.BranchId, opt => opt.MapFrom(src => src.Employee.BranchId))
-                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Employee.Branch.Name));
+                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Employee.Branch.Name))
+                .ForMember(dest => dest.SportId, opt => opt.MapFrom(src => src.SportId))
+                .ForMember(dest => dest.SkillLevel, opt => opt.MapFrom(src => src.SkillLevel));
         }
     }
 }

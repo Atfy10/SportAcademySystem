@@ -39,6 +39,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         .ThenInclude(i => i.Allocations)
                             .ThenInclude(a => a.Payment)
                                 .ThenInclude(p => p.Branch)
+                .Include(sd => sd.InvoiceLines)
+                    .ThenInclude(l => l.Invoice)
+                        .ThenInclude(i => i.Allocations)
+                            .ThenInclude(a => a.Payment)
+                                .ThenInclude(p => p.PaymentType)
                 .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(term))
@@ -67,6 +72,35 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 TotalCount = totalCount,
                 Page = page.Page,
                 PageSize = page.PageSize,
+            };
+        }
+
+        public async Task<PagedData<SubscriptionDetailsDto>> GetReportAsync(
+            DateTime? from, DateTime? to, int? branchId, int? sportId, SubscriptionStatus? status,
+            PageRequest? page, CancellationToken ct = default)
+        {
+            var query = GetFullSubDetails();
+
+            if (from.HasValue) query = query.Where(sd => sd.EndDate >= DateOnly.FromDateTime(from.Value));
+            if (to.HasValue) query = query.Where(sd => sd.StartDate <= DateOnly.FromDateTime(to.Value));
+            if (branchId.HasValue) query = query.Where(sd => sd.BranchId == branchId.Value);
+            if (sportId.HasValue) query = query.Where(sd => sd.SportId == sportId.Value);
+            if (status.HasValue) query = query.Where(sd => sd.Status == status.Value);
+
+            var totalCount = await query.CountAsync(ct);
+            var take = page?.PageSize ?? 5000;
+            var entities = await query
+                .OrderByDescending(sd => sd.Id)
+                .Skip(page?.Skip ?? 0)
+                .Take(take)
+                .ToListAsync(ct);
+
+            return new PagedData<SubscriptionDetailsDto>
+            {
+                Items = entities.Select(SubscriptionDetailsMapper.ToDto).ToList(),
+                TotalCount = totalCount,
+                Page = page?.Page ?? 1,
+                PageSize = take,
             };
         }
 
@@ -116,7 +150,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .ThenInclude(l => l.Invoice)
                         .ThenInclude(i => i.Allocations)
                             .ThenInclude(a => a.Payment)
-                                .ThenInclude(p => p.Branch);
+                                .ThenInclude(p => p.Branch)
+                .Include(sd => sd.InvoiceLines)
+                    .ThenInclude(l => l.Invoice)
+                        .ThenInclude(i => i.Allocations)
+                            .ThenInclude(a => a.Payment)
+                                .ThenInclude(p => p.PaymentType);
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
             => await _context.SubscriptionDetails

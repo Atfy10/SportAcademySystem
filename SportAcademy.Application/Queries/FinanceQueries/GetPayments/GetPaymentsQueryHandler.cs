@@ -20,10 +20,10 @@ public class GetPaymentsQueryHandler : IRequestHandler<GetPaymentsQuery, Result<
     public async Task<Result<PagedData<PaymentDto>>> Handle(GetPaymentsQuery request, CancellationToken ct)
     {
         var (items, totalCount) = await _paymentRepository.GetPagedAsync(
-            request.Page, request.BranchId, request.Method, request.Status, request.From, request.To, ct);
+            request.Page, request.BranchId, request.PaymentTypeId, request.Status, request.From, request.To, ct);
 
         var dtos = items.Select(p => new PaymentDto(
-            p.PaymentNumber, p.Amount, p.RefundedAmount, p.Method, p.Status,
+            p.PaymentNumber, p.Amount, p.RefundedAmount, p.PaymentType.Name, p.Status,
             p.PaidDate, p.Branch.Name, p.Currency, p.Reference, p.Notes
         )).ToList();
 

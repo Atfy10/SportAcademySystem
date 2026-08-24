@@ -12,6 +12,9 @@ namespace SportAcademy.Application.Validators.FinanceValidators
             RuleFor(x => x.Amount)
                 .GreaterThan(0).WithMessage("Payment amount must be greater than zero.");
 
+            RuleFor(x => x.PaymentTypeId)
+                .GreaterThan(0).WithMessage("A payment type must be selected.");
+
             RuleFor(x => x.BranchId)
                 .ApplyIdRuleFor("Branch");
 
