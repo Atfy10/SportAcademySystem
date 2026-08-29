@@ -1,3 +1,4 @@
+using SportAcademy.Domain.Exceptions.BaseExceptions;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Dapper;
@@ -426,7 +427,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .ProjectTo<TraineeDetailsDto>(_mapper.ConfigurationProvider)
                 .SingleOrDefaultAsync(cancellationToken)
-                ?? throw new KeyNotFoundException($"Trainee with Id {id} not found.");
+                // IdNotFoundException, not KeyNotFoundException: the pipeline maps the former to a
+                // localized 404, while the latter fell through to the generic 500 handler.
+                ?? throw new IdNotFoundException(nameof(Trainee), id);
 
         public async Task<bool> IsLinkedToSport(int sportId, CancellationToken cancellationToken = default)
             => await _context.Trainees
