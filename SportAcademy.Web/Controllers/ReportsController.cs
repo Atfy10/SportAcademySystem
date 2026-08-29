@@ -9,6 +9,7 @@ using SportAcademy.Application.Queries.ReportQueries.GetPaymentMethodReport;
 using SportAcademy.Application.Queries.ReportQueries.GetRevenueReport;
 using SportAcademy.Application.Queries.ReportQueries.GetSubscriptionsReport;
 using System.Globalization;
+using System.Text;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -134,7 +135,9 @@ namespace SportAcademy.Web.Controllers
         private FileContentResult WriteCsv<T>(IEnumerable<T> rows, string fileName)
         {
             using var stream = new MemoryStream();
-            using (var writer = new StreamWriter(stream, leaveOpen: true))
+            // Excel only detects UTF-8 in a CSV when the file opens with a byte-order mark; without
+            // it, any Arabic name/branch/sport in the export renders as mojibake.
+            using (var writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true), leaveOpen: true))
             using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
             {
                 csv.WriteRecords(rows);

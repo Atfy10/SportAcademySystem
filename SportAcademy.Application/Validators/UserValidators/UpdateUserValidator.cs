@@ -17,7 +17,9 @@ namespace SportAcademy.Application.Validators.UserValidators
                 .NotEmpty().WithMessage("Please enter a username.")
                 .MinimumLength(3).WithMessage("Username must be at least 3 characters long.")
                 .MaximumLength(50).WithMessage("Username cannot exceed 50 characters.")
-                .Matches(@"^[a-zA-Z0-9_]+$")
+                // Unicode-aware: char.IsLetterOrDigit accepts Arabic script, unlike the previous
+                // ^[a-zA-Z0-9_]+$ regex which rejected every Arabic username outright.
+                .Must(u => u is not null && u.All(c => char.IsLetterOrDigit(c) || c == '_'))
                 .WithMessage("Username can only contain letters, numbers, and underscores.");
 
             When(x => !string.IsNullOrWhiteSpace(x.Email), () =>

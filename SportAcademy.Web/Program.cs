@@ -40,6 +40,11 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireNonAlphanumeric = true;
+
+    // Identity's default AllowedUserNameCharacters is an ASCII-only allow-list, which would
+    // reject Arabic usernames even though the validator now permits them. Empty disables the
+    // character check and defers entirely to CreateUserValidator/UpdateUserValidator.
+    options.User.AllowedUserNameCharacters = string.Empty;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
