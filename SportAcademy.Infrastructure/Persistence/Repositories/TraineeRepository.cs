@@ -217,7 +217,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     INNER JOIN CONTAINSTABLE(
                         Trainees,
                         (FirstName, LastName, Email),
-                        @term
+                        @term, LANGUAGE 1025
                     ) ft ON t.Id = ft.[KEY]
                     LEFT JOIN Branches b ON t.BranchId = b.Id
                     WHERE t.IsDeleted = 0 AND t.TenantId = @tenantId
@@ -281,13 +281,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     // into whitespace tokens and require each token to appear somewhere (first
                     // name, last name, their concatenation, or email) - order- and
                     // column-independent, so "Bandar Man", "Man Bandar", or just "Man" all match.
+                    // Both sides go through dbo.NormalizeArabicText so "أحمد"/"احمد" (a name
+                    // spelled two common ways) match regardless of which one the trainee record
+                    // or the search box holds - the SQL function is the single source of truth
+                    // for the folding rules, so column and term can never drift out of sync.
                     var tokens = term.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     var tokenConditions = new List<string>();
                     for (var i = 0; i < tokens.Length; i++)
                     {
                         var p = $"likeTerm{i}";
                         tokenConditions.Add(
-                            $"(t.FirstName LIKE @{p} OR t.LastName LIKE @{p} OR (t.FirstName + ' ' + t.LastName) LIKE @{p} OR t.Email LIKE @{p})");
+                            $"(dbo.NormalizeArabicText(t.FirstName) LIKE dbo.NormalizeArabicText(@{p}) OR " +
+                            $"dbo.NormalizeArabicText(t.LastName) LIKE dbo.NormalizeArabicText(@{p}) OR " +
+                            $"dbo.NormalizeArabicText(t.FirstName + ' ' + t.LastName) LIKE dbo.NormalizeArabicText(@{p}) OR " +
+                            $"t.Email LIKE @{p})");
                         filterParams[p] = $"%{tokens[i]}%";
                     }
                     if (tokenConditions.Count > 0)

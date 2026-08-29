@@ -88,7 +88,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     INNER JOIN CONTAINSTABLE(
                         Employees,
                         (FirstName, LastName),
-                        @term
+                        @term, LANGUAGE 1025
                     ) ft ON e.Id = ft.[KEY]
                     INNER JOIN Branches b ON e.BranchId = b.Id
                     INNER JOIN Sports s ON c.SportId = s.Id
@@ -112,7 +112,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     INNER JOIN CONTAINSTABLE(
                         Employees,
                         (FirstName, LastName),
-                        @term
+                        @term, LANGUAGE 1025
                     ) ft ON e.Id = ft.[KEY]
                     WHERE e.TenantId = @tenantId;
                 ";
