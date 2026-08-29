@@ -5,12 +5,18 @@ namespace SportAcademy.Application.Mappings
 {
     public static class PaymentTypeMappings
     {
-        public static PaymentTypeDto ToDto(this PaymentType entity)
+        /// <summary>
+        /// Requires entity.Translations to already be loaded (see PaymentTypeRepository, which
+        /// Includes it) - this is pure in-memory selection over whatever the caller fetched, not
+        /// a query, so there is nothing to translate to SQL here.
+        /// </summary>
+        public static PaymentTypeDto ToDto(this PaymentType entity, string lang)
         {
             return new PaymentTypeDto
             {
                 Id = entity.Id,
-                Name = entity.Name,
+                Name = entity.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault()
+                       ?? entity.Name,
                 IsActive = entity.IsActive,
                 IsDefault = entity.IsDefault,
             };

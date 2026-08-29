@@ -12,7 +12,9 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
+using SportAcademy.Infrastructure.Persistence.Projections;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -20,20 +22,23 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
         public BranchRepository(
             ApplicationDbContext context,
-            IMapper mapper
-        ) : base(context, mapper)
+            IMapper mapper,
+            ICurrentLanguageProvider languageProvider
+        ) : base(context, mapper, languageProvider)
         {
             _context = context;
             _mapper = mapper;
+            _languageProvider = languageProvider;
         }
 
         public async Task<List<BranchDropDownListDto>> GetAllBranchsBase(CancellationToken cancellationToken = default)
             => await _context.Branchs
                 .AsNoTracking()
-                .ProjectTo<BranchDropDownListDto>(_mapper.ConfigurationProvider)
+                .Select(BranchProjections.ToDropDownDto(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
 
         public async Task<int> GetBranchesCountAsync(CancellationToken cancellationToken = default)
@@ -61,7 +66,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var query = _context.Branchs
                 .OrderBy(b => b.Id)
                 .AsNoTracking()
-                .ProjectTo<BranchCardDto>(_mapper.ConfigurationProvider);
+                .Select(BranchProjections.ToCardDto(_languageProvider.Language));
 
             return await query.ToPagedDataAsync(page, cancellationToken);
         }
@@ -72,7 +77,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(b => b.Name.Contains(term) || b.City.Contains(term) || b.Country.Contains(term))
                 .OrderBy(b => b.Id)
                 .AsNoTracking()
-                .ProjectTo<BranchCardDto>(_mapper.ConfigurationProvider);
+                .Select(BranchProjections.ToCardDto(_languageProvider.Language));
 
             return await query.ToPagedDataAsync(page, cancellationToken);
         }

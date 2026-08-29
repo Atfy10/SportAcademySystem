@@ -17,8 +17,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<List<PaymentType>> GetAllAsync(CancellationToken cancellationToken = default)
             => await _context.PaymentTypes
                 .AsNoTracking()
+                .Include(pt => pt.Translations)
                 .OrderBy(pt => pt.Name)
                 .ToListAsync(cancellationToken);
+
+        // Read-only, translation-aware - deliberately separate from the plain GetByIdAsync
+        // the update handlers use: those mutate-and-Update() the fetched entity, and attaching a
+        // populated Translations navigation to that graph risks EF's change tracker treating the
+        // (already-keyed) translation rows as part of the write instead of leaving them alone.
+        public async Task<PaymentType?> GetByIdWithTranslationAsync(int id, CancellationToken cancellationToken = default)
+            => await _context.PaymentTypes
+                .AsNoTracking()
+                .Include(pt => pt.Translations)
+                .FirstOrDefaultAsync(pt => pt.Id == id, cancellationToken);
 
         public async Task<bool> HasPaymentsAsync(int paymentTypeId, CancellationToken cancellationToken = default)
             => await _context.Payments.AnyAsync(p => p.PaymentTypeId == paymentTypeId, cancellationToken);

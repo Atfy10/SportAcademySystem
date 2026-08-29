@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.PaymentTypeDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Enums;
 
@@ -11,10 +12,12 @@ namespace SportAcademy.Application.Commands.PaymentTypeCommands.UpdatePaymentTyp
     {
         private readonly string _operation = OperationType.Update.ToString();
         private readonly IPaymentTypeRepository _repository;
+        private readonly ICurrentLanguageProvider _language;
 
-        public UpdatePaymentTypeCommandHandler(IPaymentTypeRepository repository)
+        public UpdatePaymentTypeCommandHandler(IPaymentTypeRepository repository, ICurrentLanguageProvider language)
         {
             _repository = repository;
+            _language = language;
         }
 
         public async Task<Result<PaymentTypeDto>> Handle(UpdatePaymentTypeCommand request, CancellationToken cancellationToken)
@@ -42,7 +45,7 @@ namespace SportAcademy.Application.Commands.PaymentTypeCommands.UpdatePaymentTyp
 
             await _repository.UpdateAsync(entity, cancellationToken);
 
-            return Result<PaymentTypeDto>.Success(entity.ToDto(), _operation);
+            return Result<PaymentTypeDto>.Success(entity.ToDto(_language.Language), _operation);
         }
     }
 }

@@ -6,7 +6,9 @@ using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
+using SportAcademy.Infrastructure.Persistence.Projections;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -14,12 +16,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
-        public TraineeGroupRepository(ApplicationDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public TraineeGroupRepository(ApplicationDbContext context, IMapper mapper, ICurrentLanguageProvider languageProvider)
+            : base(context, mapper, languageProvider)
         {
             _mapper = mapper;
             _context = context;
+            _languageProvider = languageProvider;
         }
 
         public async Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default)
@@ -32,7 +36,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
                 .AsNoTracking()
-                .ProjectTo<TraineeGroupCardDto>(_mapper.ConfigurationProvider)
+                .Select(TraineeGroupProjections.ToCardDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
 
         public async Task<TraineeGroupDetailDto?> GetDetailsByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -55,7 +59,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.TraineeGroups
                 .Where(tg => sportId == null || tg.Coach.SportId == sportId.Value)
                 .AsNoTracking()
-                .ProjectTo<TraineeGroupDropdownDto>(_mapper.ConfigurationProvider)
+                .Select(TraineeGroupProjections.ToDropdownDto(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
 
         public async Task<TraineeGroup?> GetByIdWithSchedulesAsync(int id, CancellationToken cancellationToken = default)
