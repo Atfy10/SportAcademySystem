@@ -1,5 +1,6 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using SportAcademy.Domain.Contract;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Interfaces;
@@ -15,11 +16,21 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     {
         protected readonly ApplicationDbContext _context;
         protected readonly IMapper _mapper;
+        /// <summary>
+        /// Optional so every existing derived repository keeps compiling unchanged; only the
+        /// repositories for translatable entities (Sport, Branch, PaymentType, TraineeGroup,
+        /// NationalityCategory) inject and use it, in their own hand-written translated
+        /// projections - see SportRepository / SportProjections for the pattern. Not routed
+        /// through AutoMapper.ProjectTo: Profiles are configured once at startup, so there is no
+        /// way to splice a per-request language into a cached ProjectTo expression tree there.
+        /// </summary>
+        protected readonly ICurrentLanguageProvider? LanguageProvider;
 
-        public BaseRepository(ApplicationDbContext context, IMapper mapper = default!)
+        public BaseRepository(ApplicationDbContext context, IMapper mapper = default!, ICurrentLanguageProvider? languageProvider = null)
         {
             _context = context;
             _mapper = mapper;
+            LanguageProvider = languageProvider;
         }
 
         public async Task<bool> IsExistAsync(TKey id, CancellationToken cancellationToken = default)

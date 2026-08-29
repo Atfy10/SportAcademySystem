@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
@@ -14,19 +13,16 @@ namespace SportAcademy.Application.Queries.SportQueries.GetAllSportsPaginated
         private readonly ISportRepository _sportRepository;
         private readonly string _operationType = OperationType.GetAll.ToString();
 
-        public GetAllSportsPaginatedQueryHandler(
-            ISportRepository sportRepository)
+        public GetAllSportsPaginatedQueryHandler(ISportRepository sportRepository)
         {
             _sportRepository = sportRepository;
         }
 
         public async Task<Result<PagedData<SportDto>>> Handle(GetAllSportsPaginatedQuery request, CancellationToken cancellationToken)
         {
-            var sports = await _sportRepository.GetAllPaginatedAsync<SportDto>(
-                request.Page, cancellationToken);
+            var sports = await _sportRepository.GetAllPaginatedTranslatedAsync(request.Page, cancellationToken);
 
             return Result<PagedData<SportDto>>.Success(sports, _operationType);
         }
-
     }
 }
