@@ -155,7 +155,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<TraineeCardDto>> SearchAsync(
             string term,
             PageRequest page,
-            string? sport = null,
+            int? sportId = null,
             string? status = null,
             string? sortBy = null,
             string? sortDir = null,
@@ -172,7 +172,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var ftsAvailable = await IsFtsAvailableAsync(connection, "Trainees");
 
             var hasTerm = !string.IsNullOrWhiteSpace(term);
-            var hasSport = !string.IsNullOrWhiteSpace(sport);
+            var hasSport = sportId.HasValue;
             var hasStatus = !string.IsNullOrWhiteSpace(status);
 
             var filterConditions = new List<string>();
@@ -185,17 +185,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             if (hasSport)
             {
-                // Not a plain "s.Name = @sport" join condition - neither fromJoinWhere below
-                // declares a Sports alias "s" (that letter is only used inside the SportSkills
-                // subquery), so that used to fail at execution with "multi-part identifier
-                // 's.Name' could not be bound." An EXISTS subquery needs no outer join/alias
-                // and also correctly matches "has this sport among possibly several", not just
-                // a single joined row.
+                // Matched by id, not by name: a name comparison broke the moment a sport's
+                // displayed name could differ from what is stored (Arabic translations) - the id
+                // is the only value the UI and the row agree on. No outer join/alias is needed;
+                // EXISTS also correctly matches "has this sport among possibly several".
                 filterConditions.Add(@"EXISTS (
                     SELECT 1 FROM SportTrainees st_filter
-                    INNER JOIN Sports s_filter ON s_filter.Id = st_filter.SportId
-                    WHERE st_filter.TraineeId = t.Id AND s_filter.Name = @sport)");
-                filterParams["sport"] = sport!;
+                    WHERE st_filter.TraineeId = t.Id AND st_filter.SportId = @sportId)");
+                filterParams["sportId"] = sportId!.Value;
             }
 
             if (hasStatus)

@@ -50,7 +50,7 @@ namespace SportAcademy.Web.Controllers
         {
             var trainees = await _mediator.Send(new GetAllTraineesQuery(
                         PageRequest.Create(page, pageSize),
-                        filter?.Sport,
+                        filter?.SportId,
                         filter?.Status,
                         filter?.SortBy,
                         filter?.SortDir), ct);
@@ -224,7 +224,7 @@ namespace SportAcademy.Web.Controllers
         {
             var pageRequest = PageRequest.Create(page, pageSize);
             var result = await _mediator.Send(new SearchTraineeQuery(
-                    searchTerm, pageRequest, filter?.Sport, filter?.Status, filter?.SortBy, filter?.SortDir),
+                    searchTerm, pageRequest, filter?.SportId, filter?.Status, filter?.SortBy, filter?.SortDir),
                 cancellationToken);
 
             return Ok(result);

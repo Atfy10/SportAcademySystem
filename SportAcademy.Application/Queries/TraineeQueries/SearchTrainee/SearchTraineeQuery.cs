@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Common.Search;
@@ -9,7 +9,7 @@ namespace SportAcademy.Application.Queries.TraineeQueries.SearchTrainee;
 public record SearchTraineeQuery(
     string Term,
     PageRequest Page,
-    string? Sport = null,
+    int? SportId = null,
     string? Status = null,
     string? SortBy = null,
     string? SortDir = null

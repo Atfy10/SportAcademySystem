@@ -30,11 +30,11 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetAll
 
         public async Task<Result<PagedData<TraineeCardDto>>> Handle(GetAllTraineesQuery request, CancellationToken cancellationToken)
         {
-            var hasFilters = !string.IsNullOrEmpty(request.Sport) || !string.IsNullOrEmpty(request.Status);
+            var hasFilters = request.SportId.HasValue || !string.IsNullOrEmpty(request.Status);
             var hasSort = !string.IsNullOrEmpty(request.SortBy);
 
             var traineesDto = (hasFilters || hasSort)
-                ? await _traineeRepository.SearchAsync("", request.Page, request.Sport, request.Status, request.SortBy, request.SortDir, cancellationToken)
+                ? await _traineeRepository.SearchAsync("", request.Page, request.SportId, request.Status, request.SortBy, request.SortDir, cancellationToken)
                 : await _traineeRepository.GetAllPaginatedAsync<TraineeCardDto>(request.Page, cancellationToken);
 
             foreach (var trainee in traineesDto.Items)
