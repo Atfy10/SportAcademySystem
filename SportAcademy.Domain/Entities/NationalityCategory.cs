@@ -1,4 +1,6 @@
-﻿namespace SportAcademy.Domain.Entities
+﻿using SportAcademy.Domain.Entities.Translations;
+
+namespace SportAcademy.Domain.Entities
 {
     public class NationalityCategory
     {
@@ -8,5 +10,6 @@
 
         // Navigation Properties
         public virtual ICollection<Trainee> Trainees { get; set; } = [];
+        public virtual ICollection<NationalityCategoryTranslation> Translations { get; set; } = [];
     }
 }

@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 
@@ -27,5 +28,6 @@ namespace SportAcademy.Domain.Entities
         public virtual Coach Coach { get; set; } = null!;
         public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
         public virtual ICollection<GroupSchedule> GroupSchedules { get; set; } = [];
+        public virtual ICollection<TraineeGroupTranslation> Translations { get; set; } = [];
     }
 }

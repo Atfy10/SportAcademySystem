@@ -33,16 +33,20 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<AppUser> AppUsers { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<Branch> Branchs { get; set; }
+        public DbSet<Domain.Entities.Translations.BranchTranslation> BranchTranslations { get; set; } = null!;
         public DbSet<Coach> Coachs { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<Profile> Profiles { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PaymentType> PaymentTypes { get; set; }
+        public DbSet<Domain.Entities.Translations.PaymentTypeTranslation> PaymentTypeTranslations { get; set; } = null!;
         public DbSet<TraineeGroup> TraineeGroups { get; set; }
+        public DbSet<Domain.Entities.Translations.TraineeGroupTranslation> TraineeGroupTranslations { get; set; } = null!;
         public DbSet<GroupSchedule> GroupSchedules { get; set; }
         public DbSet<SessionOccurrence> SessionOccurrences { get; set; }
         public DbSet<Sport> Sports { get; set; }
+        public DbSet<Domain.Entities.Translations.SportTranslation> SportTranslations { get; set; } = null!;
         public DbSet<SportBranch> SportBranchs { get; set; }
         public DbSet<ChatConversation> ChatConversations { get; set; }
         public DbSet<OpenAiMessage> ChatMessages { get; set; }
@@ -58,6 +62,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<TraineeCodesHistory> TraineeCodesHistory { get; set; }
         public DbSet<Family> Families { get; set; }
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
+        public DbSet<Domain.Entities.Translations.NationalityCategoryTranslation> NationalityCategoryTranslations { get; set; } = null!;
         public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
         public DbSet<TraineeMedicalCondition> TraineeMedicalConditions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }

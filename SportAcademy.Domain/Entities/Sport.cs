@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 
@@ -20,5 +21,6 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<SportSubscriptionType> SubscriptionTypes { get; set; } = [];
         public virtual ICollection<SportBranch> Branches { get; set; } = [];
         public virtual ICollection<SportTrainee> Trainees { get; set; } = [];
+        public virtual ICollection<SportTranslation> Translations { get; set; } = [];
 	}
 }

@@ -1,4 +1,5 @@
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Entities.Tenants;
 
 namespace SportAcademy.Domain.Entities
@@ -23,5 +24,6 @@ namespace SportAcademy.Domain.Entities
 
         // Navigation Property
         public virtual ICollection<Payment> Payments { get; set; } = [];
+        public virtual ICollection<PaymentTypeTranslation> Translations { get; set; } = [];
     }
 }

@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Entities.Tenants;
 using System;
 using System.Collections.Generic;
@@ -31,5 +32,6 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<SportPrice> SportPrices { get; set; } = [];
         public virtual ICollection<Payment> Payments { get; set; } = [];
         public virtual ICollection<Finance.Invoice> Invoices { get; set; } = [];
+        public virtual ICollection<BranchTranslation> Translations { get; set; } = [];
     }
 }
