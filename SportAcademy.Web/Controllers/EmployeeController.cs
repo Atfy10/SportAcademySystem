@@ -5,6 +5,7 @@ using SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.ToggleEmployeeStatus;
 using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
+using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoaches;
 using SportAcademy.Application.Queries.EmployeeQueries.GetActiveCoachesCount;
@@ -28,10 +29,12 @@ namespace SportAcademy.Web.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ILocalizationService _localizer;
 
-        public EmployeeController(IMediator mediator)
+        public EmployeeController(IMediator mediator, ILocalizationService localizer)
         {
             _mediator = mediator;
+            _localizer = localizer;
         }
 
         [HttpGet]
@@ -169,9 +172,8 @@ namespace SportAcademy.Web.Controllers
         [HttpGet("positions")]
         public IActionResult GetPositions()
         {
-            var options = Enum.GetValues<Position>()
-                .Select(p => new { value = p, label = p.ToString() })
-                .ToList();
+            // value stays the English token the DB and raw SQL match on; only label is localized.
+            var options = _localizer.Options<Position>();
             return Ok(Result<object>.Success(options, "GetAllPositions"));
         }
 

@@ -6,6 +6,7 @@ using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
 using SportAcademy.Application.Commands.CoachCommands.RateCoach;
 using SportAcademy.Application.Commands.CoachCommands.UpdateCoach;
+using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
@@ -24,10 +25,12 @@ namespace SportAcademy.Web.Controllers
     public class CoachController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ILocalizationService _localizer;
 
-        public CoachController(IMediator mediator)
+        public CoachController(IMediator mediator, ILocalizationService localizer)
         {
             _mediator = mediator;
+            _localizer = localizer;
         }
 
         [HttpGet("{id}")]
@@ -105,10 +108,8 @@ namespace SportAcademy.Web.Controllers
         [HttpGet("skill-levels")]
         public IActionResult GetSkillLevels()
         {
-            var options = Enum.GetValues<SkillLevel>()
-                .Where(s => s != SkillLevel.NotSpecified)
-                .Select(s => new { value = s, label = s.ToString() })
-                .ToList();
+            // value stays the English token the DB and raw SQL match on; only label is localized.
+            var options = _localizer.Options<SkillLevel>(s => s != SkillLevel.NotSpecified);
             return Ok(Result<object>.Success(options, "GetSkillLevels"));
         }
 

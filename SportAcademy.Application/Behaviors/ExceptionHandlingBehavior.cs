@@ -2,6 +2,7 @@ using AutoMapper;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
@@ -10,6 +11,7 @@ using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
+using System.Diagnostics;
 using System.Reflection;
 using DomainValidationException = SportAcademy.Domain.Exceptions.GeneralExceptions.ValidationException;
 
@@ -20,12 +22,22 @@ namespace SportAcademy.Application.Behaviors
         where TResponse : ResultBase
     {
         private readonly ILogger<ExceptionHandlingBehavior<TRequest, TResponse>> _logger;
+        private readonly ILocalizationService _localizer;
 
         public ExceptionHandlingBehavior(
-            ILogger<ExceptionHandlingBehavior<TRequest, TResponse>> logger)
+            ILogger<ExceptionHandlingBehavior<TRequest, TResponse>> logger,
+            ILocalizationService localizer)
         {
             _logger = logger;
+            _localizer = localizer;
         }
+
+        /// <summary>
+        /// Short correlation reference surfaced to the user alongside a generic message, so a
+        /// support report can be tied back to the structured log entry for the same request.
+        /// </summary>
+        private static string CurrentTraceId() =>
+            Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N");
 
         public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
@@ -52,8 +64,9 @@ namespace SportAcademy.Application.Behaviors
 
                 return CreateFailureWithErrors<TResponse>(
                     requestType,
-                    "Some information you entered is invalid. Please review and try again.",
-                    errors);
+                    _localizer["errors.validation.failed"],
+                    errors,
+                    "errors.validation.failed");
             }
             catch (DomainValidationException ex)
             {
@@ -81,12 +94,23 @@ namespace SportAcademy.Application.Behaviors
             {
                 var requestType = request.GetType().Name;
 
-                _logger.LogWarning(ex,
-                    "Resource not found for {RequestType}. Message: {Message}",
+                // Structured properties, not a pre-baked sentence, so logs stay filterable.
+                _logger.LogInformation(ex,
+                    "Resource not found for {RequestType}. Entity {EntityType} Id {EntityId}",
                     requestType,
-                    ex.Message);
+                    ex.Entity,
+                    ex.Id);
 
-                return CreateFailure<TResponse>(requestType, ex.Message, 404);
+                // The user is told what is missing, not which table row: ids in error text are
+                // noise to them and mild information disclosure in a multi-tenant product.
+                var entityKey = "entity." + ex.Entity;
+                var entityName = _localizer.Exists(entityKey) ? _localizer[entityKey] : ex.Entity;
+
+                return CreateFailure<TResponse>(
+                    requestType,
+                    _localizer["errors.notFound", entityName],
+                    404,
+                    "errors.notFound");
             }
             catch (ConflictException ex)
             {
@@ -297,6 +321,24 @@ namespace SportAcademy.Application.Behaviors
 
                 return CreateFailure<TResponse>(requestType, ex.Message, 400);
             }
+            // Migration target: exceptions adopt LocalizableException a few at a time. Anything
+            // not yet migrated falls through to its specific catch above and keeps emitting the
+            // literal English it always did, so this never needs to be a big-bang rewrite.
+            catch (LocalizableException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Domain rule rejected {RequestType}. Code {ErrorCode}",
+                    requestType,
+                    ex.MessageKey);
+
+                var message = _localizer.Exists(ex.MessageKey)
+                    ? _localizer[ex.MessageKey, ex.Args]
+                    : ex.Message;
+
+                return CreateFailure<TResponse>(requestType, message, 400, ex.MessageKey);
+            }
             catch (Exception ex)
             {
                 var requestType = request.GetType().Name;
@@ -305,22 +347,34 @@ namespace SportAcademy.Application.Behaviors
                     "Unhandled exception occurred for {RequestType}",
                     requestType);
 
+                // The user gets a generic sentence plus a reference; the exception itself stays in
+                // the log, where LogError above has already recorded it with full context.
                 return CreateFailure<TResponse>(
                     requestType,
-                    "An unexpected error occurred. Please try again later.",
-                    500);
+                    _localizer["errors.generic.withReference", CurrentTraceId()],
+                    500,
+                    "errors.generic");
             }
         }
 
+        /// <summary>Stamps the machine-readable code and the correlation reference onto a failure.</summary>
+        private static TResult Stamp<TResult>(TResult result, string? code)
+            where TResult : ResultBase
+        {
+            result.Code = code;
+            result.TraceId = CurrentTraceId();
+            return result;
+        }
+
         private static TResult CreateFailure<TResult>(
-            string requestName, string message, int statusCode)
+            string requestName, string message, int statusCode, string? code = null)
             where TResult : ResultBase
         {
             var responseType = typeof(TResponse);
 
             if (responseType == typeof(Result))
             {
-                return (TResult)(object)Result.Failure(requestName, message, statusCode);
+                return Stamp((TResult)(object)Result.Failure(requestName, message, statusCode), code);
             }
 
             if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
@@ -337,7 +391,7 @@ namespace SportAcademy.Application.Behaviors
                 if (failureMethod != null)
                 {
                     var failureInstance = failureMethod?.Invoke(null, new object?[] { requestName, message, statusCode, null });
-                    return (TResult)failureInstance!;
+                    return Stamp((TResult)failureInstance!, code);
                 }
             }
 
@@ -345,14 +399,14 @@ namespace SportAcademy.Application.Behaviors
         }
 
         private static TResult CreateFailureWithErrors<TResult>(
-            string requestName, string message, Dictionary<string, string[]> errors)
+            string requestName, string message, Dictionary<string, string[]> errors, string? code = null)
             where TResult : ResultBase
         {
             var responseType = typeof(TResult);
 
             if (responseType == typeof(Result))
             {
-                return (TResult)(object)Result.Failure(requestName, message, errors);
+                return Stamp((TResult)(object)Result.Failure(requestName, message, errors), code);
             }
 
             if (responseType.IsGenericType && responseType.GetGenericTypeDefinition() == typeof(Result<>))
@@ -368,7 +422,7 @@ namespace SportAcademy.Application.Behaviors
                 if (failureMethod != null)
                 {
                     var failureInstance = failureMethod?.Invoke(null, new object[] { requestName, message, errors });
-                    return (TResult)failureInstance!;
+                    return Stamp((TResult)failureInstance!, code);
                 }
             }
 

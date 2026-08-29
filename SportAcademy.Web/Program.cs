@@ -6,10 +6,12 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using SportAcademy.Application;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Application.Common.Localization;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure;
 using SportAcademy.Infrastructure.Implementations;
+using SportAcademy.Infrastructure.Localization;
 using SportAcademy.Infrastructure.Implementations.OpenAi;
 using SportAcademy.Infrastructure.Implementations.OpenRouter;
 using SportAcademy.Infrastructure.Options;
@@ -46,6 +48,7 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
     // character check and defers entirely to CreateUserValidator/UpdateUserValidator.
     options.User.AllowedUserNameCharacters = string.Empty;
 })
+.AddErrorDescriber<LocalizedIdentityErrorDescriber>()
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
@@ -54,6 +57,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 
 builder.Services.AddScoped<ITenantIdProvider, TenantIdProvider>();
+builder.Services.AddScoped<ICurrentLanguageProvider, CurrentLanguageProvider>();
+builder.Services.AddScoped<ITenantSettingsLanguageReader, TenantSettingsLanguageReader>();
+builder.Services.AddScoped<ILocalizationService, JsonLocalizationService>();
 
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("Email"));
@@ -339,6 +345,10 @@ app.UseCors("AllowFrontend");
 app.UseMiddleware<TenantResolutionMiddleware>();
 
 app.UseAuthentication();
+
+// After authentication on purpose: the tenant's configured language is only knowable once the
+// user is resolved. TenantResolutionMiddleware runs earlier and could only see the header.
+app.UseMiddleware<CultureResolutionMiddleware>();
 
 // Must run between authentication and authorization, not after: PermissionAuthorizationHandler
 // (invoked by UseAuthorization() below) resolves permissions through a tenant-scoped DB query

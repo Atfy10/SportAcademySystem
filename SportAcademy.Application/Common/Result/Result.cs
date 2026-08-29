@@ -8,6 +8,21 @@ namespace SportAcademy.Application.Common.Result
         public int StatusCode { get; set; }
         public Dictionary<string, string[]>? Errors { get; protected set; }
 
+        /// <summary>
+        /// Stable, machine-readable error identifier, e.g. <c>errors.trainee.notFound</c>.
+        /// </summary>
+        /// <remarks>
+        /// Doubles as the localization key and as the value the frontend branches on, so it can
+        /// stop matching English prose. Null on success.
+        /// </remarks>
+        public string? Code { get; set; }
+
+        /// <summary>
+        /// Correlation id echoed from the request, so a user-facing "reference" ties a support
+        /// report to the full diagnostic context in the logs.
+        /// </summary>
+        public string? TraceId { get; set; }
+
         protected ResultBase(bool isSuccess, string operationType, string message)
         {
             IsSuccess = isSuccess;
