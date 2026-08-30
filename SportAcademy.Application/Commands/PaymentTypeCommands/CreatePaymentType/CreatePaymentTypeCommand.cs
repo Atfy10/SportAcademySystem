@@ -7,6 +7,7 @@ namespace SportAcademy.Application.Commands.PaymentTypeCommands.CreatePaymentTyp
     public record CreatePaymentTypeCommand(
         string Name,
         bool IsActive,
-        bool IsDefault
+        bool IsDefault,
+        string? NameAr = null
     ) : IRequest<Result<PaymentTypeDto>>;
 }

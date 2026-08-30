@@ -4,6 +4,7 @@ using SportAcademy.Application.DTOs.PaymentTypeDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Application.Mappings;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.PaymentTypeCommands.UpdatePaymentType
@@ -22,7 +23,7 @@ namespace SportAcademy.Application.Commands.PaymentTypeCommands.UpdatePaymentTyp
 
         public async Task<Result<PaymentTypeDto>> Handle(UpdatePaymentTypeCommand request, CancellationToken cancellationToken)
         {
-            var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+            var entity = await _repository.GetByIdWithTranslationsTrackedAsync(request.Id, cancellationToken);
 
             if (entity is null)
                 return Result<PaymentTypeDto>.Failure($"Payment type with ID {request.Id} not found.", _operation, 404);
@@ -41,6 +42,27 @@ namespace SportAcademy.Application.Commands.PaymentTypeCommands.UpdatePaymentTyp
             {
                 await _repository.ClearDefaultFlagAsync(entity.Id, cancellationToken);
                 entity.IsDefault = true;
+            }
+
+            // Patch-style, matching every other field on this command: null means "not part of
+            // this request", empty string means "clear it", non-empty means "set it".
+            if (request.NameAr is not null)
+            {
+                var trimmedName = request.NameAr.Trim();
+                var existingTranslation = entity.Translations.FirstOrDefault(t => t.LangCode == "ar");
+
+                if (trimmedName.Length == 0)
+                {
+                    if (existingTranslation is not null) entity.Translations.Remove(existingTranslation);
+                }
+                else if (existingTranslation is not null)
+                {
+                    existingTranslation.Name = trimmedName;
+                }
+                else
+                {
+                    entity.Translations.Add(new PaymentTypeTranslation { LangCode = "ar", Name = trimmedName });
+                }
             }
 
             await _repository.UpdateAsync(entity, cancellationToken);

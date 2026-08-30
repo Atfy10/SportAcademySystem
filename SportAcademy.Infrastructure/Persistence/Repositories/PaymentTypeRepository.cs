@@ -31,6 +31,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(pt => pt.Translations)
                 .FirstOrDefaultAsync(pt => pt.Id == id, cancellationToken);
 
+        public async Task<PaymentType?> GetByIdWithTranslationsTrackedAsync(int id, CancellationToken cancellationToken = default)
+            => await _context.PaymentTypes
+                .Include(pt => pt.Translations)
+                .FirstOrDefaultAsync(pt => pt.Id == id, cancellationToken);
+
         public async Task<bool> HasPaymentsAsync(int paymentTypeId, CancellationToken cancellationToken = default)
             => await _context.Payments.AnyAsync(p => p.PaymentTypeId == paymentTypeId, cancellationToken);
 

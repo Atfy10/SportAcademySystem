@@ -5,6 +5,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.PaymentTypeCommands.CreatePaymentType
@@ -38,6 +39,16 @@ namespace SportAcademy.Application.Commands.PaymentTypeCommands.CreatePaymentTyp
                 IsActive = request.IsActive,
                 IsDefault = isDefault,
             };
+
+            // New entity - attaching the translation to the nav collection here (before
+            // AddAsync) makes EF cascade-insert it in the same call, no separate round trip.
+            if (!string.IsNullOrWhiteSpace(request.NameAr))
+            {
+                entity.Translations = new List<PaymentTypeTranslation>
+                {
+                    new() { LangCode = "ar", Name = request.NameAr.Trim() }
+                };
+            }
 
             await _repository.AddAsync(entity, cancellationToken);
 

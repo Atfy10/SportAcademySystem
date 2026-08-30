@@ -49,6 +49,10 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
                     .Must(t => TimeOnly.TryParse(t, out _))
                     .WithMessage("Invalid start time - use HH:mm format.");
             });
+
+            RuleFor(x => x.NameAr)
+                .MaximumLength(150).WithMessage("Arabic group name can't exceed 150 characters.")
+                .When(x => !string.IsNullOrEmpty(x.NameAr));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,7 +16,10 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 		string PhoneNumber,
 		string? Email,
 		string? CoX,
-		string? CoY
+		string? CoY,
+			string? NameAr = null,
+			string? CityAr = null,
+			string? CountryAr = null
 		) : IRequest<Result<int>>, IRequiresFeature
 	{
 		public string FeatureKey => "branch-management";

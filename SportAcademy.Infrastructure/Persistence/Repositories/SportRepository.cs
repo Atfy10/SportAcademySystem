@@ -93,5 +93,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(SportProjections.ToDto(_languageProvider.Language))
                 .AsNoTracking()
                 .FirstOrDefaultAsync(cancellationToken);
+
+        public async Task<Sport?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default)
+            => await _context.Sports
+                .Include(s => s.Translations)
+                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
 }

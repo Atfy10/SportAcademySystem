@@ -4,6 +4,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
@@ -58,6 +59,17 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
                     StartTime = TimeOnly.Parse(s.StartTime)
                 })
                 .ToList();
+
+            // Same cascade-insert idiom as GroupSchedules above - the group's English Name is
+            // server-generated (see tgName), so NameAr has no English counterpart in this
+            // request and is attached independently.
+            if (!string.IsNullOrWhiteSpace(request.NameAr))
+            {
+                traineeGroup.Translations = new List<TraineeGroupTranslation>
+                {
+                    new() { LangCode = "ar", Name = request.NameAr.Trim() }
+                };
+            }
 
             await _traineeGroupRepository.AddAsync(traineeGroup, cancellationToken);
 

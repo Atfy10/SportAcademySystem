@@ -43,6 +43,10 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
             RuleFor(x => x.CoachId)
                 .NotEmpty().WithMessage("Please select a coach.")
                 .GreaterThan(0).WithMessage("Coach ID must be a valid number.");
+
+            RuleFor(x => x.NameAr)
+                .MaximumLength(150).WithMessage("Arabic group name can't exceed 150 characters.")
+                .When(x => !string.IsNullOrEmpty(x.NameAr));
         }
     }
 }

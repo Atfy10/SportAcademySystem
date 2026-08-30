@@ -17,7 +17,8 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
         TraineeGroupGender Gender,
         int BranchId,
         int CoachId,
-        List<CreateGroupScheduleSlot> Schedules
+        List<CreateGroupScheduleSlot> Schedules,
+        string? NameAr = null
     ) : IRequest<Result<int>>;
 
     // StartTime is a plain "HH:mm" string, not TimeOnly, matching how time-of-day values are

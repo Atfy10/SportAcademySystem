@@ -25,6 +25,14 @@ namespace SportAcademy.Application.Validators.SportValidators
             RuleFor(x => x.Category)
                 .NotEmpty().WithMessage("Please select a sport category.")
                 .IsInEnum().WithMessage("Please select a valid sport category.");
+
+            RuleFor(x => x.NameAr)
+                .MaximumLength(50).WithMessage("Arabic sport name can't exceed 50 characters.")
+                .When(x => !string.IsNullOrEmpty(x.NameAr));
+
+            RuleFor(x => x.DescriptionAr)
+                .MaximumLength(500).WithMessage("Arabic description can't exceed 500 characters.")
+                .When(x => !string.IsNullOrEmpty(x.DescriptionAr));
         }
     }
 }

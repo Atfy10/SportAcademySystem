@@ -6,6 +6,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
@@ -34,7 +35,7 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
 
         public async Task<Result<TraineeGroupDto>> Handle(UpdateTraineeGroupCommand request, CancellationToken cancellationToken)
         {
-            var traineeGroup = await _traineeGroupRepository.GetByIdAsync(request.Id, cancellationToken)
+            var traineeGroup = await _traineeGroupRepository.GetByIdWithTranslationsAsync(request.Id, cancellationToken)
                 ?? throw new TraineeGroupNotFoundException($"{request.Id}");
 
             var newCoach = await _coachRepository.GetByIdAsync(request.CoachId, cancellationToken)
@@ -53,6 +54,29 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
             }
 
             TraineeGroupMapper.ApplyUpdate(traineeGroup, request);
+
+            // NameAr == null: leave any existing translation untouched.
+            // NameAr == "" (after trim): explicit clear -> delete the translation row.
+            // NameAr non-empty: upsert with the given name. No English counterpart to pair it
+            // with here - the group's Name is server-generated, not part of this command.
+            if (request.NameAr is not null)
+            {
+                var trimmedName = request.NameAr.Trim();
+                var existingTranslation = traineeGroup.Translations.FirstOrDefault(t => t.LangCode == "ar");
+
+                if (trimmedName.Length == 0)
+                {
+                    if (existingTranslation is not null) traineeGroup.Translations.Remove(existingTranslation);
+                }
+                else if (existingTranslation is not null)
+                {
+                    existingTranslation.Name = trimmedName;
+                }
+                else
+                {
+                    traineeGroup.Translations.Add(new TraineeGroupTranslation { LangCode = "ar", Name = trimmedName });
+                }
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
 

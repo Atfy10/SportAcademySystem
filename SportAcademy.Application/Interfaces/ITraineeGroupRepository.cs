@@ -14,5 +14,11 @@ namespace SportAcademy.Application.Interfaces
         Task<TraineeGroup?> GetByIdWithSchedulesAsync(int id, CancellationToken cancellationToken = default);
         Task<PagedData<ListTraineeGroupDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default);
         Task<int?> GetSportIdAsync(int traineeGroupId, CancellationToken cancellationToken = default);
+
+        /// <summary>Tracked, with Translations eagerly loaded - for the Update handler to safely add/update/remove a translation row.</summary>
+        Task<TraineeGroup?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>The group's Name translated to <paramref name="lang"/>, or null if no translation row exists for that language.</summary>
+        Task<string?> GetTranslatedNameAsync(int id, string lang, CancellationToken cancellationToken = default);
     }
 }

@@ -14,6 +14,8 @@ namespace SportAcademy.Application.Commands.SportCommands.CreateSport
         string Name,
         string? Description,
         SportCategory Category,
-        bool IsRequireHealthTest
+        bool IsRequireHealthTest,
+        string? NameAr = null,
+        string? DescriptionAr = null
     ) : IRequest<Result<int>>;
 }

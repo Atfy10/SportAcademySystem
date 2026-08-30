@@ -1,8 +1,9 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Exceptions.BranchExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
 
@@ -47,6 +48,22 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 				throw new PhoneExistException();
 
 			branch.IsActive = true;
+
+			// Attached to the (not-yet-saved) nav collection so EF cascade-inserts it in the
+			// same AddAsync/SaveChanges call as the branch itself.
+			if (!string.IsNullOrWhiteSpace(request.NameAr))
+			{
+				branch.Translations = new List<BranchTranslation>
+				{
+					new()
+					{
+						LangCode = "ar",
+						Name = request.NameAr.Trim(),
+						City = string.IsNullOrWhiteSpace(request.CityAr) ? null : request.CityAr.Trim(),
+						Country = string.IsNullOrWhiteSpace(request.CountryAr) ? null : request.CountryAr.Trim(),
+					}
+				};
+			}
 
 			cancellationToken.ThrowIfCancellationRequested();
 

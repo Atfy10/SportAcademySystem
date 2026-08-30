@@ -17,6 +17,7 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
         int? DurationInMinutes,
         TraineeGroupGender? Gender,
         int BranchId,
-        int CoachId
+        int CoachId,
+        string? NameAr = null
     ) : IRequest<Result<TraineeGroupDto>>;
 }

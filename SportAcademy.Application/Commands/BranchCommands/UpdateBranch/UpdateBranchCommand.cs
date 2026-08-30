@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,7 +19,10 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 		string? Email,
 		string? CoX,
 		string? CoY,
-		bool IsActive
+		bool IsActive,
+		string? NameAr = null,
+		string? CityAr = null,
+		string? CountryAr = null
 		) : IRequest<Result<BranchDto>>, IRequiresFeature
 	{
 		public string FeatureKey => "branch-management";

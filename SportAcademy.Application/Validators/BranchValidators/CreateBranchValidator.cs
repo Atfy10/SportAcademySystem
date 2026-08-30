@@ -37,6 +37,18 @@ namespace SportAcademy.Application.Validators.BranchValidators
 
 			RuleFor(x => x.CoY)
 				.MaximumLength(50).When(x => !string.IsNullOrEmpty(x.CoY));
+
+			RuleFor(x => x.NameAr)
+				.MaximumLength(100).WithMessage("Arabic branch name can't exceed 100 characters.")
+				.When(x => !string.IsNullOrEmpty(x.NameAr));
+
+			RuleFor(x => x.CityAr)
+				.MaximumLength(100).WithMessage("Arabic city can't exceed 100 characters.")
+				.When(x => !string.IsNullOrEmpty(x.CityAr));
+
+			RuleFor(x => x.CountryAr)
+				.MaximumLength(100).WithMessage("Arabic country can't exceed 100 characters.")
+				.When(x => !string.IsNullOrEmpty(x.CountryAr));
 		}
 
 		}

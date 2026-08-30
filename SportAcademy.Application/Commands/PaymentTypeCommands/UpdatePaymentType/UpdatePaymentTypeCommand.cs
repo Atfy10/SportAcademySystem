@@ -8,6 +8,7 @@ namespace SportAcademy.Application.Commands.PaymentTypeCommands.UpdatePaymentTyp
         int Id,
         string? Name,
         bool? IsActive,
-        bool? IsDefault
+        bool? IsDefault,
+        string? NameAr = null
     ) : IRequest<Result<PaymentTypeDto>>;
 }

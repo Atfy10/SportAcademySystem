@@ -67,6 +67,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(g => g.GroupSchedules)
                 .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
 
+        public async Task<TraineeGroup?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default)
+            => await _context.TraineeGroups
+                .Include(g => g.Translations)
+                .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
+
+        public async Task<string?> GetTranslatedNameAsync(int id, string lang, CancellationToken cancellationToken = default)
+            => await _context.TraineeGroupTranslations
+                .Where(t => t.TraineeGroupId == id && t.LangCode == lang)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+
         public async Task<PagedData<ListTraineeGroupDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
         {
             var lowerTerm = term.ToLower();

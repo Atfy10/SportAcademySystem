@@ -1,8 +1,9 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.BranchDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Entities.Translations;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BranchExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
@@ -24,7 +25,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 		}
 		public async Task<Result<BranchDto>> Handle(UpdateBranchCommand request, CancellationToken cancellationToken)
 		{
-			var branch = await _branchRepository.GetByIdAsync(request.Id, cancellationToken)
+			var branch = await _branchRepository.GetByIdWithSportsAsync(request.Id, cancellationToken)
 				?? throw new BranchNotFoundException($"{request.Id}");
 
 			if (!string.IsNullOrEmpty(request.Email) && request.Email != branch.Email)
@@ -56,6 +57,42 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 			_mapper.Map(request, branch);
 			branch.CoX = newCoX;
 			branch.CoY = newCoY;
+
+			// NameAr == null: leave any existing translation untouched.
+			// NameAr == "" (after trim): explicit clear -> delete the translation row.
+			// NameAr non-empty: upsert with the given name/city/country.
+			if (request.NameAr is not null)
+			{
+				var trimmedName = request.NameAr.Trim();
+				var existingTranslation = branch.Translations.FirstOrDefault(t => t.LangCode == "ar");
+
+				if (trimmedName.Length == 0)
+				{
+					if (existingTranslation is not null) branch.Translations.Remove(existingTranslation);
+				}
+				else
+				{
+					var cityAr = string.IsNullOrWhiteSpace(request.CityAr) ? null : request.CityAr.Trim();
+					var countryAr = string.IsNullOrWhiteSpace(request.CountryAr) ? null : request.CountryAr.Trim();
+
+					if (existingTranslation is not null)
+					{
+						existingTranslation.Name = trimmedName;
+						existingTranslation.City = cityAr;
+						existingTranslation.Country = countryAr;
+					}
+					else
+					{
+						branch.Translations.Add(new BranchTranslation
+						{
+							LangCode = "ar",
+							Name = trimmedName,
+							City = cityAr,
+							Country = countryAr,
+						});
+					}
+				}
+			}
 
 			cancellationToken.ThrowIfCancellationRequested();
 

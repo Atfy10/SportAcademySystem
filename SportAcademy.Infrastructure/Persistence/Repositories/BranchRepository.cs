@@ -118,6 +118,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Branchs
                 .Include(b => b.Sports)
                 .ThenInclude(sb => sb.Sport)
+                .Include(b => b.Translations)
                 .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
         public async Task<bool> ToggleIsActiveAsync(int id, CancellationToken cancellationToken = default)

@@ -24,6 +24,13 @@ namespace SportAcademy.Application.Interfaces
 
         /// <summary>Sports not yet linked to a branch, with Name/Description in the request language.</summary>
         Task<IReadOnlyList<SportDto>> GetAvailableSportsForBranchTranslatedAsync(int branchId, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// A tracked sport with its Translations collection eagerly loaded, so a caller can
+        /// safely add/update/remove translation rows on the collection without EF mistaking an
+        /// unloaded (empty) collection for "no translations exist yet".
+        /// </summary>
+        Task<Sport?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default);
     }
 
 }
