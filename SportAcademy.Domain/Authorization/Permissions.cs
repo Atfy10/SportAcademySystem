@@ -76,6 +76,13 @@ namespace SportAcademy.Domain.Authorization
             public const string Manage = "sport.manage";
         }
 
+        public static class NationalityCategory
+        {
+            // Reference-data admin concern, same tier as Sport.Manage/Branch.Manage - not
+            // granted to Employee/Accountant in AppDataSeeder.
+            public const string Manage = "nationalitycategory.manage";
+        }
+
         public static class Payment
         {
             public const string Record = "payment.record";
@@ -132,6 +139,7 @@ namespace SportAcademy.Domain.Authorization
             Coach.Manage,
             Branch.Manage,
             Sport.Manage,
+            NationalityCategory.Manage,
             Payment.Record, Payment.Correct, Payment.Refund, Payment.View,
             PaymentType.Manage,
             Finance.View,

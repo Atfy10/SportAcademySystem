@@ -30,6 +30,7 @@
   "entity.User": "المستخدم",
   "entity.Invoice": "الفاتورة",
   "entity.Tenant": "المستأجر",
+  "entity.NationalityCategory": "فئة الجنسية",
 
   "operation.success": "تم تنفيذ {0} بنجاح",
 

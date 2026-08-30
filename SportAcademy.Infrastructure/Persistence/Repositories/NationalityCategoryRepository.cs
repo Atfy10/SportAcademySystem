@@ -32,5 +32,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     Name = nc.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? nc.Name,
                 })
                 .ToListAsync(cancellationToken);
+
+        public async Task<bool> IsCodeExistAsync(string code, int? excludeId = null, CancellationToken cancellationToken = default)
+            => await _context.NationalityCategories
+                .AnyAsync(nc => nc.Code == code && (excludeId == null || nc.Id != excludeId.Value), cancellationToken);
+
+        public async Task<bool> IsNameExistAsync(string name, int? excludeId = null, CancellationToken cancellationToken = default)
+            => await _context.NationalityCategories
+                .AnyAsync(nc => nc.Name == name && (excludeId == null || nc.Id != excludeId.Value), cancellationToken);
+
+        public async Task<NationalityCategory?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default)
+            => await _context.NationalityCategories
+                .Include(nc => nc.Translations)
+                .FirstOrDefaultAsync(nc => nc.Id == id, cancellationToken);
     }
 }

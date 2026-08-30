@@ -30,6 +30,7 @@
   "entity.User": "user",
   "entity.Invoice": "invoice",
   "entity.Tenant": "tenant",
+  "entity.NationalityCategory": "nationality category",
 
   "operation.success": "{0} completed successfully",
 
