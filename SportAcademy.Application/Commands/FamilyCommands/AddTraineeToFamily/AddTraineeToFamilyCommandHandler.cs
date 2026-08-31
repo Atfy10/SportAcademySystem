@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.FamilyDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 
@@ -11,12 +12,17 @@ namespace SportAcademy.Application.Commands.FamilyCommands.AddTraineeToFamily
     {
         private readonly IFamilyRepository _familyRepository;
         private readonly ITraineeRepository _traineeRepository;
+        private readonly ICurrentLanguageProvider _languageProvider;
         private readonly string _operationType = OperationType.Update.ToString();
 
-        public AddTraineeToFamilyCommandHandler(IFamilyRepository familyRepository, ITraineeRepository traineeRepository)
+        public AddTraineeToFamilyCommandHandler(
+            IFamilyRepository familyRepository,
+            ITraineeRepository traineeRepository,
+            ICurrentLanguageProvider languageProvider)
         {
             _familyRepository = familyRepository;
             _traineeRepository = traineeRepository;
+            _languageProvider = languageProvider;
         }
 
         public async Task<Result<FamilyDetailDto>> Handle(AddTraineeToFamilyCommand request, CancellationToken cancellationToken)
@@ -35,6 +41,16 @@ namespace SportAcademy.Application.Commands.FamilyCommands.AddTraineeToFamily
 
             var familyDto = await _familyRepository.GetByIdProjectedAsync<FamilyDetailDto>(family.Id, cancellationToken)
                 ?? throw new IdNotFoundException("Family", family.Id.ToString());
+
+            var translated = await _familyRepository.GetTranslatedNamesAsync(family.Id, _languageProvider.Language, cancellationToken);
+            if (translated is not null)
+            {
+                familyDto = familyDto with
+                {
+                    Name = translated.Value.Name ?? familyDto.Name,
+                    GuardianName = translated.Value.GuardianName ?? familyDto.GuardianName,
+                };
+            }
 
             return Result<FamilyDetailDto>.Success(familyDto, _operationType);
         }

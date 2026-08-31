@@ -13,6 +13,7 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
+using SportAcademy.Infrastructure.Persistence.Projections;
 using System.Data;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
@@ -22,19 +23,21 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
         private readonly ITenantIdProvider _tenantIdProvider;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
-        public EmployeeRepository(ApplicationDbContext context, IMapper mapper, ITenantIdProvider tenantIdProvider)
-            : base(context, mapper)
+        public EmployeeRepository(ApplicationDbContext context, IMapper mapper, ITenantIdProvider tenantIdProvider, ICurrentLanguageProvider languageProvider)
+            : base(context, mapper, languageProvider)
         {
             _context = context;
             _mapper = mapper;
             _tenantIdProvider = tenantIdProvider;
+            _languageProvider = languageProvider;
         }
 
         public async Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, CancellationToken ct = default)
             => await _context.Coachs
                 .AsNoTracking()
-                .ProjectTo<CoachCardDto>(_mapper.ConfigurationProvider)
+                .Select(CoachProjections.ToCardDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, ct);
 
         public async Task<int> GetActiveEmployeesCountAsync(CancellationToken ct = default)

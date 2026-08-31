@@ -30,7 +30,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.TraineeGroups
                 .Where(tg => tg.GroupSchedules.Any(gs => gs.Day == day.DayOfWeek))
                 .AsNoTracking()
-                .ProjectTo<ListTraineeGroupDto>(_mapper.ConfigurationProvider)
+                .Select(TraineeGroupProjections.ToListDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
 
         public async Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, CancellationToken cancellationToken = default)
@@ -78,6 +78,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(t => t.Name)
                 .FirstOrDefaultAsync(cancellationToken);
 
+        public async Task<(string? SportName, string? BranchName)> GetTranslatedSportBranchNamesAsync(int id, string lang, CancellationToken cancellationToken = default)
+        {
+            var result = await _context.TraineeGroups
+                .Where(g => g.Id == id)
+                .Select(g => new
+                {
+                    SportName = g.Coach.Sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault(),
+                    BranchName = g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault(),
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return (result?.SportName, result?.BranchName);
+        }
+
         public async Task<PagedData<ListTraineeGroupDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
         {
             var lowerTerm = term.ToLower();
@@ -94,7 +108,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     (g.Coach.Employee.FirstName + " " + g.Coach.Employee.LastName).ToLower().Contains(lowerTerm) ||
                     g.Branch.Name.ToLower().Contains(lowerTerm) ||
                     g.Name.ToLower().Contains(lowerTerm))
-                .ProjectTo<ListTraineeGroupDto>(_mapper.ConfigurationProvider)
+                .Select(TraineeGroupProjections.ToListDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
         }
     }

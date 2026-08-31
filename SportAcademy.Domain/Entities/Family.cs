@@ -1,5 +1,6 @@
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
+using SportAcademy.Domain.Entities.Translations;
 
 namespace SportAcademy.Domain.Entities
 {
@@ -16,5 +17,6 @@ namespace SportAcademy.Domain.Entities
         public Tenant Tenant { get; set; } = null!;
 
         public ICollection<Trainee> Members { get; } = [];
+        public ICollection<FamilyTranslation> Translations { get; set; } = [];
     }
 }

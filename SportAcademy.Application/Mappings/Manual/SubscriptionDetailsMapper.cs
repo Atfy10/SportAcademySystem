@@ -10,7 +10,7 @@ namespace SportAcademy.Application.Mappings.Manual
     // the existing unpaginated GetAllSubDetailsQuery keeps using AutoMapper untouched.
     public static class SubscriptionDetailsMapper
     {
-        public static SubscriptionDetailsDto ToDto(SubscriptionDetails sd)
+        public static SubscriptionDetailsDto ToDto(SubscriptionDetails sd, string lang)
         {
             var latestPayment = sd.InvoiceLines
                 .SelectMany(l => l.Invoice.Allocations)
@@ -27,8 +27,12 @@ namespace SportAcademy.Application.Mappings.Manual
                     FullName = $"{sd.Trainee.FirstName} {sd.Trainee.LastName}",
                     PhoneNumber = sd.Trainee.PhoneNumber,
                 },
-                SportName = sd.SportPrice.SportSubscriptionType.Sport.Name,
-                BranchName = sd.SportPrice.Branch.Name,
+                SportName = sd.SportPrice.SportSubscriptionType.Sport.Translations
+                    .Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault()
+                    ?? sd.SportPrice.SportSubscriptionType.Sport.Name,
+                BranchName = sd.SportPrice.Branch.Translations
+                    .Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault()
+                    ?? sd.SportPrice.Branch.Name,
                 SubscriptionTypeName = sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString(),
                 Price = sd.SportPrice.Price,
                 StartDate = sd.StartDate,
@@ -37,8 +41,12 @@ namespace SportAcademy.Application.Mappings.Manual
                 {
                     PaymentNumber = latestPayment.PaymentNumber,
                     PaidDate = latestPayment.PaidDate,
-                    BranchName = latestPayment.Branch.Name,
-                    PaymentTypeName = latestPayment.PaymentType.Name,
+                    BranchName = latestPayment.Branch.Translations
+                        .Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault()
+                        ?? latestPayment.Branch.Name,
+                    PaymentTypeName = latestPayment.PaymentType.Translations
+                        .Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault()
+                        ?? latestPayment.PaymentType.Name,
                 },
                 Status = sd.Status,
             };

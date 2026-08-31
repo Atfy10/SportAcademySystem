@@ -20,5 +20,8 @@ namespace SportAcademy.Application.Interfaces
 
         /// <summary>The group's Name translated to <paramref name="lang"/>, or null if no translation row exists for that language.</summary>
         Task<string?> GetTranslatedNameAsync(int id, string lang, CancellationToken cancellationToken = default);
+
+        /// <summary>The group's own Sport/Branch names translated to <paramref name="lang"/> - null per field if no translation row exists.</summary>
+        Task<(string? SportName, string? BranchName)> GetTranslatedSportBranchNamesAsync(int id, string lang, CancellationToken cancellationToken = default);
     }
 }

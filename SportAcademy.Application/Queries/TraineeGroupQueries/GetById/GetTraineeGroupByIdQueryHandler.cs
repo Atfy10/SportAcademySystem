@@ -28,11 +28,18 @@ namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetById
 
             // GetDetailsByIdAsync builds the DTO via AutoMapper's ProjectTo, which can't take a
             // per-request lang closure (same reason TraineeGroupProjections exists as a
-            // hand-written expression for the card/dropdown queries) - resolve just the Name
-            // override with a second small query instead of rebuilding the whole projection.
+            // hand-written expression for the card/dropdown queries) - resolve the Name/
+            // SportName/BranchName overrides with a couple of small queries instead of
+            // rebuilding the whole projection.
             var translatedName = await _traineeGroupRepository.GetTranslatedNameAsync(request.Id, _languageProvider.Language, cancellationToken);
-            if (translatedName is not null)
-                traineeGroup = traineeGroup with { Name = translatedName };
+            var (translatedSportName, translatedBranchName) = await _traineeGroupRepository.GetTranslatedSportBranchNamesAsync(request.Id, _languageProvider.Language, cancellationToken);
+
+            traineeGroup = traineeGroup with
+            {
+                Name = translatedName ?? traineeGroup.Name,
+                SportName = translatedSportName ?? traineeGroup.SportName,
+                BranchName = translatedBranchName ?? traineeGroup.BranchName,
+            };
 
             return Result<TraineeGroupDetailDto>.Success(traineeGroup, _operationType);
         }

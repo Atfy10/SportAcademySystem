@@ -5,6 +5,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -15,11 +16,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
-        public SubscriptionDetailsRepository(ApplicationDbContext context, IMapper mapper) : base(context, mapper)
+        public SubscriptionDetailsRepository(ApplicationDbContext context, IMapper mapper, ICurrentLanguageProvider languageProvider)
+            : base(context, mapper, languageProvider)
         {
             _context = context;
             _mapper = mapper;
+            _languageProvider = languageProvider;
         }
 
         public async Task<PagedData<SubscriptionDetailsDto>> GetAllPaginatedAsync(PageRequest page, string? term = null, CancellationToken ct = default)
@@ -28,9 +32,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(sd => sd.Trainee)
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.Branch)
+                        .ThenInclude(b => b.Translations)
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.SportSubscriptionType)
                         .ThenInclude(sst => sst.Sport)
+                            .ThenInclude(sp => sp.Translations)
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.SportSubscriptionType)
                         .ThenInclude(sst => sst.SubscriptionType)
@@ -39,11 +45,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         .ThenInclude(i => i.Allocations)
                             .ThenInclude(a => a.Payment)
                                 .ThenInclude(p => p.Branch)
+                                    .ThenInclude(b => b.Translations)
                 .Include(sd => sd.InvoiceLines)
                     .ThenInclude(l => l.Invoice)
                         .ThenInclude(i => i.Allocations)
                             .ThenInclude(a => a.Payment)
                                 .ThenInclude(p => p.PaymentType)
+                                    .ThenInclude(pt => pt.Translations)
                 .AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(term))
@@ -68,7 +76,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return new PagedData<SubscriptionDetailsDto>
             {
-                Items = pageEntities.Select(SubscriptionDetailsMapper.ToDto).ToList(),
+                Items = pageEntities.Select(sd => SubscriptionDetailsMapper.ToDto(sd, _languageProvider.Language)).ToList(),
                 TotalCount = totalCount,
                 Page = page.Page,
                 PageSize = page.PageSize,
@@ -97,7 +105,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return new PagedData<SubscriptionDetailsDto>
             {
-                Items = entities.Select(SubscriptionDetailsMapper.ToDto).ToList(),
+                Items = entities.Select(sd => SubscriptionDetailsMapper.ToDto(sd, _languageProvider.Language)).ToList(),
                 TotalCount = totalCount,
                 Page = page?.Page ?? 1,
                 PageSize = take,
@@ -143,6 +151,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.SportSubscriptionType)
                         .ThenInclude(sst => sst.Sport)
+                            .ThenInclude(sp => sp.Translations)
+                .Include(sd => sd.SportPrice)
+                    .ThenInclude(sp => sp.Branch)
+                        .ThenInclude(b => b.Translations)
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.SportBranch)
                         .ThenInclude(sb => sb.Branch)
@@ -151,11 +163,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         .ThenInclude(i => i.Allocations)
                             .ThenInclude(a => a.Payment)
                                 .ThenInclude(p => p.Branch)
+                                    .ThenInclude(b => b.Translations)
                 .Include(sd => sd.InvoiceLines)
                     .ThenInclude(l => l.Invoice)
                         .ThenInclude(i => i.Allocations)
                             .ThenInclude(a => a.Payment)
-                                .ThenInclude(p => p.PaymentType);
+                                .ThenInclude(p => p.PaymentType)
+                                    .ThenInclude(pt => pt.Translations);
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
             => await _context.SubscriptionDetails

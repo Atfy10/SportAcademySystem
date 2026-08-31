@@ -7,9 +7,9 @@ namespace SportAcademy.Infrastructure.Persistence.Projections;
 
 /// <summary>
 /// Hand-written translated projections for TraineeGroup - see SportProjections for why.
-/// Mirrors TraineeGroupMappingProfile's existing field-for-field logic exactly, changing only
-/// Name to resolve through the translation table; SportName/CoachName/BranchName stay untouched
-/// (Sport/Employee/Branch's own translation is a separate concern for a later pass).
+/// Mirrors TraineeGroupMappingProfile's existing field-for-field logic exactly. Name, SportName
+/// and BranchName all resolve through their own entity's translation table (CoachName stays
+/// untouched - it's an employee's own name, not reference data with an Arabic translation).
 /// </summary>
 public static class TraineeGroupProjections
 {
@@ -17,9 +17,9 @@ public static class TraineeGroupProjections
     {
         Id = g.Id,
         Name = g.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Name,
-        SportName = g.Coach.Sport.Name,
+        SportName = g.Coach.Sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Coach.Sport.Name,
         CoachName = g.Coach.Employee.FirstName,
-        BranchName = g.Branch.Name,
+        BranchName = g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
         DurationInMinutes = g.DurationInMinutes,
         TraineesCount = g.Enrollments.Count,
         Schedules = g.GroupSchedules
@@ -27,11 +27,26 @@ public static class TraineeGroupProjections
             .ToList(),
     };
 
+    public static Expression<Func<TraineeGroup, ListTraineeGroupDto>> ToListDto(string lang) => g => new ListTraineeGroupDto(
+        g.Id,
+        g.Coach.Sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Coach.Sport.Name,
+        g.Coach.Employee.FirstName,
+        g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
+        g.DurationInMinutes,
+        g.Enrollments.Count,
+        g.GroupSchedules
+            .Select(gs => new GroupScheduleItemDto
+            {
+                DayOfWeek = gs.Day.ToString(),
+                StartTime = gs.StartTime.ToString("HH:mm:ss"),
+            })
+            .ToList());
+
     public static Expression<Func<TraineeGroup, TraineeGroupDropdownDto>> ToDropdownDto(string lang) => g => new TraineeGroupDropdownDto(
         g.Id,
         g.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Name,
         g.Coach.SportId,
-        g.Branch.Name,
+        g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
         g.Coach.Employee.FirstName,
         g.SkillLevel,
         g.Gender);

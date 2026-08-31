@@ -8,5 +8,7 @@ public record UpdateFamilyCommand(
     int Id,
     string? Name,
     string? GuardianName,
-    string? GuardianPhone
+    string? GuardianPhone,
+    string? NameAr = null,
+    string? GuardianNameAr = null
 ) : IRequest<Result<FamilyDto>>;

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.PaymentDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -11,10 +12,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     public class PaymentRepository : BaseRepository<Payment, string>, IPaymentRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
-        public PaymentRepository(ApplicationDbContext context) : base(context)
+        public PaymentRepository(ApplicationDbContext context, ICurrentLanguageProvider languageProvider)
+            : base(context, languageProvider: languageProvider)
         {
             _context = context;
+            _languageProvider = languageProvider;
         }
 
         // A trainee's payment history is now every Payment allocated against an invoice line
@@ -31,12 +35,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(x => new
                 {
                     x.Allocation.Payment.PaymentNumber,
-                    PaymentTypeName = x.Allocation.Payment.PaymentType.Name,
+                    PaymentTypeName = x.Allocation.Payment.PaymentType.Translations
+                        .Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault()
+                        ?? x.Allocation.Payment.PaymentType.Name,
                     x.Allocation.Payment.PaidDate,
-                    BranchName = x.Allocation.Payment.Branch.Name,
+                    BranchName = x.Allocation.Payment.Branch.Translations
+                        .Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault()
+                        ?? x.Allocation.Payment.Branch.Name,
                     SubscriptionDetailsId = x.Line.SubscriptionDetailsId!.Value,
                     SubscriptionTypeName = x.Line.SubscriptionDetails!.SportPrice.SportSubscriptionType.SubscriptionType.Name,
-                    SportName = x.Line.SubscriptionDetails!.SportPrice.SportSubscriptionType.Sport.Name,
+                    SportName = x.Line.SubscriptionDetails!.SportPrice.SportSubscriptionType.Sport.Translations
+                        .Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault()
+                        ?? x.Line.SubscriptionDetails!.SportPrice.SportSubscriptionType.Sport.Name,
                     Price = x.Allocation.Amount,
                     x.Line.SubscriptionDetails!.StartDate,
                     x.Line.SubscriptionDetails!.EndDate,
@@ -125,11 +135,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var query = FilteredPayments(from, to, branchId);
 
+            // Group by Id, not Branch.Name - a raw-name group key can't be resolved to a
+            // translated name inside the same GroupBy/Select (EF can't splice a per-request lang
+            // into that projection), so the name lookup happens as a second, small query below.
             var rows = await query
-                .GroupBy(p => p.Branch.Name)
+                .GroupBy(p => p.BranchId)
                 .Select(g => new
                 {
-                    BranchName = g.Key,
+                    BranchId = g.Key,
                     Gross = g.Sum(p => p.Amount),
                     Refunded = g.Sum(p => p.RefundedAmount),
                     Count = g.Count(),
@@ -137,7 +150,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .OrderByDescending(g => g.Gross)
                 .ToListAsync(ct);
 
-            return rows.Select(r => (r.BranchName, r.Gross, r.Refunded, r.Count)).ToList();
+            if (rows.Count == 0) return [];
+
+            var branchIds = rows.Select(r => r.BranchId).ToList();
+            var branchNames = await _context.Branchs
+                .Where(b => branchIds.Contains(b.Id))
+                .Select(b => new
+                {
+                    b.Id,
+                    Name = b.Translations.Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault() ?? b.Name,
+                })
+                .ToDictionaryAsync(x => x.Id, x => x.Name, ct);
+
+            return rows.Select(r => (branchNames.GetValueOrDefault(r.BranchId, string.Empty), r.Gross, r.Refunded, r.Count)).ToList();
         }
 
         public async Task<List<(string PaymentTypeName, decimal Total, int Count)>> GetPaymentMethodBreakdownAsync(
@@ -146,12 +171,24 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var query = FilteredPayments(from, to, branchId);
 
             var rows = await query
-                .GroupBy(p => p.PaymentType.Name)
-                .Select(g => new { PaymentTypeName = g.Key, Total = g.Sum(p => p.Amount), Count = g.Count() })
+                .GroupBy(p => p.PaymentTypeId)
+                .Select(g => new { PaymentTypeId = g.Key, Total = g.Sum(p => p.Amount), Count = g.Count() })
                 .OrderByDescending(g => g.Total)
                 .ToListAsync(ct);
 
-            return rows.Select(r => (r.PaymentTypeName, r.Total, r.Count)).ToList();
+            if (rows.Count == 0) return [];
+
+            var paymentTypeIds = rows.Select(r => r.PaymentTypeId).ToList();
+            var paymentTypeNames = await _context.PaymentTypes
+                .Where(pt => paymentTypeIds.Contains(pt.Id))
+                .Select(pt => new
+                {
+                    pt.Id,
+                    Name = pt.Translations.Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault() ?? pt.Name,
+                })
+                .ToDictionaryAsync(x => x.Id, x => x.Name, ct);
+
+            return rows.Select(r => (paymentTypeNames.GetValueOrDefault(r.PaymentTypeId, string.Empty), r.Total, r.Count)).ToList();
         }
 
         private IQueryable<Payment> FilteredPayments(DateTime? from, DateTime? to, int? branchId)

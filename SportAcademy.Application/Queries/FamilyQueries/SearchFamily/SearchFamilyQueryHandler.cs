@@ -18,7 +18,7 @@ namespace SportAcademy.Application.Queries.FamilyQueries.SearchFamily
             if (!int.TryParse(searchTerm, out int code))
                 throw new Exception("Invalid search term. Please enter a valid family code.");
 
-            var families = await _familyRepository.SearchFamiliesWithCode<FamilyDto>(code, cancellationToken);
+            var families = await _familyRepository.SearchFamiliesWithCodeTranslatedAsync(code, cancellationToken);
             if (families == null || !families.Any())
                 throw new Exception("No families found with the provided code.");
 

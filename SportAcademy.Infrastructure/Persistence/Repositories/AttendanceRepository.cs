@@ -5,6 +5,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Application.DTOs.ReportDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -16,12 +17,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
-        public AttendanceRepository(ApplicationDbContext context, IMapper mapper)
-            : base(context, mapper)
+        public AttendanceRepository(ApplicationDbContext context, IMapper mapper, ICurrentLanguageProvider languageProvider)
+            : base(context, mapper, languageProvider)
         {
             _context = context;
             _mapper = mapper;
+            _languageProvider = languageProvider;
         }
 
         public async Task<int> GetGlobalAttendanceRate(CancellationToken ct = default)
@@ -174,8 +177,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     a.Enrollment.TraineeId,
                     TraineeName = a.Enrollment.Trainee.FirstName + " " + a.Enrollment.Trainee.LastName,
                     TraineeGroupId = a.Enrollment.TraineeGroupId,
-                    TraineeGroupName = a.Enrollment.TraineeGroup.Name,
-                    BranchName = a.Enrollment.TraineeGroup.Branch.Name,
+                    TraineeGroupName = a.Enrollment.TraineeGroup.Translations.Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault() ?? a.Enrollment.TraineeGroup.Name,
+                    BranchName = a.Enrollment.TraineeGroup.Branch.Translations.Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault() ?? a.Enrollment.TraineeGroup.Branch.Name,
                     CoachName = a.Enrollment.TraineeGroup.Coach.Employee.FirstName + " " + a.Enrollment.TraineeGroup.Coach.Employee.LastName,
                 })
                 .ToListAsync(ct);

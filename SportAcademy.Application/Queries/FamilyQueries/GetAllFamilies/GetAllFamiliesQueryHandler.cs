@@ -17,7 +17,7 @@ namespace SportAcademy.Application.Queries.FamilyQueries.GetAllFamilies
 
         public async Task<Result<PagedData<FamilyDto>>> Handle(GetAllFamiliesQuery request, CancellationToken cancellationToken)
         {
-            var families = await _familyRepository.GetAllPaginatedAsync<FamilyDto>(request.PageRequest, cancellationToken);
+            var families = await _familyRepository.GetAllPaginatedTranslatedAsync(request.PageRequest, cancellationToken);
 
             return Result<PagedData<FamilyDto>>.Success(families, nameof(GetAllFamiliesQuery));
         }

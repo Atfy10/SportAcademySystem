@@ -9,6 +9,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
+using SportAcademy.Infrastructure.Persistence.Projections;
 using System.Data;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
@@ -19,12 +20,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         private readonly IMapper _mapper;
 
         private readonly ITenantIdProvider _tenantIdProvider;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
-        public CoachRepository(ApplicationDbContext context, IMapper mapper, ITenantIdProvider tenantIdProvider) : base(context, mapper)
+        public CoachRepository(ApplicationDbContext context, IMapper mapper, ITenantIdProvider tenantIdProvider, ICurrentLanguageProvider languageProvider)
+            : base(context, mapper, languageProvider)
         {
             _context = context;
             _mapper = mapper;
             _tenantIdProvider = tenantIdProvider;
+            _languageProvider = languageProvider;
         }
 
         public async Task<int> CountAsync(CancellationToken cancellationToken)
@@ -69,12 +73,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             if (ftsAvailable)
             {
                 sql = @"
-                    SELECT 
+                    SELECT
                         c.EmployeeId AS Id,
                         e.FirstName,
                         e.LastName,
                         e.Position,
-                        b.Name AS BranchName,
+                        ISNULL(bt.Name, b.Name) AS BranchName,
                         e.Email,
                         e.IsWork,
                         e.PhoneNumber,
@@ -82,7 +86,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         e.HireDate,
                         ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
                         c.SkillLevel,
-                        s.Name AS SportName
+                        ISNULL(st.Name, s.Name) AS SportName
                     FROM Coaches c
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
                     INNER JOIN CONTAINSTABLE(
@@ -91,14 +95,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         @term, LANGUAGE 1025
                     ) ft ON e.Id = ft.[KEY]
                     INNER JOIN Branches b ON e.BranchId = b.Id
+                    LEFT JOIN BranchTranslations bt ON bt.BranchId = b.Id AND bt.LangCode = @lang
                     INNER JOIN Sports s ON c.SportId = s.Id
+                    LEFT JOIN SportTranslations st ON st.SportId = s.Id AND st.LangCode = @lang
                     LEFT JOIN (
-                        SELECT 
+                        SELECT
                             tg.CoachId,
                             COUNT(enr.Id) AS TotalTrainees
                         FROM TraineeGroups tg
-                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId 
-                            AND enr.IsActive = 1 
+                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId
+                            AND enr.IsActive = 1
                             AND enr.IsDeleted = 0
                         GROUP BY tg.CoachId
                     ) trainee_count ON c.EmployeeId = trainee_count.CoachId
@@ -116,17 +122,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     ) ft ON e.Id = ft.[KEY]
                     WHERE e.TenantId = @tenantId;
                 ";
-                parameters = new { term = fullTextTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId };
+                parameters = new { term = fullTextTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId, lang = _languageProvider.Language };
             }
             else
             {
                 sql = @"
-                    SELECT 
+                    SELECT
                         c.EmployeeId AS Id,
                         e.FirstName,
                         e.LastName,
                         e.Position,
-                        b.Name AS BranchName,
+                        ISNULL(bt.Name, b.Name) AS BranchName,
                         e.Email,
                         e.IsWork,
                         e.PhoneNumber,
@@ -134,18 +140,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         e.HireDate,
                         ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
                         c.SkillLevel,
-                        s.Name AS SportName
+                        ISNULL(st.Name, s.Name) AS SportName
                     FROM Coaches c
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
                     INNER JOIN Branches b ON e.BranchId = b.Id
+                    LEFT JOIN BranchTranslations bt ON bt.BranchId = b.Id AND bt.LangCode = @lang
                     INNER JOIN Sports s ON c.SportId = s.Id
+                    LEFT JOIN SportTranslations st ON st.SportId = s.Id AND st.LangCode = @lang
                     LEFT JOIN (
-                        SELECT 
+                        SELECT
                             tg.CoachId,
                             COUNT(enr.Id) AS TotalTrainees
                         FROM TraineeGroups tg
-                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId 
-                            AND enr.IsActive = 1 
+                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId
+                            AND enr.IsActive = 1
                             AND enr.IsDeleted = 0
                         GROUP BY tg.CoachId
                     ) trainee_count ON c.EmployeeId = trainee_count.CoachId
@@ -158,7 +166,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
                     WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
                 ";
-                parameters = new { likeTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId };
+                parameters = new { likeTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId, lang = _languageProvider.Language };
             }
 
             using var multi = await connection.QueryMultipleAsync(sql, parameters);
@@ -183,7 +191,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(c => c.EmployeeId == id && !c.IsDeleted)
                 .Include(c => c.Employee)
                     .ThenInclude(e => e.Branch)
+                        .ThenInclude(b => b.Translations)
                 .Include(c => c.Sport)
+                    .ThenInclude(s => s.Translations)
                 .Include(c => c.TraineeGroups)
                     .ThenInclude(tg => tg.Enrollments.Where(e => e.IsActive && !e.IsDeleted))
                 .AsNoTracking()
@@ -194,7 +204,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Coachs
                 .Where(c => !c.IsDeleted)
                 .AsNoTracking()
-                .ProjectTo<CoachDropdownItemDto>(_mapper.ConfigurationProvider)
+                .Select(CoachProjections.ToDropdownDto(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
     }
 }

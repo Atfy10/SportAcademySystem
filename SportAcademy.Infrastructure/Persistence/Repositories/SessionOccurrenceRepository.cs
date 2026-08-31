@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.SessionOccurrenceDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
+using SportAcademy.Infrastructure.Persistence.Projections;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -14,14 +16,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
+        private readonly ICurrentLanguageProvider _languageProvider;
 
         public SessionOccurrenceRepository(
             ApplicationDbContext context,
-            IMapper mapper)
-            : base(context, mapper)
+            IMapper mapper,
+            ICurrentLanguageProvider languageProvider)
+            : base(context, mapper, languageProvider)
         {
             _context = context;
             _mapper = mapper;
+            _languageProvider = languageProvider;
         }
 
         public async Task<PagedData<SessionOccurrenceDto>> GetAllPaginatedAsync(PageRequest page, CancellationToken cancellationToken = default)
@@ -29,7 +34,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var query = _context.SessionOccurrences
                 .OrderByDescending(s => s.StartDateTime)
                 .AsNoTracking()
-                .ProjectTo<SessionOccurrenceDto>(_mapper.ConfigurationProvider);
+                .Select(SessionOccurrenceProjections.ToDto(_languageProvider.Language));
 
             return await query.ToPagedDataAsync(page, cancellationToken);
         }
@@ -40,7 +45,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(s => s.StartDateTime.Date == date.Date)
                 .OrderByDescending(s => s.StartDateTime)
                 .AsNoTracking()
-                .ProjectTo<SessionOccurrenceDto>(_mapper.ConfigurationProvider);
+                .Select(SessionOccurrenceProjections.ToDto(_languageProvider.Language));
 
             return await query.ToPagedDataAsync(page, cancellationToken);
         }
@@ -53,7 +58,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     || (s.GroupSchedule.TraineeGroup.Coach.Employee!.FirstName + " " + s.GroupSchedule.TraineeGroup.Coach.Employee.LastName).Contains(term)
                     || s.GroupSchedule.TraineeGroup.Branch!.Name.Contains(term))
                 .AsNoTracking()
-                .ProjectTo<SessionOccurrenceDto>(_mapper.ConfigurationProvider);
+                .Select(SessionOccurrenceProjections.ToDto(_languageProvider.Language));
 
             return await query.ToPagedDataAsync(page, cancellationToken);
         }
