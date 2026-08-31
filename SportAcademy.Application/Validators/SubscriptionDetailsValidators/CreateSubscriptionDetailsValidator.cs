@@ -33,6 +33,9 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
             RuleFor(x => x.BranchId)
                 .ApplyIdRuleFor("Branch");
 
+            RuleFor(x => x.PaymentTypeId)
+                .GreaterThan(0).WithMessage("A payment type must be selected.");
+
             RuleFor(x => x)
                 .MustAsync(async (cmd, ct) =>
                 {
