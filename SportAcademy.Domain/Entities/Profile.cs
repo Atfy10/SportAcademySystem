@@ -12,6 +12,8 @@ namespace SportAcademy.Domain.Entities
         public string? ProfileImageUrl { get; set; }
         public string? Bio { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool HasCompletedOnboarding { get; set; }
+        public string? PreferredLanguage { get; set; }
 
         // Navigation Property
         public virtual AppUser User { get; set; } = null!;

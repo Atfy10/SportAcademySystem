@@ -13,6 +13,8 @@ using SportAcademy.Application.Queries.TraineeQueries.GetActiveTraineesCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeQueries.GetAllTraineesOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
+using SportAcademy.Application.Queries.TraineeQueries.GetSkillProgress;
+using SportAcademy.Application.Queries.TraineeQueries.GetCoachHistory;
 using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCountOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeQueries.GetAllForDropdown;
@@ -62,6 +64,20 @@ namespace SportAcademy.Web.Controllers
         {
             var trainee = await _mediator.Send(new GetTraineeByIdQuery(id));
             return Ok(trainee);
+        }
+
+        [HttpGet("{id}/skill-progress")]
+        public async Task<IActionResult> GetSkillProgress(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTraineeSkillProgressQuery(id), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/coaches")]
+        public async Task<IActionResult> GetCoachHistory(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTraineeCoachHistoryQuery(id), ct);
+            return Ok(result);
         }
 
         [HttpGet("dropdown")]

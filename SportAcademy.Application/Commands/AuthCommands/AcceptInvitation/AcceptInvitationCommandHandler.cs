@@ -22,6 +22,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
     private readonly UserManager<AppUser> _userManager;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUserPermissionOverrideRepository _userPermissionOverrideRepository;
+    private readonly IProfileRepository _profileRepository;
     private readonly IMediator _mediator;
     private const string Operation = "Accept";
     private const int RefreshTokenExpiryDays = 7;
@@ -35,6 +36,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         UserManager<AppUser> userManager,
         IJwtTokenService jwtTokenService,
         IUserPermissionOverrideRepository userPermissionOverrideRepository,
+        IProfileRepository profileRepository,
         IMediator mediator)
     {
         _tokenService = tokenService;
@@ -45,6 +47,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         _userManager = userManager;
         _jwtTokenService = jwtTokenService;
         _userPermissionOverrideRepository = userPermissionOverrideRepository;
+        _profileRepository = profileRepository;
         _mediator = mediator;
     }
 
@@ -104,6 +107,12 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
                 var errors = createResult.Errors.Select(e => e.Description).ToList();
                 return Result<AuthResponseDto>.Failure(Operation, string.Join("; ", errors), 400);
             }
+
+            // Every AppUser is expected to have a companion Profile row (avatar/bio, and now
+            // onboarding state) - AppDataSeeder creates one for the seeded SuperAdmin/Owner, but
+            // this is the actual creation path for every invited staff member, so it must too.
+            await _profileRepository.AddAsyncWithoutSave(
+                new Profile { AppUserId = user.Id, HasCompletedOnboarding = false }, ct);
 
             var roleResult = await _userManager.AddToRoleAsync(user, role);
             if (!roleResult.Succeeded)

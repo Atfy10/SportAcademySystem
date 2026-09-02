@@ -180,6 +180,18 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             await _publisher.Publish(new TraineeCreatedEvent(trainee.Id), cancellationToken);
 
+            // Sport assignment here bypasses SportTrainee's own CreateSportTraineeCommandHandler
+            // (this handler builds SportTrainee rows directly, above), which is the only other
+            // place that normally publishes this event - without it, a trainee's sports would
+            // never get an initial skill-history row, and the skill-progress report/edit modal
+            // would show them as having no sports at all despite Sports clearly listing some.
+            foreach (var sportId in sportIds)
+            {
+                await _publisher.Publish(
+                    new SportTraineeSkillLevelChangedEvent(trainee.Id, sportId, SkillLevel.NotSpecified, SkillLevel.NotSpecified),
+                    cancellationToken);
+            }
+
             return Result<CreateTraineeResponse>.Success(
                 new CreateTraineeResponse
                 {

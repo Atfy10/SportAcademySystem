@@ -445,7 +445,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(st => st.SportId)
                 .ToListAsync(cancellationToken);
 
-        public Task UpdateSports(Trainee trainee, IEnumerable<int> sportIds)
+        public Task<List<int>> UpdateSports(Trainee trainee, IEnumerable<int> sportIds)
         {
             var current = trainee.Sports
                 .Select(x => x.SportId)
@@ -474,7 +474,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 });
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(toAdd);
         }
 
         public async Task<List<TraineeDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)

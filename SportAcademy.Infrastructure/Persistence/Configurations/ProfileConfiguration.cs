@@ -19,7 +19,14 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                    .HasMaxLength(255); 
 
             builder.Property(p => p.Bio)
-                   .HasMaxLength(300); 
+                   .HasMaxLength(300);
+
+            builder.Property(p => p.HasCompletedOnboarding)
+                   .HasDefaultValue(false)
+                   .IsRequired();
+
+            builder.Property(p => p.PreferredLanguage)
+                   .HasMaxLength(5);
 
 
             // Relationship

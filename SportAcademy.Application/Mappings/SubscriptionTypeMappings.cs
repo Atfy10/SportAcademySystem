@@ -30,7 +30,7 @@ namespace SportAcademy.Application.Mappings
         {
             return new SubscriptionType
             {
-                Name = (Domain.Enums.SubType)System.Enum.Parse(typeof(Domain.Enums.SubType), cmd.Name),
+                Name = (Domain.Enums.SubType)Enum.Parse(typeof(Domain.Enums.SubType), cmd.Name),
                 DaysPerMonth = cmd.DaysPerMonth,
                 NumberOfMonths = cmd.NumberOfMonths,
                 IsActive = cmd.IsActive,

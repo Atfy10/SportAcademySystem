@@ -10,6 +10,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetAllPaginated;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetById;
+using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetByTraineeId;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetLatest;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetRenewInfo;
 using SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetStats;
@@ -45,6 +46,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> Details(int id)
         {
             var result = await _mediator.Send(new GetSubDetailsByIdQuery(id));
+            return Ok(result);
+        }
+
+        [HttpGet("trainee/{traineeId}/history")]
+        public async Task<IActionResult> GetHistoryForTrainee(int traineeId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetSubscriptionsByTraineeIdQuery(traineeId), ct);
             return Ok(result);
         }
 

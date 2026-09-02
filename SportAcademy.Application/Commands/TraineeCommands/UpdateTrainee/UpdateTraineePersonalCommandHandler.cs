@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Contract;
@@ -19,18 +20,21 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         private readonly ITraineeService _traineeService;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateTraineePersonalCommandHandler(
             IBranchRepository branchRepository,
             ITraineeService traineeService,
             ITraineeRepository traineeRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPublisher publisher)
         {
             _branchRepository = branchRepository;
             _traineeService = traineeService;
             _traineeRepository = traineeRepository;
             _unitOfWork = unitOfWork;
+            _publisher = publisher;
         }
 
         public async Task<Result<UpdateTraineePersonalCommand>> Handle(UpdateTraineePersonalCommand request, CancellationToken cancellationToken)
@@ -52,7 +56,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
             var currentSportIds = await _traineeRepository
                 .GetSportIdsByTraineeId(request.Id, cancellationToken);
 
-            await _traineeRepository.UpdateSports(trainee, request.SportIds);
+            var addedSportIds = await _traineeRepository.UpdateSports(trainee, request.SportIds);
 
             if (request.MedicalConditions != null)
             {
@@ -87,6 +91,16 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            // See CreateTraineeCommandHandler for why this is needed: UpdateSports bypasses
+            // SportTrainee's own CreateSportTraineeCommandHandler, so without this, a sport
+            // added to a trainee here would never get an initial skill-history row.
+            foreach (var sportId in addedSportIds)
+            {
+                await _publisher.Publish(
+                    new SportTraineeSkillLevelChangedEvent(trainee.Id, sportId, SkillLevel.NotSpecified, SkillLevel.NotSpecified),
+                    cancellationToken);
+            }
 
             return Result<UpdateTraineePersonalCommand>.Success(request, _operationType);
         }

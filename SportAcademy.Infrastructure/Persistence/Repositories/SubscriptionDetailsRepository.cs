@@ -141,6 +141,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(sd => sd.TraineeId == traineeId && sd.Status == SubscriptionStatus.Active)
                 .ToListAsync(cancellationToken);
 
+        public async Task<List<SubscriptionDetails>> GetAllFullSubDetailsForTraineeIdAsync(int traineeId, CancellationToken cancellationToken = default)
+            => await GetFullSubDetails()
+                .Where(sd => sd.TraineeId == traineeId)
+                .OrderByDescending(sd => sd.StartDate)
+                .ToListAsync(cancellationToken);
+
         private IQueryable<SubscriptionDetails> GetFullSubDetails()
             => _context.SubscriptionDetails
                 .Include(sd => sd.Trainee)

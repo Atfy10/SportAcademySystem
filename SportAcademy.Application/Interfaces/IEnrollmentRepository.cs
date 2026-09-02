@@ -28,6 +28,8 @@ namespace SportAcademy.Application.Interfaces
             CancellationToken ct = default);
         Task<int?> GetEnrollmentIdAsync(int traineeId, int traineeGroupId, CancellationToken ct = default);
         Task<int> GetActiveEnrollmentCountForGroupAsync(int traineeGroupId, CancellationToken ct = default);
+        Task<List<Enrollment>> GetActiveEnrollmentsForGroupAsync(int traineeGroupId, CancellationToken ct = default);
+        Task<List<EnrollmentDetailDto>> GetAllDetailsByTraineeIdAsync(int traineeId, CancellationToken ct = default);
         /// <summary>
         /// The trainee's current enrollment for the given sport, if any - a trainee may have at
         /// most one (enforced at creation), but this is defensive against pre-existing data from

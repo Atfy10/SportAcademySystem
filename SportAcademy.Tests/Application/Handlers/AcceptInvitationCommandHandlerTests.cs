@@ -24,6 +24,7 @@ public class AcceptInvitationCommandHandlerTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<IJwtTokenService> _jwtTokenServiceMock = new();
     private readonly Mock<IUserPermissionOverrideRepository> _userPermissionOverrideRepoMock = new();
+    private readonly Mock<IProfileRepository> _profileRepoMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly AcceptInvitationCommandHandler _handler;
 
@@ -41,6 +42,7 @@ public class AcceptInvitationCommandHandlerTests
             _userManagerMock.Object,
             _jwtTokenServiceMock.Object,
             _userPermissionOverrideRepoMock.Object,
+            _profileRepoMock.Object,
             _mediatorMock.Object);
     }
 
@@ -118,6 +120,10 @@ public class AcceptInvitationCommandHandlerTests
         _refreshTokenRepoMock
             .Setup(r => r.AddAsync(It.IsAny<RefreshTokenEntity>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
+        _profileRepoMock
+            .Setup(r => r.AddAsyncWithoutSave(It.IsAny<Profile>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Profile p, CancellationToken _) => p);
 
         var result = await _handler.Handle(command, CancellationToken.None);
 

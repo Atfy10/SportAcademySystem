@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
@@ -13,17 +14,20 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentG
         private readonly ITraineeGroupRepository _traineeGroupRepository;
         private readonly ITraineeRepository _traineeRepository;
         private readonly ISportTraineeRepository _sportTraineeRepository;
+        private readonly IPublisher _publisher;
 
         public ChangeEnrollmentGroupCommandHandler(
             IEnrollmentRepository enrollmentRepository,
             ITraineeGroupRepository traineeGroupRepository,
             ITraineeRepository traineeRepository,
-            ISportTraineeRepository sportTraineeRepository)
+            ISportTraineeRepository sportTraineeRepository,
+            IPublisher publisher)
         {
             _enrollmentRepository = enrollmentRepository;
             _traineeGroupRepository = traineeGroupRepository;
             _traineeRepository = traineeRepository;
             _sportTraineeRepository = sportTraineeRepository;
+            _publisher = publisher;
         }
 
         public async Task<Result<bool>> Handle(ChangeEnrollmentGroupCommand request, CancellationToken cancellationToken)
@@ -68,6 +72,9 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentG
 
             enrollment.TraineeGroupId = newGroup.Id;
             await _enrollmentRepository.UpdateAsync(enrollment, cancellationToken);
+
+            await _publisher.Publish(new EnrollmentGroupAssignedEvent(
+                enrollment.Id, newGroup.Id, DateTime.UtcNow), cancellationToken);
 
             return Result<bool>.Success(true, OperationType.Update.ToString());
         }

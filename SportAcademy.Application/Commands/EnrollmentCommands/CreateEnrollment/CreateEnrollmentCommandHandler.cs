@@ -115,6 +115,8 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             cancellationToken.ThrowIfCancellationRequested();
 
             await _publisher.Publish(new EnrollmentCreatedEvent(enrollment.Id), cancellationToken);
+            await _publisher.Publish(new EnrollmentGroupAssignedEvent(
+                enrollment.Id, request.TraineeGroupId, enrollment.EnrollmentDate), cancellationToken);
 
             return Result<int>.Success(enrollment.Id, _operationType);
         }

@@ -16,6 +16,7 @@ using SportAcademy.Application.Queries.EnrollmentQueries.GetAll;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForAllSports;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetAllEnrollmentsForSport;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetById;
+using SportAcademy.Application.Queries.EnrollmentQueries.GetByTraineeId;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSport;
 using SportAcademy.Application.Queries.EnrollmentQueries.GetEnrollmentsCountForSports;
 using SportAcademy.Application.Queries.EnrollmentQueries.SearchEnrollments;
@@ -60,6 +61,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _mediator.Send(new GetEnrollmentByIdQuery(id));
+            return Ok(result);
+        }
+
+        [HttpGet("trainee/{traineeId}/history")]
+        public async Task<IActionResult> GetHistoryForTrainee(int traineeId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetEnrollmentsByTraineeIdQuery(traineeId), ct);
             return Ok(result);
         }
 

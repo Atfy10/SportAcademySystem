@@ -9,4 +9,6 @@ public record MeResponse
     public Guid TenantId { get; init; }
     public List<string> Roles { get; init; } = [];
     public DateTime? CreatedAt { get; init; }
+    public bool HasCompletedOnboarding { get; init; }
+    public string? PreferredLanguage { get; init; }
 }

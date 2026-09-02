@@ -60,6 +60,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
         public DbSet<NotificationGroupMember> NotificationGroupMembers { get; set; }
         public DbSet<TraineeCodesHistory> TraineeCodesHistory { get; set; }
+        public DbSet<TraineeCareerEvent> TraineeCareerEvents { get; set; }
         public DbSet<Family> Families { get; set; }
         public DbSet<Domain.Entities.Translations.FamilyTranslation> FamilyTranslations { get; set; } = null!;
         public DbSet<NationalityCategory> NationalityCategories { get; set; }

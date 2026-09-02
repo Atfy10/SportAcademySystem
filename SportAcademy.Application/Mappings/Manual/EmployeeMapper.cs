@@ -11,6 +11,10 @@ namespace SportAcademy.Application.Mappings.Manual
     // entity when the command actually carries it.
     public static class EmployeeMapper
     {
+        // BranchName is left blank here rather than via employee.Branch.Name - the caller
+        // (UpdateEmployeeCommandHandler) loads employee without a Branch Include, so that
+        // navigation is null; harmless since nothing downstream reads BranchName off an
+        // update response (only IsSuccess is checked).
         public static EmployeeDto ToDto(Employee employee) => new(
             employee.Id,
             employee.FirstName,
@@ -20,10 +24,15 @@ namespace SportAcademy.Application.Mappings.Manual
             employee.Gender,
             employee.HireDate,
             employee.Address.ToString(),
+            employee.Address.Street,
+            employee.Address.City,
             employee.PhoneNumber,
             employee.SecondPhoneNumber,
             employee.Position,
             employee.BranchId,
+            string.Empty,
+            employee.Email.Value,
+            employee.IsWork,
             employee.AppUserId ?? Guid.Empty
         );
 

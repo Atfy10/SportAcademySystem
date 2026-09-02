@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.ProfileCommands.CompleteOnboarding;
 using SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions;
 using SportAcademy.Application.Commands.UserCommands.UserCreate;
 using SportAcademy.Application.Commands.UserCommands.UserDelete;
@@ -111,6 +112,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetMe(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetMeQuery(), ct);
+            return Ok(result);
+        }
+
+        [HttpPost("me/complete-onboarding")]
+        public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
             return Ok(result);
         }
     }

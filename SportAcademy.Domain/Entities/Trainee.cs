@@ -26,6 +26,7 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<Enrollment> Enrollments { get; set; } = [];
         public virtual ICollection<SubscriptionDetails> SubscriptionDetails { get; set; } = [];
         public virtual ICollection<TraineeMedicalCondition> MedicalConditions { get; set; } = [];
+        public virtual ICollection<TraineeCareerEvent> CareerEvents { get; set; } = [];
 
         [NotMapped]
         public bool IsSubscribed => SubscriptionDetails?.Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted) ?? false;

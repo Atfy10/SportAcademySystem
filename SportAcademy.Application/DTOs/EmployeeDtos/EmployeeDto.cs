@@ -16,10 +16,15 @@ namespace SportAcademy.Application.DTOs.EmployeeDtos
         Gender Gender,
         DateTime HireDate,
         string Address,
+        string Street,
+        string City,
         string PhoneNumber,
         string? SecondPhoneNumber,
         Position Position,
         int BranchId,
+        string BranchName,
+        string Email,
+        bool IsWork,
         Guid AppUserId
     );
 }

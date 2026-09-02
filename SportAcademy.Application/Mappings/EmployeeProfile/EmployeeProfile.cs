@@ -11,7 +11,21 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
     {
         public EmployeeMappingProfile()
         {
-            CreateMap<Employee, EmployeeDto>().ReverseMap();
+            // EmployeeDto is an immutable record (positional constructor, no parameterless
+            // ctor). .ForMember() forces AutoMapper into a member-init strategy that requires
+            // a parameterless constructor + settable properties - it doesn't have either, so
+            // that throws "needs to have a constructor with 0 args or only optional args" at
+            // map time. .ForCtorParam() keeps AutoMapper on the constructor-mapping path that
+            // records actually need. ReverseMap() is dropped: EmployeeDto -> Employee has no
+            // caller (Employee mutation goes through CreateEmployeeDto/UpdateEmployeeCommand
+            // via their own maps below / Mappings/Manual/EmployeeMapper.cs), and it would be
+            // broken anyway since Employee.Address is a value object, not the two loose
+            // Street/City strings this DTO carries.
+            CreateMap<Employee, EmployeeDto>()
+                .ForCtorParam(nameof(EmployeeDto.Street), opt => opt.MapFrom(src => src.Address.Street))
+                .ForCtorParam(nameof(EmployeeDto.City), opt => opt.MapFrom(src => src.Address.City))
+                .ForCtorParam(nameof(EmployeeDto.BranchName), opt => opt.MapFrom(src => src.Branch.Name))
+                .ForCtorParam(nameof(EmployeeDto.Email), opt => opt.MapFrom(src => src.Email.Value));
 
             CreateMap<Employee, EmployeeCardDto>()
                 .ForMember(dest => dest.BranchName,

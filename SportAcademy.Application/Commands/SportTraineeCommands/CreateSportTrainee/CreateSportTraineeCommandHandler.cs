@@ -2,6 +2,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportTraineeDtos;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -17,18 +18,21 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrai
 		private readonly ISportRepository _sportRepository;
 		private readonly ITraineeRepository _traineeRepository;
 		private readonly IMapper _mapper;
+		private readonly IPublisher _publisher;
 		private readonly string _operationType = OperationType.Add.ToString();
 
 		public CreateSportTraineeCommandHandler(
 			ISportTraineeRepository sportTraineeRepository,
 			ISportRepository sportRepository,
 			ITraineeRepository traineeRepository,
-			IMapper mapper)
+			IMapper mapper,
+			IPublisher publisher)
 		{
 			_sportTraineeRepository = sportTraineeRepository;
 			_sportRepository = sportRepository;
 			_traineeRepository = traineeRepository;
 			_mapper = mapper;
+			_publisher = publisher;
 		}
 
 		public async Task<Result<SportTraineeDto>> Handle(CreateSportTraineeCommand request, CancellationToken cancellationToken)
@@ -61,6 +65,10 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrai
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
             await _sportTraineeRepository.AddAsync(sportTrainee, cancellationToken);
+
+			await _publisher.Publish(new SportTraineeSkillLevelChangedEvent(
+				sportTrainee.TraineeId, sportTrainee.SportId, SkillLevel.NotSpecified, sportTrainee.SkillLevel), cancellationToken);
+
 			return Result<SportTraineeDto>.Success(dto, _operationType);
 		}
 

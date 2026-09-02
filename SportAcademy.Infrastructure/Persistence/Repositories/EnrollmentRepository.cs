@@ -115,6 +115,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Enrollments
                 .CountAsync(e => e.TraineeGroupId == traineeGroupId && e.IsActive, ct);
 
+        public async Task<List<Enrollment>> GetActiveEnrollmentsForGroupAsync(int traineeGroupId, CancellationToken ct = default)
+            => await _context.Enrollments
+                .Where(e => e.TraineeGroupId == traineeGroupId && e.IsActive)
+                .ToListAsync(ct);
+
+        public async Task<List<EnrollmentDetailDto>> GetAllDetailsByTraineeIdAsync(int traineeId, CancellationToken ct = default)
+            => await _context.Enrollments
+                .Where(e => e.TraineeId == traineeId)
+                .OrderByDescending(e => e.EnrollmentDate)
+                .AsNoTracking()
+                .ProjectTo<EnrollmentDetailDto>(_mapper.ConfigurationProvider)
+                .ToListAsync(ct);
+
         public async Task<Enrollment?> GetCurrentEnrollmentForSportAsync(int traineeId, int sportId, CancellationToken ct = default)
             => await _context.Enrollments
                 .Where(e => e.TraineeId == traineeId && e.TraineeGroup.Coach.SportId == sportId)

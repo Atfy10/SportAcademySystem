@@ -6,7 +6,10 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface ITraineeRepository : IBaseRepository<Trainee, int>, IPersonRepository
     {
-        Task UpdateSports(Trainee trainee, IEnumerable<int> sportIds);
+        /// <returns>The sport IDs that were newly added (not ones removed or already present) -
+        /// callers use this to publish a SportTraineeSkillLevelChangedEvent per new pairing, so
+        /// it gets a career-history row from the moment it's created.</returns>
+        Task<List<int>> UpdateSports(Trainee trainee, IEnumerable<int> sportIds);
         Task<List<int>> GetSportIdsByTraineeId(int id, CancellationToken cancellationToken = default);
         Task<bool> IsLinkedToSport(int sportId, CancellationToken cancellationToken = default);
         Task<TraineeDetailsDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);

@@ -31,6 +31,7 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<ISportPriceRepository, SportPriceRepository>();
             services.AddScoped<ISubscriptionTypeRepository, SubscriptionTypeRepository>();
             services.AddScoped<ISportTraineeRepository, SportTraineeRepository>();
+            services.AddScoped<ITraineeCareerEventRepository, TraineeCareerEventRepository>();
             services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             services.AddScoped<ISessionOccurrenceRepository, SessionOccurrenceRepository>();
             services.AddScoped<ITraineeGroupRepository, TraineeGroupRepository>();

@@ -46,7 +46,9 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
             // Reassigning to a coach of a different sport would silently change the sport of
             // every trainee already enrolled in this group (TraineeGroup has no independent
             // SportId - it's always whatever the assigned coach teaches).
-            if (request.CoachId != traineeGroup.CoachId)
+            var coachChanged = request.CoachId != traineeGroup.CoachId;
+            var oldCoachId = traineeGroup.CoachId;
+            if (coachChanged)
             {
                 var oldCoach = await _coachRepository.GetByIdAsync(traineeGroup.CoachId, cancellationToken);
                 if (oldCoach is not null && newCoach.SportId != oldCoach.SportId)
@@ -86,6 +88,12 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
             cancellationToken.ThrowIfCancellationRequested();
 
             await _publisher.Publish(new TraineeGroupUpdatedEvent(traineeGroup.Id), cancellationToken);
+
+            if (coachChanged)
+            {
+                await _publisher.Publish(new TraineeGroupCoachChangedEvent(
+                    traineeGroup.Id, oldCoachId, request.CoachId, newCoach.SportId), cancellationToken);
+            }
 
             return Result<TraineeGroupDto>.Success(TraineeGroupMapper.ToDto(traineeGroup), _operationType);
         }

@@ -24,7 +24,9 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetById
 
         public async Task<Result<EmployeeDto>> Handle(GetEmployeeByIdQuery request, CancellationToken cancellationToken)
         {
-            var employee = await _employeeRepository.GetByIdAsync(request.Id, cancellationToken)
+            // GetFullEmployee (not the base GetByIdAsync) includes Branch - EmployeeDto's
+            // BranchName is mapped from src.Branch.Name, which would null-ref without it.
+            var employee = await _employeeRepository.GetFullEmployee(request.Id, cancellationToken)
                 ?? throw new EmployeeNotFoundException($"{request.Id}");
 
             var employeeDto = _mapper.Map<EmployeeDto>(employee)
