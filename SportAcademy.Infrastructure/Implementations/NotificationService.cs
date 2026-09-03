@@ -126,6 +126,33 @@ namespace SportAcademy.Infrastructure.Implementations
             });
         }
 
+        public async Task SendNotificationToUsersAsync(IEnumerable<Guid> userIds, string title, string message,
+            NotificationType type = NotificationType.System)
+        {
+            var ids = userIds.Distinct().ToList();
+            if (ids.Count == 0) return;
+
+            var notification = new Notification
+            {
+                Title = title,
+                Message = message,
+                Type = type
+            };
+            await _notificationRepository.AddAsync(notification);
+            await _notificationRepository.AddRecipientsForUsersAsync(notification.Id, ids);
+
+            await _hubContext.Clients.Users(ids.Select(id => id.ToString()).ToList()).ReceiveNotification(new NotificationRecipientDto
+            {
+                Id = notification.Id,
+                Title = title,
+                Message = message,
+                Type = type,
+                ActionUrl = null,
+                IsRead = false,
+                CreatedAt = notification.CreatedAt
+            });
+        }
+
         public async Task NotifyNotificationReadAsync(string userId, int notificationId)
             => await _hubContext.Clients.User(userId).NotificationRead(notificationId);
 

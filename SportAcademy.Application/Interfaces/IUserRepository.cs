@@ -49,5 +49,11 @@ namespace SportAcademy.Application.Interfaces
         /// role assignments (not a connection-time cache), so a group notification's recipient
         /// list is always correct even for a user who has never connected to the SignalR hub.
         Task<List<Guid>> GetUserIdsInRolesAsync(IEnumerable<string> roleNames, CancellationToken ct = default);
+
+        /// Ids of every current-tenant "staff" user: anyone with a linked Employee record
+        /// (coaches, accountants, managers, admins - any role) plus the Owner specifically (who
+        /// may not have an Employee record of their own). Used for org-wide announcements like
+        /// "an excuse request was approved" that every staff member should see, not just Admins.
+        Task<List<Guid>> GetStaffAndOwnerUserIdsAsync(CancellationToken ct = default);
     }
 }
