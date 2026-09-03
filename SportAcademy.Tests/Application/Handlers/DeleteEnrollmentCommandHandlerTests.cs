@@ -15,7 +15,11 @@ public class DeleteEnrollmentCommandHandlerTests
 
     public DeleteEnrollmentCommandHandlerTests()
     {
-        _handler = new DeleteEnrollmentCommandHandler(_enrollmentRepoMock.Object);
+        _handler = new DeleteEnrollmentCommandHandler(
+            _enrollmentRepoMock.Object,
+            new Mock<IUserContextService>().Object,
+            new Mock<IUserRepository>().Object,
+            new Mock<MediatR.IPublisher>().Object);
     }
 
     private static DeleteEnrollmentCommand CreateValidCommand(int id = 1) => new(Id: id);

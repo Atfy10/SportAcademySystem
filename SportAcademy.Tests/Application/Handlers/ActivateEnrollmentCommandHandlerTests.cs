@@ -15,7 +15,11 @@ public class ActivateEnrollmentCommandHandlerTests
 
     public ActivateEnrollmentCommandHandlerTests()
     {
-        _handler = new ActivateEnrollmentCommandHandler(_enrollmentRepoMock.Object);
+        _handler = new ActivateEnrollmentCommandHandler(
+            _enrollmentRepoMock.Object,
+            new Mock<IUserContextService>().Object,
+            new Mock<IUserRepository>().Object,
+            new Mock<MediatR.IPublisher>().Object);
     }
 
     private static ActivateEnrollmentCommand CreateValidCommand(int enrollmentId = 1) =>

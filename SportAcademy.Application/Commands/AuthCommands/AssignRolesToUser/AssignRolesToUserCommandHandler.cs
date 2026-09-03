@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
@@ -19,12 +20,20 @@ public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUser
 
     private readonly IUserRepository _userRepository;
     private readonly IPermissionCacheInvalidator _cacheInvalidator;
+    private readonly IUserContextService _userContext;
+    private readonly IPublisher _publisher;
     private readonly string _operation = OperationType.Update.ToString();
 
-    public AssignRolesToUserCommandHandler(IUserRepository userRepository, IPermissionCacheInvalidator cacheInvalidator)
+    public AssignRolesToUserCommandHandler(
+        IUserRepository userRepository,
+        IPermissionCacheInvalidator cacheInvalidator,
+        IUserContextService userContext,
+        IPublisher publisher)
     {
         _userRepository = userRepository;
         _cacheInvalidator = cacheInvalidator;
+        _userContext = userContext;
+        _publisher = publisher;
     }
 
     public async Task<Result<bool>> Handle(AssignRolesToUserCommand request, CancellationToken cancellationToken)
@@ -62,6 +71,13 @@ public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUser
         // just-demoted user would keep their old effective permissions for up to the cache's
         // sliding window.
         _cacheInvalidator.Invalidate(request.UserId);
+
+        // Resolved here (not in the event handler) while IUserContextService is reliably valid
+        // for this request - the resolved name travels with the event as plain data.
+        var actorName = _userContext.UserId is { } actorId
+            ? await _userRepository.GetDisplayNameAsync(actorId, cancellationToken)
+            : "System";
+        await _publisher.Publish(new UserRolesChangedEvent(request.UserId, actorName), cancellationToken);
 
         return Result<bool>.Success(true, _operation);
     }

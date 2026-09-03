@@ -15,7 +15,11 @@ public class SuspendEnrollmentCommandHandlerTests
 
     public SuspendEnrollmentCommandHandlerTests()
     {
-        _handler = new SuspendEnrollmentCommandHandler(_enrollmentRepoMock.Object);
+        _handler = new SuspendEnrollmentCommandHandler(
+            _enrollmentRepoMock.Object,
+            new Mock<IUserContextService>().Object,
+            new Mock<IUserRepository>().Object,
+            new Mock<MediatR.IPublisher>().Object);
     }
 
     private static SuspendEnrollmentCommand CreateValidCommand(int enrollmentId = 1) =>
