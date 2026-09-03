@@ -22,12 +22,23 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         : IdentityDbContext<AppUser, AppRole, Guid, IdentityUserClaim<Guid>, AppUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
     {
         private readonly ITenantIdProvider _tenantIdProvider;
+        private readonly IBranchAccessProvider _branchAccessProvider;
         public Guid? CurrentTenantId => _tenantIdProvider.TenantId;
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantIdProvider tenantIdProvider)
+        // Read by the IBranchScoped query filter below (and the explicit navigated filters for
+        // Enrollment/Attendance/SessionOccurrence/Coach/ExcuseRequest) - false/empty for every
+        // role except "Employee", see IBranchAccessProvider.
+        public bool IsBranchRestricted => _branchAccessProvider.IsRestricted;
+        public IReadOnlyList<int> CurrentAllowedBranchIds => _branchAccessProvider.AllowedBranchIds;
+
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options,
+            ITenantIdProvider tenantIdProvider,
+            IBranchAccessProvider branchAccessProvider)
             : base(options)
         {
             _tenantIdProvider = tenantIdProvider;
+            _branchAccessProvider = branchAccessProvider;
         }
 
         public DbSet<AppUser> AppUsers { get; set; }
@@ -70,6 +81,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<TraineeMedicalCondition> TraineeMedicalConditions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<UserPermissionOverride> UserPermissionOverrides { get; set; }
+        public DbSet<UserBranchAccess> UserBranchAccesses { get; set; }
         public DbSet<Domain.Entities.Finance.Invoice> Invoices { get; set; }
         public DbSet<Domain.Entities.Finance.InvoiceLine> InvoiceLines { get; set; }
         public DbSet<Domain.Entities.Finance.PaymentAllocation> PaymentAllocations { get; set; }
@@ -218,16 +230,37 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                 }
             }
 
+            // Entities with no BranchId column of their own still need branch-scoping - each
+            // path below is the shortest required (non-nullable) navigation chain to a
+            // BranchId-bearing entity. Kept as an explicit map (not reflection) since the path
+            // differs per entity and can't be derived generically the way IBranchScoped's
+            // direct property can.
+            var branchNavigationPaths = new Dictionary<Type, string[]>
+            {
+                [typeof(Enrollment)] = ["TraineeGroup", "BranchId"],
+                [typeof(Attendance)] = ["Enrollment", "TraineeGroup", "BranchId"],
+                [typeof(SessionOccurrence)] = ["GroupSchedule", "TraineeGroup", "BranchId"],
+                [typeof(Coach)] = ["Employee", "BranchId"],
+                [typeof(ExcuseRequest)] = ["Enrollment", "TraineeGroup", "BranchId"],
+            };
+
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 var isTenantScoped = typeof(ITenantScoped).IsAssignableFrom(entityType.ClrType)
                                      && entityType.ClrType != typeof(Tenant);
                 var isSoftDeletable = typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType);
 
-                if (!isTenantScoped && !isSoftDeletable)
-                    continue;
-
                 var parameter = Expression.Parameter(entityType.ClrType, "e");
+
+                Expression? branchIdAccessor = typeof(IBranchScoped).IsAssignableFrom(entityType.ClrType)
+                    ? Expression.Property(parameter, "BranchId")
+                    : branchNavigationPaths.TryGetValue(entityType.ClrType, out var path)
+                        ? path.Aggregate((Expression)parameter, Expression.Property)
+                        : null;
+                var isBranchScoped = branchIdAccessor is not null;
+
+                if (!isTenantScoped && !isSoftDeletable && !isBranchScoped)
+                    continue;
 
                 Expression? body = null;
 
@@ -252,6 +285,25 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                     body = body != null
                         ? Expression.AndAlso(body, notDeleted)
                         : notDeleted;
+                }
+
+                if (isBranchScoped)
+                {
+                    // Unrestricted (every role except "Employee") always passes; a restricted
+                    // user only sees rows whose branch is in their current allow-list - an
+                    // Employee granted zero branches sees zero rows here, not everything.
+                    var dbContext = Expression.Constant(this);
+                    var isBranchRestricted = Expression.Property(dbContext, nameof(IsBranchRestricted));
+                    var allowedBranchIds = Expression.Property(dbContext, nameof(CurrentAllowedBranchIds));
+                    var containsCall = Expression.Call(
+                        typeof(Enumerable), nameof(Enumerable.Contains), [typeof(int)],
+                        allowedBranchIds, branchIdAccessor!);
+
+                    var branchAllowed = Expression.OrElse(Expression.Not(isBranchRestricted), containsCall);
+
+                    body = body != null
+                        ? Expression.AndAlso(body, branchAllowed)
+                        : branchAllowed;
                 }
 
                 modelBuilder.Entity(entityType.ClrType)

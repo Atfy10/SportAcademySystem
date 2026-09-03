@@ -71,6 +71,15 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
                 request.Permissions.Any(p => !Permissions.All.Contains(p)))
                 return Result<InvitationResponse>.Failure(
                     _operation, "One or more requested permissions are not valid.", 400);
+
+            // Employee is the only branch-restricted role (see IBranchAccessProvider) - an
+            // Employee invite with no branches would accept into a role that can see nothing,
+            // which is never what an admin actually wants, so it's rejected outright rather
+            // than silently creating a locked-out account.
+            if (string.Equals(request.Role, "Employee", StringComparison.OrdinalIgnoreCase) &&
+                request.BranchIds is not { Count: > 0 })
+                return Result<InvitationResponse>.Failure(
+                    _operation, "At least one branch must be selected for an Employee invitation.", 400);
         }
 
         var rawToken = _tokenService.GenerateRawToken();
@@ -85,7 +94,8 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
             tokenHash,
             expiresAt,
             request.Role,
-            request.Permissions);
+            request.Permissions,
+            request.BranchIds);
 
         // See ResendInvitationCommandHandler for why this context switch is required: the
         // caller may not belong to request.TenantId (e.g. Super Admin inviting into a tenant

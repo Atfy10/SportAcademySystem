@@ -3,7 +3,7 @@ using SportAcademy.Domain.Entities.Tenants;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class SportBranch : ITenantScoped
+    public class SportBranch : ITenantScoped, IBranchScoped
     {
         public int SportId { get; set; }
         public int BranchId { get; set; }

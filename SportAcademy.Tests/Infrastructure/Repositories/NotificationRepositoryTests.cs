@@ -33,7 +33,7 @@ public class NotificationRepositoryTests
         var provider = new TestTenantIdProvider();
         if (tenantId.HasValue) provider.SetTenantId(tenantId.Value);
 
-        return new ApplicationDbContext(options, provider);
+        return new ApplicationDbContext(options, provider, new Mock<IBranchAccessProvider>().Object);
     }
 
     private static AppUser CreateAdminUser(Guid tenantId, string userName) => new()

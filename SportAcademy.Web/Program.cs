@@ -57,6 +57,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextService, UserContextService>();
 
 builder.Services.AddScoped<ITenantIdProvider, TenantIdProvider>();
+builder.Services.AddScoped<IBranchAccessProvider, BranchAccessProvider>();
 builder.Services.AddScoped<ICurrentLanguageProvider, CurrentLanguageProvider>();
 builder.Services.AddScoped<ITenantSettingsLanguageReader, TenantSettingsLanguageReader>();
 builder.Services.AddScoped<ILocalizationService, JsonLocalizationService>();
@@ -386,6 +387,23 @@ app.Use(async (context, next) =>
 
     var tenantIdProvider = context.RequestServices.GetRequiredService<ITenantIdProvider>();
     tenantIdProvider.SetTenantId(userContext.TenantId);
+
+    // Only "Employee" is branch-restricted (see IBranchAccessProvider) - every other
+    // authenticated role stays unrestricted. Queried fresh per request (not baked into the
+    // JWT) so a branch grant/revoke made via the Users & Roles page takes effect on the very
+    // next request, not just after the access token is refreshed.
+    if (userContext.IsAuthenticated && userContext.Role.Contains("Employee") && userContext.UserId is { } currentUserId)
+    {
+        var db = context.RequestServices.GetRequiredService<ApplicationDbContext>();
+        var allowedBranchIds = await db.UserBranchAccesses
+            .Where(a => a.UserId == currentUserId)
+            .Select(a => a.BranchId)
+            .ToListAsync();
+
+        var branchAccessProvider = context.RequestServices.GetRequiredService<IBranchAccessProvider>();
+        branchAccessProvider.SetBranchAccess(true, allowedBranchIds);
+    }
+
     await next();
 });
 

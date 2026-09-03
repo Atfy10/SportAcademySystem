@@ -10,12 +10,14 @@ using SportAcademy.Application.Commands.AuthCommands.RefreshToken;
 using SportAcademy.Application.Commands.AuthCommands.ResetPassword;
 using SportAcademy.Application.Commands.AuthCommands.RevokeToken;
 using SportAcademy.Application.Commands.AuthCommands.ToggleUserActive;
+using SportAcademy.Application.Commands.AuthCommands.UpdateUserBranches;
 using SportAcademy.Application.Commands.AuthCommands.VerifyPassword;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Queries.AuthQueries.GetAllRoles;
 using SportAcademy.Application.Queries.AuthQueries.GetMyPermissions;
 using SportAcademy.Application.Queries.AuthQueries.GetMyProfile;
+using SportAcademy.Application.Queries.AuthQueries.GetUserBranches;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -85,6 +87,23 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> AssignRoles([FromRoute] string userId, [FromBody] List<string> roles, CancellationToken ct)
         {
             var result = await _mediator.Send(new AssignRolesToUserCommand(Guid.Parse(userId), roles), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:tenant.users.manage")]
+        [HttpGet("users/{userId}/branches")]
+        public async Task<IActionResult> GetUserBranches([FromRoute] string userId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetUserBranchesQuery(Guid.Parse(userId)), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:tenant.users.manage")]
+        [HttpPut("users/{userId}/branches")]
+        public async Task<IActionResult> UpdateUserBranches(
+            [FromRoute] string userId, [FromBody] List<int> branchIds, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new UpdateUserBranchesCommand(Guid.Parse(userId), branchIds), ct);
             return Ok(result);
         }
 

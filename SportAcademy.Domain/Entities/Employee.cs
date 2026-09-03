@@ -4,7 +4,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class Employee : Person
+    public class Employee : Person, SportAcademy.Domain.Contract.IBranchScoped
     {
         public int Id { get; set; }
         public decimal Salary { get; set; }

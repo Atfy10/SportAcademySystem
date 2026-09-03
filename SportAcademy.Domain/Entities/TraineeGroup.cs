@@ -5,7 +5,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class TraineeGroup : ITenantScoped, IAuditableEntity
+    public class TraineeGroup : ITenantScoped, IAuditableEntity, IBranchScoped
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;

@@ -8,7 +8,7 @@ namespace SportAcademy.Domain.Entities.Finance;
 // creation; later: any other charge type, expressed as a new InvoiceLine, not a new table -
 // see InvoiceLine). AmountPaid is maintained by IFinanceLedgerService, the only code allowed
 // to mutate it or Status - never derive/recompute it ad hoc in a query.
-public class Invoice : ITenantScoped, IAuditableEntity, ISoftDeletable
+public class Invoice : ITenantScoped, IAuditableEntity, ISoftDeletable, IBranchScoped
 {
     public int Id { get; set; }
     public required string InvoiceNumber { get; set; }

@@ -24,6 +24,13 @@ public class RefreshTokenRepositoryTests
         public void SetTenantId(Guid? tenantId) => TenantId = tenantId;
     }
 
+    private sealed class TestBranchAccessProvider : IBranchAccessProvider
+    {
+        public bool IsRestricted => false;
+        public IReadOnlyList<int> AllowedBranchIds { get; } = [];
+        public void SetBranchAccess(bool isRestricted, IReadOnlyList<int> allowedBranchIds) { }
+    }
+
     private static ApplicationDbContext CreateContext(Guid? tenantId, string dbName)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -33,7 +40,7 @@ public class RefreshTokenRepositoryTests
         var provider = new TestTenantIdProvider();
         provider.SetTenantId(tenantId);
 
-        return new ApplicationDbContext(options, provider);
+        return new ApplicationDbContext(options, provider, new TestBranchAccessProvider());
     }
 
     [Fact]

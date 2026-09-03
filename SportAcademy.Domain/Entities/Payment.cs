@@ -9,7 +9,7 @@ namespace SportAcademy.Domain.Entities
     // expressed entirely through Allocations (see PaymentAllocation), which is what lets one
     // payment cover several invoices (e.g. a family paying for multiple trainees at once) or
     // an invoice be settled by several payments (instalments).
-    public class Payment : ITenantScoped, IAuditableEntity
+    public class Payment : ITenantScoped, IAuditableEntity, IBranchScoped
     {
         public required string PaymentNumber { get; set; }
         public int PaymentTypeId { get; set; }

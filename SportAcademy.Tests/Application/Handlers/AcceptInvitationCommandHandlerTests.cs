@@ -24,6 +24,7 @@ public class AcceptInvitationCommandHandlerTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<IJwtTokenService> _jwtTokenServiceMock = new();
     private readonly Mock<IUserPermissionOverrideRepository> _userPermissionOverrideRepoMock = new();
+    private readonly Mock<IUserBranchAccessRepository> _userBranchAccessRepoMock = new();
     private readonly Mock<IProfileRepository> _profileRepoMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly AcceptInvitationCommandHandler _handler;
@@ -42,6 +43,7 @@ public class AcceptInvitationCommandHandlerTests
             _userManagerMock.Object,
             _jwtTokenServiceMock.Object,
             _userPermissionOverrideRepoMock.Object,
+            _userBranchAccessRepoMock.Object,
             _profileRepoMock.Object,
             _mediatorMock.Object);
     }

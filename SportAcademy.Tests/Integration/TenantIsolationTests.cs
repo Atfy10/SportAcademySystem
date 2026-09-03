@@ -15,6 +15,19 @@ public class TenantIsolationTests
         public void SetTenantId(Guid? tenantId) => TenantId = tenantId;
     }
 
+    // Unrestricted by default (IsRestricted stays false) - these tests are about tenant
+    // isolation, not branch isolation, so every branch is visible unless a test says otherwise.
+    private sealed class TestBranchAccessProvider : IBranchAccessProvider
+    {
+        public bool IsRestricted { get; private set; }
+        public IReadOnlyList<int> AllowedBranchIds { get; private set; } = [];
+        public void SetBranchAccess(bool isRestricted, IReadOnlyList<int> allowedBranchIds)
+        {
+            IsRestricted = isRestricted;
+            AllowedBranchIds = allowedBranchIds;
+        }
+    }
+
     private sealed class TestUserContextService : IUserContextService
     {
         public Guid? UserId { get; init; }
@@ -33,7 +46,7 @@ public class TenantIsolationTests
         if (tenantId.HasValue)
             provider.SetTenantId(tenantId.Value);
 
-        return new ApplicationDbContext(options, provider);
+        return new ApplicationDbContext(options, provider, new TestBranchAccessProvider());
     }
 
     private static ApplicationDbContext CreateContextWithInterceptor(Guid? tenantId, string dbName)
@@ -51,7 +64,7 @@ public class TenantIsolationTests
         if (tenantId.HasValue)
             provider.SetTenantId(tenantId.Value);
 
-        return new ApplicationDbContext(options, provider);
+        return new ApplicationDbContext(options, provider, new TestBranchAccessProvider());
     }
 
     private static Branch CreateBranch(string name, Guid? tenantId = null)

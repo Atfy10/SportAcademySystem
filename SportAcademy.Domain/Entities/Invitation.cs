@@ -23,6 +23,12 @@ public class Invitation : ITenantScoped, IAuditableEntity
     // and keep their hardcoded "Owner" behavior.
     public string? Role { get; set; }
     public string? Permissions { get; set; }
+
+    // Comma-separated Branch ids, same encoding as Permissions. Only meaningful when
+    // Role == "Employee" (the only branch-restricted role - see IBranchAccessProvider);
+    // CreateInvitationCommandHandler requires at least one for that role and leaves this null
+    // for every other role.
+    public string? BranchIds { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }

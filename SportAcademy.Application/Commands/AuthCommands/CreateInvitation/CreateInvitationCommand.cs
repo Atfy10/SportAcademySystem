@@ -12,4 +12,7 @@ public record CreateInvitationCommand(
     // must be PendingSetup). A Role = staff invite into an already-Active tenant.
     string? Role = null,
     List<string>? Permissions = null,
-    DateTime? ExpiresAt = null) : IRequest<Result<InvitationResponse>>;
+    DateTime? ExpiresAt = null,
+    // Required (non-empty) when Role == "Employee" - the only branch-restricted role. Ignored
+    // for every other role.
+    List<int>? BranchIds = null) : IRequest<Result<InvitationResponse>>;

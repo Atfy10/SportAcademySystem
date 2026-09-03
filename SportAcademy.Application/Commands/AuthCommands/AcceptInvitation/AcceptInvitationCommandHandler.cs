@@ -22,6 +22,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
     private readonly UserManager<AppUser> _userManager;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUserPermissionOverrideRepository _userPermissionOverrideRepository;
+    private readonly IUserBranchAccessRepository _userBranchAccessRepository;
     private readonly IProfileRepository _profileRepository;
     private readonly IMediator _mediator;
     private const string Operation = "Accept";
@@ -36,6 +37,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         UserManager<AppUser> userManager,
         IJwtTokenService jwtTokenService,
         IUserPermissionOverrideRepository userPermissionOverrideRepository,
+        IUserBranchAccessRepository userBranchAccessRepository,
         IProfileRepository profileRepository,
         IMediator mediator)
     {
@@ -47,6 +49,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         _userManager = userManager;
         _jwtTokenService = jwtTokenService;
         _userPermissionOverrideRepository = userPermissionOverrideRepository;
+        _userBranchAccessRepository = userBranchAccessRepository;
         _profileRepository = profileRepository;
         _mediator = mediator;
     }
@@ -136,6 +139,22 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
                         Effect = PermissionEffect.Allow,
                     });
                 await _userPermissionOverrideRepository.AddRangeAsync(permissionOverrides, ct);
+            }
+
+            if (isStaffOnboarding && !string.IsNullOrWhiteSpace(invitation.BranchIds))
+            {
+                // CreateInvitationCommandHandler already required at least one branch for an
+                // Employee invite (the only branch-restricted role) - this is just materializing
+                // that choice into the rows IBranchAccessProvider actually reads.
+                var branchAccess = invitation.BranchIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(b => new UserBranchAccess
+                    {
+                        UserId = user.Id,
+                        TenantId = user.TenantId,
+                        BranchId = int.Parse(b),
+                    });
+                await _userBranchAccessRepository.AddRangeAsync(branchAccess, ct);
             }
 
             if (!isStaffOnboarding)

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class Trainee : Person
+    public class Trainee : Person, SportAcademy.Domain.Contract.IBranchScoped
     {
         public int Id { get; set; }
         public TraineeCode TraineeCode { get; set; } = null!;

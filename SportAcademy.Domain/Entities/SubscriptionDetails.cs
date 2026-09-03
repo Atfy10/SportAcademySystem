@@ -4,7 +4,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
-    public class SubscriptionDetails : ITenantScoped, IAuditableEntity, ISoftDeletable
+    public class SubscriptionDetails : ITenantScoped, IAuditableEntity, ISoftDeletable, IBranchScoped
     {
         public int Id { get; set; }
         public required DateOnly StartDate { get; set; }
