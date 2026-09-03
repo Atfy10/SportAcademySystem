@@ -9,25 +9,30 @@ public sealed class SubscriptionCreatedHandler : INotificationHandler<Subscripti
 {
     private readonly INotificationService _notificationService;
     private readonly IRealtimeService _realtimeService;
-    private readonly IUserContextService _userContext;
     private readonly IUserRepository _userRepository;
+    private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
 
     public SubscriptionCreatedHandler(
         INotificationService notificationService,
         IRealtimeService realtimeService,
-        IUserContextService userContext,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        ISubscriptionDetailsRepository subscriptionDetailsRepository)
     {
         _notificationService = notificationService;
         _realtimeService = realtimeService;
-        _userContext = userContext;
         _userRepository = userRepository;
+        _subscriptionDetailsRepository = subscriptionDetailsRepository;
     }
 
     public async Task Handle(SubscriptionCreatedEvent notification, CancellationToken cancellationToken)
     {
-        var actorName = _userContext.UserId is { } userId
-            ? await _userRepository.GetDisplayNameAsync(userId, cancellationToken)
+        // Reads the creator from the entity's own persisted CreatedBy (set by
+        // AuditingInterceptor at save time) rather than the ambient IUserContextService - same
+        // reasoning as the ExcuseRequest handlers: the DB fact can't drift from what was
+        // actually saved.
+        var subscription = await _subscriptionDetailsRepository.GetByIdAsync(notification.SubscriptionId, cancellationToken);
+        var actorName = subscription?.CreatedBy is { } createdByRaw && Guid.TryParse(createdByRaw, out var createdBy)
+            ? await _userRepository.GetDisplayNameAsync(createdBy, cancellationToken)
             : "System";
 
         await _notificationService.SendNotificationToGroupAsync(

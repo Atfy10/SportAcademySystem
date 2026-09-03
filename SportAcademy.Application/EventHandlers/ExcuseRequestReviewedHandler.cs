@@ -8,7 +8,6 @@ namespace SportAcademy.Application.EventHandlers;
 public sealed class ExcuseRequestReviewedHandler(
     INotificationService notificationService,
     IRealtimeService realtimeService,
-    IUserContextService userContext,
     IUserRepository userRepository,
     IExcuseRequestRepository excuseRequestRepository)
     : INotificationHandler<ExcuseRequestReviewedEvent>
@@ -20,8 +19,12 @@ public sealed class ExcuseRequestReviewedHandler(
         var excuseRequest = await excuseRequestRepository.GetByIdAsync(notification.ExcuseRequestId, cancellationToken);
         if (excuseRequest?.RequestedByUserId is null) return;
 
-        var actorName = userContext.UserId is { } userId
-            ? await userRepository.GetDisplayNameAsync(userId, cancellationToken)
+        // Reads the reviewer from the entity's own persisted ReviewedByUserId (already loaded
+        // above) rather than the ambient IUserContextService - same reasoning as
+        // ExcuseRequestCreatedHandler: the DB fact can't drift from what
+        // Approve/RejectExcuseRequestCommandHandler actually wrote.
+        var actorName = excuseRequest.ReviewedByUserId is { } reviewedByRaw && Guid.TryParse(reviewedByRaw, out var reviewedBy)
+            ? await userRepository.GetDisplayNameAsync(reviewedBy, cancellationToken)
             : "System";
 
         var title = notification.Approved ? "Excuse Request Approved" : "Excuse Request Rejected";
