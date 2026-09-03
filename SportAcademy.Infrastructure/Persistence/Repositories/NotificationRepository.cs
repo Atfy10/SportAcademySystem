@@ -76,6 +76,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var query = _context.NotificationRecipients
                 .Where(r => r.UserId == userId)
                 .OrderByDescending(r => r.Notification.CreatedAt)
+                .ThenBy(r => r.NotificationId)
                 .AsNoTracking()
                 .ProjectTo<NotificationRecipientDto>(_mapper.ConfigurationProvider);
 

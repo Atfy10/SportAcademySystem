@@ -37,6 +37,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, CancellationToken ct = default)
             => await _context.Coachs
                 .AsNoTracking()
+                .OrderBy(c => c.EmployeeId)
                 .Select(CoachProjections.ToCardDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, ct);
 
@@ -54,7 +55,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<PagedData<EmployeeCardDto>> GetAllAsync(PageRequest page, EmployeeFilterOptions filters, CancellationToken cancellationToken = default)
         {
-            var query = _context.Employees
+            var query = ApplyBranchFilter(_context.Employees)
                 .Include(e => e.Branch)
                 .AsNoTracking();
 
@@ -69,26 +70,29 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             if (!string.IsNullOrEmpty(filters.Position) && Enum.TryParse<Domain.Enums.Position>(filters.Position, out var position))
                 query = query.Where(e => e.Position == position);
 
+            // Every branch needs an Id tiebreaker - none of these sort keys are unique
+            // (multiple employees can share a name, position, branch, status, or hire date),
+            // so without one, Skip/Take pagination can return rows inconsistently across pages.
             query = filters.SortBy?.ToLower() switch
             {
                 "name" => filters.SortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.FirstName + " " + e.LastName)
-                    : query.OrderBy(e => e.FirstName + " " + e.LastName),
+                    ? query.OrderByDescending(e => e.FirstName + " " + e.LastName).ThenBy(e => e.Id)
+                    : query.OrderBy(e => e.FirstName + " " + e.LastName).ThenBy(e => e.Id),
                 "position" => filters.SortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.Position)
-                    : query.OrderBy(e => e.Position),
+                    ? query.OrderByDescending(e => e.Position).ThenBy(e => e.Id)
+                    : query.OrderBy(e => e.Position).ThenBy(e => e.Id),
                 "branch" => filters.SortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.Branch!.Name)
-                    : query.OrderBy(e => e.Branch!.Name),
+                    ? query.OrderByDescending(e => e.Branch!.Name).ThenBy(e => e.Id)
+                    : query.OrderBy(e => e.Branch!.Name).ThenBy(e => e.Id),
                 "status" => filters.SortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.IsWork)
-                    : query.OrderBy(e => e.IsWork),
+                    ? query.OrderByDescending(e => e.IsWork).ThenBy(e => e.Id)
+                    : query.OrderBy(e => e.IsWork).ThenBy(e => e.Id),
                 "hired" => filters.SortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.HireDate)
-                    : query.OrderBy(e => e.HireDate),
+                    ? query.OrderByDescending(e => e.HireDate).ThenBy(e => e.Id)
+                    : query.OrderBy(e => e.HireDate).ThenBy(e => e.Id),
                 _ => filters.SortOrder?.ToLower() == "desc"
-                    ? query.OrderByDescending(e => e.LastName).ThenByDescending(e => e.FirstName)
-                    : query.OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+                    ? query.OrderByDescending(e => e.LastName).ThenByDescending(e => e.FirstName).ThenBy(e => e.Id)
+                    : query.OrderBy(e => e.LastName).ThenBy(e => e.FirstName).ThenBy(e => e.Id)
             };
 
             return await query
@@ -97,9 +101,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<PagedData<EmployeeDto>> GetActiveAsync(PageRequest page, CancellationToken cancellationToken = default)
-            => await _context.Employees
+            => await ApplyBranchFilter(_context.Employees)
                 .Where(e => e.IsWork)
                 .AsNoTracking()
+                .OrderBy(e => e.Id)
                 .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
 
@@ -118,16 +123,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Employees.AnyAsync(e => e.SSN == ssn, cancellationToken);
 
         public async Task<PagedData<EmployeeDto>> GetActiveCoachesAsync(PageRequest page, CancellationToken cancellationToken = default)
-            => await _context.Employees
+            => await ApplyBranchFilter(_context.Employees)
                 .Where(e => e.IsWork && e.Coach != null)
                 .AsNoTracking()
+                .OrderBy(e => e.Id)
                 .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
 
         public async Task<PagedData<EmployeeDto>> GetCoachEmployeesWithoutCoachRecordAsync(PageRequest page, CancellationToken cancellationToken = default)
-            => await _context.Employees
+            => await ApplyBranchFilter(_context.Employees)
                 .Where(e => e.IsWork && e.Position == Domain.Enums.Position.Coach)
                 .Where(e => !_context.Coachs.Any(c => c.EmployeeId == e.Id))
+                .OrderBy(e => e.Id)
                 .ProjectTo<EmployeeDto>(_mapper.ConfigurationProvider)
                 .AsNoTracking()
                 .ToPagedDataAsync(page, cancellationToken);

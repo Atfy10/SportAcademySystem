@@ -32,8 +32,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<PagedData<SessionOccurrenceDto>> GetAllPaginatedAsync(PageRequest page, CancellationToken cancellationToken = default)
         {
+            // StartDateTime alone isn't unique - multiple sessions can share the same slot
+            // (different groups, same time), so ties need a tiebreaker or Skip/Take pages can
+            // return rows inconsistently (a row appearing on two pages, or on none) between the
+            // count query and each page's query.
             var query = _context.SessionOccurrences
                 .OrderByDescending(s => s.StartDateTime)
+                .ThenBy(s => s.Id)
                 .AsNoTracking()
                 .Select(SessionOccurrenceProjections.ToDto(_languageProvider.Language));
 
@@ -45,6 +50,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var query = _context.SessionOccurrences
                 .Where(s => s.StartDateTime.Date == date.Date)
                 .OrderByDescending(s => s.StartDateTime)
+                .ThenBy(s => s.Id)
                 .AsNoTracking()
                 .Select(SessionOccurrenceProjections.ToDto(_languageProvider.Language));
 
@@ -58,6 +64,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     || s.GroupSchedule.TraineeGroup.Coach!.Sport!.Name.Contains(term)
                     || (s.GroupSchedule.TraineeGroup.Coach.Employee!.FirstName + " " + s.GroupSchedule.TraineeGroup.Coach.Employee.LastName).Contains(term)
                     || s.GroupSchedule.TraineeGroup.Branch!.Name.Contains(term))
+                .OrderByDescending(s => s.StartDateTime)
+                .ThenBy(s => s.Id)
                 .AsNoTracking()
                 .Select(SessionOccurrenceProjections.ToDto(_languageProvider.Language));
 

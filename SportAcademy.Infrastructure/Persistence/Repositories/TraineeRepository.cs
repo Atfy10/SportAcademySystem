@@ -45,7 +45,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             )
         {
             var rows = await (
-                from t in _context.Trainees.AsNoTracking()
+                from t in ApplyBranchFilter(_context.Trainees).AsNoTracking()
                 where t.Enrollments.Any(e => e.TraineeGroup.GroupSchedules.Any(gs => gs.Day == date.DayOfWeek))
 
                 from ts in t.Sports
@@ -183,6 +183,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 ["pageSize"] = page.PageSize,
                 ["tenantId"] = _tenantIdProvider.TenantId!
             };
+
+            // Trainee is excluded from the automatic global branch filter (see
+            // branchAutoFilterExclusions in ApplicationDbContext.OnModelCreating) - this raw-SQL
+            // path bypasses EF entirely, so it needs the same check applied explicitly.
+            if (_context.IsBranchRestricted)
+            {
+                filterConditions.Add("t.BranchId IN @branchIds");
+                filterParams["branchIds"] = _context.CurrentAllowedBranchIds;
+            }
 
             if (hasSport)
             {
@@ -594,9 +603,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 _ => null
             };
 
-            return sortColumn == null
-                ? $"ORDER BY {defaultSort}"
-                : $"ORDER BY {string.Join(", ", sortColumn.Split(',', StringSplitOptions.TrimEntries).Select(c => $"{c} {dir}"))}";
+            if (sortColumn == null)
+                return $"ORDER BY {defaultSort}";
+
+            // None of these columns are unique on their own - append t.Id as a tiebreaker so
+            // OFFSET/FETCH pagination returns stable, non-overlapping pages.
+            var columns = sortColumn.Split(',', StringSplitOptions.TrimEntries).Select(c => $"{c} {dir}").ToList();
+            columns.Add($"t.Id {dir}");
+            return $"ORDER BY {string.Join(", ", columns)}";
         }
 
         private class MedicalConditionRow

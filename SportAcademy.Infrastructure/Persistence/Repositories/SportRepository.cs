@@ -61,6 +61,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<SportDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Sports
                 .Where(s => EF.Functions.Like(s.Name, $"%{term}%"))
+                .OrderBy(s => s.Id)
                 .Select(SportProjections.ToDto(_languageProvider.Language))
                 .AsNoTracking()
                 .ToPagedDataAsync(page, cancellationToken);
@@ -84,6 +85,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<SportDto>> GetAllPaginatedTranslatedAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Sports
                 .AsNoTracking()
+                .OrderBy(s => s.Id)
                 .Select(SportProjections.ToDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
 

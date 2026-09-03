@@ -28,7 +28,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<PagedData<SubscriptionDetailsDto>> GetAllPaginatedAsync(PageRequest page, string? term = null, CancellationToken ct = default)
         {
-            IQueryable<SubscriptionDetails> query = _context.SubscriptionDetails
+            IQueryable<SubscriptionDetails> query = ApplyBranchFilter(_context.SubscriptionDetails)
                 .Include(sd => sd.Trainee)
                 .Include(sd => sd.SportPrice)
                     .ThenInclude(sp => sp.Branch)
@@ -84,7 +84,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             DateTime? from, DateTime? to, int? branchId, int? sportId, SubscriptionStatus? status,
             PageRequest? page, CancellationToken ct = default)
         {
-            var query = GetFullSubDetails();
+            // Unlike GetFullSubDetails()'s other callers (which fetch a specific, already
+            // access-checked trainee's own history and must not hide subscriptions processed at
+            // a different branch), this is a standalone subscriptions report/list - branch
+            // restriction applies here the same way it does for GetAllPaginatedAsync above.
+            var query = ApplyBranchFilter(GetFullSubDetails());
 
             if (from.HasValue) query = query.Where(sd => sd.EndDate >= DateOnly.FromDateTime(from.Value));
             if (to.HasValue) query = query.Where(sd => sd.StartDate <= DateOnly.FromDateTime(to.Value));

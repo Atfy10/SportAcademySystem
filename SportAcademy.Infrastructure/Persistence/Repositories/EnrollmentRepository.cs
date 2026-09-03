@@ -43,6 +43,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             var pagedData = await query
                 .AsNoTracking()
+                .OrderBy(e => e.Id)
                 .ProjectTo<EnrollmentDataDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, ct);
 
@@ -150,6 +151,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             var projected = query
                 .AsNoTracking()
+                .OrderBy(e => e.Id)
                 .ProjectTo<EnrollmentCardDto>(_mapper.ConfigurationProvider);
 
             return await projected.ToPagedDataAsync(page, ct);
@@ -208,6 +210,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             var projected = query
                 .AsNoTracking()
+                .OrderBy(e => e.Id)
                 .ProjectTo<EnrollmentCardDto>(_mapper.ConfigurationProvider);
 
             return await projected.ToPagedDataAsync(page, ct);

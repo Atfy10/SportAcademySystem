@@ -235,13 +235,54 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
             // BranchId-bearing entity. Kept as an explicit map (not reflection) since the path
             // differs per entity and can't be derived generically the way IBranchScoped's
             // direct property can.
+            // Coach is deliberately NOT branch-scoped here (it was, and that was a bug - see
+            // below). A coach's *employment* branch (Employee.BranchId) and the branch of a
+            // group they *teach* are independent - coaches can and do teach groups at a branch
+            // other than the one that employs them. TraineeGroup/SessionOccurrence/etc. already
+            // carry their own correct branch scope; every card/list projection for those entities
+            // also joins TraineeGroup -> Coach (a required, non-nullable navigation) to show the
+            // coach's name. If Coach were branch-scoped too, that join becomes an INNER JOIN
+            // against an ADDITIONALLY filtered Coach row - a coach employed at a different branch
+            // than the group they teach silently drops the entire group/session/etc. row from a
+            // branch-restricted caller's results, even though the group's own branch is one
+            // they're allowed to see. (Confirmed: branch-1 groups taught by a branch-2/3-employed
+            // coach vanished from every list and page for a branch-1-restricted Employee, while
+            // TotalCount - a plain COUNT with no Coach join - still reported the true total.)
             var branchNavigationPaths = new Dictionary<Type, string[]>
             {
                 [typeof(Enrollment)] = ["TraineeGroup", "BranchId"],
                 [typeof(Attendance)] = ["Enrollment", "TraineeGroup", "BranchId"],
                 [typeof(SessionOccurrence)] = ["GroupSchedule", "TraineeGroup", "BranchId"],
-                [typeof(Coach)] = ["Employee", "BranchId"],
                 [typeof(ExcuseRequest)] = ["Enrollment", "TraineeGroup", "BranchId"],
+            };
+
+            // These three still implement IBranchScoped (their BranchId is real and meaningful)
+            // but are excluded from the AUTOMATIC global filter below. Each represents a
+            // "home"/"registered at" branch that can legitimately differ from the branch of an
+            // unrelated, already-correctly-scoped entity that merely references it: a Trainee's
+            // registered branch can differ from a group they're enrolled in at another branch, a
+            // SubscriptionDetails' branch can differ from its Enrollment's group's branch, and an
+            // Employee's employment branch can differ from a group their Coach teaches at. Making
+            // any of these auto-filtered means every query that reaches them via a required
+            // navigation from that unrelated root (Enrollment.Trainee, Enrollment.
+            // SubscriptionDetails, TraineeGroup.Coach.Employee) silently drops the whole root row
+            // whenever the referenced entity's own branch isn't in the caller's allowed set -
+            // even though the root's own (correct) branch scope already passed. The
+            // Trainees/Employees list endpoints - where one of these IS the query's actual
+            // subject - apply the same branch check explicitly instead (see
+            // BaseRepository.GetAllPaginatedAsync and each repository's hand-written list
+            // methods).
+            var branchAutoFilterExclusions = new HashSet<Type>
+            {
+                typeof(Trainee), typeof(SubscriptionDetails), typeof(Employee),
+                // SportPrice: shares SubscriptionDetails' own BranchId by construction (its
+                // composite key is Sport+Branch+SubscriptionType), so it inherits the exact same
+                // mismatch whenever SubscriptionDetails.BranchId differs from the enrolled
+                // group's branch. Payment/Invoice: a payment or invoice can be processed at a
+                // branch other than the one the underlying subscription/enrollment belongs to
+                // (e.g. central billing, or a trainee paying at whichever branch they're
+                // visiting) - same reasoning as Trainee's registered branch vs. enrolled group.
+                typeof(Domain.Entities.SportPrice), typeof(Domain.Entities.Payment), typeof(Domain.Entities.Finance.Invoice),
             };
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
@@ -253,6 +294,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                 var parameter = Expression.Parameter(entityType.ClrType, "e");
 
                 Expression? branchIdAccessor = typeof(IBranchScoped).IsAssignableFrom(entityType.ClrType)
+                    && !branchAutoFilterExclusions.Contains(entityType.ClrType)
                     ? Expression.Property(parameter, "BranchId")
                     : branchNavigationPaths.TryGetValue(entityType.ClrType, out var path)
                         ? path.Aggregate((Expression)parameter, Expression.Property)

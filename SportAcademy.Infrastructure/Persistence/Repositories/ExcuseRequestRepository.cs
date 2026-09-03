@@ -32,6 +32,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.ExcuseRequests
                 .Where(x => x.Status == ExcuseRequestStatus.Pending)
                 .OrderBy(x => x.CreatedAt)
+                .ThenBy(x => x.Id)
                 .AsNoTracking()
                 .Select(x => new ExcuseRequestDto(
                     x.Id,

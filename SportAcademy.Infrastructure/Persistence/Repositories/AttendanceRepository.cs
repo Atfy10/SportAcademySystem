@@ -48,6 +48,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Attendances
                 .AsNoTracking()
+                .OrderBy(a => a.Id)
                 .ProjectTo<AttendanceDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
 
@@ -147,6 +148,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             var pageKeys = await sessionKeysQuery
                 .OrderByDescending(k => k.AttendanceDate)
+                .ThenBy(k => k.TraineeGroupId)
                 .Skip(page?.Skip ?? 0)
                 .Take(take)
                 .ToListAsync(ct);

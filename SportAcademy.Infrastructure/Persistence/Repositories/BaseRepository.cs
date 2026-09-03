@@ -7,6 +7,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
+using System.Linq.Expressions;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
 {
@@ -58,14 +59,63 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public virtual async Task<List<TEntity>> GetAllAsync(CancellationToken cancellationToken = default)
-            => await _context.Set<TEntity>().AsNoTracking().ToListAsync(cancellationToken);
+            => await ApplyBranchFilter(_context.Set<TEntity>()).AsNoTracking().ToListAsync(cancellationToken);
 
         public virtual async Task<PagedData<TEntityDto>> GetAllPaginatedAsync<TEntityDto>(PageRequest page, CancellationToken cancellationToken = default)
                 where TEntityDto : class
-            => await _context.Set<TEntity>()
-                .AsNoTracking()
+            => await ApplyPrimaryKeyOrder(ApplyBranchFilter(_context.Set<TEntity>()).AsNoTracking())
                 .ProjectTo<TEntityDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
+
+        // TEntity types like Trainee/Employee/SubscriptionDetails are excluded from
+        // ApplicationDbContext's automatic global branch filter (see branchAutoFilterExclusions
+        // in OnModelCreating) precisely so that referencing them through an unrelated,
+        // already-scoped root doesn't wrongly hide that root. But when TEntity itself IS the
+        // query's subject - "list all Trainees", "list all Employees" - branch restriction still
+        // needs to apply, just explicitly here instead of automatically everywhere.
+        protected IQueryable<TEntity> ApplyBranchFilter(IQueryable<TEntity> query)
+        {
+            if (!typeof(IBranchScoped).IsAssignableFrom(typeof(TEntity)))
+                return query;
+
+            var parameter = Expression.Parameter(typeof(TEntity), "e");
+            var branchIdAccessor = Expression.Property(parameter, nameof(IBranchScoped.BranchId));
+
+            var dbContext = Expression.Constant(_context);
+            var isBranchRestricted = Expression.Property(dbContext, nameof(ApplicationDbContext.IsBranchRestricted));
+            var allowedBranchIds = Expression.Property(dbContext, nameof(ApplicationDbContext.CurrentAllowedBranchIds));
+            var containsCall = Expression.Call(
+                typeof(Enumerable), nameof(Enumerable.Contains), [typeof(int)],
+                allowedBranchIds, branchIdAccessor);
+
+            var body = Expression.OrElse(Expression.Not(isBranchRestricted), containsCall);
+            var predicate = Expression.Lambda<Func<TEntity, bool>>(body, parameter);
+
+            return query.Where(predicate);
+        }
+
+        // TEntity carries no compile-time "has an Id" constraint, and not every entity's primary
+        // key is even named "Id" (e.g. Coach's is EmployeeId, NotificationRecipient's is
+        // composite) - so the tiebreaker Skip/Take pagination needs (see
+        // PaginationExtensions.ToPagedDataAsync) is built from EF's own primary-key metadata,
+        // the same way the branch/tenant query filters are built in
+        // ApplicationDbContext.OnModelCreating.
+        private IOrderedQueryable<TEntity> ApplyPrimaryKeyOrder(IQueryable<TEntity> query)
+        {
+            var keyProperties = _context.Model.FindEntityType(typeof(TEntity))!.FindPrimaryKey()!.Properties;
+            var parameter = Expression.Parameter(typeof(TEntity), "e");
+
+            IOrderedQueryable<TEntity>? ordered = null;
+            foreach (var keyProperty in keyProperties)
+            {
+                var propertyAccess = Expression.Convert(Expression.Property(parameter, keyProperty.Name), typeof(object));
+                var lambda = Expression.Lambda<Func<TEntity, object>>(propertyAccess, parameter);
+
+                ordered = ordered is null ? query.OrderBy(lambda) : ordered.ThenBy(lambda);
+            }
+
+            return ordered!;
+        }
 
         public virtual async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken = default)
             => await _context.Set<TEntity>().FindAsync(id, cancellationToken);

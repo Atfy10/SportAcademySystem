@@ -31,6 +31,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.TraineeGroups
                 .Where(tg => tg.GroupSchedules.Any(gs => gs.Day == day.DayOfWeek))
                 .AsNoTracking()
+                .OrderBy(tg => tg.Id)
                 .Select(TraineeGroupProjections.ToListDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
 
@@ -39,6 +40,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(tg => fromTime == null || toTime == null
                     || tg.GroupSchedules.Any(gs => gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value))
                 .AsNoTracking()
+                .OrderBy(tg => tg.Id)
                 .Select(TraineeGroupProjections.ToCardDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
 
@@ -143,6 +145,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     g.Name.ToLower().Contains(lowerTerm))
                 .Where(g => fromTime == null || toTime == null
                     || g.GroupSchedules.Any(gs => gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value))
+                .OrderBy(g => g.Id)
                 .Select(TraineeGroupProjections.ToListDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
         }

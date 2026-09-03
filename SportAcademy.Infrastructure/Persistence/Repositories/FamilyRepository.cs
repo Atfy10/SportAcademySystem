@@ -44,6 +44,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<FamilyDto>> GetAllPaginatedTranslatedAsync(PageRequest page, CancellationToken cancellationToken = default)
             => await _context.Families
                 .AsNoTracking()
+                .OrderBy(f => f.Id)
                 .Select(FamilyProjections.ToDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
 
