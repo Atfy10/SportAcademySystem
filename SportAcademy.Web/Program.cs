@@ -400,8 +400,17 @@ app.Use(async (context, next) =>
             .Select(a => a.BranchId)
             .ToListAsync();
 
-        var branchAccessProvider = context.RequestServices.GetRequiredService<IBranchAccessProvider>();
-        branchAccessProvider.SetBranchAccess(true, allowedBranchIds);
+        // An Employee with zero UserBranchAccess rows hasn't been assigned any branches yet
+        // (e.g. an Employee-role account that predates this feature) - treat that as
+        // unrestricted rather than locking them out of every branch-scoped list. Restriction
+        // only takes effect once an admin has actually chosen at least one branch for them,
+        // via invite-time assignment (CreateInvitationCommandHandler requires this for new
+        // Employee invites) or the "Manage branch access" action on the Users & Roles page.
+        if (allowedBranchIds.Count > 0)
+        {
+            var branchAccessProvider = context.RequestServices.GetRequiredService<IBranchAccessProvider>();
+            branchAccessProvider.SetBranchAccess(true, allowedBranchIds);
+        }
     }
 
     await next();

@@ -32,15 +32,23 @@ namespace SportAcademy.Application.Behaviors
         public async Task<TResponse> Handle(
             TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
         {
-            if (!_branchAccessProvider.IsRestricted)
-                return await next(cancellationToken);
-
+            // Same short-circuit order as FeatureGateBehavior: resolve nothing about the caller
+            // until we know the request even carries a BranchId to check. Every query in the
+            // app (list retrievals included) flows through this behavior too - only a command
+            // that actually implements one of these two interfaces should ever have a reason to
+            // touch IBranchAccessProvider at all.
             int? targetBranchId = request switch
             {
                 IBranchScopedRequest scoped => scoped.BranchId,
                 IOptionallyBranchScopedRequest optional => optional.BranchId,
                 _ => null,
             };
+
+            if (targetBranchId is null)
+                return await next(cancellationToken);
+
+            if (!_branchAccessProvider.IsRestricted)
+                return await next(cancellationToken);
 
             if (targetBranchId is { } branchId && !_branchAccessProvider.AllowedBranchIds.Contains(branchId))
             {
