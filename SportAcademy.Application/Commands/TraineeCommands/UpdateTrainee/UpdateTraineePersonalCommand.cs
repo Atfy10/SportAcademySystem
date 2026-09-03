@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 {
-    public record UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>
+    public record UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>, IBranchScopedRequest
     {
         public int Id { get; init; }
         public string? FirstName { get; init; }

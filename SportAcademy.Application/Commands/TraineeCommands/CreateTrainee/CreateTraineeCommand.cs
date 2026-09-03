@@ -1,10 +1,11 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
-    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>
+    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>, IBranchScopedRequest
     {
         public required string FirstName { get; init; }
         public required string LastName { get; init; }

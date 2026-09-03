@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice
 {
@@ -12,6 +13,6 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice
 		int SportId,
 		int BranchId,
 		int SubsTypeId
-	) : IRequest<Result<bool>>;
+	) : IRequest<Result<bool>>, IBranchScopedRequest;
 
 }

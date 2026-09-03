@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +12,5 @@ namespace SportAcademy.Application.Commands.BranchCommands.AddSportToBranch
     public record AddSportToBranchCommand(
           int SportId,
           int BranchId
-      ) : IRequest<Result<string>>;
+      ) : IRequest<Result<string>>, IBranchScopedRequest;
 }

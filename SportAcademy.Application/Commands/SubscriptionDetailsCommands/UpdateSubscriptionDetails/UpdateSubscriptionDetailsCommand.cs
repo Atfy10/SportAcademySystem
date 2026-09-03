@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,5 +18,5 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
         int? SubscriptionTypeId,
         int? SportId,
         int? BranchId
-        ) : IRequest<Result<SubscriptionDetailsDto>>;
+        ) : IRequest<Result<SubscriptionDetailsDto>>, IOptionallyBranchScopedRequest;
 }

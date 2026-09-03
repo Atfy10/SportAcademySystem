@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.FinanceCommands.RecordPayment;
 
@@ -13,4 +14,4 @@ public record RecordPaymentCommand(
     string? Reference,
     string? Notes,
     List<RecordPaymentAllocationRequest> Allocations
-) : IRequest<Result<string>>;
+) : IRequest<Result<string>>, IBranchScopedRequest;

@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportPriceDtos;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,6 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 		int BranchId,
 		int SubsTypeId,
 		decimal Price
-	) : IRequest<Result<SportPriceBranchDto>>;
+	) : IRequest<Result<SportPriceBranchDto>>, IBranchScopedRequest;
 
 }

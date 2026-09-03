@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice
 {
@@ -13,6 +14,6 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice
 		int BranchId,
 		int SubsTypeId,
 		decimal NewPrice
-	) : IRequest<Result<decimal>>;
+	) : IRequest<Result<decimal>>, IBranchScopedRequest;
 
 }

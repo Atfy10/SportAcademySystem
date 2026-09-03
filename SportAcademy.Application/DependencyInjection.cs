@@ -30,6 +30,7 @@ namespace SportAcademy.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(FeatureGateBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(BranchAccessValidationBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PaginationNormalizationBehavior<,>));
 
             // Register FluentValidation validators

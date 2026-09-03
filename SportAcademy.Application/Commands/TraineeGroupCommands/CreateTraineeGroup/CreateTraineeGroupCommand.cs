@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
         int CoachId,
         List<CreateGroupScheduleSlot> Schedules,
         string? NameAr = null
-    ) : IRequest<Result<int>>;
+    ) : IRequest<Result<int>>, IBranchScopedRequest;
 
     // StartTime is a plain "HH:mm" string, not TimeOnly, matching how time-of-day values are
     // passed elsewhere in this API (e.g. MarkAttendanceCommand.CheckInTime) - parsed in the handler.

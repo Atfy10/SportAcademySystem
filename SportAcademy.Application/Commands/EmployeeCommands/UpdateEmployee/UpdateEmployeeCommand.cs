@@ -20,7 +20,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
         string? PhoneNumber = null,
         string? SecondPhoneNumber = null,
         Position? Position = null,
-        int? BranchId = null) : IRequest<Result<EmployeeDto>>, IRequiresFeature
+        int? BranchId = null) : IRequest<Result<EmployeeDto>>, IRequiresFeature, IOptionallyBranchScopedRequest
     {
         public string FeatureKey => "employee-management";
     }
