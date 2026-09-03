@@ -311,7 +311,20 @@ builder.Services.AddSwaggerGen(c =>
 
 //builder.Services.AddOpenApi();
 
-builder.Services.AddSignalR();
+// SignalR:RedisConnection is only set once this app runs on more than one instance behind a
+// load balancer - a single connection's SignalR groups/users otherwise live in that instance's
+// memory alone, so a client connected to instance A never receives a push originating from
+// instance B. Absent that setting (every environment today), SignalR falls back to its default
+// in-memory backplane, which is correct and sufficient for a single instance.
+var redisConnectionString = builder.Configuration["SignalR:RedisConnection"];
+var signalRBuilder = builder.Services.AddSignalR();
+if (!string.IsNullOrWhiteSpace(redisConnectionString))
+{
+    signalRBuilder.AddStackExchangeRedis(redisConnectionString, options =>
+    {
+        options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("SportAcademy");
+    });
+}
 
 var app = builder.Build();
 

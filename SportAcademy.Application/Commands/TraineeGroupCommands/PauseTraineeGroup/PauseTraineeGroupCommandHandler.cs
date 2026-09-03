@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
@@ -8,7 +9,8 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.PauseTraineeGro
 
 public class PauseTraineeGroupCommandHandler(
     ITraineeGroupRepository traineeGroupRepository,
-    ISessionOccurrenceRepository sessionOccurrenceRepository)
+    ISessionOccurrenceRepository sessionOccurrenceRepository,
+    IPublisher publisher)
     : IRequestHandler<PauseTraineeGroupCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(PauseTraineeGroupCommand request, CancellationToken cancellationToken)
@@ -26,6 +28,8 @@ public class PauseTraineeGroupCommandHandler(
         // cancelled on purpose.
         await sessionOccurrenceRepository.SetFutureSessionsStatusAsync(
             group.Id, SessionStatus.Scheduled, SessionStatus.CancelledTemporary, DateTime.Now, cancellationToken);
+
+        await publisher.Publish(new TraineeGroupUpdatedEvent(group.Id), cancellationToken);
 
         return Result<bool>.Success(true, OperationType.Update.ToString());
     }

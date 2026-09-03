@@ -13,5 +13,6 @@ namespace SportAcademy.Application.Interfaces
         Task DashboardStatsUpdated();
         Task TraineeGroupUpdated(int traineeGroupId);
         Task SubscriptionUpdated(int subscriptionId);
+        Task ExcuseRequestQueueUpdated();
     }
 }

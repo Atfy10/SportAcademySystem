@@ -7,11 +7,14 @@ namespace SportAcademy.Application.EventHandlers;
 
 public sealed class ExcuseRequestReviewedHandler(
     INotificationService notificationService,
+    IRealtimeService realtimeService,
     IExcuseRequestRepository excuseRequestRepository)
     : INotificationHandler<ExcuseRequestReviewedEvent>
 {
     public async Task Handle(ExcuseRequestReviewedEvent notification, CancellationToken cancellationToken)
     {
+        await realtimeService.ExcuseRequestQueueUpdated();
+
         var excuseRequest = await excuseRequestRepository.GetByIdAsync(notification.ExcuseRequestId, cancellationToken);
         if (excuseRequest?.RequestedByUserId is null) return;
 

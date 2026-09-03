@@ -5,7 +5,9 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.EventHandlers;
 
-public sealed class ExcuseRequestCreatedHandler(INotificationService notificationService)
+public sealed class ExcuseRequestCreatedHandler(
+    INotificationService notificationService,
+    IRealtimeService realtimeService)
     : INotificationHandler<ExcuseRequestCreatedEvent>
 {
     public async Task Handle(ExcuseRequestCreatedEvent notification, CancellationToken cancellationToken)
@@ -15,5 +17,7 @@ public sealed class ExcuseRequestCreatedHandler(INotificationService notificatio
             "New Excuse Request",
             $"Excuse request #{notification.ExcuseRequestId} needs approval",
             NotificationType.Attendance);
+
+        await realtimeService.ExcuseRequestQueueUpdated();
     }
 }
