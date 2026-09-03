@@ -6,11 +6,13 @@ using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.Commands.CoachCommands.DeleteCoach;
 using SportAcademy.Application.Commands.CoachCommands.RateCoach;
 using SportAcademy.Application.Commands.CoachCommands.UpdateCoach;
+using SportAcademy.Application.Commands.CoachCommands.UpdateCoachBranches;
 using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.CoachQueries.GetAverageRating;
 using SportAcademy.Application.Queries.CoachQueries.GetById;
+using SportAcademy.Application.Queries.CoachQueries.GetCoachBranches;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
 using SportAcademy.Application.Common.Result;
@@ -88,6 +90,22 @@ namespace SportAcademy.Web.Controllers
         public async Task<ActionResult> Delete(int id, CancellationToken ct)
         {
             var result = await _mediator.Send(new DeleteCoachCommand(id), ct);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/branches")]
+        [Authorize(Policy = "Permission:coach.manage")]
+        public async Task<ActionResult> GetBranches(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetCoachBranchesQuery(id), ct);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}/branches")]
+        [Authorize(Policy = "Permission:coach.manage")]
+        public async Task<ActionResult> UpdateBranches(int id, [FromBody] List<int> branchIds, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new UpdateCoachBranchesCommand(id, branchIds), ct);
             return Ok(result);
         }
 

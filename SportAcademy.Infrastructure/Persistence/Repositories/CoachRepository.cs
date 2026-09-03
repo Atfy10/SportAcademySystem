@@ -201,10 +201,31 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<List<CoachDropdownItemDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
-            => await _context.Coachs
+        {
+            var coaches = await _context.Coachs
                 .Where(c => !c.IsDeleted)
                 .AsNoTracking()
                 .Select(CoachProjections.ToDropdownDto(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
+
+            if (coaches.Count == 0)
+                return coaches;
+
+            // CoachProjections.ToDropdownDto is a static, context-less expression (see its own
+            // note on why), so BranchIds is filled in as a second pass instead of a correlated
+            // subquery inside that same projection.
+            var coachIds = coaches.Select(c => c.Id).ToList();
+            var branchesByCoach = await _context.CoachBranchAccesses
+                .Where(a => coachIds.Contains(a.CoachId))
+                .Select(a => new { a.CoachId, a.BranchId })
+                .ToListAsync(cancellationToken);
+            var branchLookup = branchesByCoach
+                .GroupBy(a => a.CoachId)
+                .ToDictionary(g => g.Key, g => g.Select(a => a.BranchId).ToList());
+
+            return coaches
+                .Select(c => c with { BranchIds = branchLookup.GetValueOrDefault(c.Id, []) })
+                .ToList();
+        }
     }
 }

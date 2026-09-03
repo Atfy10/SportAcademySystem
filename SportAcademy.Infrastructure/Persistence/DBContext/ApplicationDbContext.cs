@@ -82,6 +82,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<UserPermissionOverride> UserPermissionOverrides { get; set; }
         public DbSet<UserBranchAccess> UserBranchAccesses { get; set; }
+        public DbSet<CoachBranchAccess> CoachBranchAccesses { get; set; }
         public DbSet<Domain.Entities.Finance.Invoice> Invoices { get; set; }
         public DbSet<Domain.Entities.Finance.InvoiceLine> InvoiceLines { get; set; }
         public DbSet<Domain.Entities.Finance.PaymentAllocation> PaymentAllocations { get; set; }

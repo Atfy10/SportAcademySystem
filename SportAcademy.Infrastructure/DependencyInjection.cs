@@ -44,6 +44,7 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IRoleRepository, RoleRepository>();
             services.AddScoped<IUserPermissionOverrideRepository, UserPermissionOverrideRepository>();
             services.AddScoped<IUserBranchAccessRepository, UserBranchAccessRepository>();
+            services.AddScoped<ICoachBranchAccessRepository, CoachBranchAccessRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<IFinancialDocumentNumberGenerator, SqlFinancialDocumentNumberGenerator>();
             services.AddScoped<IFamilyRepository, FamilyRepository>();
