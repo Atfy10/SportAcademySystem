@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SportAcademy.Domain.Entities;
-using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Infrastructure.Persistence.Configurations
 {
@@ -18,7 +17,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             // Props
             builder.Property(st => st.Name)
                 .IsRequired()
-                .HasConversion<string>();
+                .HasMaxLength(50);
 
             builder.Property(st => st.DaysPerMonth)
                 .IsRequired();

@@ -3,6 +3,7 @@ namespace SportAcademy.Application.DTOs.SessionOccurrenceDtos;
 public record SessionOccurrenceDto(
     int Id,
     int TraineeGroupId,
+    int GroupScheduleId,
     DateOnly Date,
     string TraineeGroupName,
     string SportName,
@@ -13,5 +14,6 @@ public record SessionOccurrenceDto(
     int TotalEnrolled,
     int TotalPresent,
     int TotalLate,
-    int TotalAbsent
+    int TotalAbsent,
+    string Status
 );

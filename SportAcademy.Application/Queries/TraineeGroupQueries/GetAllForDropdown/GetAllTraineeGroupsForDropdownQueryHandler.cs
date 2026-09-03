@@ -14,7 +14,8 @@ public class GetAllTraineeGroupsForDropdownQueryHandler(
         GetAllTraineeGroupsForDropdownQuery request,
         CancellationToken cancellationToken)
     {
-        var items = await traineeGroupRepository.GetAllForDropdownAsync(request.SportId, cancellationToken);
+        var items = await traineeGroupRepository.GetAllForDropdownAsync(
+            request.SportId, request.SkillLevel, request.Gender, cancellationToken);
         return Result<List<TraineeGroupDropdownDto>>.Success(items, OperationType.GetAll.ToString());
     }
 }

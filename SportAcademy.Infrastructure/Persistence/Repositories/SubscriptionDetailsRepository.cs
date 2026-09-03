@@ -56,15 +56,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             if (!string.IsNullOrWhiteSpace(term))
             {
-                // SubscriptionType.Name is an enum (string-converted column) - EF Core can't
-                // translate ToString()/Contains() on it into SQL, so it's left out of search
-                // here (trainee/sport name cover the common case; subscription-type search
-                // would need its own DB-side string comparison to be added safely).
                 query = query.Where(sd =>
                     sd.Trainee.FirstName.Contains(term)
                     || sd.Trainee.LastName.Contains(term)
                     || (sd.Trainee.FirstName + " " + sd.Trainee.LastName).Contains(term)
-                    || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term));
+                    || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term)
+                    || sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.Contains(term));
             }
 
             var totalCount = await query.CountAsync(ct);
@@ -200,13 +197,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             if (!string.IsNullOrWhiteSpace(term))
             {
-                // SubscriptionType.Name is an enum (string-converted column) - EF Core can't
-                // translate it into SQL, same limitation as GetAllPaginatedAsync above.
                 query = query.Where(sd =>
                     sd.Trainee.FirstName.Contains(term)
                     || sd.Trainee.LastName.Contains(term)
                     || (sd.Trainee.FirstName + " " + sd.Trainee.LastName).Contains(term)
-                    || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term));
+                    || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term)
+                    || sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.Contains(term));
             }
 
             var totalCount = await query.CountAsync(cancellationToken);

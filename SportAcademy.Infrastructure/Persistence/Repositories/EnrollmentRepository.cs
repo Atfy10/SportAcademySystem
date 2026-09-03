@@ -219,5 +219,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .ProjectTo<EnrollmentDetailDto>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(ct);
+
+        public async Task<Enrollment?> GetByIdWithGroupAndSubscriptionAsync(int id, CancellationToken ct = default)
+            => await _context.Enrollments
+                .Include(e => e.TraineeGroup)
+                    .ThenInclude(tg => tg.GroupSchedules)
+                .Include(e => e.SubscriptionDetails)
+                .FirstOrDefaultAsync(e => e.Id == id, ct);
     }
 }

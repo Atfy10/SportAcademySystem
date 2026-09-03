@@ -48,6 +48,9 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             var group = await _traineeGroupRepository.GetByIdAsync(request.TraineeGroupId, cancellationToken)
                 ?? throw new TraineeGroupNotFoundException(request.TraineeGroupId.ToString());
 
+            if (!group.IsActive)
+                throw new TraineeGroupInactiveException(group.Id, group.InactiveReason);
+
             var activeCount = await _enrollmentRepository.GetActiveEnrollmentCountForGroupAsync(
                 request.TraineeGroupId, cancellationToken);
             if (activeCount >= group.MaximumCapacity)
@@ -81,6 +84,13 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             if (sportId is not null && subDetails.SportId != sportId.Value)
                 throw new SubscriptionGroupSportMismatchException(request.SubscriptionDetailsId, request.TraineeGroupId);
 
+            // An enrollment's expiry always tracks its backing subscription's end date - the
+            // same rule CreateSubscriptionDetailsCommandHandler's renewal path already applies
+            // when it carries an enrollment forward. Overriding request.ExpiryDate here (rather
+            // than trusting it) keeps that true even though the create form still lets the
+            // client submit whatever date it computed independently.
+            enrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
+
             // A trainee can only join a group whose gender policy accepts them (Mixed accepts
             // anyone) and whose required skill level is at or below their own for this sport.
             var trainee = await _traineeRepository.GetFullTrainee(request.TraineeId, cancellationToken);
@@ -98,7 +108,13 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             {
                 var sportTrainee = await _sportTraineeRepository.GetByIdWithIncludesAsync(
                     sportId.Value, request.TraineeId, cancellationToken);
-                if (sportTrainee is not null && group.SkillLevel > sportTrainee.SkillLevel)
+                // NotSpecified means "no skill on record" (including the SportTrainee row
+                // CreateSubscriptionDetailsCommandHandler auto-backfills at subscription time)
+                // just as much as sportTrainee being null does - nothing to enforce against
+                // absent data either way.
+                if (sportTrainee is not null
+                    && sportTrainee.SkillLevel != SkillLevel.NotSpecified
+                    && group.SkillLevel > sportTrainee.SkillLevel)
                     throw new TraineeSkillLevelTooLowException(request.TraineeId, request.TraineeGroupId);
             }
 

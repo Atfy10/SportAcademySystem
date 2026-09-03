@@ -16,6 +16,7 @@ public static class SessionOccurrenceProjections
     public static Expression<Func<SessionOccurrence, SessionOccurrenceDto>> ToDto(string lang) => s => new SessionOccurrenceDto(
         s.Id,
         s.GroupSchedule!.TraineeGroup.Id,
+        s.GroupScheduleId,
         DateOnly.FromDateTime(s.StartDateTime),
         s.GroupSchedule!.TraineeGroup!.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? s.GroupSchedule!.TraineeGroup!.Name,
         s.GroupSchedule!.TraineeGroup!.Coach!.Sport!.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? s.GroupSchedule!.TraineeGroup!.Coach!.Sport!.Name,
@@ -26,5 +27,6 @@ public static class SessionOccurrenceProjections
         s.GroupSchedule!.TraineeGroup!.Enrollments.Count(e => e.IsActive),
         s.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present),
         s.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Late),
-        s.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Absent));
+        s.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Absent),
+        s.Status.ToString());
 }

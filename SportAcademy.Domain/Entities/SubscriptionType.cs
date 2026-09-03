@@ -1,13 +1,12 @@
 ﻿using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
-using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
     public class SubscriptionType : ITenantScoped
     {
         public int Id { get; set; }
-        public SubType Name { get; set; }
+        public string Name { get; set; } = null!;
         public int DaysPerMonth { get; set; }
         public int NumberOfMonths { get; set; }
         public bool IsActive { get; set; } = true;

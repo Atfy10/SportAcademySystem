@@ -22,18 +22,27 @@ public static class TraineeGroupProjections
         BranchName = g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
         DurationInMinutes = g.DurationInMinutes,
         TraineesCount = g.Enrollments.Count,
+        MaximumCapacity = g.MaximumCapacity,
+        SkillLevel = g.SkillLevel.ToString(),
+        IsActive = g.IsActive,
+        InactiveReason = g.InactiveReason,
         Schedules = g.GroupSchedules
-            .Select(gs => new GroupSchedulesTimesDto { DayOfWeek = gs.Day, StartTime = gs.StartTime })
+            .Select(gs => new GroupSchedulesTimesDto { DayOfWeek = gs.Day.ToString(), StartTime = gs.StartTime })
             .ToList(),
     };
 
     public static Expression<Func<TraineeGroup, ListTraineeGroupDto>> ToListDto(string lang) => g => new ListTraineeGroupDto(
         g.Id,
+        g.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Name,
         g.Coach.Sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Coach.Sport.Name,
         g.Coach.Employee.FirstName,
         g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
         g.DurationInMinutes,
         g.Enrollments.Count,
+        g.MaximumCapacity,
+        g.SkillLevel.ToString(),
+        g.IsActive,
+        g.InactiveReason,
         g.GroupSchedules
             .Select(gs => new GroupScheduleItemDto
             {

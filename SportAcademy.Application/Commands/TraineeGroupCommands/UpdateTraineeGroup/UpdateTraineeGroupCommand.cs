@@ -10,14 +10,16 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup
 {
+    // No BranchId here - a group's branch can't be changed after creation (see
+    // TraineeGroupMapper.ApplyUpdate), and the edit UI never sends one.
     public record UpdateTraineeGroupCommand(
         int Id,
         SkillLevel SkillLevel,
         int? MaximumCapacity,
         int? DurationInMinutes,
         TraineeGroupGender? Gender,
-        int BranchId,
         int CoachId,
+        string? Name = null,
         string? NameAr = null
     ) : IRequest<Result<TraineeGroupDto>>;
 }

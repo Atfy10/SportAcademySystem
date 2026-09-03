@@ -6,7 +6,7 @@ using SportAcademy.Application.DTOs.TraineeGroupDtos;
 
 namespace SportAcademy.Application.Queries.TraineeGroupQueries.Search;
 
-public record SearchTraineeGroupsQuery(string SearchTerm, PageRequest Page)
+public record SearchTraineeGroupsQuery(string SearchTerm, PageRequest Page, TimeOnly? FromTime = null, TimeOnly? ToTime = null)
     : IRequest<Result<PagedData<ListTraineeGroupDto>>>, IPaginatedRequest, ISearchRequest
 {
     public PageRequest Page { get; set; } = Page;

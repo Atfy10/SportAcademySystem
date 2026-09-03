@@ -19,6 +19,7 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
             CreateMap<SessionOccurrence, SessionOccurrenceDto>()
                 .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
                 .ForCtorParam("TraineeGroupId", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup.Id))
+                .ForCtorParam("GroupScheduleId", opt => opt.MapFrom(src => src.GroupScheduleId))
                 .ForCtorParam("Date", opt => opt.MapFrom(src => DateOnly.FromDateTime(src.StartDateTime)))
                 .ForCtorParam("TraineeGroupName", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Name))
                 .ForCtorParam("SportName", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Coach!.Sport!.Name))
@@ -37,6 +38,7 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
                 .ForCtorParam("TotalPresent", opt => opt.MapFrom(src => src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present)))
                 .ForCtorParam("TotalLate", opt => opt.MapFrom(src => src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Late)))
                 .ForCtorParam("TotalAbsent", opt => opt.MapFrom(src => src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Absent)))
+                .ForCtorParam("Status", opt => opt.MapFrom(src => src.Status.ToString()))
                 .ReverseMap();
 
             CreateMap<CreateSessionOccurrenceCommand, SessionOccurrence>();

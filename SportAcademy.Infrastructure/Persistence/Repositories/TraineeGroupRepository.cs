@@ -5,6 +5,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
@@ -33,8 +34,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(TraineeGroupProjections.ToListDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
 
-        public async Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, CancellationToken cancellationToken = default)
+        public async Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
+                .Where(tg => fromTime == null || toTime == null
+                    || tg.GroupSchedules.Any(gs => gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value))
                 .AsNoTracking()
                 .Select(TraineeGroupProjections.ToCardDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
@@ -55,12 +58,42 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(tg => (int?)tg.Coach.SportId)
                 .FirstOrDefaultAsync(cancellationToken);
 
-        public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(int? sportId = null, CancellationToken cancellationToken = default)
-            => await _context.TraineeGroups
+        public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(
+            int? sportId = null, SkillLevel? maxSkillLevel = null, Gender? gender = null, CancellationToken cancellationToken = default)
+        {
+            // The trainee's own Gender (Male/Female) maps onto the group's TraineeGroupGender
+            // policy (Male/Female/Mixed) by name, not by underlying numeric value.
+            TraineeGroupGender? traineeAsGroupGender = gender switch
+            {
+                Gender.Male => TraineeGroupGender.Male,
+                Gender.Female => TraineeGroupGender.Female,
+                _ => null
+            };
+
+            // sportId/gender filter in SQL (both are equality checks against HasConversion<string>
+            // columns, which EF translates correctly). SkillLevel does NOT: comparing "at or below
+            // maxSkillLevel" is an ordinal comparison, and EF would either fail to translate it
+            // against a converted column or - worse - silently translate it into a lexicographic
+            // string comparison that doesn't match the enum's declared order ("Advanced" sorts
+            // before "Beginner" alphabetically). ToDropdownDto already projects SkillLevel back to
+            // its real enum type, so filtering by it after materializing is a plain in-memory
+            // int comparison instead - no translation involved, so no ordering bug possible.
+            var items = await _context.TraineeGroups
+                // A paused group isn't accepting new enrollments - never offer it here.
+                .Where(tg => tg.IsActive)
                 .Where(tg => sportId == null || tg.Coach.SportId == sportId.Value)
+                .Where(tg => traineeAsGroupGender == null
+                    || tg.Gender == TraineeGroupGender.Mixed
+                    || tg.Gender == traineeAsGroupGender.Value)
                 .AsNoTracking()
                 .Select(TraineeGroupProjections.ToDropdownDto(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
+
+            if (maxSkillLevel.HasValue)
+                items = items.Where(i => i.SkillLevel <= maxSkillLevel.Value).ToList();
+
+            return items;
+        }
 
         public async Task<TraineeGroup?> GetByIdWithSchedulesAsync(int id, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
@@ -92,7 +125,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return (result?.SportName, result?.BranchName);
         }
 
-        public async Task<PagedData<ListTraineeGroupDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
+        public async Task<PagedData<ListTraineeGroupDto>> SearchAsync(string term, PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, CancellationToken cancellationToken = default)
         {
             var lowerTerm = term.ToLower();
             return await _context.TraineeGroups
@@ -108,6 +141,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     (g.Coach.Employee.FirstName + " " + g.Coach.Employee.LastName).ToLower().Contains(lowerTerm) ||
                     g.Branch.Name.ToLower().Contains(lowerTerm) ||
                     g.Name.ToLower().Contains(lowerTerm))
+                .Where(g => fromTime == null || toTime == null
+                    || g.GroupSchedules.Any(gs => gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value))
                 .Select(TraineeGroupProjections.ToListDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);
         }

@@ -11,7 +11,7 @@ namespace SportAcademy.Application.Mappings
             return new SubscriptionTypeDto
             {
                 Id = entity.Id,
-                Name = entity.Name.ToString(),
+                Name = entity.Name,
                 DaysPerMonth = entity.DaysPerMonth,
                 NumberOfMonths = entity.NumberOfMonths,
                 IsActive = entity.IsActive,
@@ -30,7 +30,7 @@ namespace SportAcademy.Application.Mappings
         {
             return new SubscriptionType
             {
-                Name = (Domain.Enums.SubType)Enum.Parse(typeof(Domain.Enums.SubType), cmd.Name),
+                Name = cmd.Name,
                 DaysPerMonth = cmd.DaysPerMonth,
                 NumberOfMonths = cmd.NumberOfMonths,
                 IsActive = cmd.IsActive,

@@ -20,6 +20,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         private readonly IFinanceLedgerService _financeLedgerService;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IEnrollmentRepository _enrollmentRepository;
+        private readonly ISportTraineeRepository _sportTraineeRepository;
         private readonly IUserContextService _userContext;
         private readonly IMapper _mapper;
         private readonly IPublisher _publisher;
@@ -31,6 +32,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             IFinanceLedgerService financeLedgerService,
             ITraineeRepository traineeRepository,
             IEnrollmentRepository enrollmentRepository,
+            ISportTraineeRepository sportTraineeRepository,
             IUserContextService userContext,
             IMapper mapper,
             IPublisher publisher)
@@ -41,6 +43,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             _financeLedgerService = financeLedgerService;
             _traineeRepository = traineeRepository;
             _enrollmentRepository = enrollmentRepository;
+            _sportTraineeRepository = sportTraineeRepository;
             _userContext = userContext;
             _mapper = mapper;
             _publisher = publisher;
@@ -64,6 +67,24 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
             cancellationToken.ThrowIfCancellationRequested();
 
             await _subscriptionDetailsRepository.AddAsync(subDetails, cancellationToken);
+
+            // Subscribing is often how a trainee starts a brand-new sport (see
+            // SubscriptionFormModal's stance on the frontend), so it must not require them to
+            // already have a SportTrainee record for request.SportId. Back-fill one here with
+            // an unset skill level (NotSpecified) if they don't have it yet - CreateEnrollment's
+            // skill-level gate already treats NotSpecified the same as "no record at all", so
+            // this doesn't block them from later enrolling into any group for this sport.
+            var hasSportRecord = await _sportTraineeRepository.IsExistAsync(
+                request.SportId, request.TraineeId, cancellationToken);
+            if (!hasSportRecord)
+            {
+                await _sportTraineeRepository.AddAsync(new SportTrainee
+                {
+                    SportId = request.SportId,
+                    TraineeId = request.TraineeId,
+                    SkillLevel = SkillLevel.NotSpecified
+                }, cancellationToken);
+            }
 
             // A trainee can only be enrolled in one group per sport - if they already have a
             // group enrollment for this sport (i.e. this is a renewal, not a first-time

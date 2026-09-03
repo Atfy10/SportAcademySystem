@@ -10,6 +10,9 @@ namespace SportAcademy.Domain.Enums
     {
         Scheduled = 1,
         Completed,
-        Canceled
+        Canceled,
+        /// <summary>Cancelled temporarily (e.g. its group was paused) - unlike Canceled, this is
+        /// expected to be reverted back to Scheduled (see TraineeGroup pause/resume).</summary>
+        CancelledTemporary
     }
 }

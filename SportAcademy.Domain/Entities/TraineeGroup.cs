@@ -15,6 +15,9 @@ namespace SportAcademy.Domain.Entities
         public TraineeGroupGender Gender { get; set; }
         public int BranchId { get; set; }
         public int CoachId { get; set; }
+        public bool IsActive { get; set; } = true;
+        /// <summary>Staff-provided reason shown while the group is paused (IsActive = false). Null while active.</summary>
+        public string? InactiveReason { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }

@@ -11,5 +11,9 @@ public record TraineeGroupCardDto
     public string BranchName { get; init; } = null!;
     public int DurationInMinutes { get; init; }
     public int TraineesCount { get; init; }
+    public int MaximumCapacity { get; init; }
+    public string SkillLevel { get; init; } = null!;
+    public bool IsActive { get; init; }
+    public string? InactiveReason { get; init; }
     public IReadOnlyList<GroupSchedulesTimesDto> Schedules { get; init; } = [];
 }

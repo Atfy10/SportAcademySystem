@@ -90,7 +90,7 @@ Pure domain layer with zero infrastructure dependencies.
 - `Attendance` — Tracks per-session attendance. Has EnrollmentId, SessionOccurrenceId, AttendanceStatus (enum), CheckInTime, CoachNote. Implements `IAuditableEntity`.
 - `SubscriptionDetails` — Tracks a trainee's subscription period. Has StartDate/EndDate (DateOnly), IsActive, PaymentNumber (FK to Payment), TraineeId, SubscriptionTypeId, SportId, BranchId. Implements `IAuditableEntity` + `ISoftDeletable`. Linked to `SportPrice` for pricing.
 - `Payment` — PK is `PaymentNumber` (string, format `PAY-YYYY-NNNNN`). Has Method (Cash/Online), PaidDate, BranchId. One-to-one with SubscriptionDetails.
-- `SubscriptionType` — Name (SubType enum: Basic/Silver/Gold/Platinum/Monthly), DaysPerMonth, IsActive, IsOffer.
+- `SubscriptionType` — Name (free-text string, tenant-defined - not a closed enum), DaysPerMonth, IsActive, IsOffer.
 - `SportPrice` — Composite key: SportId + BranchId + SubsTypeId. Stores Price per sport/branch/subscription-type combination.
 - `SportBranch` — Many-to-many join: SportId + BranchId.
 - `SportTrainee` — Many-to-many join with data: SportId + TraineeId + SkillLevel.
@@ -121,7 +121,7 @@ Pure domain layer with zero infrastructure dependencies.
 - Entity-specific folders: `TraineeExceptions/`, `EmployeeExceptions/`, `BranchExceptions/`, `SportExceptions/`, `EnrollmentExceptions/`, `SubscriptonExceptions/`, `PaymentExceptions/`, `UserExceptions/`, `AttendanceExceptions/`, `ChatBotExceptions/`, `SessionOccurrenceExceptions/`, `GeneralExceptions/`
 - All exceptions extend `Exception` directly with templated messages.
 
-**Enums** in `Domain/Enums/`: Gender, Nationality, Position, SkillLevel, SportCategory, SportName, SubType, AttendanceStatus, SessionStatus, PaymentMethod, ChatRole, EntityTypes, OperationType, Month.
+**Enums** in `Domain/Enums/`: Gender, Nationality, Position, SkillLevel, SportCategory, SportName, AttendanceStatus, SessionStatus, PaymentMethod, ChatRole, EntityTypes, OperationType, Month.
 
 ### SportAcademy.Application (CQRS + MediatR)
 

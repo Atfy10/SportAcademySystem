@@ -39,6 +39,13 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasConversion<string>();
 
+            builder.Property(tg => tg.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
+
+            builder.Property(tg => tg.InactiveReason)
+                .HasMaxLength(500);
+
             // Relationships
             // M:1  Coach
             builder.HasOne(tg => tg.Coach)
@@ -52,11 +59,17 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .HasForeignKey(tg => tg.BranchId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 1:M GroupSchedules
+            // 1:M GroupSchedules - Cascade: deleting a group must delete its weekly schedule
+            // slots (and, transitively, their SessionOccurrences - see
+            // SessionOccurrenceConfiguration) too. Configured here only - GroupScheduleConfiguration
+            // used to also configure this same relationship with Restrict, and since both
+            // configs target the same FK, whichever IEntityTypeConfiguration happened to apply
+            // last silently won - Restrict was winning, so deleting a group with any schedule
+            // rows failed outright.
             builder.HasMany(tg => tg.GroupSchedules)
                 .WithOne(gs => gs.TraineeGroup)
                 .HasForeignKey(gs => gs.TraineeGroupId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             // 1:M Enrollments
             builder.HasMany(tg => tg.Enrollments)

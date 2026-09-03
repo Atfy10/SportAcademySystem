@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAll
 {
-    public record GetAllTraineeGroupsQuery(PageRequest Page)
+    public record GetAllTraineeGroupsQuery(PageRequest Page, TimeOnly? FromTime = null, TimeOnly? ToTime = null)
         : IRequest<Result<PagedData<TraineeGroupCardDto>>>, IPaginatedRequest
     {
         public PageRequest Page { get; set; } = Page;

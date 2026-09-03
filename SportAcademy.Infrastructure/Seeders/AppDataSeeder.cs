@@ -820,11 +820,11 @@ namespace SportAcademy.Infrastructure.Seeders
         {
             return new List<SubscriptionType>
             {
-                new() { Name = SubType.Monthly, DaysPerMonth = 8, NumberOfMonths = 1, IsActive = true, IsOffer = false, TenantId = tenantId },
-                new() { Name = SubType.Quarterly, DaysPerMonth = 10, NumberOfMonths = 3, IsActive = true, IsOffer = false, TenantId = tenantId },
-                new() { Name = SubType.Silver, DaysPerMonth = 12, NumberOfMonths = 1, IsActive = true, IsOffer = false, TenantId = tenantId },
-                new() { Name = SubType.Gold, DaysPerMonth = 16, NumberOfMonths = 1, IsActive = true, IsOffer = false, TenantId = tenantId },
-                new() { Name = SubType.Platinum, DaysPerMonth = 24, NumberOfMonths = 1, IsActive = true, IsOffer = true, TenantId = tenantId }
+                new() { Name = "Monthly", DaysPerMonth = 8, NumberOfMonths = 1, IsActive = true, IsOffer = false, TenantId = tenantId },
+                new() { Name = "Quarterly", DaysPerMonth = 10, NumberOfMonths = 3, IsActive = true, IsOffer = false, TenantId = tenantId },
+                new() { Name = "Silver", DaysPerMonth = 12, NumberOfMonths = 1, IsActive = true, IsOffer = false, TenantId = tenantId },
+                new() { Name = "Gold", DaysPerMonth = 16, NumberOfMonths = 1, IsActive = true, IsOffer = false, TenantId = tenantId },
+                new() { Name = "Platinum", DaysPerMonth = 24, NumberOfMonths = 1, IsActive = true, IsOffer = true, TenantId = tenantId }
             };
         }
 
@@ -867,13 +867,13 @@ namespace SportAcademy.Infrastructure.Seeders
             Guid tenantId, List<SportBranch> sportBranches, Dictionary<int, decimal> sportPriceLookup,
             List<SubscriptionType> subTypes)
         {
-            var priceMultipliers = new Dictionary<SubType, decimal>
+            var priceMultipliers = new Dictionary<string, decimal>
             {
-                [SubType.Monthly] = 1.0m,
-                [SubType.Quarterly] = 2.8m,
-                [SubType.Silver] = 1.4m,
-                [SubType.Gold] = 1.8m,
-                [SubType.Platinum] = 2.5m
+                ["Monthly"] = 1.0m,
+                ["Quarterly"] = 2.8m,
+                ["Silver"] = 1.4m,
+                ["Gold"] = 1.8m,
+                ["Platinum"] = 2.5m
             };
 
             var random = new Random();

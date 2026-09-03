@@ -36,13 +36,14 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
                 .NotEmpty().WithMessage("Please select a gender.")
                 .IsInEnum().WithMessage("Invalid gender selected. Please choose from the available options.");
 
-            RuleFor(x => x.BranchId)
-                .NotEmpty().WithMessage("Please select a branch.")
-                .GreaterThan(0).WithMessage("Branch ID must be a valid number.");
-
             RuleFor(x => x.CoachId)
                 .NotEmpty().WithMessage("Please select a coach.")
                 .GreaterThan(0).WithMessage("Coach ID must be a valid number.");
+
+            RuleFor(x => x.Name)
+                .NotEmpty().WithMessage("Group name cannot be empty.")
+                .MaximumLength(200).WithMessage("Group name can't exceed 200 characters.")
+                .When(x => x.Name is not null);
 
             RuleFor(x => x.NameAr)
                 .MaximumLength(150).WithMessage("Arabic group name can't exceed 150 characters.")

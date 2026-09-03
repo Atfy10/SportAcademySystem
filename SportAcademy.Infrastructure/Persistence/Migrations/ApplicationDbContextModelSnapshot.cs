@@ -639,6 +639,75 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.ToTable("Enrollments", (string)null);
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.ExcuseRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EnrollmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("RequestedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedByUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("SessionOccurrenceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TraineeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnrollmentId");
+
+                    b.HasIndex("SessionOccurrenceId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("TraineeId");
+
+                    b.ToTable("ExcuseRequests", (string)null);
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.Family", b =>
                 {
                     b.Property<int>("Id")
@@ -1577,7 +1646,8 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("NumberOfMonths")
                         .HasColumnType("int");
@@ -2137,6 +2207,15 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InactiveReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("MaximumCapacity")
                         .ValueGeneratedOnAdd()
@@ -3160,6 +3239,41 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Navigation("TraineeGroup");
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.ExcuseRequest", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Enrollment", "Enrollment")
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.SessionOccurrence", "SessionOccurrence")
+                        .WithMany()
+                        .HasForeignKey("SessionOccurrenceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.Trainee", "Trainee")
+                        .WithMany()
+                        .HasForeignKey("TraineeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Enrollment");
+
+                    b.Navigation("SessionOccurrence");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("Trainee");
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.Family", b =>
                 {
                     b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
@@ -3245,7 +3359,7 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.HasOne("SportAcademy.Domain.Entities.TraineeGroup", "TraineeGroup")
                         .WithMany("GroupSchedules")
                         .HasForeignKey("TraineeGroupId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Tenant");

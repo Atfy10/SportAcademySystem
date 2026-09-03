@@ -64,7 +64,7 @@ public class SubscriptionDetailsServiceTests
                 {
                     SubscriptionType = new SubscriptionType
                     {
-                        Name = SubType.Gold,
+                        Name = "Gold",
                         DaysPerMonth = 16
                     }
                 }

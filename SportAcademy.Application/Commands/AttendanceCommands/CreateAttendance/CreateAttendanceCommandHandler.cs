@@ -5,6 +5,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.AttendanceExceptions;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 
@@ -35,9 +36,17 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
 
         public async Task<Result<int>> Handle(CreateAttendanceCommand request, CancellationToken cancellationToken)
         {
-            var groupId = await _sessionOccurrenceRepository.GetTraineeGroupIdAsync(
+            if (request.Status == AttendanceStatus.Excused)
+                throw new ExcusedRequiresApprovalException();
+
+            var timing = await _sessionOccurrenceRepository.GetTimingAsync(
                 request.SessionOccurrenceId, cancellationToken)
                 ?? throw new SessionOccurrenceNotFoundException(request.SessionOccurrenceId.ToString());
+
+            if (DateTime.Now > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 15))
+                throw new AttendanceWindowClosedException(request.SessionOccurrenceId);
+
+            var groupId = timing.TraineeGroupId;
 
             var enrollmentId = await _enrollmentRepository.GetEnrollmentIdAsync(
                 request.TraineeId, groupId, cancellationToken)

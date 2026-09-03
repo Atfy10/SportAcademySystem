@@ -1,3 +1,3 @@
 namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 
-public record SubscriptionDetailsDropdownDto(int Id, string Name, int SportId);
+public record SubscriptionDetailsDropdownDto(int Id, string Name, int SportId, DateOnly EndDate);

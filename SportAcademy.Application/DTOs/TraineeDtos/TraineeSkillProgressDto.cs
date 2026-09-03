@@ -6,3 +6,6 @@ public record SkillLevelPeriodDto(SkillLevel SkillLevel, DateTime StartDate, Dat
 
 public record TraineeSportSkillProgressDto(
     int SportId, string SportName, SkillLevel CurrentSkillLevel, List<SkillLevelPeriodDto> History);
+
+public record TraineeSportsSkillDto(
+    int SportId, string SportName, SkillLevel CurrentSkillLevel);

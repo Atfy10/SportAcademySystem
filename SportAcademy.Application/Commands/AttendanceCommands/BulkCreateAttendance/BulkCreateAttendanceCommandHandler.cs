@@ -24,12 +24,24 @@ public class BulkCreateAttendanceCommandHandler(
 
         foreach (var item in request.Items)
         {
-            var groupId = await sessionOccurrenceRepository.GetTraineeGroupIdAsync(
+            // Excused must go through an ExcuseRequest for Owner/Admin approval, never written
+            // directly - same rule CreateAttendanceCommandHandler enforces for the single-mark
+            // endpoint. Skipped (not thrown) so one disallowed row doesn't fail the whole batch,
+            // matching this handler's existing best-effort stance on bad rows below.
+            if (item.Status == AttendanceStatus.Excused) continue;
+
+            var timing = await sessionOccurrenceRepository.GetTimingAsync(
                 item.SessionOccurrenceId, cancellationToken);
-            if (groupId == null) continue;
+            if (timing == null) continue;
+
+            // No marking attendance more than 15 minutes after the session ended.
+            if (DateTime.Now > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + 15))
+                continue;
+
+            var groupId = timing.Value.TraineeGroupId;
 
             var enrollmentId = await enrollmentRepository.GetEnrollmentIdAsync(
-                item.TraineeId, groupId.Value, cancellationToken);
+                item.TraineeId, groupId, cancellationToken);
             if (enrollmentId == null) continue;
 
             var attendance = await attendanceRepository.GetBySessionAndTraineeAsync(

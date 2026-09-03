@@ -7,6 +7,8 @@ using SportAcademy.Application.Commands.AttendanceCommands.DeleteAttendance;
 using SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance;
 using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.DeleteTraineeGroup;
+using SportAcademy.Application.Commands.TraineeGroupCommands.PauseTraineeGroup;
+using SportAcademy.Application.Commands.TraineeGroupCommands.ResumeTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
@@ -17,6 +19,7 @@ using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetById;
 using SportAcademy.Application.Queries.TraineeGroupQueries.Search;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -45,11 +48,13 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAll(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] TimeOnly? fromTime,
+            [FromQuery] TimeOnly? toTime,
             CancellationToken cancellationToken
             )
         {
             var result = await _mediator.Send(
-                new GetAllTraineeGroupsQuery(PageRequest.Create(page, pageSize)),
+                new GetAllTraineeGroupsQuery(PageRequest.Create(page, pageSize), fromTime, toTime),
                 cancellationToken);
             return Ok(result);
         }
@@ -79,6 +84,27 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize(Policy = "Permission:traineegroup.manage")]
+        [HttpPatch("{id}/pause")]
+        public async Task<IActionResult> Pause(
+            [FromRoute] int id,
+            [FromBody] PauseTraineeGroupRequest? body,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new PauseTraineeGroupCommand(id, body?.Reason), cancellationToken);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:traineegroup.manage")]
+        [HttpPatch("{id}/resume")]
+        public async Task<IActionResult> Resume(
+            [FromRoute] int id,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new ResumeTraineeGroupCommand(id), cancellationToken);
+            return Ok(result);
+        }
+
         [HttpGet("for-specific-day")]
         public async Task<IActionResult> GetAllForDay(
             [FromQuery] DateTime date,
@@ -100,9 +126,13 @@ namespace SportAcademy.Web.Controllers
         }
 
         [HttpGet("dropdown")]
-        public async Task<IActionResult> GetAllForDropdown([FromQuery] int? sportId, CancellationToken ct)
+        public async Task<IActionResult> GetAllForDropdown(
+            [FromQuery] int? sportId,
+            [FromQuery] SkillLevel? skillLevel,
+            [FromQuery] Gender? gender,
+            CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllTraineeGroupsForDropdownQuery(sportId), ct);
+            var result = await _mediator.Send(new GetAllTraineeGroupsForDropdownQuery(sportId, skillLevel, gender), ct);
             return Ok(result);
         }
 
@@ -111,12 +141,16 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] string searchTerm,
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] TimeOnly? fromTime,
+            [FromQuery] TimeOnly? toTime,
             CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(
-                new SearchTraineeGroupsQuery(searchTerm, PageRequest.Create(page, pageSize)),
+                new SearchTraineeGroupsQuery(searchTerm, PageRequest.Create(page, pageSize), fromTime, toTime),
                 cancellationToken);
             return Ok(result);
         }
     }
+
+    public record PauseTraineeGroupRequest(string? Reason);
 }

@@ -26,6 +26,9 @@ namespace SportAcademy.Domain.Authorization
         {
             public const string Mark = "attendance.mark";
             public const string ViewRate = "attendance.view_rate";
+            // Reviewing (approving/rejecting) an excuse request is an Owner/Admin-only concern,
+            // distinct from filing one (Mark) - a coach files, they don't self-approve.
+            public const string ApproveExcuse = "attendance.approve_excuse";
         }
 
         public static class TraineeGroup
@@ -129,7 +132,7 @@ namespace SportAcademy.Domain.Authorization
         [
             Trainee.Register, Trainee.Edit, Trainee.Delete, Trainee.Export,
             Enrollment.Create, Enrollment.Edit, Enrollment.Activate,
-            Attendance.Mark, Attendance.ViewRate,
+            Attendance.Mark, Attendance.ViewRate, Attendance.ApproveExcuse,
             TraineeGroup.Manage, TraineeGroup.GenerateSessions,
             Subscription.Manage,
             SubscriptionType.Manage,

@@ -43,5 +43,9 @@ namespace SportAcademy.Application.Interfaces
         Task<int> CountPendingPaymentAsync(CancellationToken ct = default);
         Task<PagedData<EnrollmentCardDto>> GetAllAsync(PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default);
         Task<EnrollmentDetailDto?> GetDetailByIdAsync(int id, CancellationToken ct = default);
+        /// <summary>Tracked, with TraineeGroup.GroupSchedules and SubscriptionDetails eagerly
+        /// loaded - for handlers that need to mutate both the enrollment and its subscription in
+        /// one save (e.g. deferring a session on an approved excuse request).</summary>
+        Task<Enrollment?> GetByIdWithGroupAndSubscriptionAsync(int id, CancellationToken ct = default);
     }
 }

@@ -8,6 +8,7 @@ using SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSessionO
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.SessionOccurrenceQueries.CountAll;
 using SportAcademy.Application.Queries.SessionOccurrenceQueries.GetById;
+using SportAcademy.Application.Queries.SessionOccurrenceQueries.GetNearby;
 using SportAcademy.Application.Queries.SessionOccurrenceQueries.GetPaginated;
 using SportAcademy.Application.Queries.SessionOccurrenceQueries.SearchSessionOccurrences;
 
@@ -73,6 +74,18 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var result = await _mediator.Send(new GetSessionOccurrenceByIdQuery(id));
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/nearby")]
+        public async Task<IActionResult> GetNearby(
+            int id,
+            [FromQuery] int? past,
+            [FromQuery] int? future,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new GetNearbySessionOccurrencesQuery(id, past ?? 3, future ?? 3), cancellationToken);
             return Ok(result);
         }
 

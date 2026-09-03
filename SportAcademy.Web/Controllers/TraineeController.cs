@@ -9,24 +9,25 @@ using SportAcademy.Application.Commands.Trainees.ImportTrainees;
 using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
+using SportAcademy.Application.Queries.TraineeQueries.ExportTrainees;
 using SportAcademy.Application.Queries.TraineeQueries.GetActiveTraineesCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetAll;
+using SportAcademy.Application.Queries.TraineeQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.TraineeQueries.GetAllTraineesOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeQueries.GetById;
-using SportAcademy.Application.Queries.TraineeQueries.GetSkillProgress;
 using SportAcademy.Application.Queries.TraineeQueries.GetCoachHistory;
+using SportAcademy.Application.Queries.TraineeQueries.GetSkillProgress;
+using SportAcademy.Application.Queries.TraineeQueries.GetSportsSkill;
 using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCount;
 using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCountOfSpecificDay;
-using SportAcademy.Application.Queries.TraineeQueries.GetAllForDropdown;
 using SportAcademy.Application.Queries.TraineeQueries.SearchTrainee;
 using SportAcademy.Application.Queries.TraineeQueries.SearchTraineeById;
-using SportAcademy.Application.Queries.TraineeQueries.ExportTrainees;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Web.Features.Trainees;
+using SportAcademy.Web.Features.Trainees.Mappings;
+using SportAcademy.Web.Features.Trainees.Requests;
 using System.Globalization;
 using System.Threading.Tasks;
-using SportAcademy.Web.Features.Trainees;
-using SportAcademy.Web.Features.Trainees.Requests;
-using SportAcademy.Web.Features.Trainees.Mappings;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -64,6 +65,13 @@ namespace SportAcademy.Web.Controllers
         {
             var trainee = await _mediator.Send(new GetTraineeByIdQuery(id));
             return Ok(trainee);
+        }
+
+        [HttpGet("{id}/sports-skill")]
+        public async Task<IActionResult> GetSportsSkill(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetSportsSkillQuery(id), ct);
+            return Ok(result);
         }
 
         [HttpGet("{id}/skill-progress")]

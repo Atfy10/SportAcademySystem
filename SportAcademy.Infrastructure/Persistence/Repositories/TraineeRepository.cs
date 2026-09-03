@@ -109,6 +109,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Trainees
                 .Where(t => t.Id == id)
                 .Include(t => t.Sports)
+                    .ThenInclude(s => s.Sport)
                 .Include(t => t.AppUser)
                 .SingleOrDefaultAsync(cancellationToken);
 

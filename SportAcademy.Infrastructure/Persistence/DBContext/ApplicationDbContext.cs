@@ -37,6 +37,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Coach> Coachs { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
+        public DbSet<ExcuseRequest> ExcuseRequests { get; set; }
         public DbSet<Profile> Profiles { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<PaymentType> PaymentTypes { get; set; }

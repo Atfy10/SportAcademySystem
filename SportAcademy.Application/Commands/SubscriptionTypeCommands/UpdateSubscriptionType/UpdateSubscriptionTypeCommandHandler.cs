@@ -27,7 +27,7 @@ namespace SportAcademy.Application.Commands.SubscriptionTypeCommands.UpdateSubsc
                 return Result<SubscriptionTypeDto>.Failure($"Subscription type with ID {request.Id} not found.", _operation, 404);
 
             if (request.Name is not null)
-                entity.Name = (SubType)System.Enum.Parse(typeof(SubType), request.Name);
+                entity.Name = request.Name;
 
             if (request.DaysPerMonth.HasValue)
                 entity.DaysPerMonth = request.DaysPerMonth.Value;

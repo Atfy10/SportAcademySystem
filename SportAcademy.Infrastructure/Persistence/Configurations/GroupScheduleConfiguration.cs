@@ -20,11 +20,9 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             // Relationships
-            // 1:M TraineeGroup
-            builder.HasOne(gs => gs.TraineeGroup)
-                .WithMany(tg => tg.GroupSchedules)
-                .HasForeignKey(gs => gs.TraineeGroupId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // TraineeGroup 1:M GroupSchedules is configured on the TraineeGroup side
+            // (TraineeGroupConfiguration) - see the comment there for why it must not also be
+            // configured here.
 
             // 1:M SessionOccurrences
             builder.HasMany(gs => gs.SessionOccurrences)

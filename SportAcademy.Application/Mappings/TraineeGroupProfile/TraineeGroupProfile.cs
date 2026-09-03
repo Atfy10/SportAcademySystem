@@ -26,12 +26,16 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
             .ForMember(dest => dest.BranchName,
                 opt => opt.MapFrom(src => src.Branch.Name))
+            .ForMember(dest => dest.SkillLevel,
+                opt => opt.MapFrom(src => src.SkillLevel.ToString()))
+            .ForMember(dest => dest.Gender,
+                opt => opt.MapFrom(src => src.Gender.ToString()))
             .ForMember(dest => dest.Schedules,
                 opt => opt.MapFrom(src => src.GroupSchedules
                         .Select(gs => new GroupScheduleDto
                         {
                             Id = gs.Id,
-                            DayOfWeek = gs.Day,
+                            DayOfWeek = gs.Day.ToString(),
                             StartTime = gs.StartTime,
                             EndTime = gs.StartTime.Add(TimeSpan.FromMinutes(src.DurationInMinutes))
                         }).ToList()
@@ -67,13 +71,19 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 opt => opt.MapFrom(src => src.GroupSchedules
                         .Select(gs => new GroupSchedulesTimesDto
                         {
-                            DayOfWeek = gs.Day,
+                            DayOfWeek = gs.Day.ToString(),
                             StartTime = gs.StartTime
                         }).ToList()
                 )
             )
             .ForMember(dest => dest.TraineesCount,
                 opt => opt.MapFrom(src => src.Enrollments.Count)
+            )
+            .ForMember(dest => dest.MaximumCapacity,
+                opt => opt.MapFrom(src => src.MaximumCapacity)
+            )
+            .ForMember(dest => dest.SkillLevel,
+                opt => opt.MapFrom(src => src.SkillLevel.ToString())
             );
 
         // TraineeGroup <-> TraineeGroupDto and UpdateTraineeGroupCommand -> TraineeGroup are no
@@ -91,11 +101,16 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
         // parameters explicitly via ForCtorParam.
         CreateMap<TraineeGroup, ListTraineeGroupDto>()
             .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
+            .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
             .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Coach.Sport.Name))
             .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
             .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
             .ForCtorParam("DurationInMinutes", opt => opt.MapFrom(src => src.DurationInMinutes))
             .ForCtorParam("TraineesCount", opt => opt.MapFrom(src => src.Enrollments.Count))
+            .ForCtorParam("MaximumCapacity", opt => opt.MapFrom(src => src.MaximumCapacity))
+            .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel.ToString()))
+            .ForCtorParam("IsActive", opt => opt.MapFrom(src => src.IsActive))
+            .ForCtorParam("InactiveReason", opt => opt.MapFrom(src => src.InactiveReason))
             .ForCtorParam("Schedules", opt => opt.MapFrom(src => src.GroupSchedules
                 .Select(gs => new GroupScheduleItemDto
                 {

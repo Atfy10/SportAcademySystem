@@ -31,7 +31,7 @@ namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAll
         public async Task<Result<PagedData<TraineeGroupCardDto>>> Handle(GetAllTraineeGroupsQuery request, CancellationToken cancellationToken)
         {
             var traineeGroups = await _traineeGroupRepository
-                .GetAllAsCardAsync(request.Page, cancellationToken);
+                .GetAllAsCardAsync(request.Page, request.FromTime, request.ToTime, cancellationToken);
 
             return Result<PagedData<TraineeGroupCardDto>>.Success(traineeGroups, _operationType);
         }
