@@ -12,14 +12,22 @@ namespace SportAcademy.Infrastructure.Implementations
     {
         private readonly IHubContext<NotificationHub, INotificationClient> _hubContext;
         private readonly INotificationRepository _notificationRepository;
+        private readonly IUserRepository _userRepository;
         private readonly ITenantIdProvider _tenantIdProvider;
+
+        // Roles that make up the "Admins" notification group - kept here (not read from
+        // NotificationGroupMembers) so a recipient is resolved from a user's actual current
+        // role assignment, never from a stale connection-time cache. See SendNotificationToGroupAsync.
+        private static readonly string[] AdminGroupRoles = ["Admin", "Owner"];
 
         public NotificationService(IHubContext<NotificationHub, INotificationClient> hubContext,
             INotificationRepository notificationRepository,
+            IUserRepository userRepository,
             ITenantIdProvider tenantIdProvider)
         {
             _hubContext = hubContext;
             _notificationRepository = notificationRepository;
+            _userRepository = userRepository;
             _tenantIdProvider = tenantIdProvider;
         }
 
@@ -89,7 +97,22 @@ namespace SportAcademy.Infrastructure.Implementations
                 GroupName = scopedGroupName
             };
             await _notificationRepository.AddAsync(notification);
-            await _notificationRepository.AddRecipientsForGroupAsync(notification.Id, scopedGroupName);
+
+            // "Admins" recipients are resolved live from role assignment rather than the
+            // NotificationGroupMembers cache (only ever populated when a user connects to the
+            // SignalR hub) - otherwise an Admin/Owner who has never connected, or was simply
+            // offline when this fired, would never get a persisted recipient row for it at all,
+            // and the notification would be permanently missing from their history even after
+            // they log in later.
+            if (groupName == NotificationGroupNames.Admins)
+            {
+                var recipientIds = await _userRepository.GetUserIdsInRolesAsync(AdminGroupRoles);
+                await _notificationRepository.AddRecipientsForUsersAsync(notification.Id, recipientIds);
+            }
+            else
+            {
+                await _notificationRepository.AddRecipientsForGroupAsync(notification.Id, scopedGroupName);
+            }
 
             await _hubContext.Clients.Group(scopedGroupName).ReceiveNotification(new NotificationRecipientDto
             {

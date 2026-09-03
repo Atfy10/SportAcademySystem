@@ -44,5 +44,10 @@ namespace SportAcademy.Application.Interfaces
         /// notification text: the linked Employee's or Trainee's person name if there is one
         /// (most users are one or the other), else falls back to the login username.
         Task<string> GetDisplayNameAsync(Guid userId, CancellationToken ct = default);
+
+        /// Ids of every current-tenant user holding any of the given roles - resolved live from
+        /// role assignments (not a connection-time cache), so a group notification's recipient
+        /// list is always correct even for a user who has never connected to the SignalR hub.
+        Task<List<Guid>> GetUserIdsInRolesAsync(IEnumerable<string> roleNames, CancellationToken ct = default);
     }
 }

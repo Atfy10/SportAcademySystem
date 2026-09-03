@@ -39,10 +39,13 @@ namespace SportAcademy.Infrastructure.Notifications
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+            // Owner is at least as privileged as Admin (see CLAUDE.md's enforced-roles note) and
+            // must join the same live group - this previously checked "Admin" only, so an Owner
+            // never received a live "Admins"-group push at all.
             var isAdmin = await db.UserRoles
                 .Where(ur => ur.UserId == userId)
                 .Join(db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name)
-                .AnyAsync(n => n == "Admin");
+                .AnyAsync(n => n == "Admin" || n == "Owner");
 
             if (isAdmin)
             {

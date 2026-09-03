@@ -57,6 +57,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             await SaveChangesAsync(ct);
         }
 
+        public async Task AddRecipientsForUsersAsync(int notificationId, IEnumerable<Guid> userIds, CancellationToken ct = default)
+        {
+            var recipients = userIds.Select(userId => new NotificationRecipient
+            {
+                NotificationId = notificationId,
+                UserId = userId,
+                IsRead = false
+            });
+
+            await _context.NotificationRecipients.AddRangeAsync(recipients, ct);
+            await SaveChangesAsync(ct);
+        }
+
         public async Task<PagedData<NotificationRecipientDto>> GetUserNotificationsAsync(
             Guid userId, PageRequest page, CancellationToken ct = default)
         {

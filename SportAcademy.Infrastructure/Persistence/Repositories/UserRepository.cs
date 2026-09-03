@@ -181,6 +181,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return result?.EmployeeName ?? result?.TraineeName ?? result?.UserName ?? "Unknown";
         }
 
+        public async Task<List<Guid>> GetUserIdsInRolesAsync(IEnumerable<string> roleNames, CancellationToken ct = default)
+        {
+            var names = roleNames.ToList();
+            return await _context.AppUsers
+                .Where(u => u.UserRoles.Any(ur => names.Contains(ur.Role.Name)))
+                .Select(u => u.Id)
+                .ToListAsync(ct);
+        }
+
         public async Task<(List<AppUser> Items, int TotalCount)> GetOwnersPagedAsync(
             int skip, int take, string? search, CancellationToken ct = default)
         {
