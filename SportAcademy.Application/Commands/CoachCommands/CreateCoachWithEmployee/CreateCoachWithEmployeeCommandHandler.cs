@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
@@ -16,17 +17,26 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
         private readonly IPersonService _personService;
+        private readonly IUserContextService _userContext;
+        private readonly IUserRepository _userRepository;
+        private readonly IPublisher _publisher;
 
         public CreateCoachWithEmployeeCommandHandler(
             ICoachRepository coachRepository,
             IEmployeeRepository employeeRepository,
             IMapper mapper,
-            IPersonService personService)
+            IPersonService personService,
+            IUserContextService userContext,
+            IUserRepository userRepository,
+            IPublisher publisher)
         {
             _coachRepository = coachRepository;
             _employeeRepository = employeeRepository;
             _mapper = mapper;
             _personService = personService;
+            _userContext = userContext;
+            _userRepository = userRepository;
+            _publisher = publisher;
         }
 
         public async Task<Result<int>> Handle(CreateCoachWithEmployeeCommand request, CancellationToken ct)
@@ -56,6 +66,13 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             ct.ThrowIfCancellationRequested();
 
             await _coachRepository.AddAsync(coach, ct);
+
+            var actorName = _userContext.UserId is { } actorId
+                ? await _userRepository.GetDisplayNameAsync(actorId, ct)
+                : "System";
+            await _publisher.Publish(
+                new EmployeeLifecycleEvent(employee.Id, $"{employee.FirstName} {employee.LastName}", "Created as Coach", actorName),
+                ct);
 
             return Result<int>.Success(coach.EmployeeId, _operationType);
         }

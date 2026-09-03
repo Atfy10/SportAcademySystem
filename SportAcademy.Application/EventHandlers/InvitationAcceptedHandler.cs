@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
 
 namespace SportAcademy.Application.EventHandlers;
@@ -9,13 +11,19 @@ public sealed class InvitationAcceptedHandler : INotificationHandler<InvitationA
 {
     private readonly ILogger<InvitationAcceptedHandler> _logger;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
 
     public InvitationAcceptedHandler(
         ILogger<InvitationAcceptedHandler> logger,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IUserRepository userRepository,
+        INotificationService notificationService)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _userRepository = userRepository;
+        _notificationService = notificationService;
     }
 
     public async Task Handle(InvitationAcceptedEvent notification, CancellationToken cancellationToken)
@@ -25,5 +33,14 @@ public sealed class InvitationAcceptedHandler : INotificationHandler<InvitationA
             notification.InvitationId, notification.UserId, DateTime.UtcNow);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Tell whoever sent the invitation that it was accepted - was purely a log line before,
+        // invisible to anyone actually using the product.
+        var accepterName = await _userRepository.GetDisplayNameAsync(notification.UserId, cancellationToken);
+        await _notificationService.SendNotificationAsync(
+            notification.InvitedByUserId.ToString(),
+            "Invitation Accepted",
+            $"{accepterName} accepted your invitation and joined.",
+            NotificationType.Success);
     }
 }

@@ -26,7 +26,9 @@ public class CreateEmployeeCommandHandlerTests
             _personServiceMock.Object,
             _mapperMock.Object,
             _employeeRepoMock.Object,
-            _userRepoMock.Object);
+            _userRepoMock.Object,
+            new Mock<IUserContextService>().Object,
+            new Mock<MediatR.IPublisher>().Object);
     }
 
     private static CreateEmployeeCommand CreateValidCommand(bool createUserAccount = true) => new(

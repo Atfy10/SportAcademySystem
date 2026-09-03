@@ -2,6 +2,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EmployeeDtos;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
@@ -19,17 +20,23 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         private readonly IPersonService _employeeService;
         private readonly string _operationType = OperationType.Add.ToString();
         private readonly IUserRepository _userRepository;
+        private readonly IUserContextService _userContext;
+        private readonly IPublisher _publisher;
 
         public CreateEmployeeCommandHandler(
             IPersonService employeeService,
             IMapper mapper,
             IEmployeeRepository employeeRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IUserContextService userContext,
+            IPublisher publisher)
         {
             _mapper = mapper;
             _employeeService = employeeService;
             _employeeRepository = employeeRepository;
             _userRepository = userRepository;
+            _userContext = userContext;
+            _publisher = publisher;
         }
 
         public async Task<Result<CreateEmployeeResultDto>> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
@@ -73,6 +80,13 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
             await _employeeRepository.AddAsync(employee, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            var actorName = _userContext.UserId is { } actorId
+                ? await _userRepository.GetDisplayNameAsync(actorId, cancellationToken)
+                : "System";
+            await _publisher.Publish(
+                new EmployeeLifecycleEvent(employee.Id, $"{employee.FirstName} {employee.LastName}", "Created", actorName),
+                cancellationToken);
 
             var resultDto = new CreateEmployeeResultDto(employee.Id, generatedUserName, generatedPassword);
             return Result<CreateEmployeeResultDto>.Success(resultDto, _operationType);

@@ -178,7 +178,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 })
                 .FirstOrDefaultAsync(ct);
 
-            return result?.EmployeeName ?? result?.TraineeName ?? result?.UserName ?? "Unknown";
+            return result?.UserName ?? result?.EmployeeName ?? result?.TraineeName ?? "Unknown";
         }
 
         public async Task<List<Guid>> GetUserIdsInRolesAsync(IEnumerable<string> roleNames, CancellationToken ct = default)

@@ -21,6 +21,7 @@ public class CreateInvitationCommandHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
+    private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly CreateInvitationCommandHandler _handler;
 
     public CreateInvitationCommandHandlerTests()
@@ -31,7 +32,8 @@ public class CreateInvitationCommandHandlerTests
             _invitationRepoMock.Object,
             _unitOfWorkMock.Object,
             _mediatorMock.Object,
-            _tenantIdProviderMock.Object);
+            _tenantIdProviderMock.Object,
+            _userRepoMock.Object);
     }
 
     private static Tenant CreateTenant(Guid id, string slug = "test-academy") => new()

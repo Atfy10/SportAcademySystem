@@ -163,7 +163,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
             var accessToken = await _jwtTokenService.GenerateJwtToken(user, role);
 
-            await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id), ct);
+            await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id, invitation.InvitedByUserId), ct);
 
             return Result<AuthResponseDto>.Success(
                 new AuthResponseDto(accessToken, plainRefreshToken), Operation);

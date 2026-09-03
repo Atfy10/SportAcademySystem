@@ -24,6 +24,7 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediator _mediator;
     private readonly ITenantIdProvider _tenantIdProvider;
+    private readonly IUserRepository _userRepository;
     private readonly string _operation = OperationType.Add.ToString();
 
     public CreateInvitationCommandHandler(
@@ -32,7 +33,8 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
         IInvitationRepository invitationRepository,
         IUnitOfWork unitOfWork,
         IMediator mediator,
-        ITenantIdProvider tenantIdProvider)
+        ITenantIdProvider tenantIdProvider,
+        IUserRepository userRepository)
     {
         _tenantRepository = tenantRepository;
         _tokenService = tokenService;
@@ -40,6 +42,7 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
         _unitOfWork = unitOfWork;
         _mediator = mediator;
         _tenantIdProvider = tenantIdProvider;
+        _userRepository = userRepository;
     }
 
     public async Task<Result<InvitationResponse>> Handle(CreateInvitationCommand request, CancellationToken ct)
@@ -100,8 +103,9 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
             _tenantIdProvider.SetTenantId(previousTenantId);
         }
 
+        var actorName = await _userRepository.GetDisplayNameAsync(request.InvitedByUserId, ct);
         await _mediator.Publish(
-            new InvitationCreatedEvent(invitation.Id, rawToken, tenant.Slug, request.Email), ct);
+            new InvitationCreatedEvent(invitation.Id, rawToken, tenant.Slug, request.Email, actorName), ct);
 
         return Result<InvitationResponse>.Success(invitation.ToResponse(), _operation);
     }

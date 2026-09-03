@@ -2,4 +2,4 @@ using MediatR;
 
 namespace SportAcademy.Domain.Events;
 
-public sealed record InvitationAcceptedEvent(Guid InvitationId, Guid UserId) : INotification;
+public sealed record InvitationAcceptedEvent(Guid InvitationId, Guid UserId, Guid InvitedByUserId) : INotification;
