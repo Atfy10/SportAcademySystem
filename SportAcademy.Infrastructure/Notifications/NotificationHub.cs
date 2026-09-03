@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Helpers;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.Notifications

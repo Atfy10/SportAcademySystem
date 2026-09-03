@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Application.EventHandlers;
 
@@ -33,20 +34,18 @@ public sealed class ExcuseRequestReviewedHandler(
             : $"Excuse request #{notification.ExcuseRequestId} was rejected by {actorName}.";
 
         // This is an org-wide outcome announcement, not just a reply to whoever filed it -
-        // every staff member (coaches, accountants, managers, admins - anyone with an Employee
-        // record) plus the Owner gets it, in addition to the original requester (already
-        // included whenever they're staff themselves, but unioned in explicitly in case they
+        // every Admin, Owner and Employee gets it, plus the original requester explicitly
+        // (already covered whenever they're staff themselves, unioned in just in case they
         // aren't linked as an Employee for some reason).
-        var recipientIds = await userRepository.GetStaffAndOwnerUserIdsAsync(cancellationToken);
-        if (Guid.TryParse(excuseRequest.RequestedByUserId, out var requesterId))
-        {
-            recipientIds.Add(requesterId);
-        }
+        var extraIds = Guid.TryParse(excuseRequest.RequestedByUserId, out var requesterId)
+            ? new[] { requesterId }
+            : null;
 
-        await notificationService.SendNotificationToUsersAsync(
-            recipientIds,
+        await notificationService.SendNotificationToGroupsAsync(
+            NotificationGroupNames.AllRoleGroups,
             title,
             message,
-            NotificationType.Attendance);
+            NotificationType.Attendance,
+            extraIds);
     }
 }

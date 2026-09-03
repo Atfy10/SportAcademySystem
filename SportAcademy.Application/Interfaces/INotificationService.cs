@@ -8,6 +8,16 @@ namespace SportAcademy.Application.Interfaces
             NotificationType type = NotificationType.System, string? actionUrl = null);
         Task SendNotificationToGroupAsync(string groupName, string title, string message,
             NotificationType type = NotificationType.System);
+
+        /// Sends one notification to the union of every named group's current members (e.g.
+        /// Admins + Owners + Employees) plus any explicit extra user ids (e.g. an event's
+        /// originator, in case they aren't already covered by one of the groups) - membership
+        /// for each group is resolved live from role/employment data, never a connection-time
+        /// cache, so it reaches everyone currently qualifying regardless of SignalR connection
+        /// history.
+        Task SendNotificationToGroupsAsync(IEnumerable<string> groupNames, string title, string message,
+            NotificationType type = NotificationType.System, IEnumerable<Guid>? extraUserIds = null);
+
         Task BroadcastNotificationAsync(string title, string message,
             NotificationType type = NotificationType.System);
 

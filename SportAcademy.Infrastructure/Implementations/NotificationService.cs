@@ -4,6 +4,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Helpers;
 using SportAcademy.Infrastructure.Notifications;
 
 namespace SportAcademy.Infrastructure.Implementations
@@ -14,11 +15,6 @@ namespace SportAcademy.Infrastructure.Implementations
         private readonly INotificationRepository _notificationRepository;
         private readonly IUserRepository _userRepository;
         private readonly ITenantIdProvider _tenantIdProvider;
-
-        // Roles that make up the "Admins" notification group - kept here (not read from
-        // NotificationGroupMembers) so a recipient is resolved from a user's actual current
-        // role assignment, never from a stale connection-time cache. See SendNotificationToGroupAsync.
-        private static readonly string[] AdminGroupRoles = ["Admin", "Owner"];
 
         public NotificationService(IHubContext<NotificationHub, INotificationClient> hubContext,
             INotificationRepository notificationRepository,
@@ -83,65 +79,67 @@ namespace SportAcademy.Infrastructure.Implementations
 
         public async Task SendNotificationToGroupAsync(string groupName, string title, string message,
             NotificationType type = NotificationType.System)
+            => await SendNotificationToGroupsAsync([groupName], title, message, type);
+
+        public async Task SendNotificationToGroupsAsync(IEnumerable<string> groupNames, string title, string message,
+            NotificationType type = NotificationType.System, IEnumerable<Guid>? extraUserIds = null)
         {
-            // The group name is scoped to the current tenant once, here, so the SignalR
-            // broadcast and the persisted NotificationGroupMember lookup always agree - and so
-            // an "Admins" notification can never be delivered to another tenant's admins.
-            var scopedGroupName = ScopedGroup(groupName);
+            var names = groupNames.Distinct().ToList();
 
-            var notification = new Notification
+            // Every named group's membership is resolved live from role/employment data (never
+            // NotificationGroupMembers, a connection-time cache) so this always reaches every
+            // current member regardless of SignalR connection history - see
+            // ResolveRoleGroupMemberIdsAsync.
+            var recipientIds = new HashSet<Guid>();
+            foreach (var name in names)
             {
-                Title = title,
-                Message = message,
-                Type = type,
-                GroupName = scopedGroupName
-            };
-            await _notificationRepository.AddAsync(notification);
-
-            // "Admins" recipients are resolved live from role assignment rather than the
-            // NotificationGroupMembers cache (only ever populated when a user connects to the
-            // SignalR hub) - otherwise an Admin/Owner who has never connected, or was simply
-            // offline when this fired, would never get a persisted recipient row for it at all,
-            // and the notification would be permanently missing from their history even after
-            // they log in later.
-            if (groupName == NotificationGroupNames.Admins)
-            {
-                var recipientIds = await _userRepository.GetUserIdsInRolesAsync(AdminGroupRoles);
-                await _notificationRepository.AddRecipientsForUsersAsync(notification.Id, recipientIds);
-            }
-            else
-            {
-                await _notificationRepository.AddRecipientsForGroupAsync(notification.Id, scopedGroupName);
+                foreach (var id in await ResolveRoleGroupMemberIdsAsync(name))
+                {
+                    recipientIds.Add(id);
+                }
             }
 
-            await _hubContext.Clients.Group(scopedGroupName).ReceiveNotification(new NotificationRecipientDto
+            if (extraUserIds is not null)
             {
-                Id = notification.Id,
-                Title = title,
-                Message = message,
-                Type = type,
-                ActionUrl = null,
-                IsRead = false,
-                CreatedAt = notification.CreatedAt
-            });
+                foreach (var id in extraUserIds)
+                {
+                    recipientIds.Add(id);
+                }
+            }
+
+            if (recipientIds.Count == 0) return;
+
+            var groupLabel = ScopedGroup(string.Join("+", names));
+            await SendToUserIdsAsync(recipientIds, title, message, type, groupLabel);
         }
 
         public async Task SendNotificationToUsersAsync(IEnumerable<Guid> userIds, string title, string message,
             NotificationType type = NotificationType.System)
         {
-            var ids = userIds.Distinct().ToList();
+            var ids = userIds.Distinct().ToHashSet();
             if (ids.Count == 0) return;
 
+            await SendToUserIdsAsync(ids, title, message, type);
+        }
+
+        /// Persists the notification, fans out a recipient row per user, and pushes live to
+        /// each of them by user id (Clients.Users) - independent of which SignalR "groups" (if
+        /// any) their connection has joined, so it works whether or not the hub's own group
+        /// bookkeeping is in sync.
+        private async Task SendToUserIdsAsync(
+            IReadOnlyCollection<Guid> userIds, string title, string message, NotificationType type, string? groupName = null)
+        {
             var notification = new Notification
             {
                 Title = title,
                 Message = message,
-                Type = type
+                Type = type,
+                GroupName = groupName
             };
             await _notificationRepository.AddAsync(notification);
-            await _notificationRepository.AddRecipientsForUsersAsync(notification.Id, ids);
+            await _notificationRepository.AddRecipientsForUsersAsync(notification.Id, userIds);
 
-            await _hubContext.Clients.Users(ids.Select(id => id.ToString()).ToList()).ReceiveNotification(new NotificationRecipientDto
+            await _hubContext.Clients.Users(userIds.Select(id => id.ToString()).ToList()).ReceiveNotification(new NotificationRecipientDto
             {
                 Id = notification.Id,
                 Title = title,
@@ -152,6 +150,14 @@ namespace SportAcademy.Infrastructure.Implementations
                 CreatedAt = notification.CreatedAt
             });
         }
+
+        private async Task<List<Guid>> ResolveRoleGroupMemberIdsAsync(string groupName) => groupName switch
+        {
+            NotificationGroupNames.Admins => await _userRepository.GetUserIdsInRolesAsync(["Admin"]),
+            NotificationGroupNames.Owners => await _userRepository.GetUserIdsInRolesAsync(["Owner"]),
+            NotificationGroupNames.Employees => await _userRepository.GetEmployeeUserIdsAsync(),
+            _ => [],
+        };
 
         public async Task NotifyNotificationReadAsync(string userId, int notificationId)
             => await _hubContext.Clients.User(userId).NotificationRead(notificationId);

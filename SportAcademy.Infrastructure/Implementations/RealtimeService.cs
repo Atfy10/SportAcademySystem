@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Helpers;
 using SportAcademy.Infrastructure.Notifications;
 
 namespace SportAcademy.Infrastructure.Implementations;

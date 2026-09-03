@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Moq;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Helpers;
 using SportAcademy.Infrastructure.Implementations;
 using SportAcademy.Infrastructure.Notifications;
 

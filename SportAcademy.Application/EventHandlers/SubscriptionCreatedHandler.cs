@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Application.EventHandlers;
 
@@ -35,8 +36,8 @@ public sealed class SubscriptionCreatedHandler : INotificationHandler<Subscripti
             ? await _userRepository.GetDisplayNameAsync(createdBy, cancellationToken)
             : "System";
 
-        await _notificationService.SendNotificationToGroupAsync(
-            "Admins",
+        await _notificationService.SendNotificationToGroupsAsync(
+            [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "New Subscription",
             $"Subscription #{notification.SubscriptionId} created by {actorName}",
             NotificationType.Info);

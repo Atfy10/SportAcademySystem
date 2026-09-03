@@ -190,10 +190,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<List<Guid>> GetStaffAndOwnerUserIdsAsync(CancellationToken ct = default)
+        public async Task<List<Guid>> GetEmployeeUserIdsAsync(CancellationToken ct = default)
         {
             return await _context.AppUsers
-                .Where(u => u.Employee != null || u.UserRoles.Any(ur => ur.Role.Name == "Owner"))
+                .Where(u => u.Employee != null)
                 .Select(u => u.Id)
                 .ToListAsync(ct);
         }

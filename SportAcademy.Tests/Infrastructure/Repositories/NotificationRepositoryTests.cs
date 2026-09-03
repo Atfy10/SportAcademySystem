@@ -3,6 +3,7 @@ using Moq;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Helpers;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Repositories;

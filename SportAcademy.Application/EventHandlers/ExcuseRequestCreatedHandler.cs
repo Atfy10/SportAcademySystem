@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Application.EventHandlers;
 
@@ -23,8 +24,9 @@ public sealed class ExcuseRequestCreatedHandler(
             ? await userRepository.GetDisplayNameAsync(requestedBy, cancellationToken)
             : "System";
 
-        await notificationService.SendNotificationToGroupAsync(
-            "Admins",
+        // Only whoever can actually act on it - Admins and Owners hold attendance.approve_excuse.
+        await notificationService.SendNotificationToGroupsAsync(
+            [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "New Excuse Request",
             $"Excuse request #{notification.ExcuseRequestId} filed by {actorName} needs approval",
             NotificationType.Attendance);
