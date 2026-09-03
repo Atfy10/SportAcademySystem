@@ -166,6 +166,21 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<AppUser?> GetByIdIgnoringTenantAsync(Guid id, CancellationToken ct = default)
             => await _context.AppUsers.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == id, ct);
 
+        public async Task<string> GetDisplayNameAsync(Guid userId, CancellationToken ct = default)
+        {
+            var result = await _context.AppUsers
+                .Where(u => u.Id == userId)
+                .Select(u => new
+                {
+                    u.UserName,
+                    EmployeeName = u.Employee != null ? u.Employee.FirstName + " " + u.Employee.LastName : null,
+                    TraineeName = u.Trainee != null ? u.Trainee.FirstName + " " + u.Trainee.LastName : null,
+                })
+                .FirstOrDefaultAsync(ct);
+
+            return result?.EmployeeName ?? result?.TraineeName ?? result?.UserName ?? "Unknown";
+        }
+
         public async Task<(List<AppUser> Items, int TotalCount)> GetOwnersPagedAsync(
             int skip, int take, string? search, CancellationToken ct = default)
         {

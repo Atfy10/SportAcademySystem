@@ -39,5 +39,10 @@ namespace SportAcademy.Application.Interfaces
         // and consume it later, from an unauthenticated request when the link is clicked.
         Task<string> GeneratePasswordResetTokenAsync(AppUser user);
         Task<IdentityResult> ConsumePasswordResetTokenAsync(AppUser user, string token, string newPassword);
+
+        /// Best-available human-readable name for a user id, for attributing "who did this" in
+        /// notification text: the linked Employee's or Trainee's person name if there is one
+        /// (most users are one or the other), else falls back to the login username.
+        Task<string> GetDisplayNameAsync(Guid userId, CancellationToken ct = default);
     }
 }

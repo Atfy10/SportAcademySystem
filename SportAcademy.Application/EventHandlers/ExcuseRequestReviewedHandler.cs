@@ -8,6 +8,8 @@ namespace SportAcademy.Application.EventHandlers;
 public sealed class ExcuseRequestReviewedHandler(
     INotificationService notificationService,
     IRealtimeService realtimeService,
+    IUserContextService userContext,
+    IUserRepository userRepository,
     IExcuseRequestRepository excuseRequestRepository)
     : INotificationHandler<ExcuseRequestReviewedEvent>
 {
@@ -18,10 +20,14 @@ public sealed class ExcuseRequestReviewedHandler(
         var excuseRequest = await excuseRequestRepository.GetByIdAsync(notification.ExcuseRequestId, cancellationToken);
         if (excuseRequest?.RequestedByUserId is null) return;
 
+        var actorName = userContext.UserId is { } userId
+            ? await userRepository.GetDisplayNameAsync(userId, cancellationToken)
+            : "System";
+
         var title = notification.Approved ? "Excuse Request Approved" : "Excuse Request Rejected";
         var message = notification.Approved
-            ? $"Excuse request #{notification.ExcuseRequestId} was approved."
-            : $"Excuse request #{notification.ExcuseRequestId} was rejected.";
+            ? $"Excuse request #{notification.ExcuseRequestId} was approved by {actorName}."
+            : $"Excuse request #{notification.ExcuseRequestId} was rejected by {actorName}.";
 
         await notificationService.SendNotificationAsync(
             excuseRequest.RequestedByUserId,
