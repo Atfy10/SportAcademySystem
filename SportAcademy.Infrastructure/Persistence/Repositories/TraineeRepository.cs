@@ -499,6 +499,76 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(t => t.Id != 0)
                 .AnyAsync(t => t.Email.Value == email.ToLowerInvariant(), cancellationToken);
 
+        // The reverse of TraineeGroupRepository.GetAllForDropdownAsync ("groups eligible for a
+        // trainee"): here the group is fixed, and every check CreateEnrollmentCommandHandler
+        // would otherwise reject a submission on is mirrored here so this list never offers a
+        // trainee who'd then fail on submit. Same SkillLevel gotcha applies as there - it's
+        // HasConversion<string>()-mapped, so the "at or above the group's required level"
+        // ordinal comparison happens in-memory after materializing, never as translated SQL.
+        public async Task<List<EligibleTraineeForGroupDto>> GetEligibleForGroupAsync(int traineeGroupId, CancellationToken ct = default)
+        {
+            var group = await _context.TraineeGroups
+                .Where(tg => tg.Id == traineeGroupId)
+                .Select(tg => new { tg.Gender, tg.SkillLevel, SportId = (int?)tg.Coach.SportId })
+                .FirstOrDefaultAsync(ct);
+
+            if (group is null || group.SportId is null)
+                return [];
+
+            var sportId = group.SportId.Value;
+
+            // "One group per sport" - a trainee already enrolled (in any status) in any group
+            // for this sport is excluded, same as GetCurrentEnrollmentForSportAsync's own stance.
+            var alreadyEnrolledInSport = (await _context.Enrollments
+                .Where(e => e.TraineeGroup.Coach.SportId == sportId)
+                .Select(e => e.TraineeId)
+                .Distinct()
+                .ToListAsync(ct))
+                .ToHashSet();
+
+            var candidates = await ApplyBranchFilter(_context.Trainees)
+                .Where(t => !t.IsDeleted)
+                .Where(t => group.Gender == TraineeGroupGender.Mixed
+                    || (group.Gender == TraineeGroupGender.Male && t.Gender == Gender.Male)
+                    || (group.Gender == TraineeGroupGender.Female && t.Gender == Gender.Female))
+                .Select(t => new
+                {
+                    t.Id,
+                    FullName = t.FirstName + " " + t.LastName,
+                    t.Gender,
+                    Subscription = t.SubscriptionDetails
+                        .Where(sd => sd.SportId == sportId && sd.Status == SubscriptionStatus.Active && !sd.IsDeleted
+                            // Not already claimed by another enrollment - same "unclaimed" rule
+                            // GetActiveForTraineeDropdownAsync applies per-trainee.
+                            && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id))
+                        .Select(sd => new { sd.Id, sd.EndDate })
+                        .FirstOrDefault(),
+                    SportTrainee = t.Sports
+                        .Where(st => st.SportId == sportId)
+                        .Select(st => (SkillLevel?)st.SkillLevel)
+                        .FirstOrDefault()
+                })
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            return candidates
+                .Where(c => !alreadyEnrolledInSport.Contains(c.Id))
+                .Where(c => c.Subscription is not null)
+                // NotSpecified/missing = "no skill on record" - never a disqualifier, matching
+                // CreateEnrollmentCommandHandler's own stance.
+                .Where(c => c.SportTrainee is null
+                    || c.SportTrainee == SkillLevel.NotSpecified
+                    || c.SportTrainee >= group.SkillLevel)
+                .Select(c => new EligibleTraineeForGroupDto(
+                    c.Id,
+                    c.FullName,
+                    c.Gender.ToString(),
+                    (c.SportTrainee ?? SkillLevel.NotSpecified).ToString(),
+                    c.Subscription!.Id,
+                    c.Subscription!.EndDate))
+                .ToList();
+        }
+
         public async Task<List<TraineeExportDto>> GetExportDataByIdsAsync(List<int> ids, CancellationToken ct = default)
         {
             var trainees = await _context.Trainees

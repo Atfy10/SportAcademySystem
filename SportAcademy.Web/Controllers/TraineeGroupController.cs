@@ -13,6 +13,7 @@ using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
 using SportAcademy.Application.Queries.BranchQueries.GetAll;
+using SportAcademy.Application.Queries.EnrollmentQueries.GetEligibleTraineesForGroup;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllForDropdown;
@@ -133,6 +134,14 @@ namespace SportAcademy.Web.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllTraineeGroupsForDropdownQuery(sportId, skillLevel, gender), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:enrollment.create")]
+        [HttpGet("{id}/eligible-trainees")]
+        public async Task<IActionResult> GetEligibleTrainees(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetEligibleTraineesForGroupQuery(id), ct);
             return Ok(result);
         }
 
