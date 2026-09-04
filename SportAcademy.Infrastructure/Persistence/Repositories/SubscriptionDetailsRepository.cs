@@ -246,13 +246,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(sd => sd.Status == SubscriptionStatus.Active && sd.EndDate < today)
                 .ExecuteUpdateAsync(s => s.SetProperty(sd => sd.Status, SubscriptionStatus.Expired), cancellationToken);
 
-            var total = await _context.SubscriptionDetails
+            var total = await ApplyBranchFilter(_context.SubscriptionDetails)
                 .CountAsync(sd => !sd.IsDeleted, cancellationToken);
-            var active = await _context.SubscriptionDetails
+            var active = await ApplyBranchFilter(_context.SubscriptionDetails)
                 .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.Status == SubscriptionStatus.Active, cancellationToken);
-            var expired = await _context.SubscriptionDetails
+            var expired = await ApplyBranchFilter(_context.SubscriptionDetails)
                 .CountAsync(sd => !sd.IsDeleted && sd.EndDate < today, cancellationToken);
-            var expiringSoon = await _context.SubscriptionDetails
+            var expiringSoon = await ApplyBranchFilter(_context.SubscriptionDetails)
                 .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.EndDate <= today.AddDays(15), cancellationToken);
 
             return new SubscriptionStatsDto

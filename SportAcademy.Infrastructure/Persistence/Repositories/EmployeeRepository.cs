@@ -42,13 +42,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ToPagedDataAsync(page, ct);
 
         public async Task<int> GetActiveEmployeesCountAsync(CancellationToken ct = default)
-            => await _context.Employees
+            => await ApplyBranchFilter(_context.Employees)
                 .AsNoTracking()
                 .Where(e => e.IsWork)
                 .CountAsync(ct);
 
         public async Task<int> GetActiveCoachesCountAsync(CancellationToken ct = default)
-            => await _context.Employees
+            => await ApplyBranchFilter(_context.Employees)
                 .AsNoTracking()
                 .Where(e => e.IsWork && e.Coach != null)
                 .CountAsync(ct);
@@ -140,7 +140,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ToPagedDataAsync(page, cancellationToken);
 
         public async Task<int> GetEmployeesCountAsync(CancellationToken ct = default)
-            => await _context.Employees.CountAsync(ct);
+            => await ApplyBranchFilter(_context.Employees).CountAsync(ct);
 
         public async Task<PagedData<EmployeeCardDto>> SearchAsync(
             string term,

@@ -67,18 +67,22 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ProjectTo<TEntityDto>(_mapper.ConfigurationProvider)
                 .ToPagedDataAsync(page, cancellationToken);
 
-        // TEntity types like Trainee/Employee/SubscriptionDetails are excluded from
-        // ApplicationDbContext's automatic global branch filter (see branchAutoFilterExclusions
-        // in OnModelCreating) precisely so that referencing them through an unrelated,
-        // already-scoped root doesn't wrongly hide that root. But when TEntity itself IS the
-        // query's subject - "list all Trainees", "list all Employees" - branch restriction still
-        // needs to apply, just explicitly here instead of automatically everywhere.
-        protected IQueryable<TEntity> ApplyBranchFilter(IQueryable<TEntity> query)
+        // Entity types like Trainee/Employee/SubscriptionDetails/SportPrice/Payment/Invoice are
+        // excluded from ApplicationDbContext's automatic global branch filter (see
+        // branchAutoFilterExclusions in OnModelCreating) precisely so that referencing them
+        // through an unrelated, already-scoped root doesn't wrongly hide that root. But when one
+        // of them itself IS the query's subject - "list all Trainees", "count active Employees",
+        // an aggregate stat over SubscriptionDetails - branch restriction still needs to apply,
+        // just explicitly here instead of automatically everywhere. Generic (not bound to
+        // TEntity) so any repository can apply it to any IBranchScoped entity it queries
+        // directly, not only its own TEntity - see TraineeRepository.GetActiveTraineesCount for
+        // an example (a Trainee-repository method whose query root is SubscriptionDetails).
+        protected IQueryable<T> ApplyBranchFilter<T>(IQueryable<T> query) where T : class
         {
-            if (!typeof(IBranchScoped).IsAssignableFrom(typeof(TEntity)))
+            if (!typeof(IBranchScoped).IsAssignableFrom(typeof(T)))
                 return query;
 
-            var parameter = Expression.Parameter(typeof(TEntity), "e");
+            var parameter = Expression.Parameter(typeof(T), "e");
             var branchIdAccessor = Expression.Property(parameter, nameof(IBranchScoped.BranchId));
 
             var dbContext = Expression.Constant(_context);
@@ -89,7 +93,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 allowedBranchIds, branchIdAccessor);
 
             var body = Expression.OrElse(Expression.Not(isBranchRestricted), containsCall);
-            var predicate = Expression.Lambda<Func<TEntity, bool>>(body, parameter);
+            var predicate = Expression.Lambda<Func<T, bool>>(body, parameter);
 
             return query.Where(predicate);
         }

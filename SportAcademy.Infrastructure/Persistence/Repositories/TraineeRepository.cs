@@ -114,7 +114,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .SingleOrDefaultAsync(cancellationToken);
 
         public async Task<int> GetTraineesCountOfSpecificDayAsync(DateTime date, CancellationToken cancellationToken = default)
-            => await _context.Trainees
+            => await ApplyBranchFilter(_context.Trainees)
                 .Where(t => t.Enrollments.Any(e => e.TraineeGroup.GroupSchedules.Any(gs => gs.Day == date.DayOfWeek)))
                 .CountAsync(cancellationToken);
 
@@ -128,11 +128,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<int> CountAsync(CancellationToken cancellationToken)
         {
-            return await _context.Trainees.CountAsync(cancellationToken);
+            return await ApplyBranchFilter(_context.Trainees).CountAsync(cancellationToken);
         }
 
         public async Task<int> GetActiveTraineesCount(CancellationToken cancellationToken = default)
-            => await _context.SubscriptionDetails
+            => await ApplyBranchFilter(_context.SubscriptionDetails)
                 .Where(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted)
                 .Select(sd => sd.TraineeId)
                 .Distinct()
@@ -488,7 +488,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<List<TraineeDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
-            => await _context.Trainees
+            => await ApplyBranchFilter(_context.Trainees)
                 .Where(t => !t.IsDeleted)
                 .AsNoTracking()
                 .ProjectTo<TraineeDropdownDto>(_mapper.ConfigurationProvider)
