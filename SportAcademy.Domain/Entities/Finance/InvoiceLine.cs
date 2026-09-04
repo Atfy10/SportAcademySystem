@@ -21,6 +21,12 @@ public class InvoiceLine
     // point at a subscription (e.g. a manual adjustment or a late fee might not).
     public int? SubscriptionDetailsId { get; set; }
 
+    // Set only on a Type == Discount line - which DiscountCode produced this line, so a report
+    // can answer "how many times was code X used" and so a code with any InvoiceLine still
+    // referencing it can't be hard-deleted (only deactivated).
+    public int? DiscountCodeId { get; set; }
+
     public Invoice Invoice { get; set; } = null!;
     public SubscriptionDetails? SubscriptionDetails { get; set; }
+    public DiscountCode? DiscountCode { get; set; }
 }

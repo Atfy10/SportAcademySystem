@@ -359,6 +359,11 @@ namespace SportAcademy.Infrastructure.Seeders
                 // creates a salary payment must not also be able to approve their own request.
                 Permissions.Expense.Manage, Permissions.Expense.View,
                 Permissions.Salary.View, Permissions.Salary.Create, Permissions.Salary.MarkPaid,
+                // Accountant never holds Subscription.Manage (can't create a subscription), so
+                // it can never be the requester of a discount-subscription request - safe to let
+                // it approve/reject one too, alongside Owner/Admin. DiscountCode.Manage
+                // (minting codes) is deliberately NOT granted here - Owner/Admin only.
+                Permissions.DiscountCode.Approve,
             ],
         };
 

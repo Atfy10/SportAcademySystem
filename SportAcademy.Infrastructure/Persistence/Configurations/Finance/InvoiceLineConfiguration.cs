@@ -21,6 +21,11 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Finance
                    .WithMany(sd => sd.InvoiceLines)
                    .HasForeignKey(l => l.SubscriptionDetailsId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(l => l.DiscountCode)
+                   .WithMany(c => c.InvoiceLines)
+                   .HasForeignKey(l => l.DiscountCodeId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

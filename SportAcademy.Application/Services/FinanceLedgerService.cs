@@ -26,9 +26,11 @@ namespace SportAcademy.Application.Services
         }
 
         public async Task<Invoice> IssueSubscriptionInvoiceAsync(
-            SubscriptionDetails subscription, decimal price, string currency, CancellationToken ct = default)
+            SubscriptionDetails subscription, decimal grossPrice, decimal discountAmount,
+            int? discountCodeId, string currency, CancellationToken ct = default)
         {
             var invoiceNumber = await _numberGenerator.GenerateAsync("INV", ct);
+            var netPrice = grossPrice - discountAmount;
 
             var invoice = new Invoice
             {
@@ -39,10 +41,10 @@ namespace SportAcademy.Application.Services
                 TraineeId = subscription.TraineeId,
                 BranchId = subscription.BranchId,
                 Currency = currency,
-                SubTotal = price,
-                DiscountTotal = 0,
+                SubTotal = grossPrice,
+                DiscountTotal = discountAmount,
                 TaxTotal = 0,
-                GrandTotal = price,
+                GrandTotal = netPrice,
                 AmountPaid = 0,
             };
 
@@ -51,11 +53,28 @@ namespace SportAcademy.Application.Services
                 Type = InvoiceLineType.SubscriptionFee,
                 Description = "Subscription fee",
                 Quantity = 1,
-                UnitPrice = price,
+                UnitPrice = grossPrice,
                 DiscountAmount = 0,
-                LineTotal = price,
+                LineTotal = grossPrice,
                 SubscriptionDetailsId = subscription.Id,
             });
+
+            // Sum(Lines.LineTotal) == GrandTotal stays a true invariant: grossPrice on the fee
+            // line, -discountAmount on this one, nets to grossPrice - discountAmount.
+            if (discountAmount > 0)
+            {
+                invoice.Lines.Add(new InvoiceLine
+                {
+                    Type = InvoiceLineType.Discount,
+                    Description = "Discount code applied",
+                    Quantity = 1,
+                    UnitPrice = 0,
+                    DiscountAmount = discountAmount,
+                    LineTotal = -discountAmount,
+                    SubscriptionDetailsId = subscription.Id,
+                    DiscountCodeId = discountCodeId,
+                });
+            }
 
             await _invoiceRepository.AddAsync(invoice, ct);
             return invoice;

@@ -22,8 +22,11 @@ namespace SportAcademy.Application.Interfaces
     // service composed from repositories rather than a raw DbContext.
     public interface IFinanceLedgerService
     {
+        // discountAmount/discountCodeId are 0/null for a plain (no discount code) invoice - see
+        // SubscriptionCreationService, the only caller. GrandTotal = grossPrice - discountAmount.
         Task<Invoice> IssueSubscriptionInvoiceAsync(
-            SubscriptionDetails subscription, decimal price, string currency, CancellationToken ct = default);
+            SubscriptionDetails subscription, decimal grossPrice, decimal discountAmount,
+            int? discountCodeId, string currency, CancellationToken ct = default);
 
         Task<Payment> RecordPaymentAsync(RecordPaymentInput input, CancellationToken ct = default);
 

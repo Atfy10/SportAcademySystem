@@ -129,6 +129,16 @@ namespace SportAcademy.Domain.Authorization
             public const string View = "salary.view";
         }
 
+        public static class DiscountCode
+        {
+            // Minting a code is Owner/Admin only (never granted to Employee/Accountant).
+            public const string Manage = "discountcode.manage";
+            // Approving/rejecting a subscription-discount-request is Owner/Admin/Accountant -
+            // Employee (the usual requester, via Subscription.Manage) never gets this, so it can
+            // never self-approve its own redemption request.
+            public const string Approve = "discountcode.approve";
+        }
+
         public static class Tenant
         {
             public const string ManageSettings = "tenant.settings.manage";
@@ -163,6 +173,7 @@ namespace SportAcademy.Domain.Authorization
             Report.View, Report.Export, Report.ViewAttendance, Report.ViewSubscriptions,
             Expense.Manage, Expense.View,
             Salary.Create, Salary.Approve, Salary.MarkPaid, Salary.View,
+            DiscountCode.Manage, DiscountCode.Approve,
             Tenant.ManageSettings, Tenant.ManageUsers,
             Platform.ManageTenants,
         ];

@@ -46,6 +46,7 @@ namespace SportAcademy.Application
             services.AddScoped<IChatBotService, ChatBotService>();
             services.AddScoped<SubDetailsManagementService>();
             services.AddScoped<IFinanceLedgerService, FinanceLedgerService>();
+            services.AddScoped<ISubscriptionCreationService, SubscriptionCreationService>();
             services.AddScoped<TraineeGroupService>();
 
             return services;
