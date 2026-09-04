@@ -37,7 +37,7 @@ namespace SportAcademy.Web.Controllers
             _mediator = mediator;
         }
 
-        [Authorize(Policy = "Permission:traineegroup.manage")]
+        [Authorize(Policy = "Permission:traineegroup.create")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTraineeGroupCommand command, CancellationToken cancellationToken)
         {

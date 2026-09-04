@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Entities;
@@ -17,18 +18,27 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
         private readonly ITraineeGroupRepository _traineeGroupRepository;
         private readonly ICoachRepository _coachRepository;
         private readonly IMapper _mapper;
+        private readonly IUserContextService _userContext;
+        private readonly IUserRepository _userRepository;
+        private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateTraineeGroupCommandHandler(
             TraineeGroupService traineeGroupService,
             ITraineeGroupRepository traineeGroupRepository,
             ICoachRepository coachRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IUserContextService userContext,
+            IUserRepository userRepository,
+            IPublisher publisher)
         {
             _traineeGroupService = traineeGroupService;
             _traineeGroupRepository = traineeGroupRepository;
             _coachRepository = coachRepository;
             _mapper = mapper;
+            _userContext = userContext;
+            _userRepository = userRepository;
+            _publisher = publisher;
         }
 
         public async Task<Result<int>> Handle(CreateTraineeGroupCommand request, CancellationToken cancellationToken)
@@ -74,6 +84,11 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
             await _traineeGroupRepository.AddAsync(traineeGroup, cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            var actorName = _userContext.UserId is { } userId
+                ? await _userRepository.GetDisplayNameAsync(userId, cancellationToken)
+                : "System";
+            await _publisher.Publish(new TraineeGroupCreatedEvent(traineeGroup.Id, traineeGroup.Name, actorName), cancellationToken);
 
             return Result<int>.Success(traineeGroup.Id, _operationType);
         }

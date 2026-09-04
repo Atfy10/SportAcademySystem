@@ -344,6 +344,9 @@ namespace SportAcademy.Infrastructure.Seeders
                 Permissions.Trainee.Register, Permissions.Trainee.Edit, Permissions.Trainee.Export,
                 Permissions.Enrollment.Create, Permissions.Enrollment.Edit, Permissions.Enrollment.Activate,
                 Permissions.Subscription.Manage,
+                // TraineeGroup.Create is deliberately NOT granted here - creating a new group is
+                // Owner/Admin only. Employee still keeps Manage (update/delete/pause/resume) for
+                // groups that already exist.
                 Permissions.TraineeGroup.Manage, Permissions.TraineeGroup.GenerateSessions, Permissions.Session.Manage,
                 Permissions.Attendance.Mark, Permissions.Attendance.ViewRate,
                 Permissions.Report.ViewAttendance, Permissions.Report.ViewSubscriptions,

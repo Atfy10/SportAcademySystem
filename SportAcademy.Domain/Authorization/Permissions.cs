@@ -35,6 +35,10 @@ namespace SportAcademy.Domain.Authorization
         {
             public const string Manage = "traineegroup.manage";
             public const string GenerateSessions = "traineegroup.generate_sessions";
+            // Creating a new group is Owner/Admin only (never granted to Employee/Accountant) -
+            // distinct from Manage, which Employee keeps for update/delete/pause/resume on
+            // groups that already exist.
+            public const string Create = "traineegroup.create";
         }
 
         public static class Subscription
@@ -157,7 +161,7 @@ namespace SportAcademy.Domain.Authorization
             Trainee.Register, Trainee.Edit, Trainee.Delete, Trainee.Export,
             Enrollment.Create, Enrollment.Edit, Enrollment.Activate,
             Attendance.Mark, Attendance.ViewRate, Attendance.ApproveExcuse,
-            TraineeGroup.Manage, TraineeGroup.GenerateSessions,
+            TraineeGroup.Manage, TraineeGroup.GenerateSessions, TraineeGroup.Create,
             Subscription.Manage,
             SubscriptionType.Manage,
             Session.Manage,
