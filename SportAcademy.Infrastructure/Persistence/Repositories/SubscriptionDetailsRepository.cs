@@ -193,11 +193,21 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // call. Rewritten as "ids of the max row per group, then re-query by those ids" -
             // GroupBy+Max and Where+Contains(subquery) are both well within EF's supported
             // translation set.
-            var latestIdsQuery = GetFullSubDetails()
+            //
+            // Skip/Take must never run against GetFullSubDetails() itself: it Includes multiple
+            // collection navigations (InvoiceLines, each with its own Allocations), and EF's join
+            // explosion for those makes Skip/Take unreliable - rows can land on the wrong page or
+            // be duplicated even though each row's own data is correct. So pagination happens
+            // here against a plain, include-free query (branch-filtered, like
+            // GetAllPaginatedAsync/GetReportAsync above), and GetFullSubDetails() is only used
+            // afterward to hydrate the small, already-fixed set of ids for the current page.
+            var baseQuery = ApplyBranchFilter(_context.SubscriptionDetails);
+
+            var latestIdsQuery = baseQuery
                 .GroupBy(sd => new { sd.TraineeId, sd.SportPrice.SportId, sd.SportPrice.BranchId })
                 .Select(g => g.Max(sd => sd.Id));
 
-            var query = GetFullSubDetails().Where(sd => latestIdsQuery.Contains(sd.Id));
+            var query = baseQuery.Where(sd => latestIdsQuery.Contains(sd.Id));
 
             if (!string.IsNullOrWhiteSpace(term))
             {
@@ -210,11 +220,23 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             }
 
             var totalCount = await query.CountAsync(cancellationToken);
-            var items = await query
+            var pageIds = await query
                 .OrderByDescending(sd => sd.Id)
                 .Skip(page.Skip)
                 .Take(page.PageSize)
+                .Select(sd => sd.Id)
                 .ToListAsync(cancellationToken);
+
+            if (pageIds.Count == 0)
+                return ([], totalCount);
+
+            var itemsById = await GetFullSubDetails()
+                .Where(sd => pageIds.Contains(sd.Id))
+                .ToDictionaryAsync(sd => sd.Id, cancellationToken);
+
+            // Re-query above has no ordering of its own - restore the page's OrderByDescending(Id)
+            // order from pageIds.
+            var items = pageIds.Select(id => itemsById[id]).ToList();
 
             return (items, totalCount);
         }
