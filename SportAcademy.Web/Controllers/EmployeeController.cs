@@ -177,6 +177,16 @@ namespace SportAcademy.Web.Controllers
             return Ok(Result<object>.Success(options, "GetAllPositions"));
         }
 
+        [HttpGet("nationalities")]
+        public IActionResult GetNationalities()
+        {
+            // Same shape as GetPositions - value stays the English enum token
+            // (CreateEmployeeCommandHandler does Enum.Parse<Nationality>(request.Nationality)),
+            // only the label shown in the dropdown is localized.
+            var options = _localizer.Options<Nationality>();
+            return Ok(Result<object>.Success(options, "GetAllNationalities"));
+        }
+
         [HttpGet("coaches")]
         [Authorize(Policy = "Permission:employee.manage")]
         public async Task<IActionResult> GetAllCoaches(
