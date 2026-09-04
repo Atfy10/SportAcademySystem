@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.ReportQueries.GetAttendanceReport;
+using SportAcademy.Application.Queries.ReportQueries.GetFinancialReport;
 using SportAcademy.Application.Queries.ReportQueries.GetOutstandingReport;
 using SportAcademy.Application.Queries.ReportQueries.GetPaymentMethodReport;
 using SportAcademy.Application.Queries.ReportQueries.GetRevenueReport;
@@ -38,6 +39,18 @@ namespace SportAcademy.Web.Controllers
             if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase) && result.IsSuccess)
                 return WriteCsv(result.Data!, "revenue-report.csv");
 
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:report.view")]
+        [HttpGet("financial")]
+        public async Task<IActionResult> GetFinancial(
+            [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? branchId,
+            [FromQuery] string? format, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetFinancialReportQuery(from, to, branchId), ct);
+            if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase) && result.IsSuccess)
+                return WriteCsv(result.Data!, "financial-report.csv");
             return Ok(result);
         }
 

@@ -115,6 +115,20 @@ namespace SportAcademy.Domain.Authorization
             public const string ViewSubscriptions = "report.view.subscriptions";
         }
 
+        public static class Expense
+        {
+            public const string Manage = "expense.manage";
+            public const string View = "expense.view";
+        }
+
+        public static class Salary
+        {
+            public const string Create = "salary.create";
+            public const string Approve = "salary.approve";
+            public const string MarkPaid = "salary.markpaid";
+            public const string View = "salary.view";
+        }
+
         public static class Tenant
         {
             public const string ManageSettings = "tenant.settings.manage";
@@ -147,6 +161,8 @@ namespace SportAcademy.Domain.Authorization
             PaymentType.Manage,
             Finance.View,
             Report.View, Report.Export, Report.ViewAttendance, Report.ViewSubscriptions,
+            Expense.Manage, Expense.View,
+            Salary.Create, Salary.Approve, Salary.MarkPaid, Salary.View,
             Tenant.ManageSettings, Tenant.ManageUsers,
             Platform.ManageTenants,
         ];

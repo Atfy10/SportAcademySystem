@@ -8,3 +8,7 @@ public record RevenueReportRow(string GroupKey, decimal GrossAmount, decimal Ref
 public record OutstandingReportSummary(decimal TotalOutstanding, int InvoiceCount, int OverdueCount, decimal OverdueAmount);
 
 public record PaymentMethodReportRow(string Method, decimal TotalAmount, int PaymentCount);
+
+// Period uses the same "yyyy-MM" format as RevenueReportRow.GroupKey's month grouping, so the
+// financial and revenue reports show matching month labels.
+public record FinancialReportRow(string Period, decimal Revenue, decimal Expenses, decimal Salaries, decimal Net);

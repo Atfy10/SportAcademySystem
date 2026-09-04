@@ -102,6 +102,11 @@ namespace SportAcademy.Infrastructure.Seeders
             // re-seeding the same rows a second time.
             var featureIds = await ReconcileFeaturesAsync();
 
+            // Same "must run unconditionally, not just on a fresh database" reasoning as
+            // ReconcileFeaturesAsync above - a test Accountant login needs to exist on this
+            // already-seeded environment even though SeedAsync as a whole is about to no-op.
+            await EnsureTestAccountantUserAsync();
+
             if (await _context.Tenants.IgnoreQueryFilters().AnyAsync())
             {
                 _logger.LogInformation("Database already seeded. Skipping tenant/business-data seeding.");
@@ -272,6 +277,55 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Tenants seeded successfully.");
         }
 
+        // Runs on every startup (see the call site in SeedAsync, before the early-return that
+        // skips the rest of seeding once a tenant exists) so a demo Accountant login is always
+        // available to exercise the expense/payroll permission boundary, even against an
+        // already-seeded database. IgnoreQueryFilters here because no ambient tenant id is set
+        // yet - same reason SeedAsync's own "any tenant exists" check above needs it.
+        private async Task EnsureTestAccountantUserAsync()
+        {
+            var salmiyaTenant = await _context.Tenants
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Slug == "salmiya-academy");
+
+            if (salmiyaTenant is null)
+                return;
+
+            _tenantIdProvider.SetTenantId(salmiyaTenant.Id);
+
+            var existing = await _userManager.FindByNameAsync("sonnet");
+            if (existing is not null)
+                return;
+
+            var accountant = new AppUser
+            {
+                UserName = "sonnet",
+                Email = "sonnet@claude.com",
+                TenantId = salmiyaTenant.Id,
+                IsPasswordReset = false,
+                IsBanned = false,
+                EmailConfirmed = true,
+                PhoneNumber = "+96550775996",
+                PhoneNumberConfirmed = true,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true
+            };
+
+            var result = await _userManager.CreateAsync(accountant, "clAude@123");
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning(
+                    "Failed to create test Accountant user: {Errors}",
+                    string.Join(", ", result.Errors.Select(e => e.Description)));
+                return;
+            }
+
+            _context.Profiles.Add(new Profile { AppUserId = accountant.Id });
+            await _context.SaveChangesAsync();
+
+            await _userManager.AddToRoleAsync(accountant, "Accountant");
+        }
+
         // Default permission grants per seeded role - the tenant business model has exactly
         // four roles (Owner, Admin, Employee, Accountant) plus the platform-only SuperAdmin.
         // Owner and Admin share every tenant-business permission except tenant.users.manage,
@@ -300,6 +354,11 @@ namespace SportAcademy.Infrastructure.Seeders
                 Permissions.Finance.View,
                 Permissions.Report.View, Permissions.Report.Export,
                 Permissions.Trainee.Export,
+                // Accountant runs payroll end-to-end except the approval gate itself
+                // (Salary.Approve) - that's deliberately Owner/Admin-only, an accountant who
+                // creates a salary payment must not also be able to approve their own request.
+                Permissions.Expense.Manage, Permissions.Expense.View,
+                Permissions.Salary.View, Permissions.Salary.Create, Permissions.Salary.MarkPaid,
             ],
         };
 
