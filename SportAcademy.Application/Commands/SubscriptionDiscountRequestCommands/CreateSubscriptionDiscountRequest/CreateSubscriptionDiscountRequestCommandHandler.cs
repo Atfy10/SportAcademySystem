@@ -1,6 +1,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDiscountRequestDtos;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Entities.Finance;
@@ -21,17 +22,20 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
         private readonly IDiscountCodeRepository _discountCodeRepository;
         private readonly IUserContextService _userContext;
         private readonly IUserRepository _userRepository;
+        private readonly IPublisher _publisher;
 
         public CreateSubscriptionDiscountRequestCommandHandler(
             ISubscriptionDiscountRequestRepository repository,
             IDiscountCodeRepository discountCodeRepository,
             IUserContextService userContext,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IPublisher publisher)
         {
             _repository = repository;
             _discountCodeRepository = discountCodeRepository;
             _userContext = userContext;
             _userRepository = userRepository;
+            _publisher = publisher;
         }
 
         public async Task<Result<SubscriptionDiscountRequestDto>> Handle(
@@ -59,6 +63,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
             };
 
             await _repository.AddAsync(entity, cancellationToken);
+            await _publisher.Publish(new SubscriptionDiscountRequestCreatedEvent(entity.Id), cancellationToken);
 
             var saved = await _repository.GetByIdWithIncludesAsync(entity.Id, cancellationToken) ?? entity;
             var nameLookup = new Dictionary<Guid, string>

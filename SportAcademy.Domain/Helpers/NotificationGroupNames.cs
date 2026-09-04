@@ -11,6 +11,7 @@ public static class NotificationGroupNames
     public const string Admins = "Admins";
     public const string Owners = "Owners";
     public const string Employees = "Employees";
+    public const string Accountants = "Accountants";
 
     /// The three role-based audiences a notification can target. Membership for each is
     /// resolved live from role/employment data at send time (see

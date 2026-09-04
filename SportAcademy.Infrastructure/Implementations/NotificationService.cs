@@ -156,6 +156,7 @@ namespace SportAcademy.Infrastructure.Implementations
             NotificationGroupNames.Admins => await _userRepository.GetUserIdsInRolesAsync(["Admin"]),
             NotificationGroupNames.Owners => await _userRepository.GetUserIdsInRolesAsync(["Owner"]),
             NotificationGroupNames.Employees => await _userRepository.GetEmployeeUserIdsAsync(),
+            NotificationGroupNames.Accountants => await _userRepository.GetUserIdsInRolesAsync(["Accountant"]),
             _ => [],
         };
 

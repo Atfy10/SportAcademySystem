@@ -1,6 +1,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDiscountRequestDtos;
+using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Enums;
@@ -18,19 +19,22 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
         private readonly ISubscriptionCreationService _subscriptionCreationService;
         private readonly IUserContextService _userContext;
         private readonly IUserRepository _userRepository;
+        private readonly IPublisher _publisher;
 
         public ApproveSubscriptionDiscountRequestCommandHandler(
             ISubscriptionDiscountRequestRepository repository,
             IDiscountCodeRepository discountCodeRepository,
             ISubscriptionCreationService subscriptionCreationService,
             IUserContextService userContext,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IPublisher publisher)
         {
             _repository = repository;
             _discountCodeRepository = discountCodeRepository;
             _subscriptionCreationService = subscriptionCreationService;
             _userContext = userContext;
             _userRepository = userRepository;
+            _publisher = publisher;
         }
 
         public async Task<Result<SubscriptionDiscountRequestDto>> Handle(
@@ -61,6 +65,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
             entity.CreatedSubscriptionDetailsId = subscription.Id;
 
             await _repository.UpdateAsync(entity, cancellationToken);
+            await _publisher.Publish(new SubscriptionDiscountRequestReviewedEvent(entity.Id, Approved: true), cancellationToken);
 
             var saved = await _repository.GetByIdWithIncludesAsync(entity.Id, cancellationToken) ?? entity;
             var nameLookup = await BuildNameLookupAsync(saved, cancellationToken);
