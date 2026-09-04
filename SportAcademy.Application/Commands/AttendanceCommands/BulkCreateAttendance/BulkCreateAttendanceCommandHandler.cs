@@ -35,7 +35,7 @@ public class BulkCreateAttendanceCommandHandler(
             if (timing == null) continue;
 
             // No marking attendance more than 15 minutes after the session ended.
-            if (DateTime.Now > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + 15))
+            if (DateTime.UtcNow > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + 15))
                 continue;
 
             var groupId = timing.Value.TraineeGroupId;

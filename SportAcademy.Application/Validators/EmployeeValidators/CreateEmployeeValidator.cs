@@ -38,7 +38,7 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
                 .IsInEnum().WithMessage("Invalid gender value.");
 
             RuleFor(x => x.BirthDate)
-                .LessThan(DateOnly.FromDateTime(DateTime.Now.AddYears(-16)))
+                .LessThan(DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-16)))
                 .WithMessage("Employee must be at least 16 years old.");
 
             RuleFor(x => x.Street)

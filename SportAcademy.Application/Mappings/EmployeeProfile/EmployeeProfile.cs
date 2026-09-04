@@ -51,7 +51,7 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
                 // without this, AutoMapper leaves it unmapped and it defaults to
                 // DateTime.MinValue (0001-01-01), which is the "joined date" bug.
                 .ForMember(dest => dest.HireDate,
-                    opt => opt.MapFrom(src => DateTime.Now));
+                    opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // No ForMember overrides here previously - meant Address (string -> value object)
             // failed to map at all, and HireDate/Nationality/Email were silently left at CLR
@@ -74,7 +74,7 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
                     opt => opt.MapFrom(src =>
                     Enum.Parse<Nationality>(src.Nationality)))
                 .ForMember(dest => dest.HireDate,
-                    opt => opt.MapFrom(src => DateTime.Now));
+                    opt => opt.MapFrom(src => DateTime.UtcNow));
 
             // UpdateEmployeeCommand -> Employee is no longer an AutoMapper mapping -
             // UpdateEmployeeCommandHandler uses Mappings/Manual/EmployeeMapper.cs instead

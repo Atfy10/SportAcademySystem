@@ -7,7 +7,7 @@ namespace SportAcademy.Domain.Services
     public class TraineeService : ITraineeService
     {
         public int CalculateAge(DateOnly birthDate) =>
-            DateTime.Now.Year - birthDate.Year - (DateTime.Now.DayOfYear < birthDate.DayOfYear ? 1 : 0);
+            DateTime.UtcNow.Year - birthDate.Year - (DateTime.UtcNow.DayOfYear < birthDate.DayOfYear ? 1 : 0);
 
         public int CreateTraineeCode(Trainee trainee, int branchId)
         {

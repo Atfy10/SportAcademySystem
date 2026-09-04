@@ -33,8 +33,8 @@ namespace SportAcademy.Domain.Services
         }
 
         public static bool IsSubscriptionActive(SubscriptionDetails subscriptionDetails)
-            => subscriptionDetails.EndDate >= DateOnly.FromDateTime(DateTime.Now)
-            && subscriptionDetails.StartDate <= DateOnly.FromDateTime(DateTime.Now);
+            => subscriptionDetails.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)
+            && subscriptionDetails.StartDate <= DateOnly.FromDateTime(DateTime.UtcNow);
 
         // Distinct from "not currently active": a subscription that hasn't started yet
         // (StartDate in the future) isn't active *today* either, but it hasn't expired - it's
@@ -43,6 +43,6 @@ namespace SportAcademy.Domain.Services
         // !IsSubscriptionActive, or a future-dated (e.g. a renewal starting tomorrow) subscription
         // gets mislabeled Expired the moment it's created.
         public static bool HasExpired(SubscriptionDetails subscriptionDetails)
-            => subscriptionDetails.EndDate < DateOnly.FromDateTime(DateTime.Now);
+            => subscriptionDetails.EndDate < DateOnly.FromDateTime(DateTime.UtcNow);
     }
 }

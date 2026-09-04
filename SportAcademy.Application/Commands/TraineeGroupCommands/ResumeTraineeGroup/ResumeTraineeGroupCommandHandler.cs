@@ -25,7 +25,7 @@ public class ResumeTraineeGroupCommandHandler(
         // Only restores sessions this same pause temporarily cancelled - a session someone
         // separately, permanently Canceled is untouched.
         await sessionOccurrenceRepository.SetFutureSessionsStatusAsync(
-            group.Id, SessionStatus.CancelledTemporary, SessionStatus.Scheduled, DateTime.Now, cancellationToken);
+            group.Id, SessionStatus.CancelledTemporary, SessionStatus.Scheduled, DateTime.UtcNow, cancellationToken);
 
         await publisher.Publish(new TraineeGroupUpdatedEvent(group.Id), cancellationToken);
 

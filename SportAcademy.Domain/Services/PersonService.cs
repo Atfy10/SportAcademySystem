@@ -6,8 +6,8 @@ namespace SportAcademy.Domain.Services
     public class PersonService : IPersonService
     {
         public int CalculateAge(DateOnly birthDate)
-            => DateOnly.FromDateTime(DateTime.Now).Year - birthDate.Year - 
-               (DateOnly.FromDateTime(DateTime.Now) < birthDate.AddYears(DateOnly.FromDateTime(DateTime.Now).Year - birthDate.Year) ? 1 : 0);
+            => DateOnly.FromDateTime(DateTime.UtcNow).Year - birthDate.Year -
+               (DateOnly.FromDateTime(DateTime.UtcNow) < birthDate.AddYears(DateOnly.FromDateTime(DateTime.UtcNow).Year - birthDate.Year) ? 1 : 0);
 
         public string GenerateUserName(string firstName, string lastName)
         {

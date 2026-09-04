@@ -55,7 +55,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 {
                     TraineeId = t.Id,
                     FullName = $"{t.FirstName} + {t.LastName}",
-                    Age = DateTime.Now.Year - t.BirthDate.Year,
+                    Age = DateTime.UtcNow.Year - t.BirthDate.Year,
                     t.Email,
                     t.PhoneNumber,
                     t.JoinDate,

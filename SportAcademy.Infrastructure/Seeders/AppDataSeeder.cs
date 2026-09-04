@@ -1000,7 +1000,7 @@ namespace SportAcademy.Infrastructure.Seeders
                     FirstName = emp.First,
                     LastName = emp.Last,
                     SSN = GenerateKuwaitiSSN(random, 1970, 2000),
-                    BirthDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-random.Next(22, 55))),
+                    BirthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-random.Next(22, 55))),
                     Gender = emp.Gender,
                     Nationality = emp.Gender == Gender.Female && emp.Last.StartsWith("Al-")
                         ? Nationality.Kuwaiti
@@ -1010,7 +1010,7 @@ namespace SportAcademy.Infrastructure.Seeders
                     Address = Address.Create($"Street {random.Next(1, 250)}, Block {random.Next(1, 12)}", branch.City),
                     Email = Email.Create($"{emp.First.ToLower()}.{emp.Last.ToLower()}@salmiya-academy.com.kw"),
                     Salary = random.Next(400, 1500),
-                    HireDate = DateTime.Now.AddDays(-random.Next(30, 1095)),
+                    HireDate = DateTime.UtcNow.AddDays(-random.Next(30, 1095)),
                     Position = emp.Position,
                     IsWork = true,
                     BranchId = branch.Id,
@@ -1065,7 +1065,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 var branch = branches[random.Next(branches.Count)];
                 var natCat = natCats.ElementAt(random.Next(natCats.Count));
                 var family = families[i];
-                var birthDate = DateOnly.FromDateTime(DateTime.Now.AddYears(-random.Next(6, 35)));
+                var birthDate = DateOnly.FromDateTime(DateTime.UtcNow.AddYears(-random.Next(6, 35)));
 
                 var trainee = new Trainee
                 {
@@ -1080,7 +1080,7 @@ namespace SportAcademy.Infrastructure.Seeders
                     Address = Address.Create($"Street {random.Next(1, 250)}, Block {random.Next(1, 12)}", branch.City),
                     Email = Email.Create($"{firstName.ToLower()}.{lastName.ToLower()}{random.Next(10, 999)}@email.com"),
                     TenantId = tenantId,
-                    JoinDate = DateOnly.FromDateTime(DateTime.Now.AddDays(-random.Next(30, 730))),
+                    JoinDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-random.Next(30, 730))),
                     BranchId = branch.Id,
                     FamilyId = family.Id,
                     NationalityCategoryId = natCat.Value,
@@ -1204,7 +1204,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 {
                     PaymentNumber = $"PAY-{DateTime.UtcNow.Year}-{random.Next(10000, 99999)}",
                     PaymentTypeId = paymentTypes[random.Next(paymentTypes.Count)].Id,
-                    PaidDate = DateTime.Now.AddDays(-random.Next(1, 180)),
+                    PaidDate = DateTime.UtcNow.AddDays(-random.Next(1, 180)),
                     BranchId = branches[random.Next(branches.Count)].Id,
                     Amount = random.Next(20, 80),
                     TenantId = tenantId

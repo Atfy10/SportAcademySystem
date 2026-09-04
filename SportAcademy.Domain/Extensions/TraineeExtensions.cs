@@ -10,7 +10,7 @@ namespace SportAcademy.Domain.Extensions
     public static class TraineeExtensions
     {
         public static int CalculateAge(this Trainee trainee) =>
-            DateTime.Now.Year - trainee.BirthDate.Year - (DateTime.Now.DayOfYear < trainee.BirthDate.DayOfYear ? 1 : 0);
+            DateTime.UtcNow.Year - trainee.BirthDate.Year - (DateTime.UtcNow.DayOfYear < trainee.BirthDate.DayOfYear ? 1 : 0);
         public static bool IsAdult(this Trainee trainee) =>
             trainee.CalculateAge() >= 15;
     }

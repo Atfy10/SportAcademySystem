@@ -6,6 +6,7 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.ValueObjects;
+using SportAcademy.Infrastructure.Persistence.Converters;
 using SportAcademy.Infrastructure.Persistence.Views.AdminViews;
 using SportAcademy.Infrastructure.Persistence.Views.CoachViews;
 using SportAcademy.Infrastructure.Persistence.Views.EmployeeViews;
@@ -113,6 +114,19 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<TraineeSessionView> TraineeSessionViews { get; set; }
         public DbSet<TraineeScheduleView> TraineeScheduleViews { get; set; }
         public DbSet<TraineeSubscriptionView> TraineeSubscriptionViews { get; set; }
+
+        // Forces Kind=Utc on every DateTime/DateTime? read from the database (SQL Server's
+        // datetime2 has no offset, so EF would otherwise materialize Kind=Unspecified regardless
+        // of what wrote it) - see UtcDateTimeConverter for the full reasoning. DateTimeOffset
+        // columns (just ASP.NET Identity's own AppUser.LockoutEnd) are a different CLR type and
+        // untouched by this.
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            base.ConfigureConventions(configurationBuilder);
+
+            configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+            configurationBuilder.Properties<DateTime?>().HaveConversion<NullableUtcDateTimeConverter>();
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

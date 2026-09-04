@@ -14,7 +14,7 @@ namespace SportAcademy.Domain.Entities
         public required string PaymentNumber { get; set; }
         public int PaymentTypeId { get; set; }
         public PaymentStatus Status { get; set; } = PaymentStatus.Completed;
-        public DateTime PaidDate { get; set; } = DateTime.Now;
+        public DateTime PaidDate { get; set; } = DateTime.UtcNow;
         public int BranchId { get; set; }
         public string Currency { get; set; } = "KWD";
         public decimal Amount { get; set; }

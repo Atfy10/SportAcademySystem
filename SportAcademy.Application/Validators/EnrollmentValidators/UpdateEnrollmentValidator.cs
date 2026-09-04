@@ -20,7 +20,7 @@ namespace SportAcademy.Application.Validators.EnrollmentValidators
 
             RuleFor(x => x.ExpiryDate)
                 .NotEmpty().WithMessage("Please provide an expiry date.")
-                .Must(x => x > DateTime.Now)
+                .Must(x => x > DateTime.UtcNow)
                 .WithMessage("Expiry date should be in the future.");
 
             RuleFor(x => x.SessionRemaining)

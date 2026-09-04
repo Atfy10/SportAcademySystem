@@ -27,7 +27,7 @@ public class PauseTraineeGroupCommandHandler(
         // reversible status so resuming can tell these apart from a session someone permanently
         // cancelled on purpose.
         await sessionOccurrenceRepository.SetFutureSessionsStatusAsync(
-            group.Id, SessionStatus.Scheduled, SessionStatus.CancelledTemporary, DateTime.Now, cancellationToken);
+            group.Id, SessionStatus.Scheduled, SessionStatus.CancelledTemporary, DateTime.UtcNow, cancellationToken);
 
         await publisher.Publish(new TraineeGroupUpdatedEvent(group.Id), cancellationToken);
 

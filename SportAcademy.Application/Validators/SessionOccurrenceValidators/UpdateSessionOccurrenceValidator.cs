@@ -15,7 +15,7 @@ namespace SportAcademy.Application.Validators.SessionOccurrenceValidators
 
             RuleFor(x => x.StartDateTime)
                 .NotEmpty().WithMessage("Please enter the session start date and time.")
-                .Must(start => start >= DateTime.Now.AddMinutes(-30))
+                .Must(start => start >= DateTime.UtcNow.AddMinutes(-30))
                 .WithMessage("Start time cannot be more than 30 minutes in the past.");
 
             RuleFor(x => x.Status)

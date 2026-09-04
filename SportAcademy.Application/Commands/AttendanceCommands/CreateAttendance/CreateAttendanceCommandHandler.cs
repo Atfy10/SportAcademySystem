@@ -43,7 +43,7 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
                 request.SessionOccurrenceId, cancellationToken)
                 ?? throw new SessionOccurrenceNotFoundException(request.SessionOccurrenceId.ToString());
 
-            if (DateTime.Now > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 15))
+            if (DateTime.UtcNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 15))
                 throw new AttendanceWindowClosedException(request.SessionOccurrenceId);
 
             var groupId = timing.TraineeGroupId;
