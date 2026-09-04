@@ -34,7 +34,7 @@ public class OnboardingController : ControllerBase
                 return Forbid();
 
             var command = new CreateInvitationCommand(
-                tenantId, request.Email, userId, request.Role, request.Permissions, request.ExpiresAt);
+                tenantId, request.Email, userId, request.Role, request.Permissions, request.ExpiresAt, request.BranchIds);
 
             var result = await _mediator.Send(command, ct);
             return Ok(result);
@@ -99,7 +99,8 @@ public class OnboardingController : ControllerBase
     }
 
     public record CreateInvitationRequest(
-        string Email, string? Role = null, List<string>? Permissions = null, DateTime? ExpiresAt = null);
+        string Email, string? Role = null, List<string>? Permissions = null, DateTime? ExpiresAt = null,
+        List<int>? BranchIds = null);
 
     public record AcceptInvitationRequest(string Password);
 }
