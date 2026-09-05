@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Common.Email;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Events;
 
@@ -26,13 +27,13 @@ public sealed class InvitationCreatedHandler : INotificationHandler<InvitationCr
         var inviteUrl = _appUrlProvider.InvitationUrl(notification.TenantSlug, notification.RawToken);
 
         var subject = "You've been invited to join AURA Academy";
-        var body = $"""
-            <h2>Welcome to AURA Academy</h2>
-            <p>You have been invited to set up your organization.</p>
-            <p>Click the link below to accept the invitation and create your account:</p>
-            <p><a href="{inviteUrl}">{inviteUrl}</a></p>
-            <p>This link will expire in 7 days.</p>
-            """;
+        var body = EmailTemplate.Render(
+            preheader: "You've been invited to set up your organization on AURA Academy.",
+            heading: "Welcome to AURA Academy",
+            bodyHtml: "<p>You have been invited to set up your organization. Click the button below to accept the invitation and create your account.</p>",
+            ctaText: "Accept invitation",
+            ctaUrl: inviteUrl,
+            footerNote: "This link will expire in 7 days. If you weren't expecting this invitation, you can safely ignore this email.");
 
         // The invitation itself is already committed to the database by the time this event
         // fires (CreateInvitationCommandHandler/ResendInvitationCommandHandler call

@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Common.Email;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
@@ -45,14 +46,13 @@ public class SendOwnerPasswordResetLinkCommandHandler : IRequestHandler<SendOwne
         var resetUrl = _appUrlProvider.PasswordResetUrl(owner.Id, token);
 
         var subject = "Reset your AURA Academy password";
-        var body = $"""
-            <h2>Password Reset Requested</h2>
-            <p>A platform administrator requested a password reset for your AURA Academy account.</p>
-            <p>Click the link below to set a new password:</p>
-            <p><a href="{resetUrl}">{resetUrl}</a></p>
-            <p>If you did not expect this, you can safely ignore this email - your password will
-            not change unless you open the link above and set a new one.</p>
-            """;
+        var body = EmailTemplate.Render(
+            preheader: "A platform administrator requested a password reset for your AURA Academy account.",
+            heading: "Password reset requested",
+            bodyHtml: "<p>A platform administrator requested a password reset for your AURA Academy account. Click the button below to set a new password.</p>",
+            ctaText: "Reset password",
+            ctaUrl: resetUrl,
+            footerNote: "If you did not expect this, you can safely ignore this email - your password will not change unless you open the link above and set a new one.");
 
         // Token generation + the resulting link are already durable at this point (Identity's
         // reset token is derived from the user's security stamp, not stored separately, and
