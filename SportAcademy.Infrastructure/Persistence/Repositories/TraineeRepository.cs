@@ -509,18 +509,23 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var group = await _context.TraineeGroups
                 .Where(tg => tg.Id == traineeGroupId)
-                .Select(tg => new { tg.Gender, tg.SkillLevel, SportId = (int?)tg.Coach.SportId })
+                .Select(tg => new { tg.Gender, tg.SkillLevel, tg.Type, SportId = (int?)tg.Coach.SportId })
                 .FirstOrDefaultAsync(ct);
 
             if (group is null || group.SportId is null)
                 return [];
 
             var sportId = group.SportId.Value;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            // "One group per sport" - a trainee already enrolled (in any status) in any group
-            // for this sport is excluded, same as GetCurrentEnrollmentForSportAsync's own stance.
+            // "One group per sport" - a trainee currently in any group for this sport is
+            // excluded, same as GetCurrentEnrollmentForSportAsync's own stance. Closed
+            // enrollments (EndDate set - they lapsed past the grace window and left the group)
+            // don't count: they're no longer in a group, and CreateEnrollmentCommandHandler
+            // would accept them back, so excluding them here would hide trainees who are in
+            // fact enrollable.
             var alreadyEnrolledInSport = (await _context.Enrollments
-                .Where(e => e.TraineeGroup.Coach.SportId == sportId)
+                .Where(e => e.TraineeGroup.Coach.SportId == sportId && e.EndDate == null)
                 .Select(e => e.TraineeId)
                 .Distinct()
                 .ToListAsync(ct))
@@ -538,6 +543,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     t.Gender,
                     Subscription = t.SubscriptionDetails
                         .Where(sd => sd.SportId == sportId && sd.Status == SubscriptionStatus.Active && !sd.IsDeleted
+                            // EndDate, not just the Status flag - nothing expires subscriptions
+                            // on a schedule, so an expired one can still read Active until
+                            // something happens to flip it. Same rule as
+                            // GetActiveForTraineeDropdownAsync, so the two views agree about who
+                            // is enrollable.
+                            && sd.EndDate >= today
+                            // Priced for this kind of group: CreateEnrollmentCommandHandler
+                            // throws SubscriptionGroupTypeMismatchException otherwise, and this
+                            // list is supposed to never offer a trainee who'd fail on submit.
+                            && sd.GroupType == group.Type
                             // Not already claimed by another enrollment - same "unclaimed" rule
                             // GetActiveForTraineeDropdownAsync applies per-trainee.
                             && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id))

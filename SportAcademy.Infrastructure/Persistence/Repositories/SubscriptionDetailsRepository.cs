@@ -243,10 +243,29 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)
         {
-            var query = _context.SubscriptionDetails
-                .Where(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted
-                    // A subscription already claimed by an enrollment (its required 1:1 FK)
-                    // can't be picked for a new one - the unique constraint would reject it.
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            // ApplyBranchFilter is required here, not optional: SubscriptionDetails is
+            // deliberately excluded from the automatic branch query filter (see
+            // branchAutoFilterExclusions in ApplicationDbContext), on the understanding that
+            // every hand-written list method applies the check itself - as the other methods in
+            // this repository do. Without it a branch-restricted user is offered subscriptions
+            // belonging to branches they can't see.
+            var query = ApplyBranchFilter(_context.SubscriptionDetails)
+                // EndDate, not just Status: Status is a stored flag that nothing expires on a
+                // schedule - the only thing that flips Active -> Expired by date is the
+                // ExecuteUpdateAsync inside GetSubDetailsStatsAsync, so a subscription's flag is
+                // only as fresh as the last time someone loaded the stats. Offering one on the
+                // flag alone means an enrollment can be created against an already-expired
+                // subscription and is born expired. GetSubDetailsStatsAsync doesn't trust the
+                // flag either - its "active" count is EndDate >= today && Status == Active.
+                .Where(sd => sd.Status == SubscriptionStatus.Active
+                    && sd.EndDate >= today
+                    && !sd.IsDeleted
+                    // A subscription already spent on an enrollment can't back another one -
+                    // including a closed enrollment, which consumed it just as much as an open
+                    // one did. (There is no unique index enforcing this at the database level;
+                    // it's this query and CreateEnrollmentCommandHandler that keep it true.)
                     && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id));
 
             if (traineeId.HasValue)
