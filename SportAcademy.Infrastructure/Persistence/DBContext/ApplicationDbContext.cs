@@ -61,8 +61,6 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Sport> Sports { get; set; }
         public DbSet<Domain.Entities.Translations.SportTranslation> SportTranslations { get; set; } = null!;
         public DbSet<SportBranch> SportBranchs { get; set; }
-        public DbSet<ChatConversation> ChatConversations { get; set; }
-        public DbSet<OpenAiMessage> ChatMessages { get; set; }
         public DbSet<SportPrice> SportPrices { get; set; }
         public DbSet<SportSubscriptionType> SportSubscriptionTypes { get; set; }
         public DbSet<SportTrainee> SportTrainees { get; set; }
@@ -78,7 +76,6 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Domain.Entities.Translations.FamilyTranslation> FamilyTranslations { get; set; } = null!;
         public DbSet<NationalityCategory> NationalityCategories { get; set; }
         public DbSet<Domain.Entities.Translations.NationalityCategoryTranslation> NationalityCategoryTranslations { get; set; } = null!;
-        public DbSet<VideoAnalysis> VideoAnalyses { get; set; }
         public DbSet<TraineeMedicalCondition> TraineeMedicalConditions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<UserPermissionOverride> UserPermissionOverrides { get; set; }

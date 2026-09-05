@@ -12,8 +12,6 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure;
 using SportAcademy.Infrastructure.Implementations;
 using SportAcademy.Infrastructure.Localization;
-using SportAcademy.Infrastructure.Implementations.OpenAi;
-using SportAcademy.Infrastructure.Implementations.OpenRouter;
 using SportAcademy.Infrastructure.Options;
 using SportAcademy.Infrastructure.Notifications;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -246,8 +244,6 @@ var seedingEnabled = builder.Environment.IsDevelopment()
     || builder.Configuration.GetValue<bool>("Seeding:Enabled");
 
 // Register external HTTP client services (web layer specific)
-builder.Services.AddHttpClient<IOpenAiChatClient, OpenAiChatClient>();
-builder.Services.AddHttpClient<IOpenRouterClient, OpenRouterClient>();
 builder.Services.AddHttpClient<SendGridEmailService>();
 if (seedingEnabled)
 {

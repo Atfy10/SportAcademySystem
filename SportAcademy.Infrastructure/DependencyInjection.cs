@@ -55,9 +55,6 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IFamilyRepository, FamilyRepository>();
             services.AddScoped<INationalityCategoryRepository, NationalityCategoryRepository>();
             services.AddScoped<ICoachRepository, CoachRepository>();
-            services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
-            services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
-            services.AddScoped<IVideoAnalysisRepository, VideoAnalysisRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             // Register JWT token service
@@ -108,8 +105,7 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // IEmailService is registered in Program.cs via AddHttpClient<IEmailService,
-            // SendGridEmailService>() - it needs an injected HttpClient, matching the pattern
-            // used for IOpenAiChatClient/IOpenRouterClient.
+            // SendGridEmailService>() - it needs an injected HttpClient.
 
             // Register Application URL Provider
             services.AddScoped<IAppUrlProvider, AppUrlProvider>();

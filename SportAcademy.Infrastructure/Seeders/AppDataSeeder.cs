@@ -510,7 +510,6 @@ namespace SportAcademy.Infrastructure.Seeders
             ("subscription-reports", "Subscription Reports", "Full subscription history, filterable and printable"),
             ("notifications", "Notification System", "Send and manage system notifications"),
             ("chat-system", "In-App Chat", "Internal messaging and communication"),
-            ("video-analysis", "AI Video Analysis", "AI-powered sports video analysis"),
             ("health-test-mgmt", "Health Test Management", "Track health assessments and tests"),
             ("discount-offers", "Discounts & Offers", "Manage promotions and discounts"),
             ("session-management", "Session Management", "Manage training sessions"),
