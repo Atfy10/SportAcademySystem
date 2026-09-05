@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Common.Scheduling;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
@@ -93,7 +94,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     || tg.Gender == traineeAsGroupGender.Value)
                 .Where(tg => groupType == null || tg.Type == groupType.Value)
                 .AsNoTracking()
-                .Select(TraineeGroupProjections.ToDropdownDto(_languageProvider.Language))
+                .Select(TraineeGroupProjections.ToDropdownRow(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
 
             if (maxSkillLevel.HasValue)
@@ -107,12 +108,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // finish on a different date than the trainee was billed for.
             if (trainingDays is { Count: > 0 })
             {
-                // Compared as names, matching how the DTO exposes them.
-                var wanted = trainingDays.Select(d => d.ToString()).ToHashSet();
+                var wanted = trainingDays.ToHashSet();
                 items = items.Where(i => wanted.SetEquals(i.TrainingDays)).ToList();
             }
 
-            return items;
+            return items
+                .Select(i => new TraineeGroupDropdownDto(
+                    i.Id, i.Name, i.SportId, i.BranchName, i.CoachName,
+                    i.SkillLevel, i.Gender, i.Type, DayNames.From(i.TrainingDays)))
+                .ToList();
         }
 
         public async Task<TraineeGroup?> GetByIdWithSchedulesAsync(int id, CancellationToken cancellationToken = default)

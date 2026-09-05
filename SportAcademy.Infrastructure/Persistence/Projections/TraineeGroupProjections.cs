@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using SportAcademy.Application.DTOs.GroupScheduleDtos;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Infrastructure.Persistence.Projections;
 
@@ -51,7 +52,24 @@ public static class TraineeGroupProjections
             })
             .ToList());
 
-    public static Expression<Func<TraineeGroup, TraineeGroupDropdownDto>> ToDropdownDto(string lang) => g => new TraineeGroupDropdownDto(
+    /// <summary>
+    /// The dropdown's shape as it comes out of the database, with training days still as raw
+    /// DayOfWeek values. They're turned into names (and the set-equality filter is applied)
+    /// after materializing - see TraineeGroupRepository.GetAllForDropdownAsync - because naming
+    /// them is not something a provider can translate.
+    /// </summary>
+    public record TraineeGroupDropdownRow(
+        int Id,
+        string Name,
+        int SportId,
+        string BranchName,
+        string CoachName,
+        SkillLevel SkillLevel,
+        TraineeGroupGender Gender,
+        TraineeGroupType Type,
+        List<DayOfWeek> TrainingDays);
+
+    public static Expression<Func<TraineeGroup, TraineeGroupDropdownRow>> ToDropdownRow(string lang) => g => new TraineeGroupDropdownRow(
         g.Id,
         g.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Name,
         g.Coach.SportId,
@@ -60,5 +78,5 @@ public static class TraineeGroupProjections
         g.SkillLevel,
         g.Gender,
         g.Type,
-        g.GroupSchedules.Select(gs => gs.Day).Distinct().OrderBy(d => d).Select(d => d.ToString()).ToList());
+        g.GroupSchedules.Select(gs => gs.Day).Distinct().ToList());
 }

@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Common.Scheduling;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
@@ -179,10 +180,40 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                                     .ThenInclude(pt => pt.Translations);
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
-            => await _context.SubscriptionDetails
+            => await ToDropdownDtosAsync(_context.SubscriptionDetails, cancellationToken);
+
+        // Not ProjectTo: the DTO exposes TrainingDays as day names, and that conversion can't be
+        // expressed in SQL - the column is a single value-converted string, so there is no
+        // collection for the provider to order or project over (it fails with "The LINQ
+        // expression 'd => d' could not be translated"). The raw days are selected instead and
+        // named after materializing. Selecting the exact columns rather than whole entities also
+        // keeps the joins ProjectTo used to generate for the subscription-type name.
+        private static async Task<List<SubscriptionDetailsDropdownDto>> ToDropdownDtosAsync(
+            IQueryable<SubscriptionDetails> query, CancellationToken cancellationToken)
+        {
+            var rows = await query
                 .AsNoTracking()
-                .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
+                .Select(sd => new
+                {
+                    sd.Id,
+                    Name = sd.SportPrice.SportSubscriptionType.SubscriptionType.Name,
+                    sd.SportId,
+                    sd.EndDate,
+                    sd.GroupType,
+                    sd.TrainingDays,
+                })
                 .ToListAsync(cancellationToken);
+
+            return rows
+                .Select(r => new SubscriptionDetailsDropdownDto(
+                    r.Id,
+                    r.Name.ToString(),
+                    r.SportId,
+                    r.EndDate,
+                    r.GroupType,
+                    DayNames.From(r.TrainingDays)))
+                .ToList();
+        }
 
         public async Task<(List<SubscriptionDetails> Items, int TotalCount)> GetLatestSubscriptionsAsync(
             PageRequest page, string? term = null, CancellationToken cancellationToken = default)
@@ -273,10 +304,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 query = query.Where(sd => sd.TraineeId == traineeId.Value);
             }
 
-            return await query
-                .AsNoTracking()
-                .ProjectTo<SubscriptionDetailsDropdownDto>(_mapper.ConfigurationProvider)
-                .ToListAsync(cancellationToken);
+            return await ToDropdownDtosAsync(query, cancellationToken);
         }
 
         public async Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default)
