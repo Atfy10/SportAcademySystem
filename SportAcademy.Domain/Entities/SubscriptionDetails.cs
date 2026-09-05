@@ -14,6 +14,23 @@ namespace SportAcademy.Domain.Entities
         public int SubscriptionTypeId { get; set; }
         public int SportId { get; set; }
         public int BranchId { get; set; }
+
+        /// <summary>
+        /// Which kind of group this subscription was priced for. Part of the SportPrice key
+        /// alongside Sport/Branch/SubscriptionType, so it's fixed at creation and never edited
+        /// afterwards (same as SportId/BranchId). Only groups of this type may be enrolled into.
+        /// </summary>
+        public TraineeGroupType GroupType { get; set; }
+
+        /// <summary>
+        /// The weekly training-day pattern chosen at subscription time (e.g. Sun/Tue/Thu),
+        /// picked from the patterns actually in use by groups for this sport+branch+type.
+        /// EndDate is computed from it (see TrainingScheduleService.ComputeEndDate), and the
+        /// group-assignment step narrows candidate groups to ones training on exactly these
+        /// days - which is what keeps the billing period and the real schedule from drifting.
+        /// Empty on subscriptions created before this was introduced.
+        /// </summary>
+        public List<DayOfWeek> TrainingDays { get; set; } = [];
         public bool IsDeleted { get; set; }
         public DateTime? DeletedAt { get; set; }
         public string? DeletedBy { get; set; }

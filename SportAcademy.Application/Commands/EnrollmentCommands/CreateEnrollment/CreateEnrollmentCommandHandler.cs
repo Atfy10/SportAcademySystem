@@ -45,7 +45,9 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
         {
             var enrollment = EnrollmentMapper.ToEntity(request);
 
-            var group = await _traineeGroupRepository.GetByIdAsync(request.TraineeGroupId, cancellationToken)
+            // With schedules: the enrollment's expiry is counted across the group's actual
+            // training days further down, not copied from the subscription's own estimate.
+            var group = await _traineeGroupRepository.GetByIdWithSchedulesAsync(request.TraineeGroupId, cancellationToken)
                 ?? throw new TraineeGroupNotFoundException(request.TraineeGroupId.ToString());
 
             if (!group.IsActive)
@@ -84,12 +86,30 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             if (sportId is not null && subDetails.SportId != sportId.Value)
                 throw new SubscriptionGroupSportMismatchException(request.SubscriptionDetailsId, request.TraineeGroupId);
 
-            // An enrollment's expiry always tracks its backing subscription's end date - the
-            // same rule CreateSubscriptionDetailsCommandHandler's renewal path already applies
-            // when it carries an enrollment forward. Overriding request.ExpiryDate here (rather
-            // than trusting it) keeps that true even though the create form still lets the
-            // client submit whatever date it computed independently.
-            enrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
+            // Public and private training are priced separately, so a subscription may only be
+            // spent in a group of the type it was priced for.
+            if (group.Type != subDetails.GroupType)
+                throw new SubscriptionGroupTypeMismatchException(
+                    request.SubscriptionDetailsId, request.TraineeGroupId, subDetails.GroupType, group.Type);
+
+            // The expiry is counted across the days this group actually trains on, starting from
+            // the day the trainee joins it - the same walk that produced the subscription's own
+            // end date, but against the real group rather than the pattern picked at purchase
+            // time. Since only groups matching that pattern are offered for assignment, the two
+            // normally land on the same date; doing the walk here rather than copying
+            // subDetails.EndDate keeps it correct even when the enrollment starts later than the
+            // subscription did (a trainee assigned to a group a few days after purchasing).
+            var trainingDays = group.GroupSchedules.Select(gs => gs.Day).Distinct().ToList();
+            if (trainingDays.Count == 0)
+                throw new GroupHasNoScheduleException(group.Id);
+
+            var subscriptionType = subDetails.SportPrice.SportSubscriptionType.SubscriptionType;
+            var totalSessions = TrainingScheduleService.CalculateTotalSessions(
+                subscriptionType.DaysPerMonth, subscriptionType.NumberOfMonths);
+
+            enrollment.ExpiryDate = TrainingScheduleService
+                .ComputeEndDate(DateOnly.FromDateTime(enrollment.EnrollmentDate), totalSessions, trainingDays)
+                .ToDateTime(TimeOnly.MinValue);
 
             // A trainee can only join a group whose gender policy accepts them (Mixed accepts
             // anyone) and whose required skill level is at or below their own for this sport.
@@ -124,6 +144,35 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             enrollment.IsActive = true;
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            // A trainee who lapsed past the grace window left this group (EnrollmentLapseService
+            // closed the row), but their history with it - attendance, the original join date -
+            // is still attached to that enrollment. Coming back to the SAME group reopens it
+            // rather than starting a parallel row, which is what "their enrollment becomes
+            // active again" means in practice: EndDate cleared, pointed at the new subscription,
+            // sessions and expiry recomputed. Joining a DIFFERENT group is a genuinely new
+            // enrollment and falls through to the insert below, leaving the closed row as history.
+            var reopened = await _enrollmentRepository.GetEndedEnrollmentForGroupAsync(
+                request.TraineeId, request.TraineeGroupId, cancellationToken);
+
+            if (reopened is not null)
+            {
+                reopened.EndDate = null;
+                reopened.IsActive = true;
+                reopened.SubscriptionDetailsId = request.SubscriptionDetailsId;
+                reopened.ExpiryDate = enrollment.ExpiryDate;
+                reopened.SessionAllowed = enrollment.SessionAllowed;
+                reopened.SessionRemaining = enrollment.SessionAllowed;
+
+                await _enrollmentRepository.UpdateAsync(reopened, cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                await _publisher.Publish(new EnrollmentGroupAssignedEvent(
+                    reopened.Id, request.TraineeGroupId, reopened.EnrollmentDate), cancellationToken);
+
+                return Result<int>.Success(reopened.Id, _operationType);
+            }
 
             await _enrollmentRepository.AddAsyncWithoutSave(enrollment, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

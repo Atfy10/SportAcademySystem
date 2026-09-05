@@ -9,5 +9,6 @@ public record TraineeGroupDto(
     int DurationInMinutes,
     TraineeGroupGender Gender,
     int BranchId,
-    int CoachId
+    int CoachId,
+    TraineeGroupType Type
 );

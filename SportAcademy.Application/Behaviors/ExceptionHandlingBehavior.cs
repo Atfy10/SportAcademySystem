@@ -233,6 +233,28 @@ namespace SportAcademy.Application.Behaviors
 
                 return CreateFailure<TResponse>(requestType, ex.Message, 409);
             }
+            catch (SubscriptionGroupTypeMismatchException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Subscription/group type mismatch for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (GroupHasNoScheduleException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Trainee group has no weekly schedule for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
             catch (TraineeGenderMismatchException ex)
             {
                 var requestType = request.GetType().Name;

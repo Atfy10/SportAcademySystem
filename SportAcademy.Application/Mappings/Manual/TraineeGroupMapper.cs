@@ -20,6 +20,7 @@ namespace SportAcademy.Application.Mappings.Manual
             if (cmd.MaximumCapacity.HasValue) group.MaximumCapacity = cmd.MaximumCapacity.Value;
             if (cmd.DurationInMinutes.HasValue) group.DurationInMinutes = cmd.DurationInMinutes.Value;
             if (cmd.Gender.HasValue) group.Gender = cmd.Gender.Value;
+            if (cmd.Type.HasValue) group.Type = cmd.Type.Value;
             if (cmd.Name is not null) group.Name = cmd.Name.Trim();
             group.CoachId = cmd.CoachId;
         }
@@ -31,7 +32,8 @@ namespace SportAcademy.Application.Mappings.Manual
             group.DurationInMinutes,
             group.Gender,
             group.BranchId,
-            group.CoachId
+            group.CoachId,
+            group.Type
         );
     }
 }

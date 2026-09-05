@@ -9,6 +9,18 @@ namespace SportAcademy.Domain.Entities
         public int Id { get; set; }
         public DateTime EnrollmentDate { get; set; }
         public DateTime ExpiryDate { get; set; }
+
+        /// <summary>
+        /// When the trainee actually left the group - distinct from <see cref="ExpiryDate"/>,
+        /// which only says how long the backing subscription paid for. Null means the trainee
+        /// is still in the group, including during the 7-day grace window after a subscription
+        /// expires (nothing changes at expiry; only EnrollmentLapseService's sweep past that
+        /// window sets this, together with IsActive = false). Cleared again if they renew and
+        /// rejoin the same group. Also distinct from IsActive, which stays a staff-controlled
+        /// manual suspend/resume toggle.
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
         public int SessionAllowed { get; set; }
         public int SessionRemaining { get; set; }
         public bool IsActive { get; set; }

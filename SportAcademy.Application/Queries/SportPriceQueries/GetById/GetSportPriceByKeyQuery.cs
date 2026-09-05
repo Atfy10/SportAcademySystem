@@ -7,13 +7,15 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportPriceDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Queries.SportPriceQueries.GetById
 {
 	public record GetSportPriceByKeyQuery(
 		int BranchId,
 		int SportId,
-		int SubsTypeId
+		int SubsTypeId,
+		TraineeGroupType GroupType
 	) : IRequest<Result<SportPriceDto>>;
 
 }

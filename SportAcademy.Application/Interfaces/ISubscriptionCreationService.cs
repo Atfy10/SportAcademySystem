@@ -1,4 +1,5 @@
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Interfaces
 {
@@ -14,9 +15,15 @@ namespace SportAcademy.Application.Interfaces
     // changed between the two calls. null/null for the plain (no discount code) path.
     public interface ISubscriptionCreationService
     {
+        // endDate is not a parameter: it's derived here from the subscription type's session
+        // count walked across trainingDays (see TrainingScheduleService.ComputeEndDate), so a
+        // caller can't submit a date that disagrees with the schedule the trainee will actually
+        // train on. groupType selects which SportPrice row applies - public and private training
+        // for the same sport/branch/type are priced separately.
         Task<SubscriptionDetails> CreateAsync(
             int traineeId, int subscriptionTypeId, int sportId, int branchId,
-            DateOnly startDate, DateOnly endDate, int paymentTypeId,
+            DateOnly startDate, TraineeGroupType groupType, IReadOnlyCollection<DayOfWeek> trainingDays,
+            int paymentTypeId,
             decimal? discountPercentage, int? discountCodeId, Guid? actingUserId,
             CancellationToken ct = default);
     }

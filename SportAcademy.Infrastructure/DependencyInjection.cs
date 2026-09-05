@@ -85,6 +85,7 @@ namespace SportAcademy.Infrastructure
             services.AddHostedService<InvitationExpiryService>();
             services.AddHostedService<TenantArchivalService>();
             services.AddHostedService<EmailQueueCleanupService>();
+            services.AddHostedService<EnrollmentLapseService>();
 
             // Register seeders
             services.AddScoped<Seeders.AppDataSeeder>();

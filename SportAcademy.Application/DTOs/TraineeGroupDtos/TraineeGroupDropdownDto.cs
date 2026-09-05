@@ -9,4 +9,6 @@ public record TraineeGroupDropdownDto(
     string BranchName,
     string CoachName,
     SkillLevel SkillLevel,
-    TraineeGroupGender Gender);
+    TraineeGroupGender Gender,
+    TraineeGroupType Type,
+    List<DayOfWeek> TrainingDays);

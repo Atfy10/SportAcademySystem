@@ -93,7 +93,9 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
                 .ForCtorParam("Name", opt => opt.MapFrom(src => src.SportPrice.SportSubscriptionType.SubscriptionType.Name.ToString()))
                 .ForCtorParam("SportId", opt => opt.MapFrom(src => src.SportId))
-                .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.EndDate));
+                .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.EndDate))
+                .ForCtorParam("GroupType", opt => opt.MapFrom(src => src.GroupType))
+                .ForCtorParam("TrainingDays", opt => opt.MapFrom(src => src.TrainingDays));
         }
     }
 }

@@ -7,6 +7,7 @@ using SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice;
 using SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice;
 using SportAcademy.Application.Queries.SportPriceQueries.GetAll;
 using SportAcademy.Application.Queries.SportPriceQueries.GetById;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -53,10 +54,10 @@ namespace SportAcademy.Web.Controllers
 			return Ok(result);
 		}
 
-		[HttpGet("branches/{branchId}/sports/{sportId}/subType/{subsTypeId}")]
-		public async Task<IActionResult> GetSportPriceByKey(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken)
+		[HttpGet("branches/{branchId}/sports/{sportId}/subType/{subsTypeId}/groupType/{groupType}")]
+		public async Task<IActionResult> GetSportPriceByKey(int branchId, int sportId, int subsTypeId, TraineeGroupType groupType, CancellationToken cancellationToken)
 		{
-			var result = await _mediator.Send(new GetSportPriceByKeyQuery(branchId, sportId, subsTypeId), cancellationToken);
+			var result = await _mediator.Send(new GetSportPriceByKeyQuery(branchId, sportId, subsTypeId, groupType), cancellationToken);
 			return Ok(result);
 		}
 

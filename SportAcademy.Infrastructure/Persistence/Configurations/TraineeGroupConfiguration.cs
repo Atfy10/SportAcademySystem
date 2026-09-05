@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,12 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(tg => tg.SkillLevel)
                 .IsRequired()
                 .HasConversion<string>();
+
+            builder.Property(tg => tg.Type)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(TraineeGroupType.Public);
 
             builder.Property(tg => tg.MaximumCapacity)
                 .IsRequired()

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
@@ -17,17 +18,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             _context = context;
         }
-        public async Task<bool> IsExistAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
+        public async Task<bool> IsExistAsync(int branchId, int sportId, int subsTypeId, TraineeGroupType groupType, CancellationToken cancellationToken = default)
             => await _context.SportPrices.AnyAsync(
                 sp => sp.BranchId == branchId
                     && sp.SportId == sportId
-                    && sp.SubsTypeId == subsTypeId, cancellationToken);
+                    && sp.SubsTypeId == subsTypeId
+                    && sp.GroupType == groupType, cancellationToken);
 
-        public async Task<SportPrice?> GetByKeyAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
+        public async Task<SportPrice?> GetByKeyAsync(int branchId, int sportId, int subsTypeId, TraineeGroupType groupType, CancellationToken cancellationToken = default)
             => await _context.SportPrices.FirstOrDefaultAsync(
                 sp => sp.BranchId == branchId
                     && sp.SportId == sportId
-                    && sp.SubsTypeId == subsTypeId,
+                    && sp.SubsTypeId == subsTypeId
+                    && sp.GroupType == groupType,
                 cancellationToken);
 
         public async Task<List<SportPrice>> GetAllWithIncludesAsync(CancellationToken cancellationToken = default)
@@ -37,7 +40,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .Include(sp => sp.SportSubscriptionType.SubscriptionType)
                     .ToListAsync(cancellationToken);
 
-        public async Task<SportPrice?> GetByKeyWithIncludesAsync(int branchId, int sportId, int subsTypeId, CancellationToken cancellationToken = default)
+        public async Task<SportPrice?> GetByKeyWithIncludesAsync(int branchId, int sportId, int subsTypeId, TraineeGroupType groupType, CancellationToken cancellationToken = default)
             => await _context.SportPrices
                     .Include(sp => sp.Branch)
                     .Include(sp => sp.SportSubscriptionType.Sport)
@@ -45,7 +48,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .FirstOrDefaultAsync(
                         sp => sp.BranchId == branchId
                             && sp.SportId == sportId
-                            && sp.SubsTypeId == subsTypeId,
+                            && sp.SubsTypeId == subsTypeId
+                            && sp.GroupType == groupType,
                         cancellationToken);
     }
 }

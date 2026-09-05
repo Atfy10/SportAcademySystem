@@ -17,6 +17,7 @@ using SportAcademy.Application.Queries.EnrollmentQueries.GetEligibleTraineesForG
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAll;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllCount;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllForDropdown;
+using SportAcademy.Application.Queries.TraineeGroupQueries.GetDayPatterns;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetAllOfSpecificDay;
 using SportAcademy.Application.Queries.TraineeGroupQueries.GetById;
 using SportAcademy.Application.Queries.TraineeGroupQueries.Search;
@@ -131,9 +132,26 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] int? sportId,
             [FromQuery] SkillLevel? skillLevel,
             [FromQuery] Gender? gender,
+            [FromQuery] TraineeGroupType? groupType,
+            [FromQuery] List<DayOfWeek>? trainingDays,
             CancellationToken ct)
         {
-            var result = await _mediator.Send(new GetAllTraineeGroupsForDropdownQuery(sportId, skillLevel, gender), ct);
+            var result = await _mediator.Send(
+                new GetAllTraineeGroupsForDropdownQuery(sportId, skillLevel, gender, groupType, trainingDays), ct);
+            return Ok(result);
+        }
+
+        // Feeds the subscription form's day-pattern picker - the patterns groups actually run
+        // for this sport/branch, since the subscription's end date is counted across whichever
+        // one is chosen.
+        [HttpGet("day-patterns")]
+        public async Task<IActionResult> GetDayPatterns(
+            [FromQuery] int sportId,
+            [FromQuery] int branchId,
+            [FromQuery] TraineeGroupType? groupType,
+            CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetGroupDayPatternsQuery(sportId, branchId, groupType), ct);
             return Ok(result);
         }
 

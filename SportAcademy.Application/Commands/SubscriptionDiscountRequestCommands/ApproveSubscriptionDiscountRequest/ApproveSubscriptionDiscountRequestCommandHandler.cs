@@ -54,7 +54,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
 
             var subscription = await _subscriptionCreationService.CreateAsync(
                 entity.TraineeId, entity.SubscriptionTypeId, entity.SportId, entity.BranchId,
-                entity.StartDate, entity.EndDate, entity.PaymentTypeId,
+                entity.StartDate, entity.GroupType, entity.TrainingDays, entity.PaymentTypeId,
                 discountPercentage: code.PercentageOff, discountCodeId: code.Id,
                 actingUserId: entity.RequestedByUserId,
                 cancellationToken);

@@ -39,9 +39,9 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice
 		public async Task<Result<decimal>> Handle(UpdateSportPriceCommand request, CancellationToken cancellationToken)
 		{
 			var keyExists = await _sportPriceRepository.IsExistAsync(request.BranchId,
-				request.SportId, request.SubsTypeId, cancellationToken);
+				request.SportId, request.SubsTypeId, request.GroupType, cancellationToken);
 			if (!keyExists)
-				throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}");
+				throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}, {request.GroupType}");
 
 			var branchExists = await _branchRepository.IsExistAsync(request.BranchId, cancellationToken);
 			if (!branchExists)
@@ -66,8 +66,8 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.UpdateSportPrice
 				throw new InvalidPriceException();
 
 			var sportPrice = await _sportPriceRepository
-				.GetByKeyAsync(request.BranchId, request.SportId, request.SubsTypeId, cancellationToken)
-				?? throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}");
+				.GetByKeyAsync(request.BranchId, request.SportId, request.SubsTypeId, request.GroupType, cancellationToken)
+				?? throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}, {request.GroupType}");
 
 			sportPrice.Price = request.NewPrice;
 

@@ -47,7 +47,9 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetRenewIn
                 TraineeId = subDetails.TraineeId,
                 SportId = subDetails.SportPrice?.SportSubscriptionType?.SportId ?? 0,
                 BranchId = subDetails.SportPrice?.BranchId ?? 0,
-                SubscriptionTypeId = subDetails.SportPrice?.SportSubscriptionType?.SubscriptionTypeId ?? 0
+                SubscriptionTypeId = subDetails.SportPrice?.SportSubscriptionType?.SubscriptionTypeId ?? 0,
+                GroupType = subDetails.GroupType,
+                TrainingDays = subDetails.TrainingDays,
             };
 
             return Result<RenewSubscriptionInfoDto>.Success(dto, _operation);

@@ -63,7 +63,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
 
         public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(
-            int? sportId = null, SkillLevel? maxSkillLevel = null, Gender? gender = null, CancellationToken cancellationToken = default)
+            int? sportId = null, SkillLevel? maxSkillLevel = null, Gender? gender = null,
+            TraineeGroupType? groupType = null, IReadOnlyCollection<DayOfWeek>? trainingDays = null,
+            CancellationToken cancellationToken = default)
         {
             // The trainee's own Gender (Male/Female) maps onto the group's TraineeGroupGender
             // policy (Male/Female/Mixed) by name, not by underlying numeric value.
@@ -89,12 +91,25 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(tg => traineeAsGroupGender == null
                     || tg.Gender == TraineeGroupGender.Mixed
                     || tg.Gender == traineeAsGroupGender.Value)
+                .Where(tg => groupType == null || tg.Type == groupType.Value)
                 .AsNoTracking()
                 .Select(TraineeGroupProjections.ToDropdownDto(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
 
             if (maxSkillLevel.HasValue)
                 items = items.Where(i => i.SkillLevel <= maxSkillLevel.Value).ToList();
+
+            // Set equality against the subscription's chosen pattern, done in memory for the same
+            // reason SkillLevel is above: this is a whole-set comparison, not something EF can
+            // translate cleanly, and the candidate list here is one sport's groups at most.
+            // Exact match (not "contains") matters - the subscription's end date was counted
+            // across precisely these days, so a group training on more or fewer of them would
+            // finish on a different date than the trainee was billed for.
+            if (trainingDays is { Count: > 0 })
+            {
+                var wanted = trainingDays.ToHashSet();
+                items = items.Where(i => wanted.SetEquals(i.TrainingDays)).ToList();
+            }
 
             return items;
         }
@@ -103,6 +118,38 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.TraineeGroups
                 .Include(g => g.GroupSchedules)
                 .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
+
+        // The distinct weekly day-patterns actually being run for this sport/branch/type - what
+        // a subscription picks from, since its end date is counted across whichever pattern the
+        // trainee will train on. Offering patterns that exist rather than free-form day picking
+        // is what guarantees a matching group exists once it's time to assign one.
+        public async Task<List<GroupDayPatternDto>> GetDayPatternsAsync(
+            int sportId, int branchId, TraineeGroupType? groupType = null, CancellationToken cancellationToken = default)
+        {
+            var schedules = await _context.TraineeGroups
+                .Where(tg => tg.IsActive)
+                .Where(tg => tg.Coach.SportId == sportId)
+                .Where(tg => tg.BranchId == branchId)
+                .Where(tg => groupType == null || tg.Type == groupType.Value)
+                .Where(tg => tg.GroupSchedules.Any())
+                .AsNoTracking()
+                .Select(tg => new
+                {
+                    tg.Type,
+                    Days = tg.GroupSchedules.Select(gs => gs.Day).Distinct().ToList()
+                })
+                .ToListAsync(cancellationToken);
+
+            // Grouped in memory: the key is a whole set of days, which SQL has no way to group by.
+            return schedules
+                .GroupBy(s => string.Join(",", s.Days.OrderBy(d => d).Select(d => (int)d)))
+                .Select(g => new GroupDayPatternDto(
+                    g.First().Days.OrderBy(d => d).ToList(),
+                    g.Count()))
+                .OrderByDescending(p => p.GroupCount)
+                .ThenBy(p => p.Days.Count)
+                .ToList();
+        }
 
         public async Task<TraineeGroup?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups

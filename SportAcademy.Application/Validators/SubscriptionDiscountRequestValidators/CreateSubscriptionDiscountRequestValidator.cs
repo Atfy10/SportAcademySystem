@@ -11,9 +11,15 @@ namespace SportAcademy.Application.Validators.SubscriptionDiscountRequestValidat
 
             RuleFor(x => x.StartDate).NotEmpty().WithMessage("Please select a start date.");
 
-            RuleFor(x => x.EndDate)
-                .NotEmpty().WithMessage("Please select an end date.")
-                .GreaterThan(x => x.StartDate).WithMessage("End date should be after the start date.");
+            // End date isn't submitted - it's computed at approval time from the plan's session
+            // count walked across these training days (see SubscriptionCreationService).
+            RuleFor(x => x.GroupType)
+                .IsInEnum().WithMessage("Please choose whether this is public or private training.");
+
+            RuleFor(x => x.TrainingDays)
+                .NotEmpty().WithMessage("Please choose the training days - the subscription's end date is counted across them.")
+                .Must(days => days.Distinct().Count() == days.Count)
+                .WithMessage("The same training day was selected more than once.");
 
             RuleFor(x => x.TraineeId).ApplyIdRuleFor("Trainee");
             RuleFor(x => x.SubscriptionTypeId).ApplyIdRuleFor("Subscription Type");

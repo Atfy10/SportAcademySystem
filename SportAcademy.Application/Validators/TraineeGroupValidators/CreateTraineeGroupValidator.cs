@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
+using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,10 +19,20 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
                 .NotEmpty().WithMessage("Please select a skill level.")
                 .IsInEnum().WithMessage("Invalid skill level selected. Please choose from the available options.");
 
+            RuleFor(x => x.Type)
+                .IsInEnum().WithMessage("Please choose whether this is a public or private group.");
+
+            // Private training is small by definition - that's what separates it from a public
+            // group and what its higher price pays for. The public ceiling is unchanged.
             RuleFor(x => x.MaximumCapacity)
                 .NotEmpty().WithMessage("Please enter the maximum capacity.")
                 .GreaterThan(0).WithMessage("Maximum capacity must be greater than 0.")
-                .LessThanOrEqualTo(50).WithMessage("Maximum capacity cannot exceed 50 trainees.");
+                .LessThanOrEqualTo(x => x.Type == TraineeGroupType.Private
+                    ? TraineeGroupCapacity.PrivateMaximum
+                    : 50)
+                .WithMessage(x => x.Type == TraineeGroupType.Private
+                    ? $"A private group cannot exceed {TraineeGroupCapacity.PrivateMaximum} trainees."
+                    : "Maximum capacity cannot exceed 50 trainees.");
 
             RuleFor(x => x.DurationInMinutes)
                 .NotEmpty().WithMessage("Please enter the session duration.")

@@ -18,16 +18,16 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice
 
 		public async Task<Result<bool>> Handle(DeleteSportPriceCommand request, CancellationToken cancellationToken)
 		{
-			var keyExists = await _sportPriceRepository.IsExistAsync(request.BranchId, 
-				request.SportId, request.SubsTypeId, cancellationToken);
+			var keyExists = await _sportPriceRepository.IsExistAsync(request.BranchId,
+				request.SportId, request.SubsTypeId, request.GroupType, cancellationToken);
 			if (!keyExists)
-				throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}");
+				throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}, {request.GroupType}");
 
 			cancellationToken.ThrowIfCancellationRequested();
 
 			var sportPrice = await _sportPriceRepository
-				.GetByKeyAsync(request.BranchId, request.SportId, request.SubsTypeId, cancellationToken)
-				?? throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}");
+				.GetByKeyAsync(request.BranchId, request.SportId, request.SubsTypeId, request.GroupType, cancellationToken)
+				?? throw new SportPriceNotFoundException($"{request.BranchId}, {request.SportId}, {request.SubsTypeId}, {request.GroupType}");
 
 			await _sportPriceRepository.DeleteAsync(sportPrice, cancellationToken);
 

@@ -1,5 +1,6 @@
 ﻿using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Domain.Entities
 {
@@ -8,6 +9,7 @@ namespace SportAcademy.Domain.Entities
         public int SportId { get; set; }
         public int BranchId { get; set; }
         public int SubsTypeId { get; set; }
+        public TraineeGroupType GroupType { get; set; }
         public decimal Price { get; set; }
 
         public Guid TenantId { get; set; }

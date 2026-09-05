@@ -58,5 +58,7 @@ public static class TraineeGroupProjections
         g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
         g.Coach.Employee.FirstName,
         g.SkillLevel,
-        g.Gender);
+        g.Gender,
+        g.Type,
+        g.GroupSchedules.Select(gs => gs.Day).Distinct().ToList());
 }

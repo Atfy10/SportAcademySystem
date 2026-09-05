@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,10 +18,23 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             //Table Name
             builder.ToTable("SportPrices");
 
-            //Pk 
-            builder.HasKey(sp => new { sp.SportId, sp.BranchId, sp.SubsTypeId });
+            //Pk
+            // GroupType is part of the key: public and private training for the same
+            // sport/branch/subscription type are priced separately, so each combination needs
+            // its own row rather than one price covering both.
+            builder.HasKey(sp => new { sp.SportId, sp.BranchId, sp.SubsTypeId, sp.GroupType });
 
             //props
+            // Defaulted so the column can be added to a table that already has rows: existing
+            // prices become the public price, and a private one is added per combination that
+            // offers private training. The default must match SubscriptionDetails.GroupType's,
+            // or the composite FK between them breaks for every pre-existing subscription.
+            builder.Property(sp => sp.GroupType)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(TraineeGroupType.Public);
+
             builder.Property(sp => sp.Price)
                 .HasPrecision(10, 2)
                 .IsRequired();
@@ -55,6 +69,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                         sd.SportId,
                         sd.BranchId,
                         sd.SubscriptionTypeId,
+                        sd.GroupType,
                     })
                     .OnDelete(DeleteBehavior.Restrict);
         }

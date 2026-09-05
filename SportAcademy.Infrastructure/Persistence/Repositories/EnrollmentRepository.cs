@@ -129,10 +129,29 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ProjectTo<EnrollmentDetailDto>(_mapper.ConfigurationProvider)
                 .ToListAsync(ct);
 
+        // "Current" means the trainee is still in a group for this sport - an enrollment whose
+        // EndDate is set has been closed (they lapsed past the grace window and left the group,
+        // see EnrollmentLapseService), and must not be matched here: the renewal carry-forward
+        // in SubscriptionCreationService would otherwise silently re-attach a returning trainee
+        // to a group they already left, and CreateEnrollment's duplicate guard would refuse to
+        // let them re-enroll anywhere at all.
         public async Task<Enrollment?> GetCurrentEnrollmentForSportAsync(int traineeId, int sportId, CancellationToken ct = default)
             => await _context.Enrollments
-                .Where(e => e.TraineeId == traineeId && e.TraineeGroup.Coach.SportId == sportId)
+                .Where(e => e.TraineeId == traineeId
+                    && e.TraineeGroup.Coach.SportId == sportId
+                    && e.EndDate == null)
                 .OrderByDescending(e => e.EnrollmentDate)
+                .FirstOrDefaultAsync(ct);
+
+        // The counterpart to the above: a closed enrollment for this exact group, used to
+        // reactivate in place when a returning trainee rejoins the same group rather than
+        // stacking up a second row for the same trainee/group pair.
+        public async Task<Enrollment?> GetEndedEnrollmentForGroupAsync(int traineeId, int traineeGroupId, CancellationToken ct = default)
+            => await _context.Enrollments
+                .Where(e => e.TraineeId == traineeId
+                    && e.TraineeGroupId == traineeGroupId
+                    && e.EndDate != null)
+                .OrderByDescending(e => e.EndDate)
                 .FirstOrDefaultAsync(ct);
 
         public async Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default)

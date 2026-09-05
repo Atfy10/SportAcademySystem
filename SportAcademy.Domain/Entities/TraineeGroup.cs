@@ -10,6 +10,7 @@ namespace SportAcademy.Domain.Entities
         public int Id { get; set; }
         public string Name { get; set; } = null!;
         public SkillLevel SkillLevel { get; set; }
+        public TraineeGroupType Type { get; set; } = TraineeGroupType.Public;
         public int MaximumCapacity { get; set; } = 15;
         public int DurationInMinutes { get; set; } = 55;
         public TraineeGroupGender Gender { get; set; }

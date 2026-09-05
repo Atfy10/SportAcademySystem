@@ -13,6 +13,7 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
     public record CreateTraineeGroupCommand(
         string? Name,
         SkillLevel SkillLevel,
+        TraineeGroupType Type,
         int? MaximumCapacity,
         int? DurationInMinutes,
         TraineeGroupGender Gender,

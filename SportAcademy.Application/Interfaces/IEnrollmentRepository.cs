@@ -35,8 +35,17 @@ namespace SportAcademy.Application.Interfaces
         /// most one (enforced at creation), but this is defensive against pre-existing data from
         /// before that rule existed, picking the most recently created one. Returns the tracked
         /// entity, not a DTO, since callers mutate and save it.
+        /// Closed enrollments (EndDate set - the trainee lapsed and left the group) are excluded:
+        /// they are no longer current by definition.
         /// </summary>
         Task<Enrollment?> GetCurrentEnrollmentForSportAsync(int traineeId, int sportId, CancellationToken ct = default);
+
+        /// <summary>
+        /// The most recently closed (EndDate set) enrollment for this trainee in this exact
+        /// group, if any. Used to reactivate in place when a returning trainee rejoins the same
+        /// group, instead of creating a second enrollment row for the same pair.
+        /// </summary>
+        Task<Enrollment?> GetEndedEnrollmentForGroupAsync(int traineeId, int traineeGroupId, CancellationToken ct = default);
         Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default);
         Task<int> CountAllAsync(CancellationToken ct = default);
         Task<int> CountActiveAsync(CancellationToken ct = default);

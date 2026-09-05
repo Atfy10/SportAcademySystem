@@ -1,3 +1,5 @@
+using SportAcademy.Domain.Enums;
+
 namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
 {
     public record RenewSubscriptionInfoDto
@@ -14,5 +16,10 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
         public int SportId { get; set; }
         public int BranchId { get; set; }
         public int SubscriptionTypeId { get; set; }
+
+        // Carried into the renewal so it reprices and re-dates on the same basis as the
+        // subscription being renewed, instead of making staff re-pick both.
+        public TraineeGroupType GroupType { get; set; }
+        public List<DayOfWeek> TrainingDays { get; set; } = [];
     }
 }

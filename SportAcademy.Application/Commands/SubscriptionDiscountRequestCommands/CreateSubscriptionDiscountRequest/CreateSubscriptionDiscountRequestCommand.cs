@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SubscriptionDiscountRequestDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.CreateSubscriptionDiscountRequest
 {
@@ -11,7 +12,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
         int SportId,
         int BranchId,
         DateOnly StartDate,
-        DateOnly EndDate,
+        TraineeGroupType GroupType,
+        List<DayOfWeek> TrainingDays,
         int PaymentTypeId,
         string DiscountCode
     ) : IRequest<Result<SubscriptionDiscountRequestDto>>, IBranchScopedRequest;

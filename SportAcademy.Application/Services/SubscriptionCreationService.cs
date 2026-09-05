@@ -41,17 +41,28 @@ namespace SportAcademy.Application.Services
 
         public async Task<SubscriptionDetails> CreateAsync(
             int traineeId, int subscriptionTypeId, int sportId, int branchId,
-            DateOnly startDate, DateOnly endDate, int paymentTypeId,
+            DateOnly startDate, TraineeGroupType groupType, IReadOnlyCollection<DayOfWeek> trainingDays,
+            int paymentTypeId,
             decimal? discountPercentage, int? discountCodeId, Guid? actingUserId,
             CancellationToken ct = default)
         {
             var sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(
-                branchId, sportId, subscriptionTypeId, ct)
-                ?? throw new IdNotFoundException(nameof(SportPrice), $"{branchId}/{sportId}/{subscriptionTypeId}");
+                branchId, sportId, subscriptionTypeId, groupType, ct)
+                ?? throw new IdNotFoundException(nameof(SportPrice), $"{branchId}/{sportId}/{subscriptionTypeId}/{groupType}");
 
             var discountAmount = discountPercentage.HasValue
                 ? Math.Round(sportPrice.Price * discountPercentage.Value / 100m, 3)
                 : 0m;
+
+            // How long the subscription runs depends on the training days as much as on the plan:
+            // the same number of sessions takes longer to use up at 2 days a week than at 3. The
+            // date is counted across the chosen pattern rather than added as a flat calendar
+            // duration, and the group picked later is constrained to these same days - so the
+            // billing period and the trainee's real schedule stay in step.
+            var subscriptionType = sportPrice.SportSubscriptionType.SubscriptionType;
+            var totalSessions = TrainingScheduleService.CalculateTotalSessions(
+                subscriptionType.DaysPerMonth, subscriptionType.NumberOfMonths);
+            var endDate = TrainingScheduleService.ComputeEndDate(startDate, totalSessions, trainingDays);
 
             var subDetails = new SubscriptionDetails
             {
@@ -61,6 +72,8 @@ namespace SportAcademy.Application.Services
                 SubscriptionTypeId = subscriptionTypeId,
                 SportId = sportId,
                 BranchId = branchId,
+                GroupType = groupType,
+                TrainingDays = trainingDays.Distinct().OrderBy(d => d).ToList(),
             };
 
             await _subscriptionDetailsMangeService.ValidateSubscriptionAsync(subDetails, ct);

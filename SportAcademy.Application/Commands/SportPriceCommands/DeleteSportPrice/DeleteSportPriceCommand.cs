@@ -6,13 +6,15 @@ using System.Threading.Tasks;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice
 {
 	public record DeleteSportPriceCommand(
 		int SportId,
 		int BranchId,
-		int SubsTypeId
+		int SubsTypeId,
+		TraineeGroupType GroupType
 	) : IRequest<Result<bool>>, IBranchScopedRequest;
 
 }

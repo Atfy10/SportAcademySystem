@@ -16,10 +16,17 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
                 .Must(x => x <= DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)))
                 .WithMessage("Start date can’t be more than 30 days from today.");
 
-            RuleFor(x => x.EndDate)
-                .NotEmpty().WithMessage("Please select an end date.")
-                .GreaterThan(x => x.StartDate)
-                .WithMessage("End date should be after the start date.");
+            // No EndDate rule - it's derived from TrainingDays and the plan's session count in
+            // SubscriptionCreationService, never submitted by the client.
+            RuleFor(x => x.GroupType)
+                .IsInEnum().WithMessage("Please choose whether this is public or private training.");
+
+            RuleFor(x => x.TrainingDays)
+                .NotEmpty().WithMessage("Please choose the training days - the subscription's end date is counted across them.")
+                .Must(days => days.Distinct().Count() == days.Count)
+                .WithMessage("The same training day was selected more than once.")
+                .Must(days => days.Count <= 7)
+                .WithMessage("A week only has seven days.");
 
             RuleFor(x => x.TraineeId)
                 .ApplyIdRuleFor("Trainee");
@@ -39,10 +46,10 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
             RuleFor(x => x)
                 .MustAsync(async (cmd, ct) =>
                 {
-                    var exists = await sportPriceRepository.IsExistAsync(cmd.BranchId, cmd.SportId, cmd.SubscriptionTypeId, ct);
+                    var exists = await sportPriceRepository.IsExistAsync(cmd.BranchId, cmd.SportId, cmd.SubscriptionTypeId, cmd.GroupType, ct);
                     return exists;
                 })
-                .WithMessage("No price configured for this sport, branch, and plan combination.");
+                .WithMessage("No price configured for this sport, branch, plan, and group type combination.");
         }
     }
 }

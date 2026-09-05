@@ -27,7 +27,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         {
             var subDetails = await _subscriptionCreationService.CreateAsync(
                 request.TraineeId, request.SubscriptionTypeId, request.SportId, request.BranchId,
-                request.StartDate, request.EndDate, request.PaymentTypeId,
+                request.StartDate, request.GroupType, request.TrainingDays, request.PaymentTypeId,
                 discountPercentage: null, discountCodeId: null,
                 actingUserId: _userContext.UserId,
                 cancellationToken);

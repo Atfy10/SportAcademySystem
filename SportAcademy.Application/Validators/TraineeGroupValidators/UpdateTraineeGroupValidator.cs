@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
+using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,10 +23,22 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
                 .NotEmpty().WithMessage("Please select a skill level.")
                 .IsInEnum().WithMessage("Invalid skill level selected. Please choose from the available options.");
 
+            // Type is optional on update (null = leave as-is), so only enforce the enum when one
+            // is actually supplied.
+            RuleFor(x => x.Type)
+                .IsInEnum().WithMessage("Please choose whether this is a public or private group.")
+                .When(x => x.Type.HasValue);
+
+            // Private groups get the tighter ceiling; the public one (15 here) is left as it was.
             RuleFor(x => x.MaximumCapacity)
                 .NotEmpty().WithMessage("Please enter the maximum capacity.")
                 .GreaterThan(0).WithMessage("Maximum capacity must be greater than 0.")
-                .LessThanOrEqualTo(15).WithMessage("Maximum capacity cannot exceed 15 trainees.");
+                .LessThanOrEqualTo(x => x.Type == TraineeGroupType.Private
+                    ? TraineeGroupCapacity.PrivateMaximum
+                    : 15)
+                .WithMessage(x => x.Type == TraineeGroupType.Private
+                    ? $"A private group cannot exceed {TraineeGroupCapacity.PrivateMaximum} trainees."
+                    : "Maximum capacity cannot exceed 15 trainees.");
 
             RuleFor(x => x.DurationInMinutes)
                 .NotEmpty().WithMessage("Please enter the session duration.")

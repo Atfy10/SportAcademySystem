@@ -32,7 +32,7 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentG
 
         public async Task<Result<bool>> Handle(ChangeEnrollmentGroupCommand request, CancellationToken cancellationToken)
         {
-            var enrollment = await _enrollmentRepository.GetByIdAsync(request.EnrollmentId, cancellationToken)
+            var enrollment = await _enrollmentRepository.GetByIdWithGroupAndSubscriptionAsync(request.EnrollmentId, cancellationToken)
                 ?? throw new EnrollmentNotFoundException(request.EnrollmentId.ToString());
 
             if (enrollment.TraineeGroupId == request.NewTraineeGroupId)
@@ -45,6 +45,14 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentG
             var newSportId = await _traineeGroupRepository.GetSportIdAsync(newGroup.Id, cancellationToken);
             if (currentSportId != newSportId)
                 throw new EnrollmentGroupSportMismatchException(request.EnrollmentId, request.NewTraineeGroupId);
+
+            // Same rule as at enrollment time: the backing subscription was priced for one group
+            // type, so a move can't quietly land the trainee in the other one.
+            if (enrollment.SubscriptionDetails is not null
+                && newGroup.Type != enrollment.SubscriptionDetails.GroupType)
+                throw new SubscriptionGroupTypeMismatchException(
+                    enrollment.SubscriptionDetailsId, request.NewTraineeGroupId,
+                    enrollment.SubscriptionDetails.GroupType, newGroup.Type);
 
             var trainee = await _traineeRepository.GetFullTrainee(enrollment.TraineeId, cancellationToken);
             var genderOk = trainee is null || newGroup.Gender switch

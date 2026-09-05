@@ -39,8 +39,8 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 		}
 		public async Task<Result<SportPriceBranchDto>> Handle(CreateSportPriceCommand request, CancellationToken cancellationToken)
 		{
-			var keyExists = await _sportPriceRepository.IsExistAsync(request.BranchId, 
-				request.SportId, request.SubsTypeId, cancellationToken);
+			var keyExists = await _sportPriceRepository.IsExistAsync(request.BranchId,
+				request.SportId, request.SubsTypeId, request.GroupType, cancellationToken);
 			if (keyExists)
 				throw new SportPriceExistsException();
 
@@ -76,7 +76,7 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 
 			cancellationToken.ThrowIfCancellationRequested();
 
-			sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(request.BranchId, request.SportId, request.SubsTypeId);
+			sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(request.BranchId, request.SportId, request.SubsTypeId, request.GroupType);
 
             cancellationToken.ThrowIfCancellationRequested();
 

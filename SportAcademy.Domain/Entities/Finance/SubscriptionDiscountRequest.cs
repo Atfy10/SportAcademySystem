@@ -20,7 +20,13 @@ public class SubscriptionDiscountRequest : ITenantScoped, IBranchScoped, IAudita
     public int SportId { get; set; }
     public int BranchId { get; set; }
     public DateOnly StartDate { get; set; }
-    public DateOnly EndDate { get; set; }
+
+    // No EndDate stored: it depends on the training days and the plan's session count, and is
+    // recomputed at approval time by ISubscriptionCreationService - same reasoning as the
+    // discount code and price, which are also re-derived fresh rather than trusted from when
+    // the request was raised.
+    public TraineeGroupType GroupType { get; set; }
+    public List<DayOfWeek> TrainingDays { get; set; } = [];
     public int PaymentTypeId { get; set; }
     public required string DiscountCode { get; set; }   // raw code as typed, re-validated at approval time
     public SubscriptionDiscountRequestStatus Status { get; set; } = SubscriptionDiscountRequestStatus.PendingApproval;
