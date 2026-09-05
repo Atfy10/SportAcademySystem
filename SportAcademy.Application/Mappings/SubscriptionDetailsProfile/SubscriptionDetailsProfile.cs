@@ -100,7 +100,8 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                     .Select(d => d.ToString())
                     .ToList()))
                 .ForCtorParam("SessionsAllowed", opt => opt.MapFrom(src =>
-                    src.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth));
+                    src.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth
+                    * src.SportPrice.SportSubscriptionType.SubscriptionType.NumberOfMonths));
         }
     }
 }

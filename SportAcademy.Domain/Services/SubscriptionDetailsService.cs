@@ -9,8 +9,17 @@ namespace SportAcademy.Domain.Services
 {
     public class SubscriptionDetailsService
     {
+        // Sessions for the WHOLE subscription, not one month of it. DaysPerMonth is a monthly
+        // rate ("Quarterly" is seeded as DaysPerMonth 10 x NumberOfMonths 3), so returning it
+        // alone granted a three-month subscriber a single month's sessions - while the price
+        // they paid, the end date counted across their training days, and the total shown on the
+        // subscription form were all for the full term.
         public static int CalculateAllowedSessions(SubscriptionDetails subscriptionDetails)
-            => subscriptionDetails.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth;
+        {
+            var subscriptionType = subscriptionDetails.SportPrice.SportSubscriptionType.SubscriptionType;
+            return TrainingScheduleService.CalculateTotalSessions(
+                subscriptionType.DaysPerMonth, subscriptionType.NumberOfMonths);
+        }
 
         public static bool HasActiveSubscriptionConflict(
             SubscriptionDetails subDetails,

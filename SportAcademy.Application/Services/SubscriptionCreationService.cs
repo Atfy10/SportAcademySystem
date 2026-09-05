@@ -116,7 +116,9 @@ namespace SportAcademy.Application.Services
                 // null on this freshly-created-and-added entity (no navigations loaded/attached).
                 // sportPrice was fetched with includes specifically for this.
                 existingEnrollment.SubscriptionDetailsId = subDetails.Id;
-                existingEnrollment.SessionAllowed = sportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth;
+                existingEnrollment.SessionAllowed = TrainingScheduleService.CalculateTotalSessions(
+                    sportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth,
+                    sportPrice.SportSubscriptionType.SubscriptionType.NumberOfMonths);
                 existingEnrollment.SessionRemaining = existingEnrollment.SessionAllowed;
                 existingEnrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
                 existingEnrollment.IsActive = true;

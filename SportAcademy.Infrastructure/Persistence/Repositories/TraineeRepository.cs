@@ -560,7 +560,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         {
                             sd.Id,
                             sd.EndDate,
-                            SessionsAllowed = sd.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth,
+                            SessionsAllowed = sd.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth
+                                * sd.SportPrice.SportSubscriptionType.SubscriptionType.NumberOfMonths,
                         })
                         .FirstOrDefault(),
                     SportTrainee = t.Sports
