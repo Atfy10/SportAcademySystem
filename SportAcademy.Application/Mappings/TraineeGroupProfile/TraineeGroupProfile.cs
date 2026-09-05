@@ -125,7 +125,16 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
             .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
             .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel))
-            .ForCtorParam("Gender", opt => opt.MapFrom(src => src.Gender));
+            .ForCtorParam("Gender", opt => opt.MapFrom(src => src.Gender))
+            .ForCtorParam("Type", opt => opt.MapFrom(src => src.Type))
+            // TrainingDays has no matching member on TraineeGroup - it's derived from the
+            // group's schedule. Every constructor parameter must be satisfiable or AutoMapper
+            // discards the constructor entirely and then reports the *first* ForCtorParam as
+            // having no matching constructor, which is a thoroughly misleading error.
+            .ForCtorParam("TrainingDays", opt => opt.MapFrom(src => src.GroupSchedules
+                .Select(gs => gs.Day)
+                .Distinct()
+                .ToList()));
     }
 
     private static int GetAge(Trainee trainee)
