@@ -7,6 +7,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Services;
 using SportAcademy.Domain.ValueObjects;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using System.Security.Claims;
@@ -15,6 +16,12 @@ namespace SportAcademy.Infrastructure.Seeders
 {
     public class AppDataSeeder
     {
+        /// <summary>
+        /// What a private group's place costs relative to the same plan's public price. Demo
+        /// figure only - real academies set their own in the pricing matrix.
+        /// </summary>
+        private const decimal PrivatePriceMultiplier = 2.2m;
+
         private const string DefaultPassword = "Admin@123";
 
         private static readonly string[] KuwaitiAreas =
@@ -797,7 +804,10 @@ namespace SportAcademy.Infrastructure.Seeders
             _context.Set<Payment>().AddRange(payments);
             await _context.SaveChangesAsync();
 
-            var subscriptionDetails = CreateSubscriptionDetails(tenantId, trainees, subTypes, sportBranches, payments, random);
+            var coachSportById = coaches.ToDictionary(c => c.EmployeeId, c => c.SportId);
+            var subscriptionDetails = CreateSubscriptionDetails(
+                tenantId, trainees, subTypes, sportBranches, traineeGroups, groupSchedules,
+                coachSportById, payments, random);
             _context.Set<SubscriptionDetails>().AddRange(subscriptionDetails);
             await _context.SaveChangesAsync();
 
@@ -827,7 +837,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 WHEN NOT MATCHED THEN INSERT (TenantId, DocumentType, [Year], LastNumber) VALUES (src.TenantId, src.DocumentType, src.[Year], {invoices.Count});
             ");
 
-            var (enrollments, sportTrainees) = CreateEnrollments(tenantId, trainees, traineeGroups, coaches, subscriptionDetails, random);
+            var (enrollments, sportTrainees) = CreateEnrollments(tenantId, trainees, traineeGroups, coaches, subTypes, subscriptionDetails, random);
             _context.Set<SportTrainee>().AddRange(sportTrainees);
             _context.Enrollments.AddRange(enrollments);
             await _context.SaveChangesAsync();
@@ -951,12 +961,30 @@ namespace SportAcademy.Infrastructure.Seeders
                 foreach (var st in subTypes)
                 {
                     var multiplier = priceMultipliers.GetValueOrDefault(st.Name, 1.0m);
+                    var publicPrice = Math.Round(basePrice * multiplier + random.Next(-5, 5), 2);
+
+                    // Both group types, because GroupType is part of the price's key: without a
+                    // Private row here, picking Private in the subscription form fails
+                    // validation with "no price configured" and the feature can't be exercised
+                    // at all on a seeded database. Private is a small-group product, priced at a
+                    // premium over the same plan's public price.
                     result.Add(new SportPrice
                     {
                         SportId = sb.SportId,
                         BranchId = sb.BranchId,
                         SubsTypeId = st.Id,
-                        Price = Math.Round(basePrice * multiplier + random.Next(-5, 5), 2),
+                        GroupType = TraineeGroupType.Public,
+                        Price = publicPrice,
+                        TenantId = tenantId
+                    });
+
+                    result.Add(new SportPrice
+                    {
+                        SportId = sb.SportId,
+                        BranchId = sb.BranchId,
+                        SubsTypeId = st.Id,
+                        GroupType = TraineeGroupType.Private,
+                        Price = Math.Round(publicPrice * PrivatePriceMultiplier, 2),
                         TenantId = tenantId
                     });
                 }
@@ -1141,16 +1169,26 @@ namespace SportAcademy.Infrastructure.Seeders
                 "Elite Squad", "Weekend Warriors", "Morning Session", "Evening Session"
             };
 
-            return groupNames.Select(name =>
+            return groupNames.Select((name, index) =>
             {
                 // Pick the coach first, then bound the group's required skill level by the
                 // coach's own - a coach can only lead a group at or below their own level.
                 var coach = coaches[random.Next(coaches.Count)];
+
+                // Every third group is private, so a seeded database has both kinds to enroll
+                // into. Capacity follows the type rather than one range for all: a private group
+                // is small by definition (and the validators cap it at
+                // TraineeGroupCapacity.PrivateMaximum), which is what its higher price buys.
+                var type = index % 3 == 2 ? TraineeGroupType.Private : TraineeGroupType.Public;
+
                 return new TraineeGroup
                 {
-                    Name = name,
+                    Name = type == TraineeGroupType.Private ? $"{name} (Private)" : name,
+                    Type = type,
                     SkillLevel = (SkillLevel)random.Next(0, (int)coach.SkillLevel + 1),
-                    MaximumCapacity = random.Next(10, 15),
+                    MaximumCapacity = type == TraineeGroupType.Private
+                        ? random.Next(3, 7)
+                        : random.Next(10, 15),
                     DurationInMinutes = random.Next(2, 4) * 15 + 30,
                     Gender = random.Next(3) switch
                     {
@@ -1214,30 +1252,74 @@ namespace SportAcademy.Infrastructure.Seeders
             }).ToList();
         }
 
+        // Takes the seeded groups and their schedules because a subscription is no longer
+        // independent of them: it records the group type it was priced for and the weekly
+        // day-pattern its end date was counted across, and the enrollment picker only offers
+        // groups matching both exactly. Inventing a pattern here would produce subscriptions no
+        // seeded group can satisfy - they'd look fine in the list and offer nothing to enroll into.
         private static List<SubscriptionDetails> CreateSubscriptionDetails(
             Guid tenantId, List<Trainee> trainees, List<SubscriptionType> subTypes,
-            List<SportBranch> sportBranches,
+            List<SportBranch> sportBranches, List<TraineeGroup> traineeGroups,
+            List<GroupSchedule> groupSchedules, Dictionary<int, int> coachSportById,
             List<Payment> payments, Random random)
         {
             var details = new List<SubscriptionDetails>();
             var subscribedTrainees = trainees.Where(_ => random.NextDouble() < 0.7).ToList();
+
+            var daysByGroupId = groupSchedules
+                .GroupBy(gs => gs.TraineeGroupId)
+                .ToDictionary(g => g.Key, g => g.Select(gs => gs.Day).Distinct().OrderBy(d => d).ToList());
 
             for (int i = 0; i < subscribedTrainees.Count && i < payments.Count; i++)
             {
                 var trainee = subscribedTrainees[i];
                 var payment = payments[i];
                 var startDate = DateOnly.FromDateTime(payment.PaidDate);
+
+                // Sport and branch come from a real SportBranch pair: the subscription's FK to
+                // SportPrice is (Sport, Branch, SubscriptionType, GroupType), so an invented
+                // combination wouldn't have a price row to point at.
                 var sb = sportBranches[random.Next(sportBranches.Count)];
+                var subType = subTypes[random.Next(subTypes.Count)];
+
+                // Copy the type and pattern off a group that actually teaches this sport, so the
+                // enrollment step has something to match. Groups pick their branch independently
+                // of their coach's sport, so the group's own branch is deliberately ignored here.
+                var candidates = traineeGroups
+                    .Where(g => coachSportById.TryGetValue(g.CoachId, out var sportId) && sportId == sb.SportId)
+                    .Where(g => daysByGroupId.ContainsKey(g.Id))
+                    .ToList();
+
+                var groupType = TraineeGroupType.Public;
+                var trainingDays = new List<DayOfWeek>();
+
+                if (candidates.Count > 0)
+                {
+                    var model = candidates[random.Next(candidates.Count)];
+                    groupType = model.Type;
+                    trainingDays = daysByGroupId[model.Id];
+                }
+
+                // Counted across the real pattern, like the application does - not a flat month,
+                // which would disagree with the sessions the plan actually grants.
+                var endDate = trainingDays.Count > 0
+                    ? TrainingScheduleService.ComputeEndDate(
+                        startDate,
+                        TrainingScheduleService.CalculateTotalSessions(subType.DaysPerMonth, subType.NumberOfMonths),
+                        trainingDays)
+                    : startDate.AddMonths(subType.NumberOfMonths);
 
                 details.Add(new SubscriptionDetails
                 {
                     StartDate = startDate,
-                    EndDate = startDate.AddMonths(1),
+                    EndDate = endDate,
                     Status = SubscriptionStatus.Active,
                     TraineeId = trainee.Id,
-                    SubscriptionTypeId = subTypes[random.Next(subTypes.Count)].Id,
+                    SubscriptionTypeId = subType.Id,
                     SportId = sb.SportId,
                     BranchId = sb.BranchId,
+                    GroupType = groupType,
+                    TrainingDays = trainingDays,
                     TenantId = tenantId
                 });
             }
@@ -1330,9 +1412,12 @@ namespace SportAcademy.Infrastructure.Seeders
         // is raised to match if no group at their current level is available.
         private static (List<Enrollment> Enrollments, List<SportTrainee> SportTrainees) CreateEnrollments(
             Guid tenantId, List<Trainee> trainees, List<TraineeGroup> groups, List<Coach> coaches,
-            List<SubscriptionDetails> subscriptionDetails, Random random)
+            List<SubscriptionType> subTypes, List<SubscriptionDetails> subscriptionDetails, Random random)
         {
             var coachSportById = coaches.ToDictionary(c => c.EmployeeId, c => c.SportId);
+            var sessionsBySubscriptionTypeId = subTypes.ToDictionary(
+                st => st.Id,
+                st => TrainingScheduleService.CalculateTotalSessions(st.DaysPerMonth, st.NumberOfMonths));
             var traineeById = trainees.ToDictionary(t => t.Id);
             var skillByTraineeSport = new Dictionary<(int TraineeId, int SportId), SkillLevel>();
             var enrollments = new List<Enrollment>();
@@ -1348,6 +1433,10 @@ namespace SportAcademy.Infrastructure.Seeders
                     .Where(g => coachSportById[g.CoachId] == sd.SportId)
                     .Where(g => g.Gender == TraineeGroupGender.Mixed
                         || (g.Gender == TraineeGroupGender.Male) == (trainee.Gender == Gender.Male))
+                    // Priced for this kind of group - CreateEnrollmentCommandHandler throws
+                    // SubscriptionGroupTypeMismatchException on a mismatch, so seeding one would
+                    // produce demo data the application itself would refuse to create.
+                    .Where(g => g.Type == sd.GroupType)
                     .ToList();
 
                 if (candidates.Count == 0)
@@ -1368,12 +1457,17 @@ namespace SportAcademy.Infrastructure.Seeders
                     ? recordedSkill.Value
                     : group.SkillLevel;
 
+                // The plan's own quota for the whole term, as CreateEnrollmentCommandHandler
+                // assigns it - not a flat 8, which bore no relation to what the trainee bought
+                // and left Gold and Quarterly subscribers looking short-changed in the demo data.
+                var sessionsAllowed = sessionsBySubscriptionTypeId.GetValueOrDefault(sd.SubscriptionTypeId, 8);
+
                 enrollments.Add(new Enrollment
                 {
                     EnrollmentDate = sd.StartDate.ToDateTime(TimeOnly.MinValue),
                     ExpiryDate = sd.EndDate.ToDateTime(TimeOnly.MinValue),
-                    SessionAllowed = 8,
-                    SessionRemaining = random.Next(0, 9),
+                    SessionAllowed = sessionsAllowed,
+                    SessionRemaining = random.Next(0, sessionsAllowed + 1),
                     IsActive = true,
                     TraineeId = sd.TraineeId,
                     TraineeGroupId = group.Id,
