@@ -98,7 +98,9 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 .ForCtorParam("TrainingDays", opt => opt.MapFrom(src => src.TrainingDays
                     .OrderBy(d => d)
                     .Select(d => d.ToString())
-                    .ToList()));
+                    .ToList()))
+                .ForCtorParam("SessionsAllowed", opt => opt.MapFrom(src =>
+                    src.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth));
         }
     }
 }

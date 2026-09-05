@@ -556,7 +556,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             // Not already claimed by another enrollment - same "unclaimed" rule
                             // GetActiveForTraineeDropdownAsync applies per-trainee.
                             && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id))
-                        .Select(sd => new { sd.Id, sd.EndDate })
+                        .Select(sd => new
+                        {
+                            sd.Id,
+                            sd.EndDate,
+                            SessionsAllowed = sd.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth,
+                        })
                         .FirstOrDefault(),
                     SportTrainee = t.Sports
                         .Where(st => st.SportId == sportId)
@@ -580,7 +585,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     c.Gender.ToString(),
                     (c.SportTrainee ?? SkillLevel.NotSpecified).ToString(),
                     c.Subscription!.Id,
-                    c.Subscription!.EndDate))
+                    c.Subscription!.EndDate,
+                    c.Subscription!.SessionsAllowed))
                 .ToList();
         }
 

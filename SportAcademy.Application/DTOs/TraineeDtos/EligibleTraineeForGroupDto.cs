@@ -10,4 +10,9 @@ public record EligibleTraineeForGroupDto(
     string Gender,
     string SkillLevel,
     int SubscriptionDetailsId,
-    DateOnly SubscriptionEndDate);
+    DateOnly SubscriptionEndDate,
+    /// <summary>
+    /// Sessions the resulting enrollment will be granted - the subscription's own figure, which
+    /// is what CreateEnrollmentCommandHandler assigns regardless of what the form submits.
+    /// </summary>
+    int SessionsAllowed);

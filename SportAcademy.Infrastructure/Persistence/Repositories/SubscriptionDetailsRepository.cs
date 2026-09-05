@@ -201,6 +201,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     sd.EndDate,
                     sd.GroupType,
                     sd.TrainingDays,
+                    SessionsAllowed = sd.SportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth,
                 })
                 .ToListAsync(cancellationToken);
 
@@ -211,7 +212,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     r.SportId,
                     r.EndDate,
                     r.GroupType,
-                    DayNames.From(r.TrainingDays)))
+                    DayNames.From(r.TrainingDays),
+                    r.SessionsAllowed))
                 .ToList();
         }
 
