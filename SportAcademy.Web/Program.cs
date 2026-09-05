@@ -249,6 +249,11 @@ var seedingEnabled = builder.Environment.IsDevelopment()
 builder.Services.AddHttpClient<ResendEmailService>();
 builder.Services.AddHttpClient<SendGridEmailService>();
 
+// Read through the fully-layered configuration, so this reflects whatever actually won -
+// appsettings.Development.json overrides the base file, and an Email__Provider environment
+// variable overrides both. Which one was chosen is logged after the host is built (Serilog isn't
+// configured until then), because the selection is otherwise invisible until the first send and
+// a stale override in one layer looks exactly like the switch not having worked.
 var emailProvider = builder.Configuration["Email:Provider"];
 var useSendGrid = string.Equals(emailProvider, "SendGrid", StringComparison.OrdinalIgnoreCase);
 
@@ -336,6 +341,12 @@ if (!string.IsNullOrWhiteSpace(redisConnectionString))
 }
 
 var app = builder.Build();
+
+app.Logger.LogInformation(
+    "Email provider: {Provider} (Email:Provider resolved to {Configured}, From {FromEmail})",
+    useSendGrid ? "SendGrid" : "Resend",
+    emailProvider ?? "(not set)",
+    builder.Configuration["Email:FromEmail"]);
 
 // Configure the HTTP request pipeline.
 // Migrations run in every environment (single-instance IIS deploys have no migration
