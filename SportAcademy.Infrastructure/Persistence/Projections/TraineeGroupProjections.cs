@@ -60,5 +60,5 @@ public static class TraineeGroupProjections
         g.SkillLevel,
         g.Gender,
         g.Type,
-        g.GroupSchedules.Select(gs => gs.Day).Distinct().ToList());
+        g.GroupSchedules.Select(gs => gs.Day).Distinct().OrderBy(d => d).Select(d => d.ToString()).ToList());
 }

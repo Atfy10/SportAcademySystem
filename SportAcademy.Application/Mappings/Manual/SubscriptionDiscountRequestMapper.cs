@@ -22,7 +22,7 @@ namespace SportAcademy.Application.Mappings.Manual
             r.Branch?.Name ?? string.Empty,
             r.StartDate,
             r.GroupType,
-            r.TrainingDays,
+            r.TrainingDays.OrderBy(d => d).Select(d => d.ToString()).ToList(),
             r.PaymentTypeId,
             r.DiscountCode,
             r.Status,

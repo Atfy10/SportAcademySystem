@@ -14,7 +14,8 @@ public record SubscriptionDiscountRequestDto(
     string BranchName,
     DateOnly StartDate,
     TraineeGroupType GroupType,
-    List<DayOfWeek> TrainingDays,
+    /// <summary>Day-of-week names ("Sunday"), as elsewhere in this API - see GroupDayPatternDto.</summary>
+    List<string> TrainingDays,
     int PaymentTypeId,
     string DiscountCode,
     SubscriptionDiscountRequestStatus Status,

@@ -20,6 +20,8 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
         // Carried into the renewal so it reprices and re-dates on the same basis as the
         // subscription being renewed, instead of making staff re-pick both.
         public TraineeGroupType GroupType { get; set; }
-        public List<DayOfWeek> TrainingDays { get; set; } = [];
+
+        /// <summary>Day-of-week names ("Sunday"), as elsewhere in this API - see GroupDayPatternDto.</summary>
+        public List<string> TrainingDays { get; set; } = [];
     }
 }

@@ -107,7 +107,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // finish on a different date than the trainee was billed for.
             if (trainingDays is { Count: > 0 })
             {
-                var wanted = trainingDays.ToHashSet();
+                // Compared as names, matching how the DTO exposes them.
+                var wanted = trainingDays.Select(d => d.ToString()).ToHashSet();
                 items = items.Where(i => wanted.SetEquals(i.TrainingDays)).ToList();
             }
 
@@ -141,10 +142,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
 
             // Grouped in memory: the key is a whole set of days, which SQL has no way to group by.
+            // Ordered by the enum's own value (Sunday first) before being turned into names, so
+            // a pattern always reads in week order rather than alphabetically.
             return schedules
                 .GroupBy(s => string.Join(",", s.Days.OrderBy(d => d).Select(d => (int)d)))
                 .Select(g => new GroupDayPatternDto(
-                    g.First().Days.OrderBy(d => d).ToList(),
+                    g.First().Days.OrderBy(d => d).Select(d => d.ToString()).ToList(),
                     g.Count()))
                 .OrderByDescending(p => p.GroupCount)
                 .ThenBy(p => p.Days.Count)

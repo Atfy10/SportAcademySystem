@@ -134,6 +134,8 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForCtorParam("TrainingDays", opt => opt.MapFrom(src => src.GroupSchedules
                 .Select(gs => gs.Day)
                 .Distinct()
+                .OrderBy(d => d)
+                .Select(d => d.ToString())
                 .ToList()));
     }
 

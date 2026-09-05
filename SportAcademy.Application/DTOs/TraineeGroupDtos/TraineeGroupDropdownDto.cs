@@ -11,4 +11,5 @@ public record TraineeGroupDropdownDto(
     SkillLevel SkillLevel,
     TraineeGroupGender Gender,
     TraineeGroupType Type,
-    List<DayOfWeek> TrainingDays);
+    /// <summary>Day-of-week names ("Sunday"), as elsewhere in this API - see GroupDayPatternDto.</summary>
+    List<string> TrainingDays);

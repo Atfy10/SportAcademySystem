@@ -10,4 +10,5 @@ public record SubscriptionDetailsDropdownDto(
     int SportId,
     DateOnly EndDate,
     TraineeGroupType GroupType,
-    List<DayOfWeek> TrainingDays);
+    /// <summary>Day-of-week names ("Sunday"), as elsewhere in this API - see GroupDayPatternDto.</summary>
+    List<string> TrainingDays);

@@ -49,7 +49,7 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetRenewIn
                 BranchId = subDetails.SportPrice?.BranchId ?? 0,
                 SubscriptionTypeId = subDetails.SportPrice?.SportSubscriptionType?.SubscriptionTypeId ?? 0,
                 GroupType = subDetails.GroupType,
-                TrainingDays = subDetails.TrainingDays,
+                TrainingDays = subDetails.TrainingDays.OrderBy(d => d).Select(d => d.ToString()).ToList(),
             };
 
             return Result<RenewSubscriptionInfoDto>.Success(dto, _operation);
