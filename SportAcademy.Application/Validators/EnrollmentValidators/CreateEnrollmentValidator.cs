@@ -11,8 +11,8 @@ namespace SportAcademy.Application.Validators.EnrollmentValidators
 
             RuleFor(x => x.EnrollmentDate)
                 .NotEmpty().WithMessage("Please provide an enrollment date.")
-                .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
-                .WithMessage("Enrollment date can't be set in the future.");
+                .LessThanOrEqualTo(DateTime.UtcNow.AddDays(7))
+                .WithMessage("Enrollment date can't be more than 7 days in the future.");
 
             RuleFor(x => x.ExpiryDate)
                 .NotEmpty().WithMessage("Please provide an expiry date.")

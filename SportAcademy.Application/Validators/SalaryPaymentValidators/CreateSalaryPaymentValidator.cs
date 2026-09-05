@@ -14,6 +14,12 @@ namespace SportAcademy.Application.Validators.SalaryPaymentValidators
             RuleFor(x => x.Amount)
                 .GreaterThan(0).WithMessage("Amount must be greater than zero.");
 
+            RuleFor(x => x.Bonus)
+                .GreaterThanOrEqualTo(0).WithMessage("Bonus can't be negative.")
+                .When(x => x.Bonus.HasValue);
+
+            RuleFor(x => x.BranchId).ApplyOptionalIdRuleFor("Branch");
+
             RuleFor(x => x.PeriodMonth)
                 .NotEqual(default(DateOnly)).WithMessage("A pay period is required.");
 

@@ -18,6 +18,10 @@ public class CoachBranchAccess : ITenantScoped, IAuditableEntity
     public int CoachId { get; set; }
     public int BranchId { get; set; }
 
+    // Optional per-branch salary override for this coach. Null means "use the coach's
+    // Employee.Salary" - see CreateSalaryPaymentCommandHandler for how the two combine.
+    public decimal? Salary { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }

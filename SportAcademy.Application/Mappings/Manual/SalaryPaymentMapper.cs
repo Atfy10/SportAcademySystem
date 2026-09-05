@@ -16,6 +16,7 @@ namespace SportAcademy.Application.Mappings.Manual
             sp.BranchId,
             sp.Branch?.Name ?? string.Empty,
             sp.Amount,
+            sp.Bonus,
             sp.Currency,
             sp.PeriodMonth,
             sp.Status,

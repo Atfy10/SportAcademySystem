@@ -38,7 +38,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
                 .Where(tg => fromTime == null || toTime == null
-                    || tg.GroupSchedules.Any(gs => gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value))
+                    || tg.GroupSchedules.Any(gs => fromTime.Value <= toTime.Value
+                        ? gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value
+                        : gs.StartTime >= fromTime.Value || gs.StartTime < toTime.Value))
                 .AsNoTracking()
                 .OrderBy(tg => tg.Id)
                 .Select(TraineeGroupProjections.ToCardDto(_languageProvider.Language))
@@ -144,7 +146,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     g.Branch.Name.ToLower().Contains(lowerTerm) ||
                     g.Name.ToLower().Contains(lowerTerm))
                 .Where(g => fromTime == null || toTime == null
-                    || g.GroupSchedules.Any(gs => gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value))
+                    || g.GroupSchedules.Any(gs => fromTime.Value <= toTime.Value
+                        ? gs.StartTime >= fromTime.Value && gs.StartTime < toTime.Value
+                        : gs.StartTime >= fromTime.Value || gs.StartTime < toTime.Value))
                 .OrderBy(g => g.Id)
                 .Select(TraineeGroupProjections.ToListDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, cancellationToken);

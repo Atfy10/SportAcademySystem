@@ -13,6 +13,7 @@ public class SalaryPayment : ITenantScoped, IBranchScoped, IAuditableEntity, ISo
     public int EmployeeId { get; set; }
     public int BranchId { get; set; }
     public decimal Amount { get; set; }
+    public decimal Bonus { get; set; }
     public string Currency { get; set; } = "KWD";
     public DateOnly PeriodMonth { get; set; }
     public SalaryPaymentStatus Status { get; set; } = SalaryPaymentStatus.PendingApproval;

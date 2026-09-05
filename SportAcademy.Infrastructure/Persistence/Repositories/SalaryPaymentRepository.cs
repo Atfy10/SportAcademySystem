@@ -119,7 +119,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             var rows = await query
                 .GroupBy(sp => new { sp.PaidAt!.Value.Year, sp.PaidAt!.Value.Month })
-                .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(sp => sp.Amount) })
+                .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(sp => sp.Amount + sp.Bonus) })
                 .OrderBy(g => g.Year).ThenBy(g => g.Month)
                 .ToListAsync(cancellationToken);
 

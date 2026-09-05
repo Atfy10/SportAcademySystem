@@ -6,7 +6,9 @@ namespace SportAcademy.Application.Commands.SalaryPaymentCommands.CreateSalaryPa
 {
     public record CreateSalaryPaymentCommand(
         int EmployeeId,
+        int? BranchId,
         decimal Amount,
+        decimal? Bonus,
         DateOnly PeriodMonth,
         int? PaymentTypeId,
         string? Notes

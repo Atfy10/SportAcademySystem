@@ -26,12 +26,12 @@ public class UpdateCoachBranchesCommandHandler : IRequestHandler<UpdateCoachBran
         var coach = await _coachRepository.GetByIdAsync(request.CoachId, ct)
             ?? throw new IdNotFoundException(nameof(Coach), request.CoachId);
 
-        if (request.BranchIds.Count == 0)
+        if (request.Branches.Count == 0)
             return Result<bool>.Failure(_operation, "A coach must be authorized for at least one branch.", 400);
 
-        var access = request.BranchIds
-            .Distinct()
-            .Select(branchId => new CoachBranchAccess { BranchId = branchId });
+        var access = request.Branches
+            .DistinctBy(b => b.BranchId)
+            .Select(b => new CoachBranchAccess { BranchId = b.BranchId, Salary = b.Salary });
 
         await _coachBranchAccessRepository.ReplaceForCoachAsync(coach.EmployeeId, coach.TenantId, access.ToList(), ct);
 

@@ -16,6 +16,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             // coach rather than appending, so a duplicate row would only ever be a bug.
             builder.HasIndex(a => new { a.CoachId, a.BranchId }).IsUnique();
 
+            builder.Property(a => a.Salary).HasColumnType("decimal(18,3)");
+
             builder.HasOne(a => a.Coach)
                    .WithMany()
                    .HasForeignKey(a => a.CoachId)

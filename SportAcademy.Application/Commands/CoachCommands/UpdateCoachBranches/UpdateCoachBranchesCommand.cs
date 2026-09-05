@@ -3,4 +3,6 @@ using SportAcademy.Application.Common.Result;
 
 namespace SportAcademy.Application.Commands.CoachCommands.UpdateCoachBranches;
 
-public record UpdateCoachBranchesCommand(int CoachId, List<int> BranchIds) : IRequest<Result<bool>>;
+public record CoachBranchAccessInput(int BranchId, decimal? Salary);
+
+public record UpdateCoachBranchesCommand(int CoachId, List<CoachBranchAccessInput> Branches) : IRequest<Result<bool>>;

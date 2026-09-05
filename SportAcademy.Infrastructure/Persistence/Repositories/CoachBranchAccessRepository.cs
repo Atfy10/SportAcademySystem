@@ -17,6 +17,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<List<CoachBranchAccess>> GetForCoachAsync(int coachId, CancellationToken ct = default)
             => await _context.CoachBranchAccesses
                 .Where(a => a.CoachId == coachId)
+                .Include(a => a.Branch)
                 .AsNoTracking()
                 .ToListAsync(ct);
 

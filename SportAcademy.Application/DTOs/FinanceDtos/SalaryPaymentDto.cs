@@ -9,6 +9,7 @@ public record SalaryPaymentDto(
     int BranchId,
     string BranchName,
     decimal Amount,
+    decimal Bonus,
     string Currency,
     DateOnly PeriodMonth,
     SalaryPaymentStatus Status,

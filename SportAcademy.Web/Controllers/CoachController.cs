@@ -103,9 +103,9 @@ namespace SportAcademy.Web.Controllers
 
         [HttpPut("{id}/branches")]
         [Authorize(Policy = "Permission:coach.manage")]
-        public async Task<ActionResult> UpdateBranches(int id, [FromBody] List<int> branchIds, CancellationToken ct)
+        public async Task<ActionResult> UpdateBranches(int id, [FromBody] List<CoachBranchAccessInput> branches, CancellationToken ct)
         {
-            var result = await _mediator.Send(new UpdateCoachBranchesCommand(id, branchIds), ct);
+            var result = await _mediator.Send(new UpdateCoachBranchesCommand(id, branches), ct);
             return Ok(result);
         }
 

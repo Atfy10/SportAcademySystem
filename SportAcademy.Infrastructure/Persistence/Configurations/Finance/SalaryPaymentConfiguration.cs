@@ -29,6 +29,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Finance
             // KWD (and several other Gulf currencies) has 3 decimal places - decimal(18,2)
             // would silently truncate fils.
             builder.Property(sp => sp.Amount).HasPrecision(18, 3);
+            builder.Property(sp => sp.Bonus).HasPrecision(18, 3);
 
             builder.HasOne(sp => sp.Employee)
                 .WithMany()
