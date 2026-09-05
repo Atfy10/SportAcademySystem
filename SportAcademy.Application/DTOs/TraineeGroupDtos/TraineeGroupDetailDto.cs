@@ -10,6 +10,8 @@ public record TraineeGroupDetailDto
     // comment for why (camelCase-over-the-wire enum vs PascalCase-keyed enums.json).
     public string SkillLevel { get; init; } = null!;
     public string Gender { get; init; } = null!;
+    /// <summary>"Public" or "Private" - a string for the same reason as the two above.</summary>
+    public string Type { get; init; } = null!;
     public int MaximumCapacity { get; init; }
     public int DurationInMinutes { get; init; }
     public int SportId { get; init; }

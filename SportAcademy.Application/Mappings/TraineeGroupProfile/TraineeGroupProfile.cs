@@ -30,6 +30,8 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 opt => opt.MapFrom(src => src.SkillLevel.ToString()))
             .ForMember(dest => dest.Gender,
                 opt => opt.MapFrom(src => src.Gender.ToString()))
+            .ForMember(dest => dest.Type,
+                opt => opt.MapFrom(src => src.Type.ToString()))
             .ForMember(dest => dest.Schedules,
                 opt => opt.MapFrom(src => src.GroupSchedules
                         .Select(gs => new GroupScheduleDto

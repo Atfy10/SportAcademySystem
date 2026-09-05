@@ -20,7 +20,10 @@ namespace SportAcademy.Application.DTOs.SportPriceDtos
 
 		// Part of the price's identity, not a display detail: public and private training for
 		// the same sport/branch/plan are separate rows, and the UI keys, edits, and deletes by it.
-		public TraineeGroupType GroupType { get; init; }
+		// A PascalCase string ("Public"/"Private"), not the enum: serialized as an enum it would
+		// arrive camelCase and silently fail to match the form's own option values, which is
+		// exactly how a private price came to be displayed - and re-saved - as public.
+		public string GroupType { get; init; } = nameof(TraineeGroupType.Public);
 
 		public decimal Price { get; init; }
 	}
