@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
 {
     public class UpdateTraineeGroupValidator : AbstractValidator<UpdateTraineeGroupCommand>
     {
-        public UpdateTraineeGroupValidator()
+        public UpdateTraineeGroupValidator(ITraineeGroupRepository traineeGroupRepository)
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 
@@ -23,22 +24,27 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
                 .NotEmpty().WithMessage("Please select a skill level.")
                 .IsInEnum().WithMessage("Invalid skill level selected. Please choose from the available options.");
 
-            // Type is optional on update (null = leave as-is), so only enforce the enum when one
-            // is actually supplied.
-            RuleFor(x => x.Type)
-                .IsInEnum().WithMessage("Please choose whether this is a public or private group.")
-                .When(x => x.Type.HasValue);
-
-            // Private groups get the tighter ceiling; the public one (15 here) is left as it was.
             RuleFor(x => x.MaximumCapacity)
                 .NotEmpty().WithMessage("Please enter the maximum capacity.")
                 .GreaterThan(0).WithMessage("Maximum capacity must be greater than 0.")
-                .LessThanOrEqualTo(x => x.Type == TraineeGroupType.Private
-                    ? TraineeGroupCapacity.PrivateMaximum
-                    : 15)
-                .WithMessage(x => x.Type == TraineeGroupType.Private
-                    ? $"A private group cannot exceed {TraineeGroupCapacity.PrivateMaximum} trainees."
-                    : "Maximum capacity cannot exceed 15 trainees.");
+                .LessThanOrEqualTo(15).WithMessage("Maximum capacity cannot exceed 15 trainees.");
+
+            // The ceiling depends on the group's own type, which the command no longer carries
+            // (Type is fixed at creation), so it has to be read from the stored group rather
+            // than taken from the request - otherwise a private group could be edited up to the
+            // public limit and quietly exceed what private training is sold as.
+            RuleFor(x => x)
+                .MustAsync(async (cmd, ct) =>
+                {
+                    if (!cmd.MaximumCapacity.HasValue) return true;
+
+                    var group = await traineeGroupRepository.GetByIdAsync(cmd.Id, ct);
+                    if (group is null) return true; // the handler reports the missing group itself
+
+                    return group.Type != TraineeGroupType.Private
+                        || cmd.MaximumCapacity.Value <= TraineeGroupCapacity.PrivateMaximum;
+                })
+                .WithMessage($"A private group cannot exceed {TraineeGroupCapacity.PrivateMaximum} trainees.");
 
             RuleFor(x => x.DurationInMinutes)
                 .NotEmpty().WithMessage("Please enter the session duration.")
