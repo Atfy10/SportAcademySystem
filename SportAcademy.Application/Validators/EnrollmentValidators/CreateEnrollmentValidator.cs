@@ -19,10 +19,12 @@ namespace SportAcademy.Application.Validators.EnrollmentValidators
                 .GreaterThan(x => x.EnrollmentDate)
                 .WithMessage("Expiry date should be after the enrollment date.");
 
-            RuleFor(x => x.SessionAllowed)
-                .NotEmpty().WithMessage("Please specify the number of sessions allowed.")
-                .GreaterThan(0).WithMessage("At least 1 session must be allowed.")
-                .LessThanOrEqualTo(100).WithMessage("Maximum 100 sessions can be allowed.");
+            // No rule on SessionAllowed: it isn't a client decision. The handler assigns the
+            // quota from the subscription (SubscriptionDetailsService.CalculateAllowedSessions),
+            // so nothing is submitted to validate - and demanding it here rejected every
+            // enrollment once the forms stopped sending a number they never controlled.
+            // The old cap of 100 would have been wrong too: a 12-month plan at 16 sessions a
+            // month is a legitimate 192.
 
             RuleFor(x => x.TraineeId)
                 .NotEmpty().WithMessage("Please select a trainee.")
