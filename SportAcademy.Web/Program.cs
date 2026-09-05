@@ -243,18 +243,30 @@ builder.Services.AddInfrastructureServices();
 var seedingEnabled = builder.Environment.IsDevelopment()
     || builder.Configuration.GetValue<bool>("Seeding:Enabled");
 
-// Register external HTTP client services (web layer specific)
+// Register external HTTP client services (web layer specific). Both providers are registered so
+// Email:Provider can choose between them at startup - switching is then a config change plus a
+// restart, not a redeploy, and the one that isn't selected costs nothing but a typed HttpClient.
+builder.Services.AddHttpClient<ResendEmailService>();
 builder.Services.AddHttpClient<SendGridEmailService>();
-if (seedingEnabled)
+
+var emailProvider = builder.Configuration["Email:Provider"];
+var useSendGrid = string.Equals(emailProvider, "SendGrid", StringComparison.OrdinalIgnoreCase);
+
+builder.Services.AddScoped<IEmailService>(sp =>
 {
+    IEmailService sender = useSendGrid
+        ? sp.GetRequiredService<SendGridEmailService>()
+        : sp.GetRequiredService<ResendEmailService>();
+
+    // Development (and any box with seeding on) additionally records every outgoing link to a
+    // file before the send is attempted, so an invitation is still usable when the provider is
+    // unreachable, out of credits, or simply not configured yet.
+    if (!seedingEnabled)
+        return sender;
+
     var devInvitationLinksPath = Path.Combine(builder.Environment.ContentRootPath, "dev-invitation-links.txt");
-    builder.Services.AddScoped<IEmailService>(sp =>
-        new FileLoggingEmailServiceDecorator(sp.GetRequiredService<SendGridEmailService>(), devInvitationLinksPath));
-}
-else
-{
-    builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<SendGridEmailService>());
-}
+    return new FileLoggingEmailServiceDecorator(sender, devInvitationLinksPath);
+});
 
 builder.Services.AddControllers(options =>
     {
