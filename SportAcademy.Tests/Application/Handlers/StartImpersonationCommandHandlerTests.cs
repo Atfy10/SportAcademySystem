@@ -1,4 +1,6 @@
 using FluentAssertions;
+using MediatR;
+using Microsoft.Extensions.Logging;
 using Moq;
 using SportAcademy.Application.Commands.PlatformCommands.StartImpersonation;
 using SportAcademy.Application.Interfaces;
@@ -6,6 +8,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Events;
 
 namespace SportAcademy.Tests.Application.Handlers;
 
@@ -16,6 +19,7 @@ public class StartImpersonationCommandHandlerTests
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly Mock<IUserContextService> _userContextMock = new();
     private readonly Mock<IJwtTokenService> _jwtTokenServiceMock = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
     private readonly StartImpersonationCommandHandler _handler;
 
     private readonly Guid _superAdminId = Guid.NewGuid();
@@ -28,16 +32,19 @@ public class StartImpersonationCommandHandlerTests
             _grantRepoMock.Object,
             _userRepoMock.Object,
             _userContextMock.Object,
-            _jwtTokenServiceMock.Object);
+            _jwtTokenServiceMock.Object,
+            _mediatorMock.Object,
+            Mock.Of<ILogger<StartImpersonationCommandHandler>>());
     }
 
-    private static Tenant CreateTenant(Guid id, TenantStatus status) => new()
+    private static Tenant CreateTenant(Guid id, TenantStatus status, Guid? ownerId = null) => new()
     {
         Id = id,
         Name = "Test Academy",
         DisplayName = "Test Academy",
         Slug = "test-academy",
         Status = status,
+        OwnerId = ownerId,
     };
 
     [Fact]
@@ -105,5 +112,52 @@ public class StartImpersonationCommandHandlerTests
 
         // Capped at 60 minutes regardless of anything the caller might ask for later.
         (capturedGrant.ExpiresAt - capturedGrant.StartedAt).Should().BeCloseTo(TimeSpan.FromMinutes(60), TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public async Task Handle_TenantHasOwner_NotifiesTheOwnerOfTheImpersonation()
+    {
+        var tenantId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var tenant = CreateTenant(tenantId, TenantStatus.Active, ownerId);
+        var superAdmin = new AppUser { Id = _superAdminId, UserName = "superadmin", Email = "sa@test.com" };
+
+        _tenantRepoMock.Setup(r => r.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _userRepoMock.Setup(r => r.GetByIdAsync(_superAdminId, It.IsAny<CancellationToken>())).ReturnsAsync(superAdmin);
+        _jwtTokenServiceMock
+            .Setup(j => j.GenerateImpersonationToken(superAdmin, tenantId, It.IsAny<Guid>(), It.IsAny<DateTime>()))
+            .ReturnsAsync("impersonation-jwt");
+
+        var result = await _handler.Handle(new StartImpersonationCommand(tenantId, "Support ticket #123"), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _mediatorMock.Verify(
+            m => m.Publish(
+                It.Is<ImpersonationStartedEvent>(e =>
+                    e.TenantId == tenantId && e.OwnerId == ownerId && e.SuperAdminUserId == _superAdminId
+                    && e.Reason == "Support ticket #123"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_TenantHasNoOwnerYet_SkipsNotificationWithoutThrowing()
+    {
+        var tenantId = Guid.NewGuid();
+        var tenant = CreateTenant(tenantId, TenantStatus.Active, ownerId: null);
+        var superAdmin = new AppUser { Id = _superAdminId, UserName = "superadmin", Email = "sa@test.com" };
+
+        _tenantRepoMock.Setup(r => r.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _userRepoMock.Setup(r => r.GetByIdAsync(_superAdminId, It.IsAny<CancellationToken>())).ReturnsAsync(superAdmin);
+        _jwtTokenServiceMock
+            .Setup(j => j.GenerateImpersonationToken(superAdmin, tenantId, It.IsAny<Guid>(), It.IsAny<DateTime>()))
+            .ReturnsAsync("impersonation-jwt");
+
+        var result = await _handler.Handle(new StartImpersonationCommand(tenantId, "reason"), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _mediatorMock.Verify(
+            m => m.Publish(It.IsAny<ImpersonationStartedEvent>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

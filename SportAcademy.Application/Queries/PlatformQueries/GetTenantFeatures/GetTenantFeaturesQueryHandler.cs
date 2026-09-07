@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Common.Features;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.PlatformDtos;
 using SportAcademy.Domain.Contract;
@@ -34,7 +35,10 @@ public class GetTenantFeaturesQueryHandler : IRequestHandler<GetTenantFeaturesQu
                 Name = f.Name,
                 DisplayName = f.DisplayName,
                 Description = f.Description,
+                Category = FeatureCategories.For(f.Name),
                 IsEnabled = tf?.IsEnabled ?? false,
+                LockedBySuperAdmin = tf?.LockedBySuperAdmin ?? false,
+                EnabledBy = tf?.EnabledBy,
                 EnabledAt = tf?.EnabledAt
             };
         }).ToList();

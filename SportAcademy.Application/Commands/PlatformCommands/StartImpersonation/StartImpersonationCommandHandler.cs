@@ -1,10 +1,12 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.PlatformDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Events;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 
 namespace SportAcademy.Application.Commands.PlatformCommands.StartImpersonation;
@@ -21,6 +23,8 @@ public class StartImpersonationCommandHandler
     private readonly IUserRepository _userRepository;
     private readonly IUserContextService _userContext;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IMediator _mediator;
+    private readonly ILogger<StartImpersonationCommandHandler> _logger;
     private readonly string _operation = OperationType.Add.ToString();
 
     public StartImpersonationCommandHandler(
@@ -28,13 +32,17 @@ public class StartImpersonationCommandHandler
         IImpersonationGrantRepository grantRepository,
         IUserRepository userRepository,
         IUserContextService userContext,
-        IJwtTokenService jwtTokenService)
+        IJwtTokenService jwtTokenService,
+        IMediator mediator,
+        ILogger<StartImpersonationCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
         _grantRepository = grantRepository;
         _userRepository = userRepository;
         _userContext = userContext;
         _jwtTokenService = jwtTokenService;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     public async Task<Result<ImpersonationSessionDto>> Handle(
@@ -74,6 +82,25 @@ public class StartImpersonationCommandHandler
 
         var session = new ImpersonationSessionDto(
             accessToken, grant.Id, tenant.Id, tenant.DisplayName, grant.ExpiresAt);
+
+        // The grant is already saved and the session token already minted at this point - a
+        // failure telling the Owner about it must never block the SuperAdmin from proceeding,
+        // the same reasoning as AcceptInvitationCommandHandler's post-commit publish.
+        if (tenant.OwnerId is { } ownerId)
+        {
+            try
+            {
+                await _mediator.Publish(
+                    new ImpersonationStartedEvent(tenant.Id, ownerId, superAdminId, request.Reason, grant.ExpiresAt),
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to notify Owner {OwnerId} of impersonation grant {GrantId} for tenant {TenantId}.",
+                    ownerId, grant.Id, tenant.Id);
+            }
+        }
 
         return Result<ImpersonationSessionDto>.Success(
             session, _operation, $"Impersonation session started for '{tenant.DisplayName}'.");

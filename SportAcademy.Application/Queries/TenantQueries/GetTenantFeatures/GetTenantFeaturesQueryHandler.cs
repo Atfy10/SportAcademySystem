@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Common.Features;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Interfaces;
@@ -12,45 +13,6 @@ public class GetTenantFeaturesQueryHandler : IRequestHandler<GetTenantFeaturesQu
     private readonly ITenantRepository _tenantRepository;
     private readonly IUserContextService _userContext;
     private readonly string _operation = OperationType.Get.ToString();
-
-    private static readonly Dictionary<string, string> FeatureCategoryMap = new()
-    {
-        ["user-management"] = "Management",
-        ["role-management"] = "Management",
-        ["tenant-settings"] = "Management",
-        ["branch-management"] = "Management",
-        ["trainee-management"] = "Management",
-        ["employee-management"] = "Management",
-        ["coach-management"] = "Management",
-        ["sport-management"] = "Management",
-        ["subscription-plan"] = "Management",
-        ["pricing-management"] = "Management",
-        ["payment-processing"] = "Management",
-        ["profile-mgmt"] = "Management",
-        ["api-access"] = "Management",
-        ["backup-restore"] = "Management",
-        ["system-settings"] = "Management",
-        ["trainee-codes"] = "Management",
-        ["group-management"] = "Operations",
-        ["schedule-management"] = "Operations",
-        ["attendance-tracking"] = "Operations",
-        ["enrollment-management"] = "Operations",
-        ["family-management"] = "Operations",
-        ["nationality-categories"] = "Operations",
-        ["session-management"] = "Operations",
-        ["financial-reports"] = "Finance",
-        ["discount-offers"] = "Finance",
-        ["notifications"] = "Communication",
-        ["chat-system"] = "Communication",
-        ["trainee-reports"] = "Analytics",
-        ["coach-reports"] = "Analytics",
-        ["operational-reports"] = "Analytics",
-        ["attendance-reports"] = "Analytics",
-        ["video-analysis"] = "Analytics",
-        ["health-test-mgmt"] = "Analytics",
-        ["ai-assistant"] = "Analytics",
-        ["audit-trail"] = "Security",
-    };
 
     public GetTenantFeaturesQueryHandler(ITenantRepository tenantRepository, IUserContextService userContext)
     {
@@ -85,7 +47,7 @@ public class GetTenantFeaturesQueryHandler : IRequestHandler<GetTenantFeaturesQu
                 Name = f.Name,
                 DisplayName = f.DisplayName,
                 Description = f.Description,
-                Category = FeatureCategoryMap.GetValueOrDefault(f.Name, "Management"),
+                Category = FeatureCategories.For(f.Name),
                 IsEnabled = tf?.IsEnabled ?? false,
                 CanToggle = allowedFeatureIds.Contains(f.Id) && !(tf?.LockedBySuperAdmin ?? false),
                 LockedBySuperAdmin = tf?.LockedBySuperAdmin ?? false,
