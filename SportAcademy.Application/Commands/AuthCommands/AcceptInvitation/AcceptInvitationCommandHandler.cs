@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Interfaces;
@@ -25,6 +26,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
     private readonly IUserBranchAccessRepository _userBranchAccessRepository;
     private readonly IProfileRepository _profileRepository;
     private readonly IMediator _mediator;
+    private readonly ILogger<AcceptInvitationCommandHandler> _logger;
     private const string Operation = "Accept";
     private const int RefreshTokenExpiryDays = 7;
 
@@ -39,7 +41,8 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         IUserPermissionOverrideRepository userPermissionOverrideRepository,
         IUserBranchAccessRepository userBranchAccessRepository,
         IProfileRepository profileRepository,
-        IMediator mediator)
+        IMediator mediator,
+        ILogger<AcceptInvitationCommandHandler> logger)
     {
         _tokenService = tokenService;
         _invitationRepository = invitationRepository;
@@ -52,6 +55,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         _userBranchAccessRepository = userBranchAccessRepository;
         _profileRepository = profileRepository;
         _mediator = mediator;
+        _logger = logger;
     }
 
     public async Task<Result<AuthResponseDto>> Handle(AcceptInvitationCommand request, CancellationToken ct)
@@ -192,11 +196,24 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         var accessToken = await _jwtTokenService.GenerateJwtToken(user, role);
 
         // Deliberately outside the try/catch above: the transaction is already committed by this
-        // point, so a failure in a subscriber (e.g. InvitationAcceptedHandler) must never be
-        // treated as "the transaction needs rolling back" - RollbackTransactionAsync would just
-        // throw its own "no active transaction" error and bury whatever the subscriber actually
-        // failed on.
-        await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id, invitation.InvitedByUserId), ct);
+        // point (the new Owner/staff user exists and, for an Owner, the tenant is already
+        // Active), so nothing from here on may turn a successful acceptance into a reported
+        // failure. RollbackTransactionAsync would find no active transaction and throw its own
+        // error on top, and even without that, a failure in a subscriber (e.g.
+        // InvitationAcceptedHandler's best-effort "notify the inviter") is not a reason to tell
+        // the newly-created user their onboarding failed when their account and tenant
+        // activation are already durably saved. Logged and swallowed, never rethrown.
+        try
+        {
+            await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id, invitation.InvitedByUserId), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "InvitationAcceptedEvent subscriber failed for Invitation {InvitationId} / User {UserId} - " +
+                "acceptance itself already committed successfully.",
+                invitation.Id, user.Id);
+        }
 
         return Result<AuthResponseDto>.Success(
             new AuthResponseDto(accessToken, plainRefreshToken), Operation);

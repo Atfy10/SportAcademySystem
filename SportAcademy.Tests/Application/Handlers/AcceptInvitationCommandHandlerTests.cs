@@ -1,6 +1,7 @@
 using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Moq;
 using SportAcademy.Application.Commands.AuthCommands.AcceptInvitation;
 using SportAcademy.Application.Common.Result;
@@ -45,7 +46,8 @@ public class AcceptInvitationCommandHandlerTests
             _userPermissionOverrideRepoMock.Object,
             _userBranchAccessRepoMock.Object,
             _profileRepoMock.Object,
-            _mediatorMock.Object);
+            _mediatorMock.Object,
+            Mock.Of<ILogger<AcceptInvitationCommandHandler>>());
     }
 
     private static Invitation CreatePendingInvitation(Guid tenantId, string email = "owner@test.com")
@@ -247,5 +249,53 @@ public class AcceptInvitationCommandHandlerTests
 
         result.IsSuccess.Should().BeFalse();
         _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_SubscriberThrowsAfterCommit_StillReturnsSuccessAndNeverRollsBack()
+    {
+        // The account and (for an Owner) tenant activation are already durably committed by the
+        // time InvitationAcceptedEvent is published - a failure in a subscriber (e.g. the
+        // "notify the inviter" side effect) must never be reported back as "onboarding failed"
+        // when the tenant is actually already Active, nor attempt a rollback of a transaction
+        // that no longer exists.
+        var tenantId = Guid.NewGuid();
+        var invitation = CreatePendingInvitation(tenantId);
+        var tenant = CreateTenant(tenantId);
+        var command = CreateValidCommand();
+
+        _tokenServiceMock.Setup(s => s.HashToken("raw-token")).Returns("hashed-token");
+        _invitationRepoMock
+            .Setup(r => r.FindByTokenHashAsync("hashed-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invitation);
+        _tenantRepoMock.Setup(r => r.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _unitOfWorkMock.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _userManagerMock
+            .Setup(um => um.CreateAsync(It.IsAny<AppUser>(), command.Password))
+            .ReturnsAsync(IdentityResult.Success);
+        _userManagerMock
+            .Setup(um => um.AddToRoleAsync(It.IsAny<AppUser>(), "Owner"))
+            .ReturnsAsync(IdentityResult.Success);
+        _jwtTokenServiceMock.Setup(j => j.GenerateRefreshToken()).Returns("plain-refresh-token");
+        _jwtTokenServiceMock.Setup(j => j.HashToken("plain-refresh-token")).Returns("hashed-refresh-token");
+        _jwtTokenServiceMock
+            .Setup(j => j.GenerateJwtToken(It.IsAny<AppUser>(), "Owner"))
+            .ReturnsAsync("jwt-access-token");
+        _refreshTokenRepoMock
+            .Setup(r => r.AddAsync(It.IsAny<RefreshTokenEntity>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _profileRepoMock
+            .Setup(r => r.AddAsyncWithoutSave(It.IsAny<Profile>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Profile p, CancellationToken _) => p);
+        _mediatorMock
+            .Setup(m => m.Publish(It.IsAny<SportAcademy.Domain.Events.InvitationAcceptedEvent>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("subscriber blew up"));
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Data!.AccessToken.Should().Be("jwt-access-token");
+        tenant.Status.Should().Be(TenantStatus.Active);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }
