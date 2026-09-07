@@ -12,16 +12,19 @@ public class UpdateTenantProfileCommandHandler : IRequestHandler<UpdateTenantPro
     private readonly ITenantRepository _tenantRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserContextService _userContext;
+    private readonly IFileStorageService _fileStorage;
     private readonly string _operation = OperationType.Update.ToString();
 
     public UpdateTenantProfileCommandHandler(
         ITenantRepository tenantRepository,
         IUnitOfWork unitOfWork,
-        IUserContextService userContext)
+        IUserContextService userContext,
+        IFileStorageService fileStorage)
     {
         _tenantRepository = tenantRepository;
         _unitOfWork = unitOfWork;
         _userContext = userContext;
+        _fileStorage = fileStorage;
     }
 
     public async Task<Result> Handle(UpdateTenantProfileCommand request, CancellationToken ct)
@@ -35,7 +38,16 @@ public class UpdateTenantProfileCommandHandler : IRequestHandler<UpdateTenantPro
             return Result.Failure(_operation, "Profile not found.", 404);
 
         if (request.OrganizationName is not null) profile.OrganizationName = request.OrganizationName;
-        if (request.LogoUrl is not null) profile.LogoUrl = request.LogoUrl;
+
+        // Old file cleaned up the same way UpdateMyProfileCommandHandler already does for an
+        // avatar - without this, every re-upload (a tenant replacing their logo) leaves the
+        // previous file behind on disk forever, since nothing else ever references it again.
+        if (request.LogoUrl is not null && request.LogoUrl != profile.LogoUrl)
+        {
+            _fileStorage.DeleteImage(profile.LogoUrl);
+            profile.LogoUrl = request.LogoUrl;
+        }
+
         if (request.Email is not null) profile.Email = request.Email;
         if (request.Phone is not null) profile.Phone = request.Phone;
         if (request.Website is not null) profile.Website = request.Website;
