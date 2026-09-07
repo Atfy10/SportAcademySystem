@@ -29,7 +29,7 @@ namespace SportAcademy.Infrastructure.Seeders
 
         private const string SuperAdminUserName = "abdulrahman";
         private const string SuperAdminEmail = "abdulrahmanalatfy@auraacademys.com";
-        private const string SystemTenantPhone = "+201096042061";
+        private const string SuperAdminPhoneNumber = "+201096042061";
 
         private static readonly string[] KuwaitiAreas =
         [
@@ -216,34 +216,6 @@ namespace SportAcademy.Infrastructure.Seeders
                 await _context.SaveChangesAsync();
             }
 
-            // Every tenant's own Settings page reads its contact info from here (Owner-facing
-            // Settings and the SuperAdmin's Platform view are both expected to show the same,
-            // complete contact details for a tenant - see TenantProfile) - the System
-            // tenant/SuperAdmin's own account is no exception, and it had no such row at all
-            // before this. Backfilled unconditionally on every restart (not just the
-            // just-created branch above) so an already-bootstrapped instance from before this
-            // existed still gets it, same reasoning as the OwnerId reconciliation above.
-            var systemProfile = await _context.TenantProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.TenantId == systemTenant.Id);
-            if (systemProfile is null)
-            {
-                _context.TenantProfiles.Add(new TenantProfile
-                {
-                    TenantId = systemTenant.Id,
-                    OrganizationName = systemTenant.DisplayName,
-                    Email = systemTenant.Email,
-                    Phone = SystemTenantPhone,
-                    IsSetupComplete = true,
-                });
-                await _context.SaveChangesAsync();
-            }
-            else if (string.IsNullOrWhiteSpace(systemProfile.Phone))
-            {
-                systemProfile.Phone = SystemTenantPhone;
-                await _context.SaveChangesAsync();
-            }
-
             // Must happen before the very next line, not after: AppUser is ITenantScoped, so
             // FindByEmailAsync is filtered by whatever the ambient tenant currently is. Checking
             // before this point (the previous version of this method did) filters on
@@ -264,6 +236,17 @@ namespace SportAcademy.Infrastructure.Seeders
                 if (systemTenant.OwnerId is null)
                 {
                     systemTenant.OwnerId = existingUser.Id;
+                    await _context.SaveChangesAsync();
+                }
+                // AppUser.PhoneNumber (from ASP.NET Identity, not a TenantProfile) is the
+                // SuperAdmin's own account-level contact info, same field My Profile reads/writes
+                // for any Owner/Admin/Accountant with no linked Employee/Trainee record - see
+                // UpdateMyProfileCommand's own comment. Backfilled here for an already-bootstrapped
+                // instance from before this existed, same reasoning as the OwnerId reconciliation
+                // just above.
+                if (string.IsNullOrWhiteSpace(existingUser.PhoneNumber))
+                {
+                    existingUser.PhoneNumber = SuperAdminPhoneNumber;
                     await _context.SaveChangesAsync();
                 }
                 return;
@@ -299,6 +282,7 @@ namespace SportAcademy.Infrastructure.Seeders
                 Id = Guid.NewGuid(),
                 UserName = SuperAdminUserName,
                 Email = SuperAdminEmail,
+                PhoneNumber = SuperAdminPhoneNumber,
                 TenantId = systemTenant.Id,
                 IsPasswordReset = false,
                 IsBanned = false,
