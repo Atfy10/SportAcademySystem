@@ -90,12 +90,15 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
         var role = isStaffOnboarding ? invitation.Role! : "Owner";
 
+        AppUser user;
+        string plainRefreshToken;
+
         await _unitOfWork.BeginTransactionAsync(ct);
         try
         {
             var username = invitation.Email.Split('@')[0];
 
-            var user = new AppUser
+            user = new AppUser
             {
                 UserName = username,
                 Email = invitation.Email,
@@ -165,7 +168,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
             invitation.Accept();
 
-            var plainRefreshToken = _jwtTokenService.GenerateRefreshToken();
+            plainRefreshToken = _jwtTokenService.GenerateRefreshToken();
             var refreshTokenHash = _jwtTokenService.HashToken(plainRefreshToken);
 
             var refreshTokenEntity = new RefreshTokenEntity
@@ -179,18 +182,23 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
             await _refreshTokenRepository.AddAsync(refreshTokenEntity, ct);
             await _unitOfWork.CommitTransactionAsync(ct);
-
-            var accessToken = await _jwtTokenService.GenerateJwtToken(user, role);
-
-            await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id, invitation.InvitedByUserId), ct);
-
-            return Result<AuthResponseDto>.Success(
-                new AuthResponseDto(accessToken, plainRefreshToken), Operation);
         }
         catch
         {
             await _unitOfWork.RollbackTransactionAsync(ct);
             throw;
         }
+
+        var accessToken = await _jwtTokenService.GenerateJwtToken(user, role);
+
+        // Deliberately outside the try/catch above: the transaction is already committed by this
+        // point, so a failure in a subscriber (e.g. InvitationAcceptedHandler) must never be
+        // treated as "the transaction needs rolling back" - RollbackTransactionAsync would just
+        // throw its own "no active transaction" error and bury whatever the subscriber actually
+        // failed on.
+        await _mediator.Publish(new InvitationAcceptedEvent(invitation.Id, user.Id, invitation.InvitedByUserId), ct);
+
+        return Result<AuthResponseDto>.Success(
+            new AuthResponseDto(accessToken, plainRefreshToken), Operation);
     }
 }

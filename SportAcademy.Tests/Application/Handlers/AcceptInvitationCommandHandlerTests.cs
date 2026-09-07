@@ -139,6 +139,13 @@ public class AcceptInvitationCommandHandlerTests
 
         _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
+
+        // Published after the commit, not from inside the try/catch - a failure in a subscriber
+        // must never be mistaken for a mid-transaction failure (see UnitOfWork's rollback guard).
+        _mediatorMock.Verify(
+            m => m.Publish(It.IsAny<SportAcademy.Domain.Events.InvitationAcceptedEvent>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
