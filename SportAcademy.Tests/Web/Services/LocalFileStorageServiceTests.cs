@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SportAcademy.Domain.Contract;
@@ -8,35 +9,49 @@ using SportAcademy.Web.Services;
 
 namespace SportAcademy.Tests.Web.Services;
 
-// Exercises the real filesystem under a throwaway temp directory standing in for wwwroot -
-// SaveImageAsync/DeleteImage's whole job is disk I/O, so a mock filesystem would just be
-// re-asserting the implementation rather than verifying it actually works.
+// Exercises the real filesystem under a throwaway temp directory standing in for the resolved
+// uploads root - SaveImageAsync/DeleteImage's whole job is disk I/O, so a mock filesystem would
+// just be re-asserting the implementation rather than verifying it actually works.
 public class LocalFileStorageServiceTests : IDisposable
 {
-    private readonly string _webRoot;
+    // Stands in for UploadsPathResolver's resolved root directly (e.g. Storage:UploadsPath in
+    // production) - it already IS the uploads directory, not its parent, so disk paths below
+    // never include an "uploads" segment even though every returned URL does.
+    private readonly string _uploadsRoot;
     private static readonly Guid TenantId = Guid.NewGuid();
     private readonly LocalFileStorageService _service;
 
     public LocalFileStorageServiceTests()
     {
-        _webRoot = Path.Combine(Path.GetTempPath(), "sport-academy-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_webRoot);
+        _uploadsRoot = Path.Combine(Path.GetTempPath(), "sport-academy-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_uploadsRoot);
 
         var envMock = new Mock<IWebHostEnvironment>();
-        envMock.Setup(e => e.WebRootPath).Returns(_webRoot);
-        envMock.Setup(e => e.ContentRootPath).Returns(_webRoot);
+        envMock.Setup(e => e.ContentRootPath).Returns(_uploadsRoot);
+
+        var configMock = new Mock<IConfiguration>();
+        configMock.Setup(c => c["Storage:UploadsPath"]).Returns(_uploadsRoot);
 
         var tenantIdProviderMock = new Mock<ITenantIdProvider>();
         tenantIdProviderMock.Setup(p => p.TenantId).Returns(TenantId);
 
         _service = new LocalFileStorageService(
-            envMock.Object, tenantIdProviderMock.Object, Mock.Of<ILogger<LocalFileStorageService>>());
+            envMock.Object, configMock.Object, tenantIdProviderMock.Object, Mock.Of<ILogger<LocalFileStorageService>>());
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(_webRoot))
-            Directory.Delete(_webRoot, recursive: true);
+        if (Directory.Exists(_uploadsRoot))
+            Directory.Delete(_uploadsRoot, recursive: true);
+    }
+
+    // Mirrors DeleteImage's own segment-dropping logic: the URL always carries a leading
+    // "/uploads/" segment that has no corresponding folder on disk, since _uploadsRoot already
+    // points at that directory.
+    private string ToDiskPath(string url)
+    {
+        var segments = url.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries).Skip(1);
+        return Path.Combine([_uploadsRoot, .. segments]);
     }
 
     [Fact]
@@ -47,7 +62,7 @@ public class LocalFileStorageServiceTests : IDisposable
         var url = await _service.SaveImageAsync(content, "photo.jpg", ImageUploadCategory.Avatar);
 
         url.Should().MatchRegex($@"^/uploads/{TenantId:N}/avatars/[0-9a-f]{{32}}\.jpg$");
-        var diskPath = Path.Combine(_webRoot, url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        var diskPath = ToDiskPath(url);
         File.Exists(diskPath).Should().BeTrue();
         (await File.ReadAllBytesAsync(diskPath)).Should().Equal([1, 2, 3, 4]);
     }
@@ -97,7 +112,7 @@ public class LocalFileStorageServiceTests : IDisposable
     {
         using var content = new MemoryStream([1]);
         var url = await _service.SaveImageAsync(content, "photo.png", ImageUploadCategory.Avatar);
-        var diskPath = Path.Combine(_webRoot, url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        var diskPath = ToDiskPath(url);
         File.Exists(diskPath).Should().BeTrue();
 
         _service.DeleteImage(url);

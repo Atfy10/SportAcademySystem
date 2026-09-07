@@ -6,10 +6,11 @@ namespace SportAcademy.Web.Services;
 
 // Local-disk implementation for a single-instance deployment (no shared/distributed file store
 // configured anywhere in this app - see appsettings.json). Everything lives under
-// wwwroot/uploads/{tenantId:N}/{category folder}, served back out by UseStaticFiles() in
-// Program.cs - TenantFileAccessGuardMiddleware (registered just before it) reads that tenant id
-// segment to 403 a suspended/archived tenant's files, the same way every other tenant-scoped
-// request is already gated.
+// {UploadsPathResolver root}/{tenantId:N}/{category folder}, served back out by UseStaticFiles()
+// in Program.cs (mounted at that same resolved root) - TenantFileAccessGuardMiddleware
+// (registered just before it) reads the tenant id segment out of the URL to 403 a
+// suspended/archived tenant's files, the same way every other tenant-scoped request is already
+// gated.
 public class LocalFileStorageService : IFileStorageService
 {
     private static readonly Dictionary<ImageUploadCategory, string> CategoryFolders = new()
@@ -22,13 +23,18 @@ public class LocalFileStorageService : IFileStorageService
     private const string UploadsUrlPrefix = "/uploads";
 
     private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _configuration;
     private readonly ITenantIdProvider _tenantIdProvider;
     private readonly ILogger<LocalFileStorageService> _logger;
 
     public LocalFileStorageService(
-        IWebHostEnvironment env, ITenantIdProvider tenantIdProvider, ILogger<LocalFileStorageService> logger)
+        IWebHostEnvironment env,
+        IConfiguration configuration,
+        ITenantIdProvider tenantIdProvider,
+        ILogger<LocalFileStorageService> logger)
     {
         _env = env;
+        _configuration = configuration;
         _tenantIdProvider = tenantIdProvider;
         _logger = logger;
     }
@@ -41,12 +47,8 @@ public class LocalFileStorageService : IFileStorageService
         var folder = CategoryFolders[category];
         var tenantSegment = tenantId.ToString("N");
 
-        // WebRootPath can be null if wwwroot doesn't exist on disk yet (a fresh checkout/deploy
-        // never creates it - there was nothing to put there before this feature). Fall back to
-        // ContentRootPath/wwwroot and create it, rather than throwing on every app's first ever
-        // upload.
-        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-        var targetDir = Path.Combine(webRoot, "uploads", tenantSegment, folder);
+        var uploadsRoot = UploadsPathResolver.Resolve(_configuration, _env);
+        var targetDir = Path.Combine(uploadsRoot, tenantSegment, folder);
         Directory.CreateDirectory(targetDir);
 
         // Never trust the caller's filename beyond its extension - it becomes part of a
@@ -75,16 +77,20 @@ public class LocalFileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(relativeUrl) || !relativeUrl.StartsWith(UploadsUrlPrefix, StringComparison.OrdinalIgnoreCase))
             return;
 
-        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
-        var relativeSegments = relativeUrl.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var fullPath = Path.Combine([webRoot, .. relativeSegments]);
+        var uploadsRoot = UploadsPathResolver.Resolve(_configuration, _env);
+
+        // relativeSegments[0] is always "uploads" (guaranteed by the StartsWith check above) -
+        // dropped here since uploadsRoot already points at the uploads directory itself, not its
+        // parent.
+        var relativeSegments = relativeUrl.TrimStart('/').Split('/', StringSplitOptions.RemoveEmptyEntries).Skip(1);
+        var fullPath = Path.Combine([uploadsRoot, .. relativeSegments]);
 
         // Path.Combine can't be tricked by ".." segments arriving through relativeUrl into
         // escaping the uploads folder (they'd need to survive GetFullPath's normalization below
-        // pointed back inside webRoot), but the resolved path is verified to still be under
-        // webRoot before any delete happens, as a second, independent guard.
+        // pointed back inside uploadsRoot), but the resolved path is verified to still be under
+        // uploadsRoot before any delete happens, as a second, independent guard.
         var normalizedFullPath = Path.GetFullPath(fullPath);
-        var normalizedWebRoot = Path.GetFullPath(webRoot);
+        var normalizedWebRoot = Path.GetFullPath(uploadsRoot);
         if (!normalizedFullPath.StartsWith(normalizedWebRoot, StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Refused to delete a path outside the web root: {RelativeUrl}", relativeUrl);

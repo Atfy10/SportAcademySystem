@@ -414,12 +414,23 @@ app.UseHttpsRedirection();
 // the request - see the middleware's own comment for why this doesn't need general auth.
 app.UseMiddleware<TenantFileAccessGuardMiddleware>();
 
-// Serves uploaded images back out of wwwroot/uploads (LocalFileStorageService's write side) -
-// plain disk-backed UseStaticFiles(), not MapStaticAssets(), since that one only serves assets
-// baked in at build time and would never see a file an upload wrote at runtime. No auth: an
-// avatar/logo/photo URL is meant to be publicly viewable wherever the app renders it, the same
-// as any other CDN-hosted image would be.
-app.UseStaticFiles();
+// Serves uploaded images back out of the same directory LocalFileStorageService writes to
+// (UploadsPathResolver - the docker-compose volume mount in production, wwwroot/uploads
+// locally) - plain disk-backed UseStaticFiles(), not MapStaticAssets(), since that one only
+// serves assets baked in at build time and would never see a file an upload wrote at runtime.
+// Explicitly pointed at that physical directory (rather than the parameterless overload, which
+// defaults to IWebHostEnvironment.WebRootPath) because wwwroot doesn't exist on disk in
+// production at all - the parameterless overload would silently serve nothing. Scoped to
+// RequestPath "/uploads" rather than "/" so nothing else under that directory is ever exposed
+// at an unexpected URL. No auth: an avatar/logo/photo URL is meant to be publicly viewable
+// wherever the app renders it, the same as any other CDN-hosted image would be.
+var uploadsRoot = UploadsPathResolver.Resolve(app.Configuration, app.Environment);
+Directory.CreateDirectory(uploadsRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsRoot),
+    RequestPath = "/uploads",
+});
 
 app.UseCors("AllowFrontend");
 
