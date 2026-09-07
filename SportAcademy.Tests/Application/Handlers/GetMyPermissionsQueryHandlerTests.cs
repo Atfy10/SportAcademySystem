@@ -49,7 +49,11 @@ public class GetMyPermissionsQueryHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         result.Data!.IsActive.Should().BeTrue();
-        result.Data.TenantStatus.Should().Be(TenantStatus.Active);
+        // A plain string, deliberately PascalCase (TenantStatus.Active.ToString()) rather than
+        // the enum itself - see MyPermissionsDto's own comment for why: the global
+        // JsonStringEnumConverter would otherwise camelCase a native enum property on the wire,
+        // and every tenant-status consumer in the frontend compares against the PascalCase name.
+        result.Data.TenantStatus.Should().Be(nameof(TenantStatus.Active));
     }
 
     [Fact]
@@ -86,6 +90,6 @@ public class GetMyPermissionsQueryHandlerTests
 
         var result = await _handler.Handle(new GetMyPermissionsQuery(), CancellationToken.None);
 
-        result.Data!.TenantStatus.Should().Be(status);
+        result.Data!.TenantStatus.Should().Be(status.ToString());
     }
 }

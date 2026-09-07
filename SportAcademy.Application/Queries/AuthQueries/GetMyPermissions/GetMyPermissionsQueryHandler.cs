@@ -45,7 +45,7 @@ public class GetMyPermissionsQueryHandler : IRequestHandler<GetMyPermissionsQuer
         var tenantStatus = await _tenantStatusCache.GetStatusAsync(tenantId, ct) ?? TenantStatus.Archived;
 
         return Result<MyPermissionsDto>.Success(
-            new MyPermissionsDto(roles.ToList(), permissions.ToList(), !user.IsBanned, tenantStatus),
+            new MyPermissionsDto(roles.ToList(), permissions.ToList(), !user.IsBanned, tenantStatus.ToString()),
             _operation);
     }
 }
