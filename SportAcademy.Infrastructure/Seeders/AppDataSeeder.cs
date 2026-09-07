@@ -180,48 +180,20 @@ namespace SportAcademy.Infrastructure.Seeders
             }
         }
 
-        // Idempotent: skips entirely once a user with SuperAdminEmail already exists. Creates the
-        // tenant row FIRST with a null OwnerId, then the user, then patches OwnerId - this
-        // ordering (rather than creating both users this method's caller used to seed up front
-        // and only wiring the FK afterward) means neither side of the Tenant<->AppUser circular
-        // reference is ever inserted pointing at a row that doesn't exist yet, so no FK
+        // Idempotent and safe to retry from any partial-failure point - see the two guards below.
+        // Creates the tenant row FIRST with a null OwnerId, then the user, then patches OwnerId -
+        // this ordering (rather than creating both users this method's caller used to seed up
+        // front and only wiring the FK afterward) means neither side of the Tenant<->AppUser
+        // circular reference is ever inserted pointing at a row that doesn't exist yet, so no FK
         // enable/disable dance is needed (Tenant.OwnerId is nullable for exactly this reason -
         // CreateTenantCommandHandler leaves it null until invite-acceptance sets it too).
         private async Task EnsureSystemTenantAndSuperAdminAsync()
         {
-            var existing = await _userManager.FindByEmailAsync(SuperAdminEmail);
-            if (existing is not null)
-                return;
-
-            _logger.LogInformation("Bootstrapping System tenant and SuperAdmin account...");
-
-            // Same fail-fast shape as Program.cs's Cors:AllowedOrigins check: required in
-            // Production (no safe default exists for a real deployment's admin password), but
-            // falls back to the existing dev-only default elsewhere so local development isn't
-            // broken by this requirement.
-            var password = _configuration["SuperAdmin:Password"];
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                if (IsProductionEnvironment())
-                {
-                    throw new InvalidOperationException(
-                        "SuperAdmin:Password is not configured. Set it via the SuperAdmin__Password " +
-                        "environment variable before starting the app - the SuperAdmin account " +
-                        "cannot be bootstrapped without it.");
-                }
-
-                _logger.LogWarning(
-                    "SuperAdmin:Password is not configured - using the default development " +
-                    "password. This is only acceptable outside Production.");
-                password = DefaultPassword;
-            }
-
             // Looked up by Code, not created unconditionally: if a prior attempt got this far
-            // and committed the tenant but then failed to create the SuperAdmin user below (e.g.
-            // SuperAdmin:Password didn't satisfy Identity's password policy), a naive
-            // "always insert a new Tenant" here would crash every subsequent restart on
-            // IX_Tenants_Code's uniqueness instead of ever recovering. Reusing the existing row
-            // makes this method safe to retry from any partial failure point.
+            // and committed the tenant but then failed on a later step (e.g. SuperAdmin:Password
+            // didn't satisfy Identity's password policy), a naive "always insert a new Tenant"
+            // here would crash every subsequent restart on IX_Tenants_Code's uniqueness instead
+            // of ever recovering. Reusing the existing row makes this method safe to retry.
             var systemTenant = await _context.Tenants.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(t => t.Code == Tenant.SystemTenantCode);
 
@@ -243,7 +215,55 @@ namespace SportAcademy.Infrastructure.Seeders
                 await _context.SaveChangesAsync();
             }
 
+            // Must happen before the very next line, not after: AppUser is ITenantScoped, so
+            // FindByEmailAsync is filtered by whatever the ambient tenant currently is. Checking
+            // before this point (the previous version of this method did) filters on
+            // TenantId == null - which no real user ever has - so it always reports "no existing
+            // SuperAdmin" regardless of what's actually in the database. That's exactly what let
+            // a prior failed attempt's already-created user go undetected here and crash with
+            // "That username is already taken" inside CreateAsync below instead.
             _tenantIdProvider.SetTenantId(systemTenant.Id);
+
+            var existingUser = await _userManager.FindByEmailAsync(SuperAdminEmail);
+            if (existingUser is not null)
+            {
+                // Reconcile rather than assume a fully-finished prior run - a previous attempt
+                // may have created the user but failed on the role assignment or the OwnerId
+                // patch below.
+                if (!await _userManager.IsInRoleAsync(existingUser, "SuperAdmin"))
+                    await _userManager.AddToRoleAsync(existingUser, "SuperAdmin");
+                if (systemTenant.OwnerId is null)
+                {
+                    systemTenant.OwnerId = existingUser.Id;
+                    await _context.SaveChangesAsync();
+                }
+                return;
+            }
+
+            _logger.LogInformation("Bootstrapping SuperAdmin account...");
+
+            // Same fail-fast shape as Program.cs's Cors:AllowedOrigins check: required in
+            // Production (no safe default exists for a real deployment's admin password), but
+            // falls back to the existing dev-only default elsewhere so local development isn't
+            // broken by this requirement. Deliberately checked only once we know a SuperAdmin
+            // actually needs creating - an already-bootstrapped instance should never demand this
+            // on every subsequent restart.
+            var password = _configuration["SuperAdmin:Password"];
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                if (IsProductionEnvironment())
+                {
+                    throw new InvalidOperationException(
+                        "SuperAdmin:Password is not configured. Set it via the SuperAdmin__Password " +
+                        "environment variable before starting the app - the SuperAdmin account " +
+                        "cannot be bootstrapped without it.");
+                }
+
+                _logger.LogWarning(
+                    "SuperAdmin:Password is not configured - using the default development " +
+                    "password. This is only acceptable outside Production.");
+                password = DefaultPassword;
+            }
 
             var superAdmin = new AppUser
             {
