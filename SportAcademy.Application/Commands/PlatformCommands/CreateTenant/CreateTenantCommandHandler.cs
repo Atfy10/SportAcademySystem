@@ -95,6 +95,10 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
         await _tenantRepository.AddAsync(tenant, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
+        // PlatformAuditBehavior reads this back once Handle() returns - the tenant doesn't
+        // exist (and so has no id to attribute an audit event to) until this line runs.
+        request.ResolvedTenantId = tenant.Id;
+
         await _mediator.Publish(
             new TenantCreatedEvent(tenant.Id, tenant.Slug, request.OwnerEmail, request.OwnerName), ct);
 

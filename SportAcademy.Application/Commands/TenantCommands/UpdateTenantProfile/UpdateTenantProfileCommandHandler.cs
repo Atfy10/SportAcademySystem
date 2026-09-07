@@ -44,6 +44,11 @@ public class UpdateTenantProfileCommandHandler : IRequestHandler<UpdateTenantPro
         if (request.CommercialRegistration is not null) profile.CommercialRegistration = request.CommercialRegistration;
         if (request.Description is not null) profile.Description = request.Description;
 
+        // One-way: only the onboarding wizard's own submit sets this, and nothing ever clears
+        // it back to false again once a tenant has completed setup.
+        if (request.MarkSetupComplete)
+            profile.IsSetupComplete = true;
+
         _tenantRepository.UpdateProfile(profile);
         await _unitOfWork.SaveChangesAsync(ct);
 

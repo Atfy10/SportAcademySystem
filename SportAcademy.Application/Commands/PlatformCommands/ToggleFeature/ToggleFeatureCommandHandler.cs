@@ -33,6 +33,8 @@ public class ToggleFeatureCommandHandler : IRequestHandler<ToggleFeatureCommand,
             if (tenantFeature.IsEnabled == request.IsEnabled && tenantFeature.LockedBySuperAdmin)
                 return Result.Failure(_operation, $"Feature is already {(request.IsEnabled ? "enabled" : "disabled")}.", 400);
 
+            request.ResolvedBeforeState = new { tenantFeature.IsEnabled, tenantFeature.LockedBySuperAdmin };
+
             tenantFeature.IsEnabled = request.IsEnabled;
             tenantFeature.EnabledAt = DateTime.UtcNow;
             tenantFeature.EnabledBy = "SuperAdmin";

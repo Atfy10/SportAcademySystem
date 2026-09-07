@@ -39,7 +39,8 @@ public class GetTenantProfileQueryHandler : IRequestHandler<GetTenantProfileQuer
             Address = profile.Address,
             TaxNumber = profile.TaxNumber,
             CommercialRegistration = profile.CommercialRegistration,
-            Description = profile.Description
+            Description = profile.Description,
+            IsSetupComplete = profile.IsSetupComplete
         };
 
         return Result<TenantProfileDto>.Success(dto, _operation);

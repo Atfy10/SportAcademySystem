@@ -13,16 +13,19 @@ public class ActivateTenantCommandHandler : IRequestHandler<ActivateTenantComman
     private readonly IBaseRepository<Tenant, Guid> _tenantRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediator _mediator;
+    private readonly ITenantStatusCacheInvalidator _tenantStatusCache;
     private readonly string _operation = OperationType.Update.ToString();
 
     public ActivateTenantCommandHandler(
         IBaseRepository<Tenant, Guid> tenantRepository,
         IUnitOfWork unitOfWork,
-        IMediator mediator)
+        IMediator mediator,
+        ITenantStatusCacheInvalidator tenantStatusCache)
     {
         _tenantRepository = tenantRepository;
         _unitOfWork = unitOfWork;
         _mediator = mediator;
+        _tenantStatusCache = tenantStatusCache;
     }
 
     public async Task<Result> Handle(ActivateTenantCommand request, CancellationToken ct)
@@ -36,6 +39,8 @@ public class ActivateTenantCommandHandler : IRequestHandler<ActivateTenantComman
 
         tenant.Status = TenantStatus.Active;
         await _unitOfWork.SaveChangesAsync(ct);
+
+        _tenantStatusCache.Invalidate(tenant.Id);
 
         await _mediator.Publish(new TenantActivatedEvent(tenant.Id), ct);
 

@@ -33,7 +33,8 @@ namespace SportAcademy.Application.Mappings.Manual
             string.Empty,
             employee.Email.Value,
             employee.IsWork,
-            employee.AppUserId ?? Guid.Empty
+            employee.AppUserId ?? Guid.Empty,
+            employee.ImageUrl
         );
 
         public static void ApplyUpdate(Employee employee, UpdateEmployeeCommand cmd)
@@ -45,6 +46,7 @@ namespace SportAcademy.Application.Mappings.Manual
             if (cmd.SecondPhoneNumber != null) employee.SecondPhoneNumber = cmd.SecondPhoneNumber;
             if (cmd.Position.HasValue) employee.Position = cmd.Position.Value;
             if (cmd.BranchId.HasValue) employee.BranchId = cmd.BranchId.Value;
+            if (cmd.ImageUrl != null) employee.ImageUrl = cmd.ImageUrl;
 
             if (cmd.Street != null || cmd.City != null)
             {

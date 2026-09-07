@@ -22,5 +22,6 @@ namespace SportAcademy.Application.DTOs.TraineeDtos
         public int BranchId { get; init; }
         public HashSet<SportDto> Sports { get; init; } = [];
         public List<EnrollmentDto> Enrollments { get; init; } = [];
+        public string? ImageUrl { get; init; }
     }
 }

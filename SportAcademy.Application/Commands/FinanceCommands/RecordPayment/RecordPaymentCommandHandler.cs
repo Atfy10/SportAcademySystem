@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.FinanceCommands.RecordPayment;
@@ -12,23 +13,31 @@ public class RecordPaymentCommandHandler : IRequestHandler<RecordPaymentCommand,
     private readonly IUserContextService _userContext;
     private readonly IUserRepository _userRepository;
     private readonly IPublisher _publisher;
+    private readonly ITenantSettingsCurrencyReader _currencyReader;
     private readonly string _operation = OperationType.Add.ToString();
 
     public RecordPaymentCommandHandler(
         IFinanceLedgerService financeLedgerService,
         IUserContextService userContext,
         IUserRepository userRepository,
-        IPublisher publisher)
+        IPublisher publisher,
+        ITenantSettingsCurrencyReader currencyReader)
     {
         _financeLedgerService = financeLedgerService;
         _userContext = userContext;
         _userRepository = userRepository;
         _publisher = publisher;
+        _currencyReader = currencyReader;
     }
 
     public async Task<Result<string>> Handle(RecordPaymentCommand request, CancellationToken ct)
     {
-        var currency = string.IsNullOrWhiteSpace(request.Currency) ? "KWD" : request.Currency;
+        // Falls back to the tenant's configured currency (not a hardcoded literal) only when
+        // the caller didn't specify one explicitly - a payment recorded in a specific currency
+        // should keep it even if the tenant's default changes later.
+        var currency = string.IsNullOrWhiteSpace(request.Currency)
+            ? await _currencyReader.GetCurrencyAsync(ct) ?? "KWD"
+            : request.Currency;
 
         var payment = await _financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
             Amount: request.Amount,

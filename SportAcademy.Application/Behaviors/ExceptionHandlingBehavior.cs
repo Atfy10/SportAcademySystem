@@ -44,7 +44,18 @@ namespace SportAcademy.Application.Behaviors
             _logger.LogInformation("Handling {RequestType}", request.GetType().Name);
             try
             {
-                return await next(cancellationToken);
+                var response = await next(cancellationToken);
+
+                // A handler's own direct Result.Failure(...) return (the majority case - most
+                // business-rule rejections never throw) used to leave TraceId null, since only
+                // the catch blocks below ever stamped one. That meant most of the errors a user
+                // actually sees day to day carried no correlation reference at all, while only
+                // unhandled 500s did. Stamped here instead, once, so every failure - thrown or
+                // returned - gets the same reference a support report can be tied back to.
+                if (!response.IsSuccess && response.TraceId is null)
+                    response.TraceId = CurrentTraceId();
+
+                return response;
             }
             catch (ValidationException ex)
             {

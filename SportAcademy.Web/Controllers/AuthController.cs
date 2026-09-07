@@ -16,7 +16,6 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Queries.AuthQueries.GetAllRoles;
 using SportAcademy.Application.Queries.AuthQueries.GetMyPermissions;
-using SportAcademy.Application.Queries.AuthQueries.GetMyProfile;
 using SportAcademy.Application.Queries.AuthQueries.GetUserBranches;
 
 namespace SportAcademy.Web.Controllers
@@ -36,7 +35,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> Login(LoginCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         // Public: consumes the token from a "send reset link" email (see
@@ -54,7 +53,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAllRoles(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllRolesQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -71,7 +70,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> AdminCreateUser([FromBody] AdminCreateUserCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -79,7 +78,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> ToggleUserActive([FromRoute] string userId, CancellationToken ct)
         {
             var result = await _mediator.Send(new ToggleUserActiveCommand(Guid.Parse(userId)), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -87,7 +86,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> AssignRoles([FromRoute] string userId, [FromBody] List<string> roles, CancellationToken ct)
         {
             var result = await _mediator.Send(new AssignRolesToUserCommand(Guid.Parse(userId), roles), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -95,7 +94,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetUserBranches([FromRoute] string userId, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetUserBranchesQuery(Guid.Parse(userId)), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -104,7 +103,7 @@ namespace SportAcademy.Web.Controllers
             [FromRoute] string userId, [FromBody] List<int> branchIds, CancellationToken ct)
         {
             var result = await _mediator.Send(new UpdateUserBranchesCommand(Guid.Parse(userId), branchIds), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -116,16 +115,8 @@ namespace SportAcademy.Web.Controllers
         {
             var cmd = new AdminResetUserPasswordCommand(Guid.Parse(userId), request.AdminPassword, request.NewPassword);
             var result = await _mediator.Send(cmd, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
-
-        //[Authorize]
-        //[HttpGet("~/api/user/me")]
-        //public async Task<IActionResult> GetMyProfile(CancellationToken ct)
-        //{
-        //    var result = await _mediator.Send(new GetMyProfileQuery(), ct);
-        //    return Ok(result);
-        //}
 
         // Fresh, server-resolved roles/permissions for the caller - the frontend polls this
         // instead of trusting the access token's "permission" claims, which can be up to
@@ -136,7 +127,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetMyPermissions(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetMyPermissionsQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize]
@@ -144,7 +135,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> ChangePassword(ChangePasswordCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize]
@@ -152,7 +143,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> VerifyPassword([FromBody] VerifyPasswordCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [AllowAnonymous]
@@ -160,7 +151,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
         {
             var result = await _mediator.Send(new RefreshTokenCommand(request.RefreshToken), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [AllowAnonymous]
@@ -169,7 +160,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequest request, CancellationToken ct)
         {
             var result = await _mediator.Send(new RevokeTokenCommand(request.RefreshToken), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
     }
 }

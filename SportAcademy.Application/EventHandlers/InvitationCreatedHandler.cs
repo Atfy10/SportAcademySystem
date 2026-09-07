@@ -43,7 +43,7 @@ public sealed class InvitationCreatedHandler : INotificationHandler<InvitationCr
         // this event is published with `await _mediator.Publish(...)`, an unhandled exception
         // here would propagate all the way back to the command and report the whole
         // invitation as failed - even though it was created successfully and its link was
-        // already written to the dev-invitation-links.txt fallback file (see
+        // already written to the invitation-links.txt fallback file, in every environment (see
         // FileLoggingEmailServiceDecorator, which logs before attempting the real send).
         // Swallow and log instead: a failed notification email should never undo or mask a
         // successful invitation.

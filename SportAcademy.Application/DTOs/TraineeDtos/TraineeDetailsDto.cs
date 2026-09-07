@@ -15,7 +15,8 @@ public record TraineeDetailsDto(
     IReadOnlyList<string>? Sports,
     bool IsSubscribed,
     int EnrollmentCount,
-    DateTime JoinDate
+    DateTime JoinDate,
+    string? ImageUrl
 )
 {
     public double AttendanceRate { get; set; }

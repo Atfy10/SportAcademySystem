@@ -7,6 +7,7 @@ using SportAcademy.Application.DTOs.GroupScheduleDtos;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Queries.TraineeGroupQueries.Search;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -21,6 +22,12 @@ public class TraineeGroupRepositoryTests
     private readonly Mock<ITraineeGroupRepository> _traineeGroupRepoMock = new();
     private readonly Mock<ISessionOccurrenceRepository> _sessionOccurrenceRepoMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<ITenantClock> _tenantClockMock = new();
+
+    public TraineeGroupRepositoryTests()
+    {
+        _tenantClockMock.Setup(c => c.GetLocalNowAsync(It.IsAny<CancellationToken>())).ReturnsAsync(DateTime.UtcNow);
+    }
 
     private static GroupSchedule CreateSchedule(DayOfWeek day = DayOfWeek.Monday, int id = 1)
     {
@@ -66,7 +73,8 @@ public class TraineeGroupRepositoryTests
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
             _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _tenantClockMock.Object);
         var command = CreateCommand(traineeGroupId: 5);
         var group = CreateTraineeGroup(CreateSchedule());
 
@@ -90,7 +98,8 @@ public class TraineeGroupRepositoryTests
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
             _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _tenantClockMock.Object);
         var command = CreateCommand(traineeGroupId: 0);
 
         var act = () => handler.Handle(command, CancellationToken.None);
@@ -107,7 +116,8 @@ public class TraineeGroupRepositoryTests
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
             _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _tenantClockMock.Object);
         var command = CreateCommand(traineeGroupId: 999);
 
         _traineeGroupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(999, It.IsAny<CancellationToken>()))
@@ -127,7 +137,8 @@ public class TraineeGroupRepositoryTests
         var handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
             _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _tenantClockMock.Object);
         var command = CreateCommand(traineeGroupId: 1);
         var group = CreateTraineeGroup();
 

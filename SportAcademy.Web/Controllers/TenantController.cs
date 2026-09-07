@@ -12,6 +12,7 @@ using SportAcademy.Application.Queries.TenantQueries.GetTenantProfile;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantSettings;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantSettingsOptions;
 using SportAcademy.Application.Queries.TenantQueries.GetCurrentTenantQuery;
+using SportAcademy.Application.Queries.TenantQueries.GetTenantImpersonationHistory;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -32,21 +33,21 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetCurrentTenant(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetCurrentTenantQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("settings")]
         public async Task<IActionResult> GetSettings(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetTenantSettingsQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetTenantProfileQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.settings.manage")]
@@ -54,7 +55,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateTenantProfileCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.settings.manage")]
@@ -62,14 +63,14 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> UpdateSettings([FromBody] UpdateTenantSettingsCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("features")]
         public async Task<IActionResult> GetFeatures(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetTenantFeaturesQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.settings.manage")]
@@ -81,7 +82,7 @@ namespace SportAcademy.Web.Controllers
         {
             if (request.FeatureId != featureId) return BadRequest();
             var result = await _mediator.Send(new UpdateTenantFeatureCommand(featureId, request.IsEnabled), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.settings.manage")]
@@ -91,14 +92,14 @@ namespace SportAcademy.Web.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(new BulkUpdateTenantFeaturesCommand(request.FeatureStates), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("settings/export")]
         public async Task<IActionResult> ExportSettings(CancellationToken ct)
         {
             var result = await _mediator.Send(new ExportTenantSettingsQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.settings.manage")]
@@ -108,14 +109,26 @@ namespace SportAcademy.Web.Controllers
             CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("settings/options")]
         public async Task<IActionResult> GetSettingsOptions(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetTenantSettingsOptionsQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        // Owner-only, same gate as the rest of this tenant's settings surface - answers "has a
+        // platform operator accessed our account, and when" (Phase 3's "does the tenant get
+        // told" question).
+        [Authorize(Policy = "Permission:tenant.settings.manage")]
+        [HttpGet("impersonation-history")]
+        public async Task<IActionResult> GetImpersonationHistory(
+            [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTenantImpersonationHistoryQuery(page, pageSize), ct);
+            return StatusCode(result.StatusCode, result);
         }
     }
 

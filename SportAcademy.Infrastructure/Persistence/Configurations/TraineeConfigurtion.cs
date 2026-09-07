@@ -58,6 +58,9 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
 
                     emailBuilder.WithOwner();
                 });
+
+            builder.Property(t => t.ImageUrl)
+                .HasMaxLength(500);
             #endregion
 
             builder.Property(t => t.JoinDate)

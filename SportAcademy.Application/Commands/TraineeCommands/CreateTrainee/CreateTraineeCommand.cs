@@ -27,5 +27,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         public Nationality Nationality { get; init; }
         public string? Street { get; init; }
         public string? City { get; init; }
+        public string? ImageUrl { get; init; }
     }
 }

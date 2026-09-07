@@ -13,6 +13,18 @@ public class TenantIsolationTests
     {
         public Guid? TenantId { get; private set; }
         public void SetTenantId(Guid? tenantId) => TenantId = tenantId;
+
+        public IDisposable Impersonate(Guid tenantId)
+        {
+            var previous = TenantId;
+            TenantId = tenantId;
+            return new RestoreScope(() => TenantId = previous);
+        }
+
+        private sealed class RestoreScope(Action restore) : IDisposable
+        {
+            public void Dispose() => restore();
+        }
     }
 
     // Unrestricted by default (IsRestricted stays false) - these tests are about tenant
@@ -34,6 +46,9 @@ public class TenantIsolationTests
         public Guid? TenantId { get; init; }
         public List<string> Role { get; init; } = [];
         public bool IsAuthenticated => UserId.HasValue;
+        public string? IpAddress => null;
+        public string? UserAgent => null;
+        public Guid? ImpersonationGrantId => null;
     }
 
     private static ApplicationDbContext CreateContext(Guid? tenantId, string dbName)

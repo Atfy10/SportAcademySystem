@@ -17,6 +17,7 @@ namespace SportAcademy.Domain.Entities
         public Address Address { get; set; } = null!;
         public required string PhoneNumber { get; set; }
         public string? SecondPhoneNumber { get; set; }
+        public string? ImageUrl { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? CreatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }

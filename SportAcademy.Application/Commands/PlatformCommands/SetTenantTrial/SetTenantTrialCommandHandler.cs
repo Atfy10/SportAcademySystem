@@ -31,6 +31,13 @@ public class SetTenantTrialCommandHandler : IRequestHandler<SetTenantTrialComman
         if (tenant.Subscription.IsTrial)
             return Result.Failure(_operation, "Tenant is already on a trial.", 400);
 
+        request.ResolvedBeforeState = new
+        {
+            tenant.Subscription.IsTrial,
+            tenant.Subscription.EndsAt,
+            tenant.Subscription.AutoRenew,
+        };
+
         tenant.Subscription.IsTrial = true;
         tenant.Subscription.EndsAt = DateTime.UtcNow.AddDays(14);
         tenant.Subscription.AutoRenew = false;

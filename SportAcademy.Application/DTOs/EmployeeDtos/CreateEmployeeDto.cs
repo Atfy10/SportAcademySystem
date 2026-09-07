@@ -24,5 +24,6 @@ namespace SportAcademy.Application.DTOs.EmployeeDtos
         public Position Position { get; init; }
         public int BranchId { get; init; }
         public Guid? AppUserId { get; init; }
+        public string? ImageUrl { get; init; }
     }
 }

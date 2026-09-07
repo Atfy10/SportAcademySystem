@@ -1,6 +1,7 @@
 using Bogus;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Domain.Authorization;
 using SportAcademy.Domain.Contract;
@@ -22,7 +23,12 @@ namespace SportAcademy.Infrastructure.Seeders
         /// </summary>
         private const decimal PrivatePriceMultiplier = 2.2m;
 
+        // Used only for the demo Owner account below - the real SuperAdmin's password comes from
+        // required config, never a hardcoded literal (see EnsureSystemTenantAndSuperAdminAsync).
         private const string DefaultPassword = "Admin@123";
+
+        private const string SuperAdminUserName = "abdulrahman";
+        private const string SuperAdminEmail = "abdulrahmanalatfy@auraacademys.com";
 
         private static readonly string[] KuwaitiAreas =
         [
@@ -75,143 +81,207 @@ namespace SportAcademy.Infrastructure.Seeders
         private readonly RoleManager<AppRole> _roleManager;
         private readonly ILogger<AppDataSeeder> _logger;
         private readonly ITenantIdProvider _tenantIdProvider;
+        private readonly IConfiguration _configuration;
 
         public AppDataSeeder(
             ApplicationDbContext context,
             UserManager<AppUser> userManager,
             RoleManager<AppRole> roleManager,
             ILogger<AppDataSeeder> logger,
-            ITenantIdProvider tenantIdProvider)
+            ITenantIdProvider tenantIdProvider,
+            IConfiguration configuration)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
             _logger = logger;
             _tenantIdProvider = tenantIdProvider;
+            _configuration = configuration;
         }
 
-        public async Task SeedAsync()
+        // IHostEnvironment isn't guaranteed available to a plain class library project (it's an
+        // ASP.NET Core hosting abstraction) - ASPNETCORE_ENVIRONMENT is the same underlying value
+        // IHostEnvironment.EnvironmentName reflects, and it's already reachable through the
+        // IConfiguration this class already takes.
+        private bool IsProductionEnvironment() =>
+            string.Equals(_configuration["ASPNETCORE_ENVIRONMENT"], "Production", StringComparison.OrdinalIgnoreCase);
+
+        // Cross-tenant shared/reference data that must exist in EVERY environment, including a
+        // brand-new production database with zero demo data: roles, the Feature catalog, the
+        // subscription-plan catalog (CreateTenantCommand needs at least one to reference), the
+        // nationality-category lookup (every trainee registration needs one), and the SuperAdmin
+        // account itself. Each of these already reconciles (add-missing, idempotent) rather than
+        // assuming a fresh database, so calling this on every startup is safe indefinitely - the
+        // same reasoning ReconcileFeaturesAsync already established for the Feature catalog.
+        public async Task EnsureCoreDataAsync()
         {
-            // Roles and their permission claims are global (not tenant-scoped) and
-            // SeedRolePermissionsAsync fully reconciles them (adds newly-granted permissions,
-            // removes revoked ones) - it must run on every startup, not just when seeding a
-            // brand-new database, or a permission added to Permissions.All/
-            // DefaultRolePermissions after go-live would never reach an already-seeded
-            // deployment (SeedAsync as a whole is a no-op once any tenant exists - see below).
             await SeedRolesAsync();
-
-            // Same problem, same fix, for the Feature catalog: a Feature added to FeatureCatalog
-            // after go-live must reach every already-seeded tenant too, not just a brand-new
-            // database - see ReconcileFeaturesAsync. This fully replaces the old
-            // "SeedFeaturesAsync always inserts everything, only ever runs once" approach - on
-            // a genuinely fresh database this is what populates Features now (existingNames is
-            // empty, so everything is "missing"); featureIds is reused below instead of
-            // re-seeding the same rows a second time.
             var featureIds = await ReconcileFeaturesAsync();
+            await ReconcileSubscriptionPlansAsync(featureIds);
+            await ReconcileNationalityCategoriesAsync();
+            await EnsureSystemTenantAndSuperAdminAsync();
+        }
 
-            // Same "must run unconditionally, not just on a fresh database" reasoning as
-            // ReconcileFeaturesAsync above - a test Accountant login needs to exist on this
-            // already-seeded environment even though SeedAsync as a whole is about to no-op.
+        // Demo-only: the fictional "Salmiya Academy" tenant and its full business dataset, plus a
+        // test Accountant login. Never runs in Production (see Seeding:Enabled in
+        // appsettings.Production.json / Program.cs) - real deployments call EnsureCoreDataAsync
+        // above only, so the platform launches with the SuperAdmin and shared reference data
+        // above but zero customer-shaped tenants.
+        public async Task SeedDemoDataAsync()
+        {
+            // Must run unconditionally within this method (not just on a fresh database) - a
+            // test Accountant login needs to exist even against an already-seeded dev database,
+            // even though the rest of this method is about to no-op below.
             await EnsureTestAccountantUserAsync();
 
-            if (await _context.Tenants.IgnoreQueryFilters().AnyAsync())
+            if (await _context.Tenants.IgnoreQueryFilters().AnyAsync(t => t.Code != Tenant.SystemTenantCode))
             {
-                _logger.LogInformation("Database already seeded. Skipping tenant/business-data seeding.");
+                _logger.LogInformation("Demo tenant already seeded. Skipping demo/business-data seeding.");
                 return;
             }
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                _logger.LogInformation("=== Starting Database Seeding ===");
+                _logger.LogInformation("=== Starting Demo Data Seeding ===");
 
-                await DisableUserTenantFkAsync();
-
-                var systemTenantId = Guid.NewGuid();
-                var superAdminId = Guid.NewGuid();
                 var salmiyaTenantId = Guid.NewGuid();
                 var ownerId = Guid.NewGuid();
 
-                _tenantIdProvider.SetTenantId(systemTenantId);
+                await SeedSalmiyaTenantAndOwnerAsync(salmiyaTenantId, ownerId);
 
-                await SeedUsersAsync(systemTenantId, superAdminId, salmiyaTenantId, ownerId);
-                await SeedTenantsAsync(systemTenantId, superAdminId, salmiyaTenantId, ownerId);
-
-                await EnableUserTenantFkAsync();
-
-                await AssignRolesAsync(systemTenantId, superAdminId, ownerId, salmiyaTenantId);
-
-                // AssignRolesAsync (like SeedUsersAsync earlier) flips the ambient tenant to
-                // salmiyaTenantId internally via _tenantIdProvider.SetTenantId - but that's an
-                // AsyncLocal mutation scoped to AssignRolesAsync's OWN call stack. It does not
-                // propagate back to this method once AssignRolesAsync returns: from here on,
-                // the ambient tenant is still whatever it was before that call (systemTenantId,
-                // set at the top of this method). Everything below this point creates
-                // tenant-scoped entities for Salmiya Academy (features/settings/subscription
-                // enablement, then the full domain dataset) - TenantSaveChangesInterceptor
-                // stamps every newly-added ITenantScoped entity with the ambient tenant on
-                // SaveChanges regardless of what was explicitly set on the entity itself, so
-                // getting this wrong silently reassigns the entire seeded dataset to the wrong
-                // tenant. Must be set directly in this method's own scope to actually stick.
+                // Everything below creates tenant-scoped entities for Salmiya Academy -
+                // TenantSaveChangesInterceptor stamps every newly-added ITenantScoped entity
+                // with whatever the ambient tenant is on SaveChanges, so this must stay set to
+                // salmiyaTenantId for the rest of this method.
                 _tenantIdProvider.SetTenantId(salmiyaTenantId);
 
-                var enterprisePlanIds = await SeedSubscriptionPlansAsync(featureIds);
+                var featureIds = await _context.Set<Feature>().Select(f => f.Id).ToListAsync();
+                var enterprisePlanId = await _context.SubscriptionPlans
+                    .Where(p => p.Code == "ENTERPRISE")
+                    .Select(p => p.Id)
+                    .FirstAsync();
+                var natCatIds = await _context.NationalityCategories
+                    .ToDictionaryAsync(c => c.Code, c => c.Id);
 
-                var natCatIds = await SeedNationalityCategoriesAsync();
-                await SeedTenantSettingsAsync(salmiyaTenantId, enterprisePlanIds);
+                await SeedTenantSettingsAsync(salmiyaTenantId, enterprisePlanId);
                 await EnableTenantFeaturesAsync(salmiyaTenantId, featureIds);
 
                 await SeedSalmiyaDataAsync(salmiyaTenantId, natCatIds);
 
                 await transaction.CommitAsync();
-                _logger.LogInformation("=== Database Seeding Completed Successfully ===");
+                _logger.LogInformation("=== Demo Data Seeding Completed Successfully ===");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Database seeding failed. Transaction rolled back.");
+                _logger.LogError(ex, "Demo data seeding failed. Transaction rolled back.");
                 throw;
             }
         }
 
-        private async Task DisableUserTenantFkAsync()
+        // Idempotent: skips entirely once a user with SuperAdminEmail already exists. Creates the
+        // tenant row FIRST with a null OwnerId, then the user, then patches OwnerId - this
+        // ordering (rather than creating both users this method's caller used to seed up front
+        // and only wiring the FK afterward) means neither side of the Tenant<->AppUser circular
+        // reference is ever inserted pointing at a row that doesn't exist yet, so no FK
+        // enable/disable dance is needed (Tenant.OwnerId is nullable for exactly this reason -
+        // CreateTenantCommandHandler leaves it null until invite-acceptance sets it too).
+        private async Task EnsureSystemTenantAndSuperAdminAsync()
         {
-            _logger.LogDebug("Disabling circular FK constraints for seeding...");
-            await _context.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE [AspNetUsers] NOCHECK CONSTRAINT [FK_AspNetUsers_Tenants_TenantId]");
-        }
+            var existing = await _userManager.FindByEmailAsync(SuperAdminEmail);
+            if (existing is not null)
+                return;
 
-        private async Task EnableUserTenantFkAsync()
-        {
-            _logger.LogDebug("Re-enabling FK constraints...");
-            await _context.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE [AspNetUsers] WITH CHECK CHECK CONSTRAINT [FK_AspNetUsers_Tenants_TenantId]");
-        }
+            _logger.LogInformation("Bootstrapping System tenant and SuperAdmin account...");
 
-        private async Task SeedUsersAsync(
-            Guid systemTenantId, Guid superAdminId,
-            Guid salmiyaTenantId, Guid ownerId)
-        {
-            _logger.LogInformation("Seeding users...");
+            // Same fail-fast shape as Program.cs's Cors:AllowedOrigins check: required in
+            // Production (no safe default exists for a real deployment's admin password), but
+            // falls back to the existing dev-only default elsewhere so local development isn't
+            // broken by this requirement.
+            var password = _configuration["SuperAdmin:Password"];
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                if (IsProductionEnvironment())
+                {
+                    throw new InvalidOperationException(
+                        "SuperAdmin:Password is not configured. Set it via the SuperAdmin__Password " +
+                        "environment variable before starting the app - the SuperAdmin account " +
+                        "cannot be bootstrapped without it.");
+                }
+
+                _logger.LogWarning(
+                    "SuperAdmin:Password is not configured - using the default development " +
+                    "password. This is only acceptable outside Production.");
+                password = DefaultPassword;
+            }
+
+            var systemTenantId = Guid.NewGuid();
+            var superAdminId = Guid.NewGuid();
+
+            var systemTenant = new Tenant
+            {
+                Id = systemTenantId,
+                Name = "System",
+                DisplayName = "System Platform",
+                Email = "system@sportacademy.com.kw",
+                Code = Tenant.SystemTenantCode,
+                Slug = "system",
+                Status = TenantStatus.Active,
+                OwnerId = null,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Tenants.Add(systemTenant);
+            await _context.SaveChangesAsync();
+
+            _tenantIdProvider.SetTenantId(systemTenantId);
 
             var superAdmin = new AppUser
             {
                 Id = superAdminId,
-                UserName = "superadmin",
-                Email = "abdulrahmannalatfy@gmail.com",
+                UserName = SuperAdminUserName,
+                Email = SuperAdminEmail,
                 TenantId = systemTenantId,
                 IsPasswordReset = false,
                 IsBanned = false,
                 EmailConfirmed = true,
-                PhoneNumber = "+201096042061",
-                PhoneNumberConfirmed = true,
                 TwoFactorEnabled = false,
                 LockoutEnabled = true
             };
-            var result = await _userManager.CreateAsync(superAdmin, DefaultPassword);
+            var result = await _userManager.CreateAsync(superAdmin, password);
             if (!result.Succeeded)
                 throw new InvalidOperationException($"Failed to create SuperAdmin: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+
             _context.Profiles.Add(new Profile { AppUserId = superAdmin.Id });
+
+            systemTenant.OwnerId = superAdminId;
+            await _context.SaveChangesAsync();
+
+            await _userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
+
+            _logger.LogInformation("SuperAdmin bootstrapped successfully.");
+        }
+
+        // Same nullable-OwnerId-then-patch ordering as EnsureSystemTenantAndSuperAdminAsync above,
+        // for the same reason - avoids needing the old FK-disable/re-enable dance for this demo
+        // tenant too.
+        private async Task SeedSalmiyaTenantAndOwnerAsync(Guid salmiyaTenantId, Guid ownerId)
+        {
+            _logger.LogInformation("Seeding Salmiya Academy tenant and owner...");
+
+            var salmiyaTenant = new Tenant
+            {
+                Id = salmiyaTenantId,
+                Name = "Salmiya Academy",
+                DisplayName = "Salmiya Swimming Academy",
+                Email = "info@salmiya-academy.com.kw",
+                Code = "SALMYIA",
+                Slug = "salmiya-academy",
+                Status = TenantStatus.Active,
+                OwnerId = null,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Tenants.Add(salmiyaTenant);
             await _context.SaveChangesAsync();
 
             _tenantIdProvider.SetTenantId(salmiyaTenantId);
@@ -230,58 +300,17 @@ namespace SportAcademy.Infrastructure.Seeders
                 TwoFactorEnabled = false,
                 LockoutEnabled = true
             };
-            result = await _userManager.CreateAsync(owner, DefaultPassword);
+            var result = await _userManager.CreateAsync(owner, DefaultPassword);
             if (!result.Succeeded)
                 throw new InvalidOperationException($"Failed to create Owner: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             _context.Profiles.Add(new Profile { AppUserId = owner.Id });
 
-            // Intentionally only SuperAdmin + Owner are seeded - no demo Admin/Manager/
-            // Accountant/Coach accounts. SeedSalmiyaDataAsync's tenantUsers lookup (used to
-            // link demo employees to a login) already tolerates running out of users and
-            // falls back to AppUserId = null, so this is safe on its own.
-
+            salmiyaTenant.OwnerId = ownerId;
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Users seeded successfully.");
-        }
 
-        private async Task SeedTenantsAsync(
-            Guid systemTenantId, Guid superAdminId,
-            Guid salmiyaTenantId, Guid ownerId)
-        {
-            _logger.LogInformation("Seeding tenants...");
+            await _userManager.AddToRoleAsync(owner, "Owner");
 
-            var now = DateTime.UtcNow;
-
-            var systemTenant = new Tenant
-            {
-                Id = systemTenantId,
-                Name = "System",
-                DisplayName = "System Platform",
-                Email = "system@sportacademy.com.kw",
-                Code = "SYSTEM",
-                Slug = "system",
-                Status = TenantStatus.Active,
-                OwnerId = superAdminId,
-                CreatedAt = now
-            };
-            _context.Tenants.Add(systemTenant);
-
-            var salmiyaTenant = new Tenant
-            {
-                Id = salmiyaTenantId,
-                Name = "Salmiya Academy",
-                DisplayName = "Salmiya Swimming Academy",
-                Email = "info@salmiya-academy.com.kw",
-                Code = "SALMYIA",
-                Slug = "salmiya-academy",
-                Status = TenantStatus.Active,
-                OwnerId = ownerId,
-                CreatedAt = now
-            };
-            _context.Tenants.Add(salmiyaTenant);
-
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("Tenants seeded successfully.");
+            _logger.LogInformation("Salmiya Academy tenant and owner seeded successfully.");
         }
 
         // Runs on every startup (see the call site in SeedAsync, before the early-return that
@@ -375,13 +404,21 @@ namespace SportAcademy.Infrastructure.Seeders
                 // (minting codes) is deliberately NOT granted here - Owner/Admin only.
                 Permissions.DiscountCode.Approve,
             ],
+            // Platform-level, read-only: sees tenant/audit data across the whole platform but
+            // cannot mutate a tenant, ban an owner, or impersonate into one - a support/success
+            // seat distinct from SuperAdmin, which holds every platform.* permission. No UI
+            // currently exists to assign this role to a second platform user (there is no
+            // "platform users" management page anywhere in the app) - it exists in the seeder
+            // and can be granted by hand (e.g. a DB script or a future admin UI) but has no
+            // self-service provisioning path yet.
+            ["PlatformSupport"] = [Permissions.Platform.TenantsRead, Permissions.Platform.AuditRead],
         };
 
         private async Task SeedRolesAsync()
         {
             _logger.LogInformation("Seeding roles...");
 
-            var roleNames = new[] { "SuperAdmin", "Owner", "Admin", "Employee", "Accountant" };
+            var roleNames = new[] { "SuperAdmin", "Owner", "Admin", "Employee", "Accountant", "PlatformSupport" };
             foreach (var roleName in roleNames)
             {
                 var role = await _roleManager.FindByNameAsync(roleName);
@@ -466,24 +503,6 @@ namespace SportAcademy.Infrastructure.Seeders
 
             foreach (var claim in existingClaims.Where(c => !desired.Contains(c.Value)))
                 await _roleManager.RemoveClaimAsync(role, claim);
-        }
-
-        private async Task AssignRolesAsync(Guid systemTenantId, Guid superAdminId, Guid ownerId, Guid salmiyaTenantId)
-        {
-            _logger.LogInformation("Assigning roles to users...");
-
-            _tenantIdProvider.SetTenantId(systemTenantId);
-            var superAdmin = await _userManager.FindByIdAsync(superAdminId.ToString());
-            if (superAdmin != null)
-                await _userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
-
-            _tenantIdProvider.SetTenantId(salmiyaTenantId);
-
-            var owner = await _userManager.FindByIdAsync(ownerId.ToString());
-            if (owner != null)
-                await _userManager.AddToRoleAsync(owner, "Owner");
-
-            _logger.LogInformation("Roles assigned successfully.");
         }
 
         // Single source of truth for the Feature catalog, shared by SeedFeaturesAsync (fresh
@@ -597,25 +616,47 @@ namespace SportAcademy.Infrastructure.Seeders
             };
         }
 
-        private async Task<int> SeedSubscriptionPlansAsync(List<Guid> featureIds)
+        private static readonly (string Name, string Code, string Description, decimal MonthlyPrice, decimal YearlyPrice)[] SubscriptionPlanCatalog =
+        [
+            ("Basic", "BASIC", "Core features for small academies", 49, 499),
+            ("Professional", "PRO", "Full feature set for growing academies", 99, 999),
+            ("Enterprise", "ENTERPRISE", "Complete suite with AI and advanced analytics", 199, 1999)
+        ];
+
+        // Same reconciliation shape as ReconcileFeaturesAsync above (add-missing-by-Code, safe on
+        // every startup) - this is the platform-wide plan catalog CreateTenantCommand references,
+        // so it must exist before a SuperAdmin can create the very first real tenant.
+        private async Task ReconcileSubscriptionPlansAsync(List<Guid> featureIds)
         {
-            _logger.LogInformation("Seeding subscription plans...");
+            var existing = await _context.SubscriptionPlans.ToListAsync();
+            var existingCodes = existing.Select(p => p.Code).ToHashSet();
 
-            var plans = new List<SubscriptionPlan>
-            {
-                new() { Name = "Basic", Code = "BASIC", Description = "Core features for small academies", MonthlyPrice = 49, YearlyPrice = 499, IsActive = true },
-                new() { Name = "Professional", Code = "PRO", Description = "Full feature set for growing academies", MonthlyPrice = 99, YearlyPrice = 999, IsActive = true },
-                new() { Name = "Enterprise", Code = "ENTERPRISE", Description = "Complete suite with AI and advanced analytics", MonthlyPrice = 199, YearlyPrice = 1999, IsActive = true }
-            };
+            var missing = SubscriptionPlanCatalog
+                .Where(p => !existingCodes.Contains(p.Code))
+                .Select(p => new SubscriptionPlan
+                {
+                    Name = p.Name,
+                    Code = p.Code,
+                    Description = p.Description,
+                    MonthlyPrice = p.MonthlyPrice,
+                    YearlyPrice = p.YearlyPrice,
+                    IsActive = true
+                })
+                .ToList();
 
-            _context.SubscriptionPlans.AddRange(plans);
+            if (missing.Count == 0)
+                return;
+
+            _logger.LogInformation("Reconciling {Count} new subscription plan(s): {Codes}",
+                missing.Count, string.Join(", ", missing.Select(p => p.Code)));
+            _context.SubscriptionPlans.AddRange(missing);
             await _context.SaveChangesAsync();
 
             var basicFeatures = featureIds.Take(15).ToList();
             var professionalFeatures = featureIds.Take(28).ToList();
             var enterpriseFeatures = featureIds.ToList();
 
-            foreach (var plan in plans)
+            foreach (var plan in missing)
             {
                 var assignedFeatures = plan.Code switch
                 {
@@ -636,32 +677,35 @@ namespace SportAcademy.Infrastructure.Seeders
             }
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Subscription plans seeded successfully.");
-            return plans.Where(p => p.Code == "ENTERPRISE").Select(p => p.Id).First();
+            _logger.LogInformation("Subscription plan catalog reconciled successfully.");
         }
 
-        private async Task<Dictionary<string, int>> SeedNationalityCategoriesAsync()
+        private static readonly (string Code, string Name)[] NationalityCategoryCatalog =
+        [
+            ("KW", "Kuwaiti"), ("GCC", "GCC National"), ("AR", "Arab (Non-GCC)"),
+            ("AS", "Asian"), ("AF", "African"), ("EU", "European"),
+            ("NA", "North American"), ("SA", "South American"), ("OT", "Other")
+        ];
+
+        // Same reconciliation shape again - every tenant's trainee registration form needs this
+        // lookup populated (Trainee.NationalityCategoryId), so it must exist unconditionally too.
+        private async Task ReconcileNationalityCategoriesAsync()
         {
-            _logger.LogInformation("Seeding nationality categories...");
+            var existing = await _context.NationalityCategories.ToListAsync();
+            var existingCodes = existing.Select(c => c.Code).ToHashSet();
 
-            var categories = new List<NationalityCategory>
-            {
-                new() { Code = "KW", Name = "Kuwaiti" },
-                new() { Code = "GCC", Name = "GCC National" },
-                new() { Code = "AR", Name = "Arab (Non-GCC)" },
-                new() { Code = "AS", Name = "Asian" },
-                new() { Code = "AF", Name = "African" },
-                new() { Code = "EU", Name = "European" },
-                new() { Code = "NA", Name = "North American" },
-                new() { Code = "SA", Name = "South American" },
-                new() { Code = "OT", Name = "Other" }
-            };
+            var missing = NationalityCategoryCatalog
+                .Where(c => !existingCodes.Contains(c.Code))
+                .Select(c => new NationalityCategory { Code = c.Code, Name = c.Name })
+                .ToList();
 
-            _context.NationalityCategories.AddRange(categories);
+            if (missing.Count == 0)
+                return;
+
+            _logger.LogInformation("Reconciling {Count} new nationality categor(y/ies): {Codes}",
+                missing.Count, string.Join(", ", missing.Select(c => c.Code)));
+            _context.NationalityCategories.AddRange(missing);
             await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Nationality categories seeded successfully.");
-            return categories.ToDictionary(c => c.Code, c => c.Id);
         }
 
         private async Task SeedTenantSettingsAsync(Guid tenantId, int planId)

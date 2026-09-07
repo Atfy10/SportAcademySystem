@@ -39,6 +39,9 @@ public class SendOwnerPasswordResetLinkCommandHandler : IRequestHandler<SendOwne
         if (owner is null)
             return Result<bool>.Failure(_operation, "Owner not found.", 404);
 
+        // PlatformAuditBehavior reads this back once Handle() returns - see BanOwnerCommand.
+        request.ResolvedTenantId = owner.TenantId;
+
         if (string.IsNullOrWhiteSpace(owner.Email))
             return Result<bool>.Failure(_operation, "Owner has no email address on file.", 400);
 
@@ -56,10 +59,10 @@ public class SendOwnerPasswordResetLinkCommandHandler : IRequestHandler<SendOwne
 
         // Token generation + the resulting link are already durable at this point (Identity's
         // reset token is derived from the user's security stamp, not stored separately, and
-        // FileLoggingEmailServiceDecorator writes the link to the dev-invitation-links.txt
-        // fallback file before ever attempting the real send). A SendGrid failure (bad/expired
-        // API key, outage, etc.) must not turn this into a reported failure - the SuperAdmin
-        // can still retrieve the link from that file and pass it along manually.
+        // FileLoggingEmailServiceDecorator writes the link to the invitation-links.txt fallback
+        // file before ever attempting the real send, in every environment). A SendGrid failure
+        // (bad/expired API key, outage, etc.) must not turn this into a reported failure - the
+        // SuperAdmin can still retrieve the link from that file and pass it along manually.
         try
         {
             await _emailService.SendAsync(owner.Email, subject, body, ct);
@@ -68,7 +71,7 @@ public class SendOwnerPasswordResetLinkCommandHandler : IRequestHandler<SendOwne
         {
             _logger.LogError(ex,
                 "Failed to email password reset link to owner {OwnerId} ({Email}) - " +
-                "the reset link is still valid and was logged to the dev-invitation-links.txt fallback file.",
+                "the reset link is still valid and was logged to the invitation-links.txt fallback file.",
                 owner.Id, owner.Email);
         }
 

@@ -40,6 +40,7 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
         if (tenant.Subscription.SubscriptionPlanId == request.NewPlanId)
             return Result.Failure(_operation, "Tenant is already on this plan.", 400);
 
+        request.ResolvedBeforeState = new { tenant.Subscription.SubscriptionPlanId };
         tenant.Subscription.SubscriptionPlanId = plan.Id;
         await _unitOfWork.SaveChangesAsync(ct);
 

@@ -21,7 +21,8 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         string? SecondNumber,
         Position Position,
         int BranchId,
-        bool CreateUserAccount = false) : IRequest<Result<CreateEmployeeResultDto>>, IRequiresFeature, IBranchScopedRequest
+        bool CreateUserAccount = false,
+        string? ImageUrl = null) : IRequest<Result<CreateEmployeeResultDto>>, IRequiresFeature, IBranchScopedRequest
     {
         public string FeatureKey => "employee-management";
     }

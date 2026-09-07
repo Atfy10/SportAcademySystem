@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 using SportAcademy.Application.Commands.SessionOccurrenceCommands.GenerateSessionOccurrences;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -15,14 +16,21 @@ public class GenerateSessionOccurrencesCommandHandlerTests
     private readonly Mock<ITraineeGroupRepository> _traineeGroupRepoMock = new();
     private readonly Mock<ISessionOccurrenceRepository> _sessionOccurrenceRepoMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<ITenantClock> _tenantClockMock = new();
     private readonly GenerateSessionOccurrencesCommandHandler _handler;
 
     public GenerateSessionOccurrencesCommandHandlerTests()
     {
+        // No tenant timezone context in these tests - resolves to plain UtcNow, same as the
+        // handler's pre-ITenantClock behavior, so every existing UtcNow-based assertion here
+        // stays valid.
+        _tenantClockMock.Setup(c => c.GetLocalNowAsync(It.IsAny<CancellationToken>())).ReturnsAsync(DateTime.UtcNow);
+
         _handler = new GenerateSessionOccurrencesCommandHandler(
             _traineeGroupRepoMock.Object,
             _sessionOccurrenceRepoMock.Object,
-            _mapperMock.Object);
+            _mapperMock.Object,
+            _tenantClockMock.Object);
     }
 
     private static GroupSchedule CreateSchedule(DayOfWeek day = DayOfWeek.Monday, int id = 1)

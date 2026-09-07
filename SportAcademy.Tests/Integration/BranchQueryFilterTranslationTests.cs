@@ -16,6 +16,18 @@ public class BranchQueryFilterTranslationTests
     {
         public Guid? TenantId { get; private set; }
         public void SetTenantId(Guid? tenantId) => TenantId = tenantId;
+
+        public IDisposable Impersonate(Guid tenantId)
+        {
+            var previous = TenantId;
+            TenantId = tenantId;
+            return new RestoreScope(() => TenantId = previous);
+        }
+
+        private sealed class RestoreScope(Action restore) : IDisposable
+        {
+            public void Dispose() => restore();
+        }
     }
 
     private sealed class TestBranchAccessProvider : IBranchAccessProvider

@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Events;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Tenants;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.BackgroundServices
@@ -69,11 +71,16 @@ namespace SportAcademy.Infrastructure.BackgroundServices
             // tenant query filter fed by an AsyncLocal that only middleware sets, so a
             // background sweep running outside any request has no tenant and would otherwise
             // match zero rows in every tenant. The tenant is instead read off each row below.
+            //
+            // Excludes any tenant that isn't Active: a customer whose account is suspended
+            // shouldn't come back to find weeks of enrollments auto-closed while they were
+            // locked out and couldn't renew anything.
             var lapsed = await context.Set<Enrollment>()
                 .IgnoreQueryFilters()
                 .Where(e => !e.IsDeleted)
                 .Where(e => e.EndDate == null)
                 .Where(e => e.ExpiryDate < cutoff)
+                .Where(e => context.Set<Tenant>().Any(t => t.Id == e.TenantId && t.Status == TenantStatus.Active))
                 .ToListAsync(ct);
 
             if (lapsed.Count == 0)

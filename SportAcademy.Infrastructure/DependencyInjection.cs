@@ -69,6 +69,13 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IPermissionResolver>(sp => sp.GetRequiredService<PermissionResolver>());
             services.AddScoped<IPermissionCacheInvalidator>(sp => sp.GetRequiredService<PermissionResolver>());
 
+            // Backs TenantStatusGuardMiddleware - same registered-as-both-interfaces-over-one-
+            // instance pattern as PermissionResolver above, and the same reason: the middleware
+            // that reads and the handlers that invalidate must share one cache.
+            services.AddScoped<TenantStatusCache>();
+            services.AddScoped<ITenantStatusCache>(sp => sp.GetRequiredService<TenantStatusCache>());
+            services.AddScoped<ITenantStatusCacheInvalidator>(sp => sp.GetRequiredService<TenantStatusCache>());
+
             // Register Notification Service
             services.AddScoped<INotificationService, NotificationService>();
 
@@ -98,6 +105,9 @@ namespace SportAcademy.Infrastructure
 
             // Register Tenant Audit Repository
             services.AddScoped<ITenantAuditRepository, TenantAuditRepository>();
+
+            // Register Impersonation Grant Repository
+            services.AddScoped<IImpersonationGrantRepository, ImpersonationGrantRepository>();
 
             // Register Invitation Token Service
             services.AddScoped<IInvitationTokenService, InvitationTokenService>();

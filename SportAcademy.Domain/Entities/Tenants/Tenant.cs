@@ -4,6 +4,14 @@ namespace SportAcademy.Domain.Entities.Tenants;
 
 public class Tenant
 {
+    /// <summary>
+    /// Code of the platform's own bookkeeping tenant - exists only so SuperAdmin (and every
+    /// platform operator) has a TenantId claim to satisfy the tenant-scoping the rest of the
+    /// system requires, not a real customer academy. Never shown in the Platform's tenant
+    /// list/count - see callers of this constant.
+    /// </summary>
+    public const string SystemTenantCode = "SYSTEM";
+
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
     public string DisplayName { get; set; } = null!;

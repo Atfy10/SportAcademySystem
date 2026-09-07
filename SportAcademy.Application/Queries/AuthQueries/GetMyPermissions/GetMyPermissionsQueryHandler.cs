@@ -13,16 +13,19 @@ public class GetMyPermissionsQueryHandler : IRequestHandler<GetMyPermissionsQuer
     private readonly IUserContextService _userContext;
     private readonly IUserRepository _userRepository;
     private readonly IPermissionResolver _permissionResolver;
+    private readonly ITenantStatusCache _tenantStatusCache;
     private readonly string _operation = OperationType.Get.ToString();
 
     public GetMyPermissionsQueryHandler(
         IUserContextService userContext,
         IUserRepository userRepository,
-        IPermissionResolver permissionResolver)
+        IPermissionResolver permissionResolver,
+        ITenantStatusCache tenantStatusCache)
     {
         _userContext = userContext;
         _userRepository = userRepository;
         _permissionResolver = permissionResolver;
+        _tenantStatusCache = tenantStatusCache;
     }
 
     public async Task<Result<MyPermissionsDto>> Handle(GetMyPermissionsQuery request, CancellationToken ct)
@@ -36,7 +39,13 @@ public class GetMyPermissionsQueryHandler : IRequestHandler<GetMyPermissionsQuer
         var roles = await _userRepository.GetUserRoleAsync(user, ct);
         var permissions = await _permissionResolver.GetEffectivePermissionsAsync(userId, ct);
 
+        // TenantId always has a value here - TenantResolutionMiddleware's post-auth block
+        // already 400s any authenticated request with no tenant claim, before this handler runs.
+        var tenantId = _userContext.TenantId!.Value;
+        var tenantStatus = await _tenantStatusCache.GetStatusAsync(tenantId, ct) ?? TenantStatus.Archived;
+
         return Result<MyPermissionsDto>.Success(
-            new MyPermissionsDto(roles.ToList(), permissions.ToList()), _operation);
+            new MyPermissionsDto(roles.ToList(), permissions.ToList(), !user.IsBanned, tenantStatus),
+            _operation);
     }
 }

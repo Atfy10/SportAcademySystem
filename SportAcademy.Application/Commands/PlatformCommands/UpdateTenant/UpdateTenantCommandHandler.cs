@@ -27,6 +27,20 @@ public class UpdateTenantCommandHandler : IRequestHandler<UpdateTenantCommand, R
         if (tenant is null)
             return Result<TenantDetailResponse>.Failure(_operation, "Tenant not found.", 404);
 
+        request.ResolvedBeforeState = new
+        {
+            tenant.Name,
+            tenant.DisplayName,
+            tenant.Email,
+            Phone = tenant.Profile?.Phone,
+            Address = tenant.Profile?.Address,
+            Website = tenant.Profile?.Website,
+            Description = tenant.Profile?.Description,
+            TimeZone = tenant.Settings?.TimeZone,
+            Language = tenant.Settings?.Language,
+            Currency = tenant.Settings?.Currency,
+        };
+
         if (request.Name is not null) tenant.Name = request.Name;
         if (request.DisplayName is not null) tenant.DisplayName = request.DisplayName;
         if (request.Email is not null) tenant.Email = request.Email;

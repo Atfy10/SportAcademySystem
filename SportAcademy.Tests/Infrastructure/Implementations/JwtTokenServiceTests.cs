@@ -1,8 +1,11 @@
+using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Tenants;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Implementations;
 
 namespace SportAcademy.Tests.Infrastructure.Implementations;
@@ -57,6 +60,17 @@ public class JwtTokenServiceTests
             return Task.CompletedTask;
         }
 
+        public Task RevokeAllTokensForUsersAsync(IEnumerable<Guid> userIds, CancellationToken ct = default)
+        {
+            var ids = new HashSet<Guid>(userIds);
+            foreach (var t in _byId.Values.Where(t => ids.Contains(t.UserId) && !t.IsRevoked))
+            {
+                t.IsRevoked = true;
+                t.RevokedAt = DateTime.UtcNow;
+            }
+            return Task.CompletedTask;
+        }
+
         public Task<bool> TryRevokeAsync(int tokenId, DateTime revokedAt, CancellationToken ct = default)
         {
             if (!_byId.TryGetValue(tokenId, out var t) || t.IsRevoked)
@@ -90,13 +104,22 @@ public class JwtTokenServiceTests
         return mock;
     }
 
-    private static AppUser CreateUser(Guid tenantId) => new()
+    // ValidateAndRefreshTokenAsync now also rejects a non-Active tenant (F-01), so every test
+    // needs a real Tenant navigation - default Active unless a test says otherwise.
+    private static AppUser CreateUser(Guid tenantId, TenantStatus tenantStatus = TenantStatus.Active) => new()
     {
         Id = Guid.NewGuid(),
         TenantId = tenantId,
         UserName = "refresh-flow-user",
         Email = "refresh-flow-user@test.com",
         UserRoles = [],
+        Tenant = new Tenant
+        {
+            Id = tenantId,
+            Name = "Test Academy",
+            Slug = "test-academy",
+            Status = tenantStatus,
+        },
     };
 
     [Fact]
@@ -112,6 +135,91 @@ public class JwtTokenServiceTests
         var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
 
         const string plainToken = "plain-refresh-token-banned";
+        await repository.AddAsync(new RefreshToken
+        {
+            TokenHash = service.HashToken(plainToken),
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            CreatedAt = DateTime.UtcNow,
+            IsRevoked = false,
+            User = user,
+        });
+
+        var result = await service.ValidateAndRefreshTokenAsync(plainToken);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GenerateImpersonationToken_CarriesTargetTenantAndGrantClaims()
+    {
+        var superAdminId = Guid.NewGuid();
+        var systemTenantId = Guid.NewGuid();
+        var targetTenantId = Guid.NewGuid();
+        var grantId = Guid.NewGuid();
+        var expiresAt = DateTime.UtcNow.AddMinutes(42);
+
+        var superAdmin = new AppUser
+        {
+            Id = superAdminId,
+            TenantId = systemTenantId,
+            UserName = "superadmin",
+            Email = "superadmin@test.com",
+        };
+
+        var repository = new FakeRefreshTokenRepository();
+        var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
+
+        var jwt = await service.GenerateImpersonationToken(superAdmin, targetTenantId, grantId, expiresAt);
+
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var token = handler.ReadJwtToken(jwt);
+
+        // sub stays the real SuperAdmin - not the impersonated tenant's Owner - so anything
+        // resolving "who is this" (PermissionResolver included) sees the real actor.
+        // JwtSecurityTokenHandler.ReadJwtToken() returns raw JWT short claim names ("sub",
+        // "nameid", "role"), not the long ClaimTypes.* URIs a validated ClaimsPrincipal maps
+        // them to at runtime - assert against what's actually on the wire.
+        token.Claims.Should().Contain(c => c.Type == "sub" && c.Value == superAdminId.ToString());
+        token.Claims.Should().Contain(c => c.Type == "nameid" && c.Value == superAdminId.ToString());
+        token.Claims.Should().Contain(c => c.Type == "tenant_id" && c.Value == targetTenantId.ToString());
+        token.Claims.Should().Contain(c => c.Type == "impersonation_grant_id" && c.Value == grantId.ToString());
+        token.Claims.Should().Contain(c => c.Type == "role" && c.Value == "SuperAdmin");
+        token.ValidTo.Should().BeCloseTo(expiresAt, TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public async Task GenerateJwtToken_CarriesNoImpersonationGrantClaim()
+    {
+        // A normal session token must never carry this claim - ImpersonationGuardMiddleware's
+        // read-only restriction keys off its mere presence.
+        var user = CreateUser(Guid.NewGuid());
+        var repository = new FakeRefreshTokenRepository();
+        var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
+
+        var jwt = await service.GenerateJwtToken(user, "Owner");
+
+        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var token = handler.ReadJwtToken(jwt);
+
+        token.Claims.Should().NotContain(c => c.Type == "impersonation_grant_id");
+    }
+
+    [Theory]
+    [InlineData(TenantStatus.Suspended)]
+    [InlineData(TenantStatus.Inactive)]
+    [InlineData(TenantStatus.Archived)]
+    [InlineData(TenantStatus.PendingSetup)]
+    public async Task ValidateAndRefreshTokenAsync_NonActiveTenant_RejectsRefresh(TenantStatus tenantStatus)
+    {
+        // A held refresh token must not be able to sidestep TenantStatusGuardMiddleware just by
+        // minting a fresh access token once the tenant has been suspended/archived/deactivated.
+        var tenantId = Guid.NewGuid();
+        var user = CreateUser(tenantId, tenantStatus);
+        var repository = new FakeRefreshTokenRepository();
+        var service = new JwtTokenService(CreateConfiguration(), repository, CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
+
+        const string plainToken = "plain-refresh-token-non-active-tenant";
         await repository.AddAsync(new RefreshToken
         {
             TokenHash = service.HashToken(plainToken),

@@ -25,6 +25,7 @@ namespace SportAcademy.Application.DTOs.EmployeeDtos
         string BranchName,
         string Email,
         bool IsWork,
-        Guid AppUserId
+        Guid AppUserId,
+        string? ImageUrl
     );
 }

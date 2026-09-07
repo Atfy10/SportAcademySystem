@@ -53,5 +53,25 @@ namespace SportAcademy.Web.Services
         }
 
         public bool IsAuthenticated => User?.Identity?.IsAuthenticated ?? false;
+
+        public string? IpAddress => _accessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+
+        public string? UserAgent
+        {
+            get
+            {
+                var value = _accessor.HttpContext?.Request.Headers.UserAgent.ToString();
+                return string.IsNullOrEmpty(value) ? null : value;
+            }
+        }
+
+        public Guid? ImpersonationGrantId
+        {
+            get
+            {
+                var claim = User?.FindFirstValue("impersonation_grant_id");
+                return Guid.TryParse(claim, out var id) ? id : null;
+            }
+        }
     }
 }

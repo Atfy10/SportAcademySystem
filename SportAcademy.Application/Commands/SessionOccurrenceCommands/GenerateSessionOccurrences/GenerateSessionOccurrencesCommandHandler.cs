@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -14,17 +15,20 @@ public class GenerateSessionOccurrencesCommandHandler : IRequestHandler<Generate
     private readonly ITraineeGroupRepository _traineeGroupRepository;
     private readonly ISessionOccurrenceRepository _sessionOccurrenceRepository;
     private readonly IMapper _mapper;
+    private readonly ITenantClock _tenantClock;
     private readonly string _operationType = OperationType.Add.ToString();
     private const int MaxDurationDays = 90;
 
     public GenerateSessionOccurrencesCommandHandler(
         ITraineeGroupRepository traineeGroupRepository,
         ISessionOccurrenceRepository sessionOccurrenceRepository,
-        IMapper mapper)
+        IMapper mapper,
+        ITenantClock tenantClock)
     {
         _traineeGroupRepository = traineeGroupRepository;
         _sessionOccurrenceRepository = sessionOccurrenceRepository;
         _mapper = mapper;
+        _tenantClock = tenantClock;
     }
 
     public async Task<Result<int>> Handle(GenerateSessionOccurrencesCommand request, CancellationToken cancellationToken)
@@ -48,15 +52,20 @@ public class GenerateSessionOccurrencesCommandHandler : IRequestHandler<Generate
 
         var lastDateTime = await _sessionOccurrenceRepository.GetLastOccurrenceDateAsync(request.TraineeGroupId, cancellationToken);
 
+        // The tenant's local calendar day, not the server/UTC one - a session generated late in
+        // the UTC day for a tenant east of UTC (e.g. Kuwait, UTC+3) must still land on the
+        // tenant's own "today", not tomorrow.
+        var tenantToday = DateOnly.FromDateTime(await _tenantClock.GetLocalNowAsync(cancellationToken));
+
         DateOnly startDate;
         if (lastDateTime is null)
         {
-            startDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            startDate = tenantToday;
         }
         else
         {
             var lastDate = DateOnly.FromDateTime(lastDateTime.Value);
-            var daysSinceLast = DateOnly.FromDateTime(DateTime.UtcNow).DayNumber - lastDate.DayNumber;
+            var daysSinceLast = tenantToday.DayNumber - lastDate.DayNumber;
 
             if (daysSinceLast > 7)
             {

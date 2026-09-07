@@ -361,5 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-# Dev-only invitation link log (never used in production)
+# Invitation/reset link fallback log (FileLoggingEmailServiceDecorator) - only lands here for a
+# local dev run; in Docker it's written to the backend_logs volume instead (Storage:LogsPath).
+# Covers both the current and the old (pre-rename) filename - this file holds real, live,
+# unexpired credential-granting URLs and must never be committed under either name.
+SportAcademy.Web/invitation-links.txt
 SportAcademy.Web/dev-invitation-links.txt

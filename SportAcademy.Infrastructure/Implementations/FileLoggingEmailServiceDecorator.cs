@@ -4,9 +4,13 @@ using SportAcademy.Domain.Contract;
 namespace SportAcademy.Infrastructure.Implementations;
 
 /// <summary>
-/// Development-only decorator: appends every outgoing email's link to a local text file
-/// before delegating to the real provider, so links are visible without checking an inbox.
-/// Wired up only when the environment is Development (see Program.cs) - never used in production.
+/// Wraps the real email provider: appends every outgoing email's link to a local text file
+/// before attempting the real send, so an invitation/password-reset link is still recoverable if
+/// the provider is unreachable, out of credits, misconfigured, or down - never as a substitute
+/// for actually sending, always in addition to it. Wired up in every environment (see
+/// Program.cs) - SendOwnerPasswordResetLinkCommandHandler and InvitationCreatedHandler both rely
+/// on this file already holding the link before they swallow a send failure instead of
+/// reporting it.
 /// </summary>
 public sealed class FileLoggingEmailServiceDecorator : IEmailService
 {
@@ -36,7 +40,31 @@ public sealed class FileLoggingEmailServiceDecorator : IEmailService
         await FileLock.WaitAsync(ct);
         try
         {
+            // Defensive, not load-bearing: the container image/volume already creates this
+            // directory (see the Dockerfile and Storage:LogsPath), but a misconfigured LogsPath
+            // pointing somewhere new shouldn't turn every send into a startup-blocking crash.
+            var directory = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            var fileExisted = File.Exists(_filePath);
             await File.AppendAllTextAsync(_filePath, line, ct);
+
+            // Each line is a live, unexpired credential-granting URL until its token expires or
+            // is used - lock the file to the running account only, the first time it's created.
+            // Best-effort: Windows local dev has no POSIX mode bits, and a failure here must
+            // never block the send this decorator exists to guarantee gets logged.
+            if (!fileExisted && OperatingSystem.IsLinux())
+            {
+                try
+                {
+                    File.SetUnixFileMode(_filePath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+                }
+                catch
+                {
+                    // Best-effort only - see comment above.
+                }
+            }
         }
         finally
         {

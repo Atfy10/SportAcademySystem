@@ -29,6 +29,7 @@ namespace SportAcademy.Application.Mappings.Manual
                 Nationality = cmd.Nationality,
                 Address = Address.Create(street, city),
                 PhoneNumber = cmd.PhoneNumber,
+                ImageUrl = cmd.ImageUrl,
                 AppUserId = cmd.AppUserId,
                 BranchId = cmd.BranchId,
                 NationalityCategoryId = cmd.NationalityCategoryId,
@@ -47,6 +48,7 @@ namespace SportAcademy.Application.Mappings.Manual
             if (cmd.LastName != null) trainee.LastName = cmd.LastName;
             if (cmd.GuardianName != null) trainee.GuardianName = cmd.GuardianName;
             if (cmd.ParentNumber != null) trainee.ParentNumber = cmd.ParentNumber;
+            if (cmd.ImageUrl != null) trainee.ImageUrl = cmd.ImageUrl;
             trainee.BranchId = cmd.BranchId;
         }
     }

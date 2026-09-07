@@ -1,7 +1,8 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.ProfileCommands.CompleteOnboarding;
+using SportAcademy.Application.Commands.ProfileCommands.UpdateMyProfile;
 using SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions;
 using SportAcademy.Application.Commands.UserCommands.UserCreate;
 using SportAcademy.Application.Commands.UserCommands.UserDelete;
@@ -31,26 +32,28 @@ namespace SportAcademy.Web.Controllers
 
         [HttpGet]
         [Authorize(Policy = "Permission:tenant.users.manage")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(CancellationToken ct)
         {
-            var users = await _mediator.Send(new GetAllUsersQuery());
-            return Ok(users);
+            var result = await _mediator.Send(new GetAllUsersQuery(), ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("unlinked")]
         [Authorize(Policy = "Permission:tenant.users.manage")]
-        public async Task<IActionResult> GetUnlinked()
+        public async Task<IActionResult> GetUnlinked(CancellationToken ct)
         {
-            var users = await _mediator.Send(new GetUnlinkedUsersQuery());
+            // Not Result<T>-wrapped (plain List<AppUserDto>) - nothing to StatusCode-forward,
+            // a successful query is the only outcome this handler has.
+            var users = await _mediator.Send(new GetUnlinkedUsersQuery(), ct);
             return Ok(users);
         }
 
         [HttpGet("{id}")]
         [Authorize(Policy = "Permission:tenant.users.manage")]
-        public async Task<IActionResult> Details(string id)
+        public async Task<IActionResult> Details(string id, CancellationToken ct)
         {
-            var user = await _mediator.Send(new GetUserByIdQuery(Guid.Parse(id)));
-            return Ok(user);
+            var result = await _mediator.Send(new GetUserByIdQuery(Guid.Parse(id)), ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         // Mutating actions require the tenant.users.manage permission rather than a hardcoded
@@ -60,18 +63,18 @@ namespace SportAcademy.Web.Controllers
         [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPost]
         [ProducesResponseType(typeof(Result<string>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreateAsync(CreateUserCommand command)
+        public async Task<IActionResult> CreateAsync(CreateUserCommand command, CancellationToken ct)
         {
-            var user = await _mediator.Send(command);
-            return Ok(user);
+            var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
         [HttpPut]
-        public async Task<IActionResult> EditAsync(UpdateUserCommand command)
+        public async Task<IActionResult> EditAsync(UpdateUserCommand command, CancellationToken ct)
         {
-            var user = await _mediator.Send(command);
-            return Ok(user);
+            var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -80,7 +83,7 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(command, ct);
             if (!result.IsSuccess)
-                return BadRequest(result.Message);
+                return StatusCode(result.StatusCode, result);
 
             return NoContent();
         }
@@ -93,7 +96,7 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetPermissions(Guid id, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetUserPermissionsQuery(id), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -102,24 +105,32 @@ namespace SportAcademy.Web.Controllers
             Guid id, [FromBody] List<PermissionOverrideInput> overrides, CancellationToken ct)
         {
             var result = await _mediator.Send(new UpdateUserPermissionsCommand(id, overrides), ct);
-            if (!result.IsSuccess)
-                return BadRequest(result);
-
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("me")]
         public async Task<IActionResult> GetMe(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetMeQuery(), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        // Self-service: any authenticated user can edit their own account-level personal info
+        // (phone/avatar/bio) - deliberately no [Authorize(Policy=...)] beyond the class-level
+        // [Authorize], since this only ever touches the caller's own row (UserContextService.UserId),
+        // never an id from the route/body.
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateMe([FromBody] UpdateMyProfileCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpPost("me/complete-onboarding")]
         public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
     }
 }

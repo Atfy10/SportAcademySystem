@@ -3,6 +3,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.ExpenseDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Finance;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BranchExceptions;
@@ -17,17 +18,20 @@ namespace SportAcademy.Application.Commands.ExpenseCommands.CreateExpense
         private readonly IExpenseCategoryRepository _categoryRepository;
         private readonly IBranchRepository _branchRepository;
         private readonly IUserContextService _userContext;
+        private readonly ITenantSettingsCurrencyReader _currencyReader;
 
         public CreateExpenseCommandHandler(
             IExpenseRepository repository,
             IExpenseCategoryRepository categoryRepository,
             IBranchRepository branchRepository,
-            IUserContextService userContext)
+            IUserContextService userContext,
+            ITenantSettingsCurrencyReader currencyReader)
         {
             _repository = repository;
             _categoryRepository = categoryRepository;
             _branchRepository = branchRepository;
             _userContext = userContext;
+            _currencyReader = currencyReader;
         }
 
         public async Task<Result<ExpenseDto>> Handle(CreateExpenseCommand request, CancellationToken cancellationToken)
@@ -44,6 +48,7 @@ namespace SportAcademy.Application.Commands.ExpenseCommands.CreateExpense
                 ExpenseCategoryId = request.ExpenseCategoryId,
                 BranchId = request.BranchId,
                 Amount = request.Amount,
+                Currency = await _currencyReader.GetCurrencyAsync(cancellationToken) ?? "KWD",
                 ExpenseDate = request.ExpenseDate,
                 PaymentTypeId = request.PaymentTypeId,
                 Notes = request.Notes,

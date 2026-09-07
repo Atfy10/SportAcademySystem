@@ -244,6 +244,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         t.Email,
                         t.PhoneNumber,
                         t.JoinDate,
+                        t.ImageUrl,
                         CASE WHEN EXISTS (
                             SELECT 1 FROM SubscriptionDetails sd
                             WHERE sd.TraineeId = t.Id AND sd.Status = N'Active' AND sd.IsDeleted = 0
@@ -274,7 +275,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     {fromJoinWhere}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
-                        t.PhoneNumber, t.JoinDate,
+                        t.PhoneNumber, t.JoinDate, t.ImageUrl,
                         b.Name, ft.RANK
                     {BuildSortClause(sortBy, sortDir, "ft.RANK DESC, t.Id ASC")}
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
@@ -329,6 +330,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         t.Email,
                         t.PhoneNumber,
                         t.JoinDate,
+                        t.ImageUrl,
                         CASE WHEN EXISTS (
                             SELECT 1 FROM SubscriptionDetails sd
                             WHERE sd.TraineeId = t.Id AND sd.Status = N'Active' AND sd.IsDeleted = 0
@@ -359,7 +361,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     {fromJoinWhere}
                     GROUP BY
                         t.Id, t.TraineeCode, t.FirstName, t.LastName, t.BirthDate, t.Email,
-                        t.PhoneNumber, t.JoinDate,
+                        t.PhoneNumber, t.JoinDate, t.ImageUrl,
                         b.Name
                     {BuildSortClause(sortBy, sortDir, "t.Id ASC")}
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
@@ -402,7 +404,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     r.IsSubscribed,
                     sports ?? [],
                     r.CoachName,
-                    r.BranchName
+                    r.BranchName,
+                    r.ImageUrl
                 )
                 {
                     MedicalConditions = medicalConditions

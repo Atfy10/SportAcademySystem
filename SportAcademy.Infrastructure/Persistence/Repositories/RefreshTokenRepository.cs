@@ -4,6 +4,7 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,7 +34,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // silently null out the Included AppUser navigation for every row, since a null
             // CurrentTenantId can never match a real TenantId. Identity has to be resolved from
             // the token itself before any tenant context exists, so the filter must be
-            // bypassed here - see the explicit IsDeleted/IsBanned checks in
+            // bypassed here - see the explicit IsDeleted/IsBanned/Tenant.Status checks in
             // JwtTokenService.ValidateAndRefreshTokenAsync, which take over what the
             // (also-bypassed) soft-delete filter would otherwise have enforced.
             return await _context.RefreshTokens
@@ -41,6 +42,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(rt => rt.User)
                     .ThenInclude(u => u.UserRoles)
                         .ThenInclude(ur => ur.Role)
+                .Include(rt => rt.User)
+                    .ThenInclude(u => u.Tenant)
                 .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, ct);
         }
 
@@ -91,6 +94,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     .SetProperty(rt => rt.RevokedAt, revokedAt), ct);
 
             return rowsAffected > 0;
+        }
+
+        public async Task RevokeAllTokensForUsersAsync(IEnumerable<Guid> userIds, CancellationToken ct = default)
+        {
+            var ids = userIds as ICollection<Guid> ?? userIds.ToList();
+            if (ids.Count == 0) return;
+
+            var now = DateTime.UtcNow;
+            await _context.RefreshTokens
+                .Where(rt => ids.Contains(rt.UserId) && !rt.IsRevoked)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(rt => rt.IsRevoked, true)
+                    .SetProperty(rt => rt.RevokedAt, now), ct);
         }
     }
 }

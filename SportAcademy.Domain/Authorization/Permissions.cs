@@ -151,7 +151,16 @@ namespace SportAcademy.Domain.Authorization
 
         public static class Platform
         {
-            public const string ManageTenants = "platform.tenants.manage";
+            // Split from the single platform.tenants.manage blanket permission so a future
+            // read-only platform role (e.g. PlatformSupport) can see tenants/audit history
+            // without also being able to mutate a tenant, ban an owner, or impersonate into a
+            // tenant's account - each of those is a materially more sensitive action than
+            // read-only visibility and is gated separately.
+            public const string TenantsRead = "platform.tenants.read";
+            public const string TenantsManage = "platform.tenants.manage";
+            public const string OwnersManage = "platform.owners.manage";
+            public const string AuditRead = "platform.audit.read";
+            public const string Impersonate = "platform.impersonate";
         }
 
         // All permissions in the catalog, used to validate seed data / diagnostics without
@@ -179,7 +188,7 @@ namespace SportAcademy.Domain.Authorization
             Salary.Create, Salary.Approve, Salary.MarkPaid, Salary.View,
             DiscountCode.Manage, DiscountCode.Approve,
             Tenant.ManageSettings, Tenant.ManageUsers,
-            Platform.ManageTenants,
+            Platform.TenantsRead, Platform.TenantsManage, Platform.OwnersManage, Platform.AuditRead, Platform.Impersonate,
         ];
     }
 }

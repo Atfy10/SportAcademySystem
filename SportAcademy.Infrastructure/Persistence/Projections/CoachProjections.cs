@@ -24,7 +24,8 @@ public static class CoachProjections
         c.Employee.HireDate,
         c.TraineeGroups.SelectMany(tg => tg.Enrollments).Count(e => e.IsActive && !e.IsDeleted),
         c.SkillLevel,
-        c.Sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? c.Sport.Name);
+        c.Sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? c.Sport.Name,
+        c.Employee.ImageUrl);
 
     public static Expression<Func<Coach, CoachDropdownItemDto>> ToDropdownDto(string lang) => c => new CoachDropdownItemDto
     {

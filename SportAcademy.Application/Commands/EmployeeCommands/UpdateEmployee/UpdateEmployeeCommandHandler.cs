@@ -14,14 +14,17 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IFileStorageService _fileStorage;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateEmployeeCommandHandler(
             IEmployeeRepository employeeRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IFileStorageService fileStorage)
         {
             _employeeRepository = employeeRepository;
             _unitOfWork = unitOfWork;
+            _fileStorage = fileStorage;
         }
 
         public async Task<Result<EmployeeDto>> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
@@ -36,6 +39,9 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
                 if (isPhoneNumberExist)
                     throw new PhoneNumberNotUniqueException();
             }
+
+            if (request.ImageUrl != null && request.ImageUrl != employee.ImageUrl)
+                _fileStorage.DeleteImage(employee.ImageUrl);
 
             EmployeeMapper.ApplyUpdate(employee, request);
 

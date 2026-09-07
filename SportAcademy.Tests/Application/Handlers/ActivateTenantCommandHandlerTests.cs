@@ -15,6 +15,7 @@ public class ActivateTenantCommandHandlerTests
     private readonly Mock<IBaseRepository<Tenant, Guid>> _tenantRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<ITenantStatusCacheInvalidator> _tenantStatusCacheMock = new();
     private readonly ActivateTenantCommandHandler _handler;
 
     public ActivateTenantCommandHandlerTests()
@@ -22,7 +23,8 @@ public class ActivateTenantCommandHandlerTests
         _handler = new ActivateTenantCommandHandler(
             _tenantRepoMock.Object,
             _unitOfWorkMock.Object,
-            _mediatorMock.Object);
+            _mediatorMock.Object,
+            _tenantStatusCacheMock.Object);
     }
 
     private static Tenant CreateTenant(Guid id, TenantStatus status = TenantStatus.PendingSetup) => new()

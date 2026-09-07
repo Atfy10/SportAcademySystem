@@ -37,7 +37,7 @@ public class OnboardingController : ControllerBase
                 tenantId, request.Email, userId, request.Role, request.Permissions, request.ExpiresAt, request.BranchIds);
 
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [Authorize(Policy = "Permission:tenant.users.manage")]
@@ -57,7 +57,7 @@ public class OnboardingController : ControllerBase
             var command = new ResendInvitationCommand(tenantId, request.Email, userId);
 
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         // SuperAdmin manages invitations across tenants (e.g. inviting a brand-new tenant's
@@ -81,7 +81,7 @@ public class OnboardingController : ControllerBase
             CancellationToken ct)
         {
             var result = await _mediator.Send(new ValidateInvitationQuery(token), ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [AllowAnonymous]
@@ -94,7 +94,7 @@ public class OnboardingController : ControllerBase
         {
             var command = new AcceptInvitationCommand(token, request.Password, slug);
             var result = await _mediator.Send(command, ct);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
     }
 

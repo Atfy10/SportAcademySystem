@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -19,6 +20,7 @@ using SportAcademy.Infrastructure.Persistence.Interceptors;
 using SportAcademy.Infrastructure.Seeders;
 using SportAcademy.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using SportAcademy.Web.Authorization;
 using SportAcademy.Web.Filters;
 using SportAcademy.Web.Middleware;
@@ -58,7 +60,10 @@ builder.Services.AddScoped<ITenantIdProvider, TenantIdProvider>();
 builder.Services.AddScoped<IBranchAccessProvider, BranchAccessProvider>();
 builder.Services.AddScoped<ICurrentLanguageProvider, CurrentLanguageProvider>();
 builder.Services.AddScoped<ITenantSettingsLanguageReader, TenantSettingsLanguageReader>();
+builder.Services.AddScoped<ITenantSettingsCurrencyReader, TenantSettingsCurrencyReader>();
+builder.Services.AddScoped<ITenantClock, TenantClock>();
 builder.Services.AddScoped<ILocalizationService, JsonLocalizationService>();
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("Email"));
@@ -75,6 +80,8 @@ builder.Services.AddScoped<SoftDeleteInterceptor>();
 
 builder.Services.AddScoped<TenantSaveChangesInterceptor>();
 
+builder.Services.AddScoped<AuditImmutabilityInterceptor>();
+
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
@@ -83,7 +90,9 @@ builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
     var auditingInterceptor = sp.GetRequiredService<AuditingInterceptor>();
     var softDeleteInterceptor = sp.GetRequiredService<SoftDeleteInterceptor>();
     var tenantSaveChangesInterceptor = sp.GetRequiredService<TenantSaveChangesInterceptor>();
-    options.AddInterceptors(auditingInterceptor, softDeleteInterceptor, tenantSaveChangesInterceptor);
+    var auditImmutabilityInterceptor = sp.GetRequiredService<AuditImmutabilityInterceptor>();
+    options.AddInterceptors(
+        auditingInterceptor, softDeleteInterceptor, tenantSaveChangesInterceptor, auditImmutabilityInterceptor);
 });
 
 var jwtKey = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
@@ -132,6 +141,9 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+// Records a Denied audit event for any authenticated user refused a /api/platform/* route -
+// see PlatformDenialAuditResultHandler for why this can't be done from PermissionAuthorizationHandler.
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, PlatformDenialAuditResultHandler>();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -236,10 +248,9 @@ builder.Services.AddInfrastructureServices();
 // Seeding stays opt-in outside Development via Seeding:Enabled (Seeding__Enabled env var) so
 // a real production deploy never gets demo data unless someone explicitly asks for it - e.g.
 // a local IIS test box that needs a login-capable account and wants the demo dataset to test
-// against. Computed here (not just at the migration/seed call site below) because it also
-// decides whether the file-logging email fallback applies - a box seeding demo data is a
-// local test box, not a real deployment, and shouldn't need a real SendGrid key just to read
-// an invitation link.
+// against. Computed here, ahead of the migration/seed call site below, purely so it's available
+// in one place before builder.Build() - the file-logging email fallback below no longer depends
+// on this at all, it now applies in every environment.
 var seedingEnabled = builder.Environment.IsDevelopment()
     || builder.Configuration.GetValue<bool>("Seeding:Enabled");
 
@@ -263,14 +274,18 @@ builder.Services.AddScoped<IEmailService>(sp =>
         ? sp.GetRequiredService<SendGridEmailService>()
         : sp.GetRequiredService<ResendEmailService>();
 
-    // Development (and any box with seeding on) additionally records every outgoing link to a
-    // file before the send is attempted, so an invitation is still usable when the provider is
-    // unreachable, out of credits, or simply not configured yet.
-    if (!seedingEnabled)
-        return sender;
-
-    var devInvitationLinksPath = Path.Combine(builder.Environment.ContentRootPath, "dev-invitation-links.txt");
-    return new FileLoggingEmailServiceDecorator(sender, devInvitationLinksPath);
+    // Every environment, including Production, additionally records every outgoing link to a
+    // file before the send is attempted, so an invitation/reset link is still recoverable when
+    // the provider is unreachable, out of credits, misconfigured, or simply down -
+    // SendOwnerPasswordResetLinkCommandHandler and InvitationCreatedHandler both already lean on
+    // this file existing when they swallow a send failure instead of reporting it. Storage:LogsPath
+    // (set to /app/logs in Production, backed by the backend_logs Docker volume so it survives
+    // redeploys) is where this lands in a real deployment; falls back to ContentRootPath for local
+    // dev, where that setting isn't configured.
+    var invitationLinksPath = Path.Combine(
+        builder.Configuration["Storage:LogsPath"] ?? builder.Environment.ContentRootPath,
+        "invitation-links.txt");
+    return new FileLoggingEmailServiceDecorator(sender, invitationLinksPath);
 });
 
 builder.Services.AddControllers(options =>
@@ -340,6 +355,9 @@ if (!string.IsNullOrWhiteSpace(redisConnectionString))
     });
 }
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>();
+
 var app = builder.Build();
 
 app.Logger.LogInformation(
@@ -356,12 +374,31 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.MigrateAsync();
 
+    // Roles, the Feature/subscription-plan/nationality-category catalogs, and the SuperAdmin
+    // account are cross-tenant shared data that must exist in every environment - including a
+    // brand-new Production database with demo seeding off. Only the demo "Salmiya Academy"
+    // tenant and its business data stay behind the seedingEnabled gate below.
+    var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
+    await seeder.EnsureCoreDataAsync();
+
     if (seedingEnabled)
     {
-        var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
-        await seeder.SeedAsync();
+        await seeder.SeedDemoDataAsync();
     }
 }
+
+// The backend container is never published directly to the host - only reachable from Caddy
+// over the internal docker-compose network - so it's safe to trust forwarded headers from any
+// hop that can reach it at all, rather than pinning specific proxy IPs that vary per deployment.
+// Must run before UseHttpsRedirection()/UseAuthentication() so they see the original
+// scheme/client IP that Caddy forwards, not the plain-HTTP hop between Caddy and Kestrel.
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 if (app.Environment.IsDevelopment())
 {
@@ -373,6 +410,17 @@ app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 
+// Gates a suspended/archived tenant's uploaded files before UseStaticFiles() below ever sees
+// the request - see the middleware's own comment for why this doesn't need general auth.
+app.UseMiddleware<TenantFileAccessGuardMiddleware>();
+
+// Serves uploaded images back out of wwwroot/uploads (LocalFileStorageService's write side) -
+// plain disk-backed UseStaticFiles(), not MapStaticAssets(), since that one only serves assets
+// baked in at build time and would never see a file an upload wrote at runtime. No auth: an
+// avatar/logo/photo URL is meant to be publicly viewable wherever the app renders it, the same
+// as any other CDN-hosted image would be.
+app.UseStaticFiles();
+
 app.UseCors("AllowFrontend");
 
 app.UseMiddleware<TenantResolutionMiddleware>();
@@ -382,6 +430,15 @@ app.UseAuthentication();
 // After authentication on purpose: the tenant's configured language is only knowable once the
 // user is resolved. TenantResolutionMiddleware runs earlier and could only see the header.
 app.UseMiddleware<CultureResolutionMiddleware>();
+
+// Before UseAuthorization(): a suspended/archived tenant should get a distinct 403
+// TENANT_SUSPENDED/TENANT_ARCHIVED, not a permission-shaped 403 from PermissionAuthorizationHandler.
+app.UseMiddleware<TenantStatusGuardMiddleware>();
+
+// Enforces impersonation sessions are read-only and revocable before their own JWT expiry -
+// see ImpersonationGuardMiddleware. Runs after the tenant-status guard on purpose: if the
+// impersonated tenant itself gets suspended mid-session, that guard's rejection should win.
+app.UseMiddleware<ImpersonationGuardMiddleware>();
 
 // Must run between authentication and authorization, not after: PermissionAuthorizationHandler
 // (invoked by UseAuthorization() below) resolves permissions through a tenant-scoped DB query
@@ -443,10 +500,7 @@ app.MapHub<NotificationHub>("/hubs/notification");
 
 app.MapControllers();
 
-if (app.Environment.IsProduction())
-{
-    app.MapGet("/health", () => Results.Ok("API Running"));
-}
+app.MapHealthChecks("/health");
 
 try
 {

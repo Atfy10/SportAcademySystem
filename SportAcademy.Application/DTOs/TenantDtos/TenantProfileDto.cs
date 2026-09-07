@@ -11,4 +11,5 @@ public record TenantProfileDto
     public string? TaxNumber { get; init; }
     public string? CommercialRegistration { get; init; }
     public string? Description { get; init; }
+    public bool IsSetupComplete { get; init; }
 }

@@ -34,6 +34,11 @@ namespace SportAcademy.Application.Interfaces
         Task<(List<AppUser> Items, int TotalCount)> GetOwnersPagedAsync(int skip, int take, string? search, CancellationToken ct = default);
         Task<AppUser?> GetOwnerByIdAsync(Guid id, CancellationToken ct = default);
 
+        /// Every user id belonging to the given tenant, regardless of the caller's own ambient
+        /// tenant - used by ChangeTenantStatusCommandHandler to kill every affected user's
+        /// live sessions the moment a tenant is suspended/archived/deactivated (F-02).
+        Task<List<Guid>> GetUserIdsByTenantIgnoringTenantAsync(Guid tenantId, CancellationToken ct = default);
+
         // Split out of AdminResetPasswordAsync (which generates a token and immediately
         // consumes it in one call) so a "send a reset link" flow can generate the token now
         // and consume it later, from an unauthenticated request when the link is clicked.

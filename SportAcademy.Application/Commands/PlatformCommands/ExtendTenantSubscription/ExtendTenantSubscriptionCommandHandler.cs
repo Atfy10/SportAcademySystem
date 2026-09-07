@@ -31,6 +31,8 @@ public class ExtendTenantSubscriptionCommandHandler : IRequestHandler<ExtendTena
         if (tenant.Subscription is null)
             return Result.Failure(_operation, "Tenant subscription not found.", 404);
 
+        request.ResolvedBeforeState = new { tenant.Subscription.EndsAt };
+
         var baseDate = tenant.Subscription.EndsAt > DateTime.UtcNow
             ? tenant.Subscription.EndsAt
             : DateTime.UtcNow;

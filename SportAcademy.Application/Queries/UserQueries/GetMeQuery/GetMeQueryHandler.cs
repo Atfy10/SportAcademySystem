@@ -51,7 +51,9 @@ public class GetMeQueryHandler : IRequestHandler<GetMeQuery, Result<MeResponse>>
             Roles = rolesList!,
             CreatedAt = user.CreatedAt,
             HasCompletedOnboarding = userProfile?.HasCompletedOnboarding ?? false,
-            PreferredLanguage = userProfile?.PreferredLanguage
+            PreferredLanguage = userProfile?.PreferredLanguage,
+            ProfileImageUrl = userProfile?.ProfileImageUrl,
+            Bio = userProfile?.Bio
         };
 
         return Result<MeResponse>.Success(response, _operation);

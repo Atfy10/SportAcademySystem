@@ -4,6 +4,7 @@ using SportAcademy.Application.DTOs.FinanceDtos;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Finance;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
@@ -18,19 +19,22 @@ namespace SportAcademy.Application.Commands.SalaryPaymentCommands.CreateSalaryPa
         private readonly ICoachBranchAccessRepository _coachBranchAccessRepository;
         private readonly IUserContextService _userContext;
         private readonly IPublisher _publisher;
+        private readonly ITenantSettingsCurrencyReader _currencyReader;
 
         public CreateSalaryPaymentCommandHandler(
             ISalaryPaymentRepository repository,
             IEmployeeRepository employeeRepository,
             ICoachBranchAccessRepository coachBranchAccessRepository,
             IUserContextService userContext,
-            IPublisher publisher)
+            IPublisher publisher,
+            ITenantSettingsCurrencyReader currencyReader)
         {
             _repository = repository;
             _employeeRepository = employeeRepository;
             _coachBranchAccessRepository = coachBranchAccessRepository;
             _userContext = userContext;
             _publisher = publisher;
+            _currencyReader = currencyReader;
         }
 
         public async Task<Result<SalaryPaymentDto>> Handle(CreateSalaryPaymentCommand request, CancellationToken cancellationToken)
@@ -72,6 +76,7 @@ namespace SportAcademy.Application.Commands.SalaryPaymentCommands.CreateSalaryPa
                 EmployeeId = request.EmployeeId,
                 BranchId = resolvedBranchId,
                 Amount = request.Amount,
+                Currency = await _currencyReader.GetCurrencyAsync(cancellationToken) ?? "KWD",
                 Bonus = request.Bonus ?? 0,
                 PeriodMonth = request.PeriodMonth,
                 PaymentTypeId = request.PaymentTypeId,

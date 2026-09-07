@@ -21,6 +21,7 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         private readonly ITraineeRepository _traineeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
+        private readonly IFileStorageService _fileStorage;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateTraineePersonalCommandHandler(
@@ -28,19 +29,24 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
             ITraineeService traineeService,
             ITraineeRepository traineeRepository,
             IUnitOfWork unitOfWork,
-            IPublisher publisher)
+            IPublisher publisher,
+            IFileStorageService fileStorage)
         {
             _branchRepository = branchRepository;
             _traineeService = traineeService;
             _traineeRepository = traineeRepository;
             _unitOfWork = unitOfWork;
             _publisher = publisher;
+            _fileStorage = fileStorage;
         }
 
         public async Task<Result<UpdateTraineePersonalCommand>> Handle(UpdateTraineePersonalCommand request, CancellationToken cancellationToken)
         {
             var trainee = await _traineeRepository.GetFullTrainee(request.Id, cancellationToken)
                 ?? throw new TraineeNotFoundException(request.Id.ToString());
+
+            if (request.ImageUrl != null && request.ImageUrl != trainee.ImageUrl)
+                _fileStorage.DeleteImage(trainee.ImageUrl);
 
             TraineeMapper.ApplyPersonalUpdate(trainee, request);
 

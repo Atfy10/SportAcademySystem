@@ -1,6 +1,7 @@
 using MediatR;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -20,6 +21,7 @@ namespace SportAcademy.Application.Services
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly ISportTraineeRepository _sportTraineeRepository;
         private readonly IPublisher _publisher;
+        private readonly ITenantSettingsCurrencyReader _currencyReader;
 
         public SubscriptionCreationService(
             ISubscriptionDetailsRepository subscriptionDetailsRepository,
@@ -28,7 +30,8 @@ namespace SportAcademy.Application.Services
             IFinanceLedgerService financeLedgerService,
             IEnrollmentRepository enrollmentRepository,
             ISportTraineeRepository sportTraineeRepository,
-            IPublisher publisher)
+            IPublisher publisher,
+            ITenantSettingsCurrencyReader currencyReader)
         {
             _subscriptionDetailsRepository = subscriptionDetailsRepository;
             _subscriptionDetailsMangeService = subscriptionDetailsMangeService;
@@ -37,6 +40,7 @@ namespace SportAcademy.Application.Services
             _enrollmentRepository = enrollmentRepository;
             _sportTraineeRepository = sportTraineeRepository;
             _publisher = publisher;
+            _currencyReader = currencyReader;
         }
 
         public async Task<SubscriptionDetails> CreateAsync(
@@ -139,14 +143,15 @@ namespace SportAcademy.Application.Services
             // Invoice and immediately records a full payment against it via the chosen method -
             // not a deferred Accountant-only step. discountAmount/discountCodeId are 0/null on
             // the plain (no discount code) path.
+            var currency = await _currencyReader.GetCurrencyAsync(ct) ?? "KWD";
             var invoice = await _financeLedgerService.IssueSubscriptionInvoiceAsync(
-                subDetails, sportPrice.Price, discountAmount, discountCodeId, "KWD", ct);
+                subDetails, sportPrice.Price, discountAmount, discountCodeId, currency, ct);
 
             await _financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
                 Amount: invoice.GrandTotal,
                 PaymentTypeId: paymentTypeId,
                 BranchId: branchId,
-                Currency: "KWD",
+                Currency: currency,
                 Reference: null,
                 Notes: null,
                 RecordedByUserId: actingUserId,

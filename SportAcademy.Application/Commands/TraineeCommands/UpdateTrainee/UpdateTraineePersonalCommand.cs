@@ -22,5 +22,6 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
         public List<int> SportIds { get; init; } = [];
         public List<string>? MedicalConditions { get; init; } = [];
         public AppUserDto? AppUser { get; init; }
+        public string? ImageUrl { get; init; }
     }
 }

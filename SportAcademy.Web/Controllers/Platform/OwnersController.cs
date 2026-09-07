@@ -9,9 +9,14 @@ using SportAcademy.Application.Queries.PlatformQueries.GetOwners;
 namespace SportAcademy.Web.Controllers.Platform;
 
 [Authorize(Roles = "SuperAdmin")]
-[EnableRateLimiting("per-tenant")]
+// per-user, not per-tenant: see TenantsController for why (F-11).
+[EnableRateLimiting("per-user")]
 [Route("api/platform/owners")]
 [ApiController]
+// Owners has a single permission (Manage) rather than splitting read/write like Tenants -
+// there's no read-only "view owners" use case distinct from the ability to ban/reset them,
+// so a lone platform.owners.manage covers this whole controller.
+[Authorize(Policy = "Permission:platform.owners.manage")]
 public class OwnersController : ControllerBase
 {
     private readonly IMediator _mediator;

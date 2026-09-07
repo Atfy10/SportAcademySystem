@@ -38,6 +38,11 @@ public class RealtimeService : IRealtimeService
     public async Task ExcuseRequestQueueUpdated()
         => await TenantGroup().ExcuseRequestQueueUpdated();
 
+    public async Task NotifyTenantStatusChangedAsync(Guid tenantId, string newStatus)
+        => await _hubContext.Clients
+            .Group(NotificationGroupNames.ForTenant(tenantId, NotificationGroupNames.General))
+            .TenantStatusChanged(newStatus);
+
     /// Every domain-update broadcast is scoped to the current tenant's "General" SignalR
     /// group - never Clients.All - so one tenant's real-time updates can never reach another
     /// tenant's connected clients.

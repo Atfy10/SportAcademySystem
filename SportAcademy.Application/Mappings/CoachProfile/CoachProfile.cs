@@ -30,6 +30,7 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                     .Count(e => e.IsActive && !e.IsDeleted)))
                 .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel))
                 .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Sport.Name))
+                .ForCtorParam("ImageUrl", opt => opt.MapFrom(src => src.Employee.ImageUrl))
                 .ReverseMap();
 
             // New coaches default to a Rate of 3 (not 0 - CLR default - which would read as
@@ -64,7 +65,8 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                         .Count(e => e.IsActive && !e.IsDeleted),
                     src.Employee.HireDate,
                     src.Employee.IsWork,
-                    src.Rate
+                    src.Rate,
+                    src.Employee.ImageUrl
                 ));
 
             // .ForMember() here, not .ConstructUsing() - ConstructUsing opts a mapping out of

@@ -3,6 +3,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.PlatformDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities.Tenants;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.Persistence.Repositories
@@ -22,8 +23,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
+        public async Task AddWithoutSaveAsync(TenantAuditEvent auditEvent, CancellationToken ct = default)
+        {
+            await _context.Set<TenantAuditEvent>().AddAsync(auditEvent, ct);
+        }
+
         public async Task<PagedData<TenantAuditEventDto>> GetPagedAsync(
-            Guid? tenantId, string? eventType, DateTime? from, DateTime? to,
+            Guid? tenantId, string? eventType, AuditOutcome? outcome, DateTime? from, DateTime? to,
             PageRequest page, CancellationToken ct = default)
         {
             var query = _context.Set<TenantAuditEvent>().AsNoTracking().AsQueryable();
@@ -32,6 +38,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 query = query.Where(e => e.TenantId == tenantId.Value);
             if (!string.IsNullOrWhiteSpace(eventType))
                 query = query.Where(e => e.EventType == eventType);
+            if (outcome.HasValue)
+                query = query.Where(e => e.Outcome == outcome.Value);
             if (from.HasValue)
                 query = query.Where(e => e.PerformedAt >= from.Value);
             if (to.HasValue)
@@ -51,7 +59,15 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 e.EventType,
                 e.Description,
                 e.PerformedAt,
-                e.PerformedBy
+                e.PerformedBy,
+                e.PerformedByUserId,
+                e.Outcome.ToString(),
+                e.Reason,
+                e.AfterJson,
+                e.BeforeJson,
+                e.IpAddress,
+                e.UserAgent,
+                e.CorrelationId
             )).ToList();
 
             return new PagedData<TenantAuditEventDto>

@@ -10,5 +10,6 @@ public record EmployeeCardDto(
     bool IsWork,
     string PhoneNumber,
     string Address,
-    DateTime HireDate
+    DateTime HireDate,
+    string? ImageUrl
 );

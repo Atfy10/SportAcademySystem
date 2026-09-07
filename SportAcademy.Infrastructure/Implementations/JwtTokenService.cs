@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -31,18 +32,29 @@ namespace SportAcademy.Infrastructure.Implementations
             _userManager = userManager;
         }
 
-        public async Task<string> GenerateJwtToken(AppUser appUser, params string[] roles)
+        public Task<string> GenerateJwtToken(AppUser appUser, params string[] roles) =>
+            BuildTokenAsync(appUser, roles, appUser.TenantId, impersonationGrantId: null, expiresAtOverride: null);
+
+        public Task<string> GenerateImpersonationToken(
+            AppUser superAdmin, Guid targetTenantId, Guid grantId, DateTime expiresAt) =>
+            BuildTokenAsync(superAdmin, ["SuperAdmin"], targetTenantId, grantId, expiresAt);
+
+        private async Task<string> BuildTokenAsync(
+            AppUser appUser, string[] roles, Guid tenantId, Guid? impersonationGrantId, DateTime? expiresAtOverride)
         {
             var claims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.Sub, appUser.Id.ToString()),
                 new(ClaimTypes.NameIdentifier, appUser.Id.ToString()),
-                new("tenant_id", appUser.TenantId.ToString()),
+                new("tenant_id", tenantId.ToString()),
                 //new("tenant_code", appUser.Tenant.Code),
                 new(JwtRegisteredClaimNames.UniqueName, appUser.UserName!),
                 new(JwtRegisteredClaimNames.Email, appUser.Email!),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
+
+            if (impersonationGrantId is { } grantId)
+                claims.Add(new Claim("impersonation_grant_id", grantId.ToString()));
 
             var permissions = new HashSet<string>();
             foreach (var role in roles)
@@ -78,11 +90,12 @@ namespace SportAcademy.Infrastructure.Implementations
             var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha512);
 
             var expireMinutes = int.TryParse(_configuration["Jwt:ExpireMinutes"], out var parsed) ? parsed : 30;
+            var expires = expiresAtOverride ?? DateTime.UtcNow.AddMinutes(expireMinutes);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(expireMinutes),
+                Expires = expires,
                 SigningCredentials = signingCredentials,
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"],
@@ -149,6 +162,13 @@ namespace SportAcademy.Infrastructure.Implementations
             // exclude a deleted user never runs here either - enforce both checks explicitly,
             // mirroring what LoginCommandHandler already enforces for the same user.
             if (storedToken.User.IsDeleted || storedToken.User.IsBanned)
+                return null;
+
+            // A suspended/archived/deactivated tenant must not be able to mint a fresh access
+            // token for itself just by refreshing - that would let TenantStatusGuardMiddleware's
+            // enforcement be sidestepped by any client that still holds a valid refresh token
+            // (see LoginCommandHandler for the same check on the initial login).
+            if (storedToken.User.Tenant.Status is not TenantStatus.Active)
                 return null;
 
             // Atomically revoke only if still unrevoked. If a concurrent request already won

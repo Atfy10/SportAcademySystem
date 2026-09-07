@@ -13,5 +13,12 @@ public class TenantProfile
     public string? CommercialRegistration { get; set; }
     public string? Description { get; set; }
 
+    // Set true the first time the tenant Owner submits the post-invite "complete your academy
+    // profile" onboarding step (see CompleteTenantSetupCommand) - drives whether the frontend
+    // shows that wizard after AcceptInvitation instead of going straight to the dashboard.
+    // Backfilled to true for every tenant that already existed before this flag was introduced
+    // (see the AddTenantSetupCompleteFlag migration) so they are never retroactively gated.
+    public bool IsSetupComplete { get; set; }
+
     public Tenant Tenant { get; set; } = null!;
 }

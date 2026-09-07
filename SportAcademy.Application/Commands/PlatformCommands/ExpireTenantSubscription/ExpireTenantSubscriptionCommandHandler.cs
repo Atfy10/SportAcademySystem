@@ -28,6 +28,7 @@ public class ExpireTenantSubscriptionCommandHandler : IRequestHandler<ExpireTena
         if (tenant.Subscription is null)
             return Result.Failure(_operation, "Tenant subscription not found.", 404);
 
+        request.ResolvedBeforeState = new { tenant.Subscription.EndsAt };
         tenant.Subscription.EndsAt = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(ct);
 

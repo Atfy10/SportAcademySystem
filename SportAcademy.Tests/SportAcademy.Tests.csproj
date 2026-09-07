@@ -29,6 +29,10 @@
     <ProjectReference Include="..\SportAcademy.Application\SportAcademy.Application.csproj" />
     <ProjectReference Include="..\SportAcademy.Domain\SportAcademy.Domain.csproj" />
     <ProjectReference Include="..\SportAcademy.Infrastructure\SportAcademy.Infrastructure.csproj" />
+    <!-- Needed to unit-test Web-layer classes directly (middleware, IAuthorizationMiddlewareResultHandler
+         decorators) by instantiating them against a DefaultHttpContext, without a full WebApplicationFactory
+         host. Web has no reference back to Tests, so this doesn't create a cycle. -->
+    <ProjectReference Include="..\SportAcademy.Web\SportAcademy.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

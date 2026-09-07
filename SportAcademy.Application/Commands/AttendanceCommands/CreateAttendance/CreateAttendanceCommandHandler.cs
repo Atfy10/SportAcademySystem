@@ -18,6 +18,7 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
         private readonly IEnrollmentRepository _enrollmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
+        private readonly ITenantClock _tenantClock;
         private readonly string _operation = OperationType.Add.ToString();
 
         public CreateAttendanceCommandHandler(
@@ -25,13 +26,15 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
             ISessionOccurrenceRepository sessionOccurrenceRepository,
             IEnrollmentRepository enrollmentRepository,
             IUnitOfWork unitOfWork,
-            IPublisher publisher)
+            IPublisher publisher,
+            ITenantClock tenantClock)
         {
             _attendanceRepository = attendanceRepository;
             _sessionOccurrenceRepository = sessionOccurrenceRepository;
             _enrollmentRepository = enrollmentRepository;
             _unitOfWork = unitOfWork;
             _publisher = publisher;
+            _tenantClock = tenantClock;
         }
 
         public async Task<Result<int>> Handle(CreateAttendanceCommand request, CancellationToken cancellationToken)
@@ -43,7 +46,13 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
                 request.SessionOccurrenceId, cancellationToken)
                 ?? throw new SessionOccurrenceNotFoundException(request.SessionOccurrenceId.ToString());
 
-            if (DateTime.UtcNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 15))
+            // timing.StartDateTime is written (session generation) and compared here as the
+            // tenant's own wall-clock time, never converted to real UTC - "now" has to be
+            // resolved the same way, or this comparison silently mixes two different clocks for
+            // any tenant not in UTC.
+            var tenantNow = await _tenantClock.GetLocalNowAsync(cancellationToken);
+
+            if (tenantNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 15))
                 throw new AttendanceWindowClosedException(request.SessionOccurrenceId);
 
             var groupId = timing.TraineeGroupId;
@@ -55,7 +64,7 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
 
             var checkInTime = request.CheckInTime != null
                 ? TimeOnly.Parse(request.CheckInTime)
-                : TimeOnly.FromDateTime(DateTime.UtcNow);
+                : TimeOnly.FromDateTime(tenantNow);
 
             // Idempotent, same as bulk create: marking an already-recorded trainee again
             // updates the existing row instead of throwing a duplicate-key error.
@@ -69,7 +78,7 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
                     EnrollmentId = enrollmentId,
                     SessionOccurrenceId = request.SessionOccurrenceId,
                     AttendanceStatus = request.Status,
-                    AttendanceDate = DateTime.UtcNow,
+                    AttendanceDate = tenantNow,
                     CheckInTime = checkInTime,
                     CoachNote = string.Empty
                 };

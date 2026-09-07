@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+**/.vs/
+**/logs/
+**/*.user
+**/*.log
+SportAcademy.Tests/
+architecture-audit/
+.git/
+.gitignore
+.github/
+Dockerfile
+.dockerignore
+*.md
+hs_err_pid*.log
+replay_pid*.log

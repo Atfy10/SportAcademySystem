@@ -86,7 +86,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         e.HireDate,
                         ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
                         c.SkillLevel,
-                        ISNULL(st.Name, s.Name) AS SportName
+                        ISNULL(st.Name, s.Name) AS SportName,
+                        e.ImageUrl
                     FROM Coaches c
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
                     INNER JOIN CONTAINSTABLE(
@@ -140,7 +141,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         e.HireDate,
                         ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
                         c.SkillLevel,
-                        ISNULL(st.Name, s.Name) AS SportName
+                        ISNULL(st.Name, s.Name) AS SportName,
+                        e.ImageUrl
                     FROM Coaches c
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
                     INNER JOIN Branches b ON e.BranchId = b.Id

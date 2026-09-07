@@ -183,7 +183,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         e.IsWork,
                         e.PhoneNumber,
                         (e.City + ', ' + e.Street) AS Address,
-                        e.HireDate
+                        e.HireDate,
+                        e.ImageUrl
                     FROM Employees e
                     INNER JOIN CONTAINSTABLE(
                         Employees,
@@ -219,7 +220,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         e.IsWork,
                         e.PhoneNumber,
                         (e.City + ', ' + e.Street) AS Address,
-                        e.HireDate
+                        e.HireDate,
+                        e.ImageUrl
                     FROM Employees e
                     INNER JOIN Branches b ON e.BranchId = b.Id
                     WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)

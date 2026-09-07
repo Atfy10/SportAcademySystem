@@ -1,0 +1,129 @@
+using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
+using Moq;
+using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Enums;
+using SportAcademy.Web.Services;
+
+namespace SportAcademy.Tests.Web.Services;
+
+// Exercises the real filesystem under a throwaway temp directory standing in for wwwroot -
+// SaveImageAsync/DeleteImage's whole job is disk I/O, so a mock filesystem would just be
+// re-asserting the implementation rather than verifying it actually works.
+public class LocalFileStorageServiceTests : IDisposable
+{
+    private readonly string _webRoot;
+    private static readonly Guid TenantId = Guid.NewGuid();
+    private readonly LocalFileStorageService _service;
+
+    public LocalFileStorageServiceTests()
+    {
+        _webRoot = Path.Combine(Path.GetTempPath(), "sport-academy-tests-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_webRoot);
+
+        var envMock = new Mock<IWebHostEnvironment>();
+        envMock.Setup(e => e.WebRootPath).Returns(_webRoot);
+        envMock.Setup(e => e.ContentRootPath).Returns(_webRoot);
+
+        var tenantIdProviderMock = new Mock<ITenantIdProvider>();
+        tenantIdProviderMock.Setup(p => p.TenantId).Returns(TenantId);
+
+        _service = new LocalFileStorageService(
+            envMock.Object, tenantIdProviderMock.Object, Mock.Of<ILogger<LocalFileStorageService>>());
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_webRoot))
+            Directory.Delete(_webRoot, recursive: true);
+    }
+
+    [Fact]
+    public async Task SaveImageAsync_WritesFileUnderTheCategoryFolderAndReturnsItsUrl()
+    {
+        using var content = new MemoryStream([1, 2, 3, 4]);
+
+        var url = await _service.SaveImageAsync(content, "photo.jpg", ImageUploadCategory.Avatar);
+
+        url.Should().MatchRegex($@"^/uploads/{TenantId:N}/avatars/[0-9a-f]{{32}}\.jpg$");
+        var diskPath = Path.Combine(_webRoot, url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        File.Exists(diskPath).Should().BeTrue();
+        (await File.ReadAllBytesAsync(diskPath)).Should().Equal([1, 2, 3, 4]);
+    }
+
+    [Fact]
+    public async Task SaveImageAsync_ScopesTheStoredPathToTheCurrentTenant()
+    {
+        // TenantFileAccessGuardMiddleware relies on this segment being present and accurate to
+        // gate a suspended/archived tenant's files - if this ever silently stopped being
+        // written, every uploaded file would become unguardable.
+        using var content = new MemoryStream([1]);
+
+        var url = await _service.SaveImageAsync(content, "photo.jpg", ImageUploadCategory.Avatar);
+
+        url.Should().StartWith($"/uploads/{TenantId:N}/");
+    }
+
+    [Fact]
+    public async Task SaveImageAsync_IgnoresTheCallersOriginalFileNameBeyondItsExtension()
+    {
+        // A caller-supplied "../../evil.jpg" (or anything else) must never influence where the
+        // file lands - only its extension is kept, and the stored name is always a fresh GUID.
+        using var content = new MemoryStream([9]);
+
+        var url = await _service.SaveImageAsync(content, "../../evil.jpg", ImageUploadCategory.Person);
+
+        url.Should().StartWith($"/uploads/{TenantId:N}/people/");
+        url.Should().NotContain("..");
+        url.Should().NotContain("evil");
+    }
+
+    [Fact]
+    public async Task SaveImageAsync_DifferentCategoriesGoToDifferentFolders()
+    {
+        using var avatar = new MemoryStream([1]);
+        using var logo = new MemoryStream([2]);
+
+        var avatarUrl = await _service.SaveImageAsync(avatar, "a.png", ImageUploadCategory.Avatar);
+        var logoUrl = await _service.SaveImageAsync(logo, "b.png", ImageUploadCategory.TenantLogo);
+
+        avatarUrl.Should().StartWith($"/uploads/{TenantId:N}/avatars/");
+        logoUrl.Should().StartWith($"/uploads/{TenantId:N}/tenant-logos/");
+    }
+
+    [Fact]
+    public async Task DeleteImage_ExistingLocalFile_RemovesIt()
+    {
+        using var content = new MemoryStream([1]);
+        var url = await _service.SaveImageAsync(content, "photo.png", ImageUploadCategory.Avatar);
+        var diskPath = Path.Combine(_webRoot, url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+        File.Exists(diskPath).Should().BeTrue();
+
+        _service.DeleteImage(url);
+
+        File.Exists(diskPath).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("https://cdn.example.com/some-external-avatar.png")]
+    public void DeleteImage_NullOrExternalUrl_NoOp(string? url)
+    {
+        var act = () => _service.DeleteImage(url);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void DeleteImage_PathTraversalAttempt_RefusesAndDoesNotThrow()
+    {
+        // Even though the "/uploads/" prefix check alone can't be defeated by a raw ".." (it's
+        // a StartsWith on the very first segment), this asserts the second, path-based guard in
+        // DeleteImage never lets a resolved path escape webRoot.
+        var act = () => _service.DeleteImage("/uploads/../../../../etc/passwd");
+
+        act.Should().NotThrow();
+    }
+}

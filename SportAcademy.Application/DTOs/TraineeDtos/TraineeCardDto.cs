@@ -12,7 +12,8 @@ public record TraineeCardDto(
     bool IsSubscribed,
     IReadOnlyList<TraineeSportSkillDto> SportSkills,
     string? CoachName,
-    string? BranchName
+    string? BranchName,
+    string? ImageUrl
 )
 {
     public double AttendanceRate { get; set; }

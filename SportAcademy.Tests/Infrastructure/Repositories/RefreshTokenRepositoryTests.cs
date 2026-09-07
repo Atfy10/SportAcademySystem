@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Tenants;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Repositories;
 
@@ -22,6 +24,18 @@ public class RefreshTokenRepositoryTests
     {
         public Guid? TenantId { get; private set; }
         public void SetTenantId(Guid? tenantId) => TenantId = tenantId;
+
+        public IDisposable Impersonate(Guid tenantId)
+        {
+            var previous = TenantId;
+            TenantId = tenantId;
+            return new RestoreScope(() => TenantId = previous);
+        }
+
+        private sealed class RestoreScope(Action restore) : IDisposable
+        {
+            public void Dispose() => restore();
+        }
     }
 
     private sealed class TestBranchAccessProvider : IBranchAccessProvider
@@ -61,6 +75,19 @@ public class RefreshTokenRepositoryTests
 
         await using (var seedCtx = CreateContext(tenantId, dbName))
         {
+            // AppUser.Tenant is a required navigation, and GetByTokenHashAsync now includes it
+            // (F-01 needs Tenant.Status) - a user with no matching Tenant row is not a real
+            // scenario, so seed one rather than leaving the FK dangling.
+            seedCtx.Set<Tenant>().Add(new Tenant
+            {
+                Id = tenantId,
+                Name = "Test Academy",
+                DisplayName = "Test Academy",
+                Code = "TEST",
+                Email = "test-academy@test.com",
+                Slug = "test-academy",
+                Status = TenantStatus.Active,
+            });
             seedCtx.Users.Add(user);
             seedCtx.Set<RefreshToken>().Add(new RefreshToken
             {
@@ -107,6 +134,16 @@ public class RefreshTokenRepositoryTests
 
         await using (var seedCtx = CreateContext(tenantId, dbName))
         {
+            seedCtx.Set<Tenant>().Add(new Tenant
+            {
+                Id = tenantId,
+                Name = "Test Academy",
+                DisplayName = "Test Academy",
+                Code = "TEST",
+                Email = "test-academy@test.com",
+                Slug = "test-academy",
+                Status = TenantStatus.Active,
+            });
             seedCtx.Users.Add(bannedUser);
             seedCtx.Set<RefreshToken>().Add(new RefreshToken
             {

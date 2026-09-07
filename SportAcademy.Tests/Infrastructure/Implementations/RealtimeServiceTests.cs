@@ -113,4 +113,23 @@ public class RealtimeServiceTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.DashboardStatsUpdated());
     }
+
+    [Fact]
+    public async Task NotifyTenantStatusChangedAsync_BroadcastsToExplicitTenant_NotTheAmbientOne()
+    {
+        // The one exception to this file's whole premise: the caller (a SuperAdmin acting from
+        // the System tenant) is never the tenant being suspended/archived, so this must target
+        // the tenantId argument, not whatever _tenantIdProviderMock resolves to.
+        var noTenantProviderMock = new Mock<ITenantIdProvider>();
+        noTenantProviderMock.Setup(p => p.TenantId).Returns((Guid?)null);
+        var service = new RealtimeService(_hubContextMock.Object, noTenantProviderMock.Object);
+
+        var targetTenantId = Guid.NewGuid();
+        await service.NotifyTenantStatusChangedAsync(targetTenantId, "Suspended");
+
+        var expectedGroup = NotificationGroupNames.ForTenant(targetTenantId, NotificationGroupNames.General);
+        _clientsMock.Verify(c => c.Group(expectedGroup), Times.Once);
+        _clientProxyMock.Verify(c => c.TenantStatusChanged("Suspended"), Times.Once);
+        _clientsMock.VerifyGet(c => c.All, Times.Never);
+    }
 }

@@ -45,6 +45,12 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             if (tenant == null)
                 throw new UserLoginException();
 
+            // A suspended/archived/deactivated tenant should refuse a brand new login outright,
+            // not just let TenantStatusGuardMiddleware reject the request that follows it - see
+            // that middleware for the enforcement that applies to an already-issued token.
+            if (tenant.Status is not TenantStatus.Active)
+                throw new UserLoginException();
+
             _tenantIdProvider.SetTenantId(tenant.Id);
             var user = await _userRepository.GetByUsernameOrEmailAsync(request.UserNameOrEmail, cancellationToken)
                 ?? throw new UserLoginException();

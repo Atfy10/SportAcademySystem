@@ -11,4 +11,6 @@ public record MeResponse
     public DateTime? CreatedAt { get; init; }
     public bool HasCompletedOnboarding { get; init; }
     public string? PreferredLanguage { get; init; }
+    public string? ProfileImageUrl { get; init; }
+    public string? Bio { get; init; }
 }

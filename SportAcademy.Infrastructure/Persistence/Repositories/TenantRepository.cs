@@ -30,7 +30,9 @@ public class TenantRepository : ITenantRepository
     public async Task<(List<Tenant> Items, int TotalCount)> GetPagedAsync(
         int skip, int take, string? status, string? search, CancellationToken ct = default)
     {
-        var query = _context.Set<Tenant>().AsQueryable();
+        // The System tenant is the platform's own bookkeeping record (SuperAdmin's TenantId
+        // claim), not a customer academy - it must never appear in the Platform's tenant list.
+        var query = _context.Set<Tenant>().Where(t => t.Code != Tenant.SystemTenantCode);
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<TenantStatus>(status, ignoreCase: true, out var statusEnum))
             query = query.Where(t => t.Status == statusEnum);
@@ -58,11 +60,12 @@ public class TenantRepository : ITenantRepository
     }
 
     public Task<int> GetCountAsync(CancellationToken ct = default)
-        => _context.Set<Tenant>().CountAsync(ct);
+        => _context.Set<Tenant>().CountAsync(t => t.Code != Tenant.SystemTenantCode, ct);
 
     public async Task<Dictionary<string, int>> GetStatusCountsAsync(CancellationToken ct = default)
     {
         var counts = await _context.Set<Tenant>()
+            .Where(t => t.Code != Tenant.SystemTenantCode)
             .GroupBy(t => t.Status)
             .Select(g => new { Status = g.Key.ToString(), Count = g.Count() })
             .ToListAsync(ct);

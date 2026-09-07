@@ -13,5 +13,6 @@ public record CoachDetailsDto(
     int? TotalTrainees,
     DateTime? HireDate,
     bool IsWork,
-    int? Rating
+    int? Rating,
+    string? ImageUrl
 );
