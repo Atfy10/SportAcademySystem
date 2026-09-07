@@ -216,32 +216,41 @@ namespace SportAcademy.Infrastructure.Seeders
                 password = DefaultPassword;
             }
 
-            var systemTenantId = Guid.NewGuid();
-            var superAdminId = Guid.NewGuid();
+            // Looked up by Code, not created unconditionally: if a prior attempt got this far
+            // and committed the tenant but then failed to create the SuperAdmin user below (e.g.
+            // SuperAdmin:Password didn't satisfy Identity's password policy), a naive
+            // "always insert a new Tenant" here would crash every subsequent restart on
+            // IX_Tenants_Code's uniqueness instead of ever recovering. Reusing the existing row
+            // makes this method safe to retry from any partial failure point.
+            var systemTenant = await _context.Tenants.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(t => t.Code == Tenant.SystemTenantCode);
 
-            var systemTenant = new Tenant
+            if (systemTenant is null)
             {
-                Id = systemTenantId,
-                Name = "System",
-                DisplayName = "System Platform",
-                Email = "system@sportacademy.com.kw",
-                Code = Tenant.SystemTenantCode,
-                Slug = "system",
-                Status = TenantStatus.Active,
-                OwnerId = null,
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.Tenants.Add(systemTenant);
-            await _context.SaveChangesAsync();
+                systemTenant = new Tenant
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "System",
+                    DisplayName = "System Platform",
+                    Email = "system@sportacademy.com.kw",
+                    Code = Tenant.SystemTenantCode,
+                    Slug = "system",
+                    Status = TenantStatus.Active,
+                    OwnerId = null,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Tenants.Add(systemTenant);
+                await _context.SaveChangesAsync();
+            }
 
-            _tenantIdProvider.SetTenantId(systemTenantId);
+            _tenantIdProvider.SetTenantId(systemTenant.Id);
 
             var superAdmin = new AppUser
             {
-                Id = superAdminId,
+                Id = Guid.NewGuid(),
                 UserName = SuperAdminUserName,
                 Email = SuperAdminEmail,
-                TenantId = systemTenantId,
+                TenantId = systemTenant.Id,
                 IsPasswordReset = false,
                 IsBanned = false,
                 EmailConfirmed = true,
@@ -254,7 +263,7 @@ namespace SportAcademy.Infrastructure.Seeders
 
             _context.Profiles.Add(new Profile { AppUserId = superAdmin.Id });
 
-            systemTenant.OwnerId = superAdminId;
+            systemTenant.OwnerId = superAdmin.Id;
             await _context.SaveChangesAsync();
 
             await _userManager.AddToRoleAsync(superAdmin, "SuperAdmin");
