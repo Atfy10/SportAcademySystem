@@ -1,11 +1,11 @@
 using AutoMapper;
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Common.Security;
 using SportAcademy.Application.DTOs.AppUserDtos.AdminDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
-using System.Security.Cryptography;
 
 namespace SportAcademy.Application.Commands.AuthCommands.AdminCreateUser;
 
@@ -58,7 +58,7 @@ public class AdminCreateUserCommandHandler : IRequestHandler<AdminCreateUserComm
         user.IsBanned = !request.IsActive;
         user.EmailConfirmed = request.EmailConfirmed;
 
-        var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(8));
+        var password = SecurePasswordGenerator.Generate();
 
         var identityResult = await _userRepository.Register(user, password);
         if (!identityResult.Succeeded)
