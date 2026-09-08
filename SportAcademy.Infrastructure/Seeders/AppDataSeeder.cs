@@ -120,7 +120,7 @@ namespace SportAcademy.Infrastructure.Seeders
             var featureIds = await ReconcileFeaturesAsync();
             await ReconcileSubscriptionPlansAsync(featureIds);
             await ReconcileNationalityCategoriesAsync();
-            await EnsureSystemTenantAndSuperAdminAsync();
+            await EnsureSystemTenantAndSuperAdminAsync(featureIds);
         }
 
         // Demo-only: the fictional "Salmiya Academy" tenant and its full business dataset, plus a
@@ -188,7 +188,7 @@ namespace SportAcademy.Infrastructure.Seeders
         // circular reference is ever inserted pointing at a row that doesn't exist yet, so no FK
         // enable/disable dance is needed (Tenant.OwnerId is nullable for exactly this reason -
         // CreateTenantCommandHandler leaves it null until invite-acceptance sets it too).
-        private async Task EnsureSystemTenantAndSuperAdminAsync()
+        private async Task EnsureSystemTenantAndSuperAdminAsync(List<Guid> featureIds)
         {
             // Looked up by Code, not created unconditionally: if a prior attempt got this far
             // and committed the tenant but then failed on a later step (e.g. SuperAdmin:Password
@@ -214,6 +214,38 @@ namespace SportAcademy.Infrastructure.Seeders
                 };
                 _context.Tenants.Add(systemTenant);
                 await _context.SaveChangesAsync();
+            }
+
+            // The System tenant never goes through CreateTenantCommand or
+            // EnableTenantFeaturesAsync (that's only wired for a real, sold tenant), so without
+            // this it carries zero TenantFeature rows forever - every IRequiresFeature-gated
+            // command (MarkAllNotificationsAsReadCommand, UpdateMyProfileCommand, etc.) then
+            // 403s for the SuperAdmin specifically, since FeatureGateBehavior's IsFeatureEnabledAsync
+            // check finds no matching row and treats that as "not enabled". Reconciled the same
+            // add-missing way as ReconcileFeaturesAsync itself, so a feature added to the catalog
+            // later is backfilled here too, not just at first bootstrap.
+            var enabledFeatureIds = await _context.TenantFeatures
+                .Where(tf => tf.TenantId == systemTenant.Id)
+                .Select(tf => tf.FeatureId)
+                .ToListAsync();
+            var missingFeatureIds = featureIds.Except(enabledFeatureIds).ToList();
+            if (missingFeatureIds.Count > 0)
+            {
+                var now = DateTime.UtcNow;
+                foreach (var featureId in missingFeatureIds)
+                {
+                    _context.TenantFeatures.Add(new TenantFeature
+                    {
+                        TenantId = systemTenant.Id,
+                        FeatureId = featureId,
+                        IsEnabled = true,
+                        EnabledAt = now,
+                        EnabledBy = "System",
+                    });
+                }
+                await _context.SaveChangesAsync();
+                _logger.LogInformation(
+                    "Enabled {Count} feature(s) for the System tenant.", missingFeatureIds.Count);
             }
 
             // Must happen before the very next line, not after: AppUser is ITenantScoped, so
