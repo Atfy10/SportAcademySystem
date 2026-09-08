@@ -76,6 +76,14 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
             return Result<AuthResponseDto>.Failure(Operation, "Invitation has expired.", 400);
         }
 
+        // Holding the link is not proof of owning the inbox it was sent to - the frontend must
+        // drive the invitee through SendInvitationVerificationCodeCommand /
+        // VerifyInvitationCodeCommand before ever showing the password step. Enforced here too
+        // (not just by the frontend's own sequencing) since this is the actual security boundary:
+        // nothing stops a request from hitting this endpoint directly.
+        if (!invitation.IsEmailVerified)
+            return Result<AuthResponseDto>.Failure(Operation, "Please verify your email before continuing.", 400);
+
         var tenant = await _tenantRepository.GetByIdAsync(invitation.TenantId, ct);
         if (tenant is null)
             return Result<AuthResponseDto>.Failure(Operation, "Tenant not found.", 404);

@@ -12,6 +12,7 @@ using SportAcademy.Application.Commands.PlatformCommands.StartImpersonation;
 using SportAcademy.Application.Commands.PlatformCommands.ToggleFeature;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateTenant;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantDetails;
+using SportAcademy.Application.Queries.PlatformQueries.GetSubscriptionPlans;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantFeatures;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenants;
 using SportAcademy.Domain.Enums;
@@ -158,6 +159,19 @@ public class TenantsController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    // Absolute route, not tenant-scoped: this is the global plan catalog (name/id/price), not
+    // one tenant's own subscription - both the create-tenant and change-plan pickers need it so
+    // neither has to hardcode {1,2,3} = {Basic,Pro,Enterprise} and silently drift from whatever
+    // rows actually exist in SubscriptionPlans.
+    [HttpGet("/api/platform/subscription-plans")]
+    [Authorize(Roles = "SuperAdmin,PlatformSupport")]
+    [Authorize(Policy = "Permission:platform.tenants.read")]
+    public async Task<IActionResult> GetSubscriptionPlans(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetSubscriptionPlansQuery(), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
     [HttpGet("{id}/features")]
     [Authorize(Roles = "SuperAdmin,PlatformSupport")]
     [Authorize(Policy = "Permission:platform.tenants.read")]
@@ -178,7 +192,7 @@ public class TenantsController : ControllerBase
         CancellationToken ct)
     {
         var result = await _mediator.Send(
-            new ToggleFeatureCommand(id, request.FeatureId, request.IsEnabled), ct);
+            new ToggleFeatureCommand(id, request.FeatureId, request.IsEnabled, request.Lock), ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -267,6 +281,9 @@ public record ArchiveTenantRequest(string Reason);
 
 public record ChangeTenantPlanRequest(int NewPlanId);
 
-public record ToggleFeatureRequest(Guid FeatureId, bool IsEnabled);
+// Lock: whether this decision should also stop the tenant from changing it back themselves
+// (LockedBySuperAdmin) - the SuperAdmin decides this explicitly on every toggle rather than it
+// always being forced, see ToggleFeatureCommandHandler.
+public record ToggleFeatureRequest(Guid FeatureId, bool IsEnabled, bool Lock);
 
 public record ExtendSubscriptionRequest(int Days);

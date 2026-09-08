@@ -61,7 +61,12 @@ public class AcceptInvitationCommandHandlerTests
             Status = InvitationStatus.Pending,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             Purpose = InvitationPurpose.OwnerSetup,
-            InvitedByUserId = Guid.NewGuid()
+            InvitedByUserId = Guid.NewGuid(),
+            // Every existing test in this file exercises the accept flow itself, not the
+            // separate email-verification gate - defaulting to already-verified keeps them
+            // focused on what they actually test. Handle_EmailNotVerified_ReturnsFailure below
+            // covers the gate directly.
+            IsEmailVerified = true,
         };
         return invitation;
     }
@@ -148,6 +153,28 @@ public class AcceptInvitationCommandHandlerTests
             m => m.Publish(It.IsAny<SportAcademy.Domain.Events.InvitationAcceptedEvent>(), It.IsAny<CancellationToken>()),
             Times.Once);
         _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_EmailNotVerified_ReturnsFailureWithoutCreatingAUser()
+    {
+        var tenantId = Guid.NewGuid();
+        var invitation = CreatePendingInvitation(tenantId);
+        invitation.IsEmailVerified = false;
+        var tenant = CreateTenant(tenantId);
+        var command = CreateValidCommand();
+
+        _tokenServiceMock.Setup(s => s.HashToken("raw-token")).Returns("hashed-token");
+        _invitationRepoMock
+            .Setup(r => r.FindByTokenHashAsync("hashed-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invitation);
+        _tenantRepoMock.Setup(r => r.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.StatusCode.Should().Be(400);
+        _userManagerMock.Verify(um => um.CreateAsync(It.IsAny<AppUser>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

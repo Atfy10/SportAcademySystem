@@ -26,7 +26,11 @@ public static class InvitationMapper
         };
     }
 
-    public static InvitationResponse ToResponse(this Invitation entity)
+    // inviteUrl is only ever known to the handler that just minted the raw token this entity's
+    // TokenHash was derived from (the hash itself can't be reversed) - callers building a
+    // response from an already-existing invitation (nothing minted this request) pass nothing
+    // and get a null InviteUrl.
+    public static InvitationResponse ToResponse(this Invitation entity, string? inviteUrl = null)
     {
         return new InvitationResponse
         {
@@ -35,7 +39,8 @@ public static class InvitationMapper
             Status = entity.Status.ToString(),
             IsExpired = entity.ExpiresAt < DateTime.UtcNow,
             ExpiresAt = entity.ExpiresAt,
-            CreatedAt = entity.CreatedAt
+            CreatedAt = entity.CreatedAt,
+            InviteUrl = inviteUrl
         };
     }
 }

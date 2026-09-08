@@ -20,6 +20,12 @@ public record TenantDetailResponse
     public TenantSettingsResponse? Settings { get; init; }
     public TenantSubscriptionResponse? Subscription { get; init; }
     public List<TenantFeatureResponse> Features { get; init; } = [];
+
+    // Only ever populated by CreateTenantCommandHandler, right after it also creates the Owner's
+    // invitation - the raw token behind this link only exists in memory at that moment (its hash
+    // is all that's ever persisted), so no other read of a tenant (e.g. GET .../tenants/{id})
+    // can ever reconstruct it. Null everywhere else.
+    public string? OwnerInviteUrl { get; init; }
 }
 
 public record TenantProfileResponse
@@ -43,6 +49,7 @@ public record TenantSettingsResponse
 
 public record TenantSubscriptionResponse
 {
+    public int PlanId { get; init; }
     public string PlanName { get; init; } = default!;
     public string PlanCode { get; init; } = default!;
     public DateTime StartsAt { get; init; }

@@ -6,7 +6,6 @@ using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Events;
 
 namespace SportAcademy.Application.Commands.AuthCommands.ResendInvitation;
 
@@ -16,8 +15,9 @@ public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCo
     private readonly IInvitationTokenService _tokenService;
     private readonly IInvitationRepository _invitationRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMediator _mediator;
     private readonly ITenantIdProvider _tenantIdProvider;
+    private readonly IAppUrlProvider _appUrlProvider;
+    private readonly IInvitationEmailSender _emailSender;
     private readonly string _operation = OperationType.Add.ToString();
 
     public ResendInvitationCommandHandler(
@@ -25,15 +25,17 @@ public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCo
         IInvitationTokenService tokenService,
         IInvitationRepository invitationRepository,
         IUnitOfWork unitOfWork,
-        IMediator mediator,
-        ITenantIdProvider tenantIdProvider)
+        ITenantIdProvider tenantIdProvider,
+        IAppUrlProvider appUrlProvider,
+        IInvitationEmailSender emailSender)
     {
         _tenantRepository = tenantRepository;
         _tokenService = tokenService;
         _invitationRepository = invitationRepository;
         _unitOfWork = unitOfWork;
-        _mediator = mediator;
         _tenantIdProvider = tenantIdProvider;
+        _appUrlProvider = appUrlProvider;
+        _emailSender = emailSender;
     }
 
     public async Task<Result<InvitationResponse>> Handle(ResendInvitationCommand request, CancellationToken ct)
@@ -79,9 +81,13 @@ public class ResendInvitationCommandHandler : IRequestHandler<ResendInvitationCo
             _tenantIdProvider.SetTenantId(previousTenantId);
         }
 
-        await _mediator.Publish(
-            new InvitationCreatedEvent(newInvitation.Id, rawToken, tenant.Slug, request.Email), ct);
+        // Unlike a fresh CreateInvitationCommand (which just hands the link back for the admin
+        // to copy or send), Resend's whole purpose is "the invitee needs this again" - it always
+        // actively sends. A failure here must surface, not be swallowed: the admin explicitly
+        // asked for this and needs to know if it didn't go out.
+        var inviteUrl = _appUrlProvider.InvitationUrl(tenant.Slug, rawToken);
+        await _emailSender.SendInvitationLinkAsync(request.Email, inviteUrl, ct);
 
-        return Result<InvitationResponse>.Success(newInvitation.ToResponse(), _operation);
+        return Result<InvitationResponse>.Success(newInvitation.ToResponse(inviteUrl), _operation);
     }
 }

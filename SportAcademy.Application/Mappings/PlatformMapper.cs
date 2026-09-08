@@ -56,6 +56,7 @@ public static class PlatformMapper
             } : null,
             Subscription = entity.Subscription is not null ? new TenantSubscriptionResponse
             {
+                PlanId = entity.Subscription.SubscriptionPlanId,
                 PlanName = entity.Subscription.Plan?.Name ?? "",
                 PlanCode = entity.Subscription.Plan?.Code ?? "",
                 StartsAt = entity.Subscription.StartsAt,

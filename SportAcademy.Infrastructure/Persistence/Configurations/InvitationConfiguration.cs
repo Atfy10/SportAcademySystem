@@ -40,6 +40,11 @@ public sealed class InvitationConfiguration : IEntityTypeConfiguration<Invitatio
         builder.Property(i => i.Permissions)
             .HasMaxLength(2000);
 
+        // Same hex-SHA256 shape as TokenHash above (see IInvitationTokenService.HashToken) -
+        // same max length for the same reason.
+        builder.Property(i => i.VerificationCodeHash)
+            .HasMaxLength(128);
+
         builder.HasIndex(i => i.TokenHash)
             .IsUnique();
 

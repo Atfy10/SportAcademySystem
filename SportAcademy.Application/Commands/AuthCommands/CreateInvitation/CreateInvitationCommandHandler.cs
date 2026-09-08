@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.InvitationDtos;
 using SportAcademy.Application.Interfaces;
@@ -22,9 +23,11 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
     private readonly IInvitationTokenService _tokenService;
     private readonly IInvitationRepository _invitationRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMediator _mediator;
     private readonly ITenantIdProvider _tenantIdProvider;
+    private readonly IAppUrlProvider _appUrlProvider;
     private readonly IUserRepository _userRepository;
+    private readonly IMediator _mediator;
+    private readonly ILogger<CreateInvitationCommandHandler> _logger;
     private readonly string _operation = OperationType.Add.ToString();
 
     public CreateInvitationCommandHandler(
@@ -32,17 +35,21 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
         IInvitationTokenService tokenService,
         IInvitationRepository invitationRepository,
         IUnitOfWork unitOfWork,
-        IMediator mediator,
         ITenantIdProvider tenantIdProvider,
-        IUserRepository userRepository)
+        IAppUrlProvider appUrlProvider,
+        IUserRepository userRepository,
+        IMediator mediator,
+        ILogger<CreateInvitationCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
         _tokenService = tokenService;
         _invitationRepository = invitationRepository;
         _unitOfWork = unitOfWork;
-        _mediator = mediator;
         _tenantIdProvider = tenantIdProvider;
+        _appUrlProvider = appUrlProvider;
         _userRepository = userRepository;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     public async Task<Result<InvitationResponse>> Handle(CreateInvitationCommand request, CancellationToken ct)
@@ -113,10 +120,23 @@ public class CreateInvitationCommandHandler : IRequestHandler<CreateInvitationCo
             _tenantIdProvider.SetTenantId(previousTenantId);
         }
 
-        var actorName = await _userRepository.GetDisplayNameAsync(request.InvitedByUserId, ct);
-        await _mediator.Publish(
-            new InvitationCreatedEvent(invitation.Id, rawToken, tenant.Slug, request.Email, actorName), ct);
+        // No longer auto-emailed - the caller gets the link back and explicitly chooses to copy
+        // it or send it (SendInvitationEmailCommand), so creating an invitation never blocks on
+        // a live call to the email provider. The in-app "an invitation was sent" notice for the
+        // tenant's existing Admins/Owners is unrelated to that and still fires - best-effort,
+        // since it must never turn a successful invitation into a reported failure.
+        try
+        {
+            var actorName = await _userRepository.GetDisplayNameAsync(request.InvitedByUserId, ct);
+            await _mediator.Publish(new InvitationCreatedEvent(invitation.Id, request.Email, actorName), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Failed to publish the 'invitation sent' notice for invitation {InvitationId}.", invitation.Id);
+        }
 
-        return Result<InvitationResponse>.Success(invitation.ToResponse(), _operation);
+        var inviteUrl = _appUrlProvider.InvitationUrl(tenant.Slug, rawToken);
+        return Result<InvitationResponse>.Success(invitation.ToResponse(inviteUrl), _operation);
     }
 }

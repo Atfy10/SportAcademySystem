@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using MediatR;
 using Moq;
 using SportAcademy.Application.Commands.AuthCommands.CreateInvitation;
@@ -19,9 +20,10 @@ public class CreateInvitationCommandHandlerTests
     private readonly Mock<IInvitationTokenService> _tokenServiceMock = new();
     private readonly Mock<IInvitationRepository> _invitationRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
+    private readonly Mock<IAppUrlProvider> _appUrlProviderMock = new();
     private readonly Mock<IUserRepository> _userRepoMock = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
     private readonly CreateInvitationCommandHandler _handler;
 
     public CreateInvitationCommandHandlerTests()
@@ -31,9 +33,11 @@ public class CreateInvitationCommandHandlerTests
             _tokenServiceMock.Object,
             _invitationRepoMock.Object,
             _unitOfWorkMock.Object,
-            _mediatorMock.Object,
             _tenantIdProviderMock.Object,
-            _userRepoMock.Object);
+            _appUrlProviderMock.Object,
+            _userRepoMock.Object,
+            _mediatorMock.Object,
+            Mock.Of<ILogger<CreateInvitationCommandHandler>>());
     }
 
     private static Tenant CreateTenant(Guid id, string slug = "test-academy") => new()
@@ -66,11 +70,18 @@ public class CreateInvitationCommandHandlerTests
             .Setup(s => s.HashToken("raw-token-value"))
             .Returns("hashed-token-value");
 
+        _appUrlProviderMock
+            .Setup(p => p.InvitationUrl(tenant.Slug, "raw-token-value"))
+            .Returns("https://app.test/t/test-academy/invite/raw-token-value");
+
         var result = await _handler.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().NotBeNull();
         result.Data.Email.Should().Be("owner@test.com");
+        // Nothing is auto-emailed on creation any more - the caller gets the link back directly
+        // and explicitly chooses to copy or send it.
+        result.Data.InviteUrl.Should().Be("https://app.test/t/test-academy/invite/raw-token-value");
 
         _invitationRepoMock.Verify(
             r => r.AddAsync(It.Is<Invitation>(i =>
@@ -80,7 +91,6 @@ public class CreateInvitationCommandHandlerTests
             It.IsAny<CancellationToken>()), Times.Once);
 
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _mediatorMock.Verify(m => m.Publish(It.IsAny<INotification>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

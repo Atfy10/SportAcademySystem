@@ -30,15 +30,18 @@ public class ToggleFeatureCommandHandler : IRequestHandler<ToggleFeatureCommand,
 
         if (tenantFeature is not null)
         {
-            if (tenantFeature.IsEnabled == request.IsEnabled && tenantFeature.LockedBySuperAdmin)
-                return Result.Failure(_operation, $"Feature is already {(request.IsEnabled ? "enabled" : "disabled")}.", 400);
+            // Both parts of the request's intent must already match, not just IsEnabled - a
+            // request that only changes Lock (e.g. releasing a previously-forced feature back to
+            // the tenant, value unchanged) must still go through.
+            if (tenantFeature.IsEnabled == request.IsEnabled && tenantFeature.LockedBySuperAdmin == request.Lock)
+                return Result.Failure(_operation, $"Feature is already {(request.IsEnabled ? "enabled" : "disabled")} and {(request.Lock ? "locked" : "unlocked")}.", 400);
 
             request.ResolvedBeforeState = new { tenantFeature.IsEnabled, tenantFeature.LockedBySuperAdmin };
 
             tenantFeature.IsEnabled = request.IsEnabled;
             tenantFeature.EnabledAt = DateTime.UtcNow;
             tenantFeature.EnabledBy = "SuperAdmin";
-            tenantFeature.LockedBySuperAdmin = true;
+            tenantFeature.LockedBySuperAdmin = request.Lock;
         }
         else
         {
@@ -49,12 +52,13 @@ public class ToggleFeatureCommandHandler : IRequestHandler<ToggleFeatureCommand,
                 IsEnabled = request.IsEnabled,
                 EnabledAt = DateTime.UtcNow,
                 EnabledBy = "SuperAdmin",
-                LockedBySuperAdmin = true
+                LockedBySuperAdmin = request.Lock
             }, ct);
         }
 
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result.Success(_operation, $"Feature {(request.IsEnabled ? "enabled" : "disabled")} successfully.");
+        var lockNote = request.Lock ? " and locked" : "";
+        return Result.Success(_operation, $"Feature {(request.IsEnabled ? "enabled" : "disabled")}{lockNote} successfully.");
     }
 }

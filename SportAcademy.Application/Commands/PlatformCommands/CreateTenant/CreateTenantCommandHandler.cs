@@ -1,11 +1,12 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Commands.AuthCommands.CreateInvitation;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.PlatformDtos;
 using SportAcademy.Application.Mappings;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Events;
 using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.PlatformCommands.CreateTenant;
@@ -16,18 +17,24 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
     private readonly IBaseRepository<SubscriptionPlan, int> _planRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMediator _mediator;
+    private readonly IUserContextService _userContext;
+    private readonly ILogger<CreateTenantCommandHandler> _logger;
     private readonly string _operation = OperationType.Add.ToString();
 
     public CreateTenantCommandHandler(
         ITenantRepository tenantRepository,
         IBaseRepository<SubscriptionPlan, int> planRepository,
         IUnitOfWork unitOfWork,
-        IMediator mediator)
+        IMediator mediator,
+        IUserContextService userContext,
+        ILogger<CreateTenantCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
         _planRepository = planRepository;
         _unitOfWork = unitOfWork;
         _mediator = mediator;
+        _userContext = userContext;
+        _logger = logger;
     }
 
     public async Task<Result<TenantDetailResponse>> Handle(CreateTenantCommand request, CancellationToken ct)
@@ -99,10 +106,36 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
         // exist (and so has no id to attribute an audit event to) until this line runs.
         request.ResolvedTenantId = tenant.Id;
 
-        await _mediator.Publish(
-            new TenantCreatedEvent(tenant.Id, tenant.Slug, request.OwnerEmail, request.OwnerName), ct);
+        // Reuses the exact same path a SuperAdmin re-inviting a stuck PendingSetup tenant's Owner
+        // already goes through (CreateInvitationCommandHandler's Role==null branch), rather than
+        // a bespoke tenant-creation-only invitation path that duplicated its rules. Attributed to
+        // whichever SuperAdmin is creating this tenant (not Guid.Empty) - InvitationAcceptedHandler
+        // can then actually notify them when the Owner accepts, the same as any other invite.
+        string? ownerInviteUrl = null;
+        var callerId = _userContext.UserId;
+        if (callerId is { } invitedByUserId)
+        {
+            var invitationResult = await _mediator.Send(
+                new CreateInvitationCommand(tenant.Id, request.OwnerEmail, invitedByUserId), ct);
 
-        var detail = tenant.ToDetailResponse();
+            // A failure here must never undo a tenant that was already created successfully -
+            // the tenant is left in PendingSetup with no invitation yet, recoverable later via
+            // the existing "Resend Invitation" action once the underlying problem is fixed.
+            if (invitationResult.IsSuccess)
+                ownerInviteUrl = invitationResult.Data!.InviteUrl;
+            else
+                _logger.LogError(
+                    "Tenant {TenantId} was created but its Owner invitation failed: {Message}",
+                    tenant.Id, invitationResult.Message);
+        }
+        else
+        {
+            _logger.LogError(
+                "Tenant {TenantId} was created without an authenticated caller in context - no Owner invitation could be attributed and none was created.",
+                tenant.Id);
+        }
+
+        var detail = tenant.ToDetailResponse() with { OwnerInviteUrl = ownerInviteUrl };
         return Result<TenantDetailResponse>.Success(detail, _operation, "Tenant created successfully.");
     }
 }
