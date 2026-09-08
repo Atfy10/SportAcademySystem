@@ -15,6 +15,9 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.DeleteSportPrice
 		int BranchId,
 		int SubsTypeId,
 		TraineeGroupType GroupType
-	) : IRequest<Result<bool>>, IBranchScopedRequest;
+	) : IRequest<Result<bool>>, IBranchScopedRequest, IRequiresFeature
+	{
+		public string FeatureKey => "pricing-management";
+	}
 
 }

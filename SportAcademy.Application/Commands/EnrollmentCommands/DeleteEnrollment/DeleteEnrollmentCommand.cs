@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,5 +9,8 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment
 {
-    public record DeleteEnrollmentCommand(int Id) : IRequest<Result<bool>>;
+    public record DeleteEnrollmentCommand(int Id) : IRequest<Result<bool>>, IRequiresFeature
+    {
+        public string FeatureKey => "enrollment-management";
+    }
 }

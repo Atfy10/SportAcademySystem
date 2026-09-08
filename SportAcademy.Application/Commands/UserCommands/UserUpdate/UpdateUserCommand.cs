@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +13,8 @@ namespace SportAcademy.Application.Commands.UserCommands.UserUpdate
     public record UpdateUserCommand(
         string Username,
         string? Email,
-        string? PhoneNumber) : IRequest<Result<AppUserDto>>;
+        string? PhoneNumber) : IRequest<Result<AppUserDto>>, IRequiresFeature
+    {
+        public string FeatureKey => "user-management";
+    }
 }

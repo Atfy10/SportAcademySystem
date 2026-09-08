@@ -7,5 +7,8 @@ namespace SportAcademy.Application.Commands.BranchCommands.RemoveSportFromBranch
     public record RemoveSportFromBranchCommand(
         int SportId,
         int BranchId
-    ) : IRequest<Result<string>>, IBranchScopedRequest;
+    ) : IRequest<Result<string>>, IBranchScopedRequest, IRequiresFeature
+    {
+        public string FeatureKey => "branch-management";
+    }
 }

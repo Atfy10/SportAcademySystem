@@ -33,6 +33,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(f => f.CreatedAt)
                 .IsRequired();
 
+            builder.Property(f => f.IsImplemented)
+                .IsRequired()
+                .HasDefaultValue(true);
+
             builder.HasMany(f => f.TenantFeatures)
                 .WithOne(cf => cf.Feature)
                 .HasForeignKey(cf => cf.FeatureId)

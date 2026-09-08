@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Common.Features;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Interfaces;
@@ -52,7 +53,31 @@ public class UpdateTenantFeatureCommandHandler : IRequestHandler<UpdateTenantFea
 
             if (tenantFeature.IsEnabled == request.IsEnabled)
                 return Result.Failure(_operation, $"Feature is already {(request.IsEnabled ? "enabled" : "disabled")}.", 400);
+        }
 
+        // Every feature toggle must keep TenantFeature.IsEnabled dependency-closed - self-service
+        // never cascades (see FeatureDependencyPolicy), so a violation here just blocks the
+        // request with a message naming what's in the way.
+        var allFeatures = await _tenantRepository.GetAllFeaturesAsync(ct);
+        var featureNameById = allFeatures.ToDictionary(f => f.Id, f => f.Name);
+        if (featureNameById.TryGetValue(request.FeatureId, out var featureName))
+        {
+            var tenantFeatures = await _tenantRepository.GetTenantFeaturesAsync(tenantId.Value, ct);
+            var currentlyEnabledNames = tenantFeatures
+                .Where(tf => tf.IsEnabled && tf.FeatureId != request.FeatureId && featureNameById.ContainsKey(tf.FeatureId))
+                .Select(tf => featureNameById[tf.FeatureId])
+                .ToHashSet();
+
+            var dependencyError = request.IsEnabled
+                ? FeatureDependencyPolicy.ValidateEnable(featureName, currentlyEnabledNames)
+                : FeatureDependencyPolicy.ValidateDisable(featureName, currentlyEnabledNames);
+
+            if (dependencyError is not null)
+                return Result.Failure(_operation, dependencyError, 409);
+        }
+
+        if (tenantFeature is not null)
+        {
             tenantFeature.IsEnabled = request.IsEnabled;
             tenantFeature.EnabledAt = DateTime.UtcNow;
             tenantFeature.EnabledBy = "TenantAdmin";

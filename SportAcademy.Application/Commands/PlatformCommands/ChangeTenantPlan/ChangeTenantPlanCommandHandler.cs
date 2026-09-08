@@ -53,7 +53,8 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
         // (UpdatePlanFeaturesCommandHandler).
         var newPlanFeatureIds = await _tenantRepository.GetPlanFeaturesAsync(plan.Id, ct);
         var currentFeatures = await _tenantRepository.GetTenantFeaturesAsync(request.TenantId, ct);
-        var updates = PlanFeatureReconciler.ComputeUpdates(currentFeatures, newPlanFeatureIds);
+        var featureNameById = (await _tenantRepository.GetAllFeaturesAsync(ct)).ToDictionary(f => f.Id, f => f.Name);
+        var updates = PlanFeatureReconciler.ComputeUpdates(currentFeatures, newPlanFeatureIds, featureNameById);
 
         if (updates.Count > 0)
             await _tenantRepository.BulkUpdateFeaturesAsync(request.TenantId, updates, "PlanChange", ct);

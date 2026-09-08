@@ -554,40 +554,57 @@ namespace SportAcademy.Infrastructure.Seeders
         // attendance/subscription reports below are implemented), and listing them here would
         // let a SuperAdmin toggle on a feature no tenant can actually use. Add each once its
         // report implementation lands.
-        private static readonly (string Name, string DisplayName, string Description)[] FeatureCatalog =
+        //
+        // IsImplemented: false marks a catalog entry that's sold/shown but has no code behind it
+        // yet - the UI renders it as a disabled switch with a "not available yet" badge instead
+        // of a toggle that silently does nothing. Audited 2026-09-08 against the actual codebase
+        // (grep for IRequiresFeature usage, git branches, migration history) - three formerly-listed
+        // entries (api-access, health-test-mgmt, trainee-codes) had zero code, zero preserved
+        // branch, and zero product-decision record backing them, so they were removed from the
+        // catalog entirely (see the migration that added this column - it deletes those rows,
+        // cascading to every tenant's TenantFeature and every plan's SubscriptionPlanFeature
+        // grant). The four below stayed because each has a concrete reason to come back:
+        //   - chat-system, ai-assistant: real, working code, deliberately paused (not deleted) -
+        //     see the RemoveVideoAnalysisAndChatFeatures migration and the preserved
+        //     feature/ai-video-chatbot branch.
+        //   - audit-trail: already surfaced as a real toggle on the Owner's Security Settings
+        //     page, and the Platform-side audit system (TenantAuditEvent, PlatformAuditBehavior)
+        //     this would extend already exists and is exercised in production.
+        //   - schedule-management: not a dead feature, a modeling choice - schedules are a field
+        //     on TraineeGroup, not a separate resource, but session-management's dependency on it
+        //     (FeatureDependencies.cs) is a real state-consistency rule this pass didn't want to
+        //     unpick.
+        private static readonly (string Name, string DisplayName, string Description, bool IsImplemented)[] FeatureCatalog =
         [
-            ("user-management", "User Management", "Create, edit, and manage system users"),
-            ("role-management", "Role & Permission Management", "Define roles and assign permissions"),
-            ("tenant-settings", "Tenant Configuration", "Configure tenant-wide settings"),
-            ("branch-management", "Branch Management", "Manage academy branches and locations"),
-            ("trainee-management", "Trainee Management", "Register and manage trainee profiles"),
-            ("employee-management", "Employee Management", "Manage staff and employee records"),
-            ("coach-management", "Coach Management", "Assign and manage coaches"),
-            ("sport-management", "Sports Management", "Define sports and training activities"),
-            ("subscription-plan", "Subscription Plans", "Create and manage subscription offerings"),
-            ("pricing-management", "Pricing Management", "Set sport and branch pricing"),
-            ("payment-processing", "Payment Processing", "Process and track payments"),
-            ("group-management", "Group Management", "Form and manage training groups"),
-            ("schedule-management", "Schedule Management", "Create class schedules and timetables"),
-            ("attendance-tracking", "Attendance Tracking", "Record and report attendance"),
-            ("enrollment-management", "Enrollment Management", "Manage trainee enrollments"),
-            ("family-management", "Family Management", "Manage family accounts and billing"),
-            ("nationality-categories", "Nationality Categories", "Configure nationality classifications"),
-            ("financial-reports", "Financial Reports", "Revenue, outstanding, and payment-method reports"),
-            ("attendance-reports", "Attendance Reports", "Full attendance history, filterable and printable"),
-            ("subscription-reports", "Subscription Reports", "Full subscription history, filterable and printable"),
-            ("notifications", "Notification System", "Send and manage system notifications"),
-            ("chat-system", "In-App Chat", "Internal messaging and communication"),
-            ("health-test-mgmt", "Health Test Management", "Track health assessments and tests"),
-            ("discount-offers", "Discounts & Offers", "Manage promotions and discounts"),
-            ("session-management", "Session Management", "Manage training sessions"),
-            ("audit-trail", "Audit Trail", "System activity logging"),
-            ("system-settings", "System Settings", "Global system configuration"),
-            ("profile-mgmt", "Profile Management", "User profile and preferences"),
-            ("ai-assistant", "AI Assistant", "AI-powered help and insights"),
-            ("api-access", "API Access", "External API integration management"),
-            ("backup-restore", "Backup & Restore", "Data backup and restoration"),
-            ("trainee-codes", "Trainee Code Management", "Custom trainee code assignment"),
+            ("user-management", "User Management", "Create, edit, and manage system users", true),
+            ("role-management", "Role & Permission Management", "Define roles and assign permissions", true),
+            ("tenant-settings", "Tenant Configuration", "Configure tenant-wide settings", true),
+            ("branch-management", "Branch Management", "Manage academy branches and locations", true),
+            ("trainee-management", "Trainee Management", "Register and manage trainee profiles", true),
+            ("employee-management", "Employee Management", "Manage staff and employee records", true),
+            ("coach-management", "Coach Management", "Assign and manage coaches", true),
+            ("sport-management", "Sports Management", "Define sports and training activities", true),
+            ("subscription-plan", "Subscription Plans", "Create and manage subscription offerings", true),
+            ("pricing-management", "Pricing Management", "Set sport and branch pricing", true),
+            ("payment-processing", "Payment Processing", "Process and track payments", true),
+            ("group-management", "Group Management", "Form and manage training groups", true),
+            ("schedule-management", "Schedule Management", "Create class schedules and timetables", false),
+            ("attendance-tracking", "Attendance Tracking", "Record and report attendance", true),
+            ("enrollment-management", "Enrollment Management", "Manage trainee enrollments", true),
+            ("family-management", "Family Management", "Manage family accounts and billing", true),
+            ("nationality-categories", "Nationality Categories", "Configure nationality classifications", true),
+            ("financial-reports", "Financial Reports", "Revenue, outstanding, and payment-method reports", true),
+            ("attendance-reports", "Attendance Reports", "Full attendance history, filterable and printable", true),
+            ("subscription-reports", "Subscription Reports", "Full subscription history, filterable and printable", true),
+            ("notifications", "Notification System", "Send and manage system notifications", true),
+            ("chat-system", "In-App Chat", "Internal messaging and communication", false),
+            ("discount-offers", "Discounts & Offers", "Manage promotions and discounts", true),
+            ("session-management", "Session Management", "Manage training sessions", true),
+            ("audit-trail", "Audit Trail", "System activity logging", false),
+            ("system-settings", "System Settings", "Global system configuration", true),
+            ("profile-mgmt", "Profile Management", "User profile and preferences", true),
+            ("ai-assistant", "AI Assistant", "AI-powered help and insights", false),
+            ("backup-restore", "Backup & Restore", "Data backup and restoration", true),
         ];
 
         // Fully replaces the old "SeedFeaturesAsync always inserts everything, assumes it only
@@ -606,10 +623,11 @@ namespace SportAcademy.Infrastructure.Seeders
         {
             var existing = await _context.Set<Feature>().ToListAsync();
             var existingNames = existing.Select(f => f.Name).ToHashSet();
+            var catalogNames = FeatureCatalog.Select(f => f.Name).ToHashSet();
 
             var missing = FeatureCatalog
                 .Where(f => !existingNames.Contains(f.Name))
-                .Select(f => CreateFeature(f.Name, f.DisplayName, f.Description))
+                .Select(f => CreateFeature(f.Name, f.DisplayName, f.Description, f.IsImplemented))
                 .ToList();
 
             if (missing.Count > 0)
@@ -643,10 +661,44 @@ namespace SportAcademy.Infrastructure.Seeders
                 }
             }
 
-            return existing.Select(f => f.Id).Concat(missing.Select(f => f.Id)).ToList();
+            // Keep IsImplemented in sync for features that already existed (a catalog entry can
+            // flip from true to false, or vice versa, without a fresh row ever being inserted) -
+            // same self-healing idea as the "add missing" loop above, just for this one column.
+            var catalogByName = FeatureCatalog.ToDictionary(f => f.Name);
+            var changed = existing
+                .Where(f => catalogByName.TryGetValue(f.Name, out var c) && f.IsImplemented != c.IsImplemented)
+                .ToList();
+            foreach (var feature in changed)
+                feature.IsImplemented = catalogByName[feature.Name].IsImplemented;
+            if (changed.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Synced IsImplemented for {Count} feature(s): {Names}",
+                    changed.Count, string.Join(", ", changed.Select(f => f.Name)));
+            }
+
+            // A feature dropped from the catalog entirely (see FeatureCatalog's own comment on
+            // why api-access/health-test-mgmt/trainee-codes were removed) is pruned here too, not
+            // just in the one-time migration that first did this - so trimming the catalog later
+            // never again needs a matching migration to actually take effect. Cascades to every
+            // tenant's TenantFeature row and every plan's SubscriptionPlanFeature grant.
+            var removed = existing.Where(f => !catalogNames.Contains(f.Name)).ToList();
+            if (removed.Count > 0)
+            {
+                _logger.LogInformation("Pruning {Count} feature(s) no longer in the catalog: {Names}",
+                    removed.Count, string.Join(", ", removed.Select(f => f.Name)));
+                _context.Set<Feature>().RemoveRange(removed);
+                await _context.SaveChangesAsync();
+            }
+
+            return existing
+                .Except(removed)
+                .Select(f => f.Id)
+                .Concat(missing.Select(f => f.Id))
+                .ToList();
         }
 
-        private static Feature CreateFeature(string name, string displayName, string description)
+        private static Feature CreateFeature(string name, string displayName, string description, bool isImplemented = true)
         {
             return new Feature
             {
@@ -654,7 +706,8 @@ namespace SportAcademy.Infrastructure.Seeders
                 Name = name,
                 DisplayName = displayName,
                 Description = description,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                IsImplemented = isImplemented
             };
         }
 

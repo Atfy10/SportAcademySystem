@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportTraineeDtos;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,5 +14,8 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.UpdateSportTrai
 		int SportId,
 		int TraineeId,
 		string SkillLevel
-	) : IRequest<Result<SportTraineeDto>>;
+	) : IRequest<Result<SportTraineeDto>>, IRequiresFeature
+	{
+		public string FeatureKey => "trainee-management";
+	}
 }

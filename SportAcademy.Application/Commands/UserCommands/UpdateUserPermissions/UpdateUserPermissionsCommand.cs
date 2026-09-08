@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions
@@ -10,5 +11,8 @@ namespace SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions
     // AssignRolesToUserCommand's replace-the-set semantics for roles. A permission simply
     // absent from `Overrides` inherits its role default; it is not implicitly denied.
     public record UpdateUserPermissionsCommand(Guid UserId, List<PermissionOverrideInput> Overrides)
-        : IRequest<Result<bool>>;
+        : IRequest<Result<bool>>, IRequiresFeature
+    {
+        public string FeatureKey => "user-management";
+    }
 }

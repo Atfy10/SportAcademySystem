@@ -13,7 +13,7 @@ public class PlanFeatureReconcilerTests
     {
         var featureId = Guid.NewGuid();
 
-        var updates = PlanFeatureReconciler.ComputeUpdates([], [featureId]);
+        var updates = PlanFeatureReconciler.ComputeUpdates([], [featureId], new Dictionary<Guid, string>());
 
         updates.Should().ContainKey(featureId).WhoseValue.Should().BeTrue();
     }
@@ -27,7 +27,7 @@ public class PlanFeatureReconcilerTests
             new() { TenantId = TenantId, FeatureId = featureId, IsEnabled = false },
         };
 
-        var updates = PlanFeatureReconciler.ComputeUpdates(current, [featureId]);
+        var updates = PlanFeatureReconciler.ComputeUpdates(current, [featureId], new Dictionary<Guid, string>());
 
         updates.Should().ContainKey(featureId).WhoseValue.Should().BeTrue();
     }
@@ -41,7 +41,7 @@ public class PlanFeatureReconcilerTests
             new() { TenantId = TenantId, FeatureId = featureId, IsEnabled = true },
         };
 
-        var updates = PlanFeatureReconciler.ComputeUpdates(current, []);
+        var updates = PlanFeatureReconciler.ComputeUpdates(current, [], new Dictionary<Guid, string>());
 
         updates.Should().ContainKey(featureId).WhoseValue.Should().BeFalse();
     }
@@ -57,7 +57,7 @@ public class PlanFeatureReconcilerTests
             new() { TenantId = TenantId, FeatureId = excludedFeatureId, IsEnabled = false },
         };
 
-        var updates = PlanFeatureReconciler.ComputeUpdates(current, [includedFeatureId]);
+        var updates = PlanFeatureReconciler.ComputeUpdates(current, [includedFeatureId], new Dictionary<Guid, string>());
 
         updates.Should().BeEmpty();
     }
@@ -73,7 +73,22 @@ public class PlanFeatureReconcilerTests
             new() { TenantId = TenantId, FeatureId = lockedOnButExcludedId, IsEnabled = true, LockedBySuperAdmin = true },
         };
 
-        var updates = PlanFeatureReconciler.ComputeUpdates(current, [lockedOffButIncludedId]);
+        var updates = PlanFeatureReconciler.ComputeUpdates(current, [lockedOffButIncludedId], new Dictionary<Guid, string>());
+
+        updates.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void CoreFeature_IsNeverDisabled_EvenWhenExcludedFromThePlan()
+    {
+        var coreFeatureId = Guid.NewGuid();
+        var current = new List<TenantFeature>
+        {
+            new() { TenantId = TenantId, FeatureId = coreFeatureId, IsEnabled = true },
+        };
+        var featureNameById = new Dictionary<Guid, string> { [coreFeatureId] = "user-management" };
+
+        var updates = PlanFeatureReconciler.ComputeUpdates(current, [], featureNameById);
 
         updates.Should().BeEmpty();
     }

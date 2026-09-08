@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.SubscriptionTypeCommands.CreateSubscriptionType
 {
@@ -10,5 +11,8 @@ namespace SportAcademy.Application.Commands.SubscriptionTypeCommands.CreateSubsc
         bool IsActive,
         bool IsOffer,
         List<int> SportIds
-    ) : IRequest<Result<int>>;
+    ) : IRequest<Result<int>>, IRequiresFeature
+    {
+        public string FeatureKey => "subscription-plan";
+    }
 }

@@ -39,7 +39,11 @@ public class GetTenantFeaturesQueryHandler : IRequestHandler<GetTenantFeaturesQu
                 IsEnabled = tf?.IsEnabled ?? false,
                 LockedBySuperAdmin = tf?.LockedBySuperAdmin ?? false,
                 EnabledBy = tf?.EnabledBy,
-                EnabledAt = tf?.EnabledAt
+                EnabledAt = tf?.EnabledAt,
+                DependsOn = FeatureDependencies.GetPrerequisites(f.Name),
+                RequiredBy = FeatureDependencies.GetDependents(f.Name),
+                IsProtected = FeatureDependencies.IsProtected(f.Name),
+                IsImplemented = f.IsImplemented
             };
         }).ToList();
 

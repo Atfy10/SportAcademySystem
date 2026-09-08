@@ -49,9 +49,13 @@ public class GetTenantFeaturesQueryHandler : IRequestHandler<GetTenantFeaturesQu
                 Description = f.Description,
                 Category = FeatureCategories.For(f.Name),
                 IsEnabled = tf?.IsEnabled ?? false,
-                CanToggle = allowedFeatureIds.Contains(f.Id) && !(tf?.LockedBySuperAdmin ?? false),
+                CanToggle = allowedFeatureIds.Contains(f.Id) && !(tf?.LockedBySuperAdmin ?? false) && !FeatureDependencies.IsProtected(f.Name) && f.IsImplemented,
                 LockedBySuperAdmin = tf?.LockedBySuperAdmin ?? false,
-                EnabledAt = tf?.EnabledAt
+                EnabledAt = tf?.EnabledAt,
+                DependsOn = FeatureDependencies.GetPrerequisites(f.Name),
+                RequiredBy = FeatureDependencies.GetDependents(f.Name),
+                IsProtected = FeatureDependencies.IsProtected(f.Name),
+                IsImplemented = f.IsImplemented
             };
         }).ToList();
 

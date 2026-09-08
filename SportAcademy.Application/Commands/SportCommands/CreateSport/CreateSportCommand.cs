@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SportCommands.CreateSport
@@ -17,5 +18,8 @@ namespace SportAcademy.Application.Commands.SportCommands.CreateSport
         bool IsRequireHealthTest,
         string? NameAr = null,
         string? DescriptionAr = null
-    ) : IRequest<Result<int>>;
+    ) : IRequest<Result<int>>, IRequiresFeature
+    {
+        public string FeatureKey => "sport-management";
+    }
 }

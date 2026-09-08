@@ -52,5 +52,7 @@ public class PlatformGetTenantFeaturesQueryHandlerTests
         dto.IsEnabled.Should().BeFalse();
         dto.LockedBySuperAdmin.Should().BeFalse();
         dto.EnabledBy.Should().Be("TenantAdmin");
+        dto.DependsOn.Should().Contain(["session-management", "enrollment-management"]);
+        dto.RequiredBy.Should().BeEmpty();
     }
 }

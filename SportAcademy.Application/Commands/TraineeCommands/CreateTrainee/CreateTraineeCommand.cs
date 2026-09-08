@@ -5,8 +5,10 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
-    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>, IBranchScopedRequest
+    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>, IBranchScopedRequest, IRequiresFeature
     {
+        public string FeatureKey => "trainee-management";
+
         public required string FirstName { get; init; }
         public required string LastName { get; init; }
         public required string SSN { get; init; }

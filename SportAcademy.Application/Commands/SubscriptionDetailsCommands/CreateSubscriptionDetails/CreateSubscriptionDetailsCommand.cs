@@ -22,5 +22,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         TraineeGroupType GroupType,
         List<DayOfWeek> TrainingDays,
         int PaymentTypeId
-        ) : IRequest<Result<int>>, IBranchScopedRequest;
+        ) : IRequest<Result<int>>, IBranchScopedRequest, IRequiresFeature
+    {
+        public string FeatureKey => "enrollment-management";
+    }
 }

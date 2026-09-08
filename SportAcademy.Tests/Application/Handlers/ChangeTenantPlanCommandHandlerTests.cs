@@ -3,6 +3,7 @@ using Moq;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantPlan;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 
 namespace SportAcademy.Tests.Application.Handlers;
@@ -24,6 +25,11 @@ public class ChangeTenantPlanCommandHandlerTests
     public ChangeTenantPlanCommandHandlerTests()
     {
         _handler = new ChangeTenantPlanCommandHandler(_tenantRepoMock.Object, _planRepoMock.Object, _unitOfWorkMock.Object);
+        // None of these tests exercise a core feature - an empty catalog keeps
+        // PlanFeatureReconciler.ComputeUpdates's core-lookup a no-op, same as before this handler
+        // started fetching it.
+        _tenantRepoMock.Setup(r => r.GetAllFeaturesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Feature>());
     }
 
     private static Tenant CreateTenantWithSubscription(int currentPlanId) => new()
@@ -107,6 +113,41 @@ public class ChangeTenantPlanCommandHandlerTests
         capturedUpdates!.Should().ContainKey(newlyAvailableFeatureId).WhoseValue.Should().BeTrue();
         capturedUpdates.Should().NotContainKey(alreadyEnabledFeatureId);
         capturedUpdates.Should().NotContainKey(lockedOffFeatureId);
+    }
+
+    [Fact]
+    public async Task Handle_Downgrade_NeverDisablesACoreFeature_EvenWhenExcludedFromTheNewPlan()
+    {
+        var tenant = CreateTenantWithSubscription(currentPlanId: 2);
+        var coreFeatureId = Guid.NewGuid();
+
+        _tenantRepoMock.Setup(r => r.GetDetailByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _planRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SubscriptionPlan { Id = 1, Name = "Basic", Code = "BASIC" });
+        _tenantRepoMock.Setup(r => r.GetAllFeaturesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([new Feature { Id = coreFeatureId, Name = "user-management", DisplayName = "User Management" }]);
+        // The new (cheaper) plan doesn't grant it - a real gap the seeded BASIC plan currently has
+        // for profile-mgmt/system-settings.
+        _tenantRepoMock.Setup(r => r.GetPlanFeaturesAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([]);
+        _tenantRepoMock.Setup(r => r.GetTenantFeaturesAsync(TenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([
+                new TenantFeature { TenantId = TenantId, FeatureId = coreFeatureId, IsEnabled = true },
+            ]);
+
+        Dictionary<Guid, bool>? capturedUpdates = null;
+        _tenantRepoMock
+            .Setup(r => r.BulkUpdateFeaturesAsync(TenantId, It.IsAny<Dictionary<Guid, bool>>(), "PlanChange", It.IsAny<CancellationToken>()))
+            .Callback<Guid, Dictionary<Guid, bool>, string, CancellationToken>((_, updates, _, _) => capturedUpdates = updates)
+            .Returns(Task.CompletedTask);
+
+        var result = await _handler.Handle(new ChangeTenantPlanCommand(TenantId, 1), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        // BulkUpdateFeaturesAsync is only called when there's at least one update - none here.
+        _tenantRepoMock.Verify(
+            r => r.BulkUpdateFeaturesAsync(It.IsAny<Guid>(), It.IsAny<Dictionary<Guid, bool>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]

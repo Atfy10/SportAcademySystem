@@ -29,7 +29,7 @@ public class MarkNotificationAsReadCommandHandlerTests
 
         var result = await handler.Handle(command, CancellationToken.None);
 
-        result.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
         _notificationRepoMock.Verify(r => r.MarkAsReadAsync(1, TestUserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -48,7 +48,7 @@ public class MarkNotificationAsReadCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NotificationNotFound_ReturnsFalse()
+    public async Task Handle_NotificationNotFound_ReturnsFailure404()
     {
         var command = new MarkNotificationAsReadCommand(NotificationId: 999);
         var handler = new MarkNotificationAsReadCommandHandler(_notificationRepoMock.Object, _userContextMock.Object, _notificationServiceMock.Object);
@@ -58,7 +58,8 @@ public class MarkNotificationAsReadCommandHandlerTests
 
         var result = await handler.Handle(command, CancellationToken.None);
 
-        result.Should().BeFalse();
+        result.IsSuccess.Should().BeFalse();
+        result.StatusCode.Should().Be(404);
     }
 
     [Fact]
@@ -89,7 +90,7 @@ public class MarkNotificationAsReadCommandHandlerTests
 
         var result = await handler.Handle(command, CancellationToken.None);
 
-        result.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
         _notificationRepoMock.Verify(r => r.MarkAsReadAsync(notificationId, TestUserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 }
@@ -117,7 +118,8 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
 
         var result = await handler.Handle(command, CancellationToken.None);
 
-        result.Should().Be(5);
+        result.IsSuccess.Should().BeTrue();
+        result.Data.Should().Be(5);
         _notificationRepoMock.Verify(r => r.MarkAllAsReadAsync(TestUserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -146,7 +148,8 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
 
         var result = await handler.Handle(command, CancellationToken.None);
 
-        result.Should().Be(0);
+        result.IsSuccess.Should().BeTrue();
+        result.Data.Should().Be(0);
     }
 
     [Fact]
@@ -177,7 +180,7 @@ public class MarkAllNotificationsAsReadCommandHandlerTests
 
         var result = await handler.Handle(command, CancellationToken.None);
 
-        result.Should().Be(count);
+        result.Data.Should().Be(count);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.DeleteSu
 {
     public record DeleteSubscriptionDetailsCommand(
         int Id
-    ) : IRequest<Result<bool>>;
+    ) : IRequest<Result<bool>>, IRequiresFeature
+    {
+        public string FeatureKey => "enrollment-management";
+    }
 }

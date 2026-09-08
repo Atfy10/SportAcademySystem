@@ -1,6 +1,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.ProfileCommands.UpdateMyProfile;
 
@@ -10,4 +11,7 @@ namespace SportAcademy.Application.Commands.ProfileCommands.UpdateMyProfile;
 // record at all - Owner/Admin/Accountant), never Person.PhoneNumber on an Employee/Trainee,
 // which is a separate, admin-managed field with its own uniqueness rule.
 public record UpdateMyProfileCommand(string? PhoneNumber, string? ProfileImageUrl, string? Bio)
-    : IRequest<Result<MeResponse>>;
+    : IRequest<Result<MeResponse>>, IRequiresFeature
+{
+    public string FeatureKey => "profile-mgmt";
+}

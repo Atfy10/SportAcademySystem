@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AttendanceDtos;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,8 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.UpdateAttendance
         string? CoachNote,
         int? SessionOccurrenceId,
         int? EnrollmentId
-        ) : IRequest<Result<AttendanceDto>>;
+        ) : IRequest<Result<AttendanceDto>>, IRequiresFeature
+    {
+        public string FeatureKey => "attendance-tracking";
+    }
 }

@@ -217,7 +217,7 @@ public class TenantsController : ControllerBase
         CancellationToken ct)
     {
         var result = await _mediator.Send(
-            new ToggleFeatureCommand(id, request.FeatureId, request.IsEnabled, request.Lock), ct);
+            new ToggleFeatureCommand(id, request.FeatureId, request.IsEnabled, request.Lock, request.ConfirmProtectedDisable), ct);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -311,6 +311,8 @@ public record UpdatePlanFeaturesRequest(List<Guid> FeatureIds);
 // Lock: whether this decision should also stop the tenant from changing it back themselves
 // (LockedBySuperAdmin) - the SuperAdmin decides this explicitly on every toggle rather than it
 // always being forced, see ToggleFeatureCommandHandler.
-public record ToggleFeatureRequest(Guid FeatureId, bool IsEnabled, bool Lock);
+// ConfirmProtectedDisable: set by the frontend's confirmation dialog when disabling a
+// FeatureDependencies.IsProtected feature - see ToggleFeatureCommand's own comment.
+public record ToggleFeatureRequest(Guid FeatureId, bool IsEnabled, bool Lock, bool ConfirmProtectedDisable = false);
 
 public record ExtendSubscriptionRequest(int Days);

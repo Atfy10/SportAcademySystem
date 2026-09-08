@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -27,5 +28,8 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
         int CoachId,
         string? Name = null,
         string? NameAr = null
-    ) : IRequest<Result<TraineeGroupDto>>;
+    ) : IRequest<Result<TraineeGroupDto>>, IRequiresFeature
+    {
+        public string FeatureKey => "group-management";
+    }
 }

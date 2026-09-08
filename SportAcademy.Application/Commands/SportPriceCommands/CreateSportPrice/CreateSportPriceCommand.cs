@@ -17,6 +17,9 @@ namespace SportAcademy.Application.Commands.SportPriceCommands.CreateSportPrice
 		int SubsTypeId,
 		TraineeGroupType GroupType,
 		decimal Price
-	) : IRequest<Result<SportPriceBranchDto>>, IBranchScopedRequest;
+	) : IRequest<Result<SportPriceBranchDto>>, IBranchScopedRequest, IRequiresFeature
+	{
+		public string FeatureKey => "pricing-management";
+	}
 
 }

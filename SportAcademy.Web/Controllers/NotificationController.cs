@@ -45,21 +45,15 @@ namespace SportAcademy.Web.Controllers
         [HttpPatch("{id}/read")]
         public async Task<IActionResult> MarkAsRead(int id, CancellationToken ct)
         {
-            var success = await _mediator.Send(
-                new MarkNotificationAsReadCommand(id),
-                ct);
-
-            if (!success)
-                return NotFound();
-
-            return NoContent();
+            var result = await _mediator.Send(new MarkNotificationAsReadCommand(id), ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpPatch("read-all")]
         public async Task<IActionResult> MarkAllAsRead(CancellationToken ct)
         {
-            await _mediator.Send(new MarkAllNotificationsAsReadCommand(), ct);
-            return NoContent();
+            var result = await _mediator.Send(new MarkAllNotificationsAsReadCommand(), ct);
+            return StatusCode(result.StatusCode, result);
         }
     }
 }

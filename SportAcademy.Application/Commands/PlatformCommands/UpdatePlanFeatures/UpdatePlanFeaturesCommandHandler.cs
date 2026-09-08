@@ -31,9 +31,18 @@ public class UpdatePlanFeaturesCommandHandler : IRequestHandler<UpdatePlanFeatur
         if (plan is null)
             return Result.Failure(_operation, "Subscription plan not found.", 404);
 
-        var allFeatureIds = (await _tenantRepository.GetAllFeaturesAsync(ct)).Select(f => f.Id).ToHashSet();
-        if (request.FeatureIds.Any(id => !allFeatureIds.Contains(id)))
+        var allFeatures = await _tenantRepository.GetAllFeaturesAsync(ct);
+        var featureNameById = allFeatures.ToDictionary(f => f.Id, f => f.Name);
+        if (request.FeatureIds.Any(id => !featureNameById.ContainsKey(id)))
             return Result.Failure(_operation, "Unknown feature id(s).", 400);
+
+        // A plan's own feature set must be dependency-closed on its own - granting X without Y
+        // would hand every tenant on this plan a permanently-unsatisfiable prerequisite (tenant
+        // self-service can never enable X since Y is never available to enable first).
+        var planFeatureNames = request.FeatureIds.Select(id => featureNameById[id]).ToHashSet();
+        var dependencyErrors = FeatureDependencyPolicy.ValidatePlanFeatureSetClosed(planFeatureNames);
+        if (dependencyErrors.Count > 0)
+            return Result.Failure(_operation, string.Join(" ", dependencyErrors), 400);
 
         request.ResolvedBeforeState = new
         {
@@ -50,7 +59,7 @@ public class UpdatePlanFeaturesCommandHandler : IRequestHandler<UpdatePlanFeatur
         foreach (var tenantId in tenantIds)
         {
             var currentFeatures = await _tenantRepository.GetTenantFeaturesAsync(tenantId, ct);
-            var updates = PlanFeatureReconciler.ComputeUpdates(currentFeatures, request.FeatureIds);
+            var updates = PlanFeatureReconciler.ComputeUpdates(currentFeatures, request.FeatureIds, featureNameById);
 
             if (updates.Count > 0)
                 await _tenantRepository.BulkUpdateFeaturesAsync(tenantId, updates, "PlanFeaturesUpdated", ct);

@@ -21,7 +21,10 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
         int CoachId,
         List<CreateGroupScheduleSlot> Schedules,
         string? NameAr = null
-    ) : IRequest<Result<int>>, IBranchScopedRequest;
+    ) : IRequest<Result<int>>, IBranchScopedRequest, IRequiresFeature
+    {
+        public string FeatureKey => "group-management";
+    }
 
     // StartTime is a plain "HH:mm" string, not TimeOnly, matching how time-of-day values are
     // passed elsewhere in this API (e.g. MarkAttendanceCommand.CheckInTime) - parsed in the handler.

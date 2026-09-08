@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.PaymentCommands.UpdatePayment
 {
@@ -10,5 +11,8 @@ namespace SportAcademy.Application.Commands.PaymentCommands.UpdatePayment
         string PaymentNumber,
         int PaymentTypeId,
         DateTime PaidDate
-    ) : IRequest<Result>;
+    ) : IRequest<Result>, IRequiresFeature
+    {
+        public string FeatureKey => "payment-processing";
+    }
 }

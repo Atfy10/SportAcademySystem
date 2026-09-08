@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.EmployeeDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -14,5 +15,8 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         SkillLevel SkillLevel,
         int SportId,
         CreateEmployeeDto Employee
-    ) : IRequest<Result<int>>;
+    ) : IRequest<Result<int>>, IRequiresFeature
+    {
+        public string FeatureKey => "coach-management";
+    }
 }

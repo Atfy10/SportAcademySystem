@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.ReportDtos;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Queries.ReportQueries.GetAttendanceReport;
 
@@ -11,4 +12,7 @@ namespace SportAcademy.Application.Queries.ReportQueries.GetAttendanceReport;
 public record GetAttendanceReportQuery(
     DateTime? From, DateTime? To, int? BranchId, int? TraineeGroupId, int? TraineeId,
     int? CoachId, string? Status, PageRequest? Page)
-    : IRequest<Result<PagedData<AttendanceSessionGroupDto>>>;
+    : IRequest<Result<PagedData<AttendanceSessionGroupDto>>>, IRequiresFeature
+{
+    public string FeatureKey => "attendance-reports";
+}

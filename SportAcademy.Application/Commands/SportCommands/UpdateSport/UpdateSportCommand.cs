@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
@@ -13,5 +14,8 @@ namespace SportAcademy.Application.Commands.SportCommands.UpdateSport
         bool IsRequireHealthTest,
         string? NameAr = null,
         string? DescriptionAr = null
-    ) : IRequest<Result<SportDto>>;
+    ) : IRequest<Result<SportDto>>, IRequiresFeature
+    {
+        public string FeatureKey => "sport-management";
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +13,8 @@ namespace SportAcademy.Application.Commands.UserCommands.UserCreate
         string UserName,
         string Email,
         string PhoneNumber,
-        bool EmailConfirmed = false) : IRequest<Result<string>>;
+        bool EmailConfirmed = false) : IRequest<Result<string>>, IRequiresFeature
+    {
+        public string FeatureKey => "user-management";
+    }
 }

@@ -11,8 +11,9 @@ using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.Trainees.UpdateTrainee
 {
-    public record UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>, IBranchScopedRequest
+    public record UpdateTraineePersonalCommand : IRequest<Result<UpdateTraineePersonalCommand>>, IBranchScopedRequest, IRequiresFeature
     {
+        public string FeatureKey => "trainee-management";
         public int Id { get; init; }
         public string? FirstName { get; init; }
         public string? LastName { get; init; }

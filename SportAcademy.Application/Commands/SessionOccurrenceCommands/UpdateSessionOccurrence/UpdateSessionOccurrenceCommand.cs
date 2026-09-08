@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SessionOccurrenceDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSessionOccurrence
@@ -9,5 +10,8 @@ namespace SportAcademy.Application.Commands.SessionOccurrenceCommands.UpdateSess
         int Id,
         DateTime? StartDateTime,
         SessionStatus? Status
-    ) : IRequest<Result<SessionOccurrenceDto>>;
+    ) : IRequest<Result<SessionOccurrenceDto>>, IRequiresFeature
+    {
+        public string FeatureKey => "session-management";
+    }
 }

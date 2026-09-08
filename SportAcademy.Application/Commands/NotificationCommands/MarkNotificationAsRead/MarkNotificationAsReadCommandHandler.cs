@@ -2,14 +2,16 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.NotificationCommands.MarkNotificationAsRead
 {
-    public class MarkNotificationAsReadCommandHandler : IRequestHandler<MarkNotificationAsReadCommand, bool>
+    public class MarkNotificationAsReadCommandHandler : IRequestHandler<MarkNotificationAsReadCommand, Result>
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly IUserContextService _userContext;
         private readonly INotificationService _notificationService;
+        private readonly string _operation = OperationType.Update.ToString();
 
         public MarkNotificationAsReadCommandHandler(
             INotificationRepository notificationRepository,
@@ -21,21 +23,23 @@ namespace SportAcademy.Application.Commands.NotificationCommands.MarkNotificatio
             _notificationService = notificationService;
         }
 
-        public async Task<bool> Handle(MarkNotificationAsReadCommand request, CancellationToken cancellationToken)
+        public async Task<Result> Handle(MarkNotificationAsReadCommand request, CancellationToken cancellationToken)
         {
             var userId = _userContext.UserId;
             if (userId is null)
-                return false;
+                return Result.Failure(_operation, "User is not available.", 400);
 
             var marked = await _notificationRepository.MarkAsReadAsync(
                 request.NotificationId,
                 userId.Value,
                 cancellationToken);
 
-            if (marked)
-                await _notificationService.NotifyNotificationReadAsync(userId.Value.ToString(), request.NotificationId);
+            if (!marked)
+                return Result.Failure(_operation, "Notification not found.", 404);
 
-            return marked;
+            await _notificationService.NotifyNotificationReadAsync(userId.Value.ToString(), request.NotificationId);
+
+            return Result.Success(_operation, "Notification marked as read.");
         }
     }
 }

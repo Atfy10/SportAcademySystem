@@ -18,5 +18,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
         int? SubscriptionTypeId,
         int? SportId,
         int? BranchId
-        ) : IRequest<Result<SubscriptionDetailsDto>>, IOptionallyBranchScopedRequest;
+        ) : IRequest<Result<SubscriptionDetailsDto>>, IOptionallyBranchScopedRequest, IRequiresFeature
+    {
+        public string FeatureKey => "enrollment-management";
+    }
 }
