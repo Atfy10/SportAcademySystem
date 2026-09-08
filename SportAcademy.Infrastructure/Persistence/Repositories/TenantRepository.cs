@@ -145,6 +145,26 @@ public class TenantRepository : ITenantRepository
             .Select(spf => spf.FeatureId)
             .ToListAsync(ct);
 
+    public async Task ReplacePlanFeaturesAsync(int planId, List<Guid> featureIds, CancellationToken ct = default)
+    {
+        var existing = await _context.SubscriptionPlanFeatures
+            .Where(spf => spf.SubscriptionPlanId == planId)
+            .ToListAsync(ct);
+        _context.SubscriptionPlanFeatures.RemoveRange(existing);
+
+        _context.SubscriptionPlanFeatures.AddRange(featureIds.Select(featureId => new SubscriptionPlanFeature
+        {
+            SubscriptionPlanId = planId,
+            FeatureId = featureId
+        }));
+    }
+
+    public async Task<List<Guid>> GetTenantIdsSubscribedToPlanAsync(int planId, CancellationToken ct = default)
+        => await _context.TenantSubscriptions
+            .Where(s => s.SubscriptionPlanId == planId)
+            .Select(s => s.TenantId)
+            .ToListAsync(ct);
+
     public async Task BulkUpdateFeaturesAsync(Guid tenantId, Dictionary<Guid, bool> featureStates, string enabledBy, CancellationToken ct = default)
     {
         foreach (var (featureId, isEnabled) in featureStates)

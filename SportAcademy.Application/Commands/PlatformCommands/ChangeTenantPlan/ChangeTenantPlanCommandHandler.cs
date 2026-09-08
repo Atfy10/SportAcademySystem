@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Common.Features;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
@@ -43,25 +44,19 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
         request.ResolvedBeforeState = new { tenant.Subscription.SubscriptionPlanId };
         tenant.Subscription.SubscriptionPlanId = plan.Id;
 
-        // The plan itself carries no other configuration this system enforces - its features are
-        // the "specs" a plan actually grants (see SubscriptionPlanFeature). A downgrade must
-        // revoke access to anything the tenant no longer has entitlement to, not just relabel
-        // the plan while every previously-enabled feature keeps working. An upgrade only makes
-        // new features *available* (allowedFeatureIds is recomputed live from the plan on every
-        // read) rather than force-enabling them - that stays the tenant's own opt-in choice, the
-        // same self-service model UpdateTenantFeatureCommandHandler already enforces.
-        // A SuperAdmin-locked feature is excluded here explicitly (not left to
-        // BulkUpdateFeaturesAsync's own defensive skip) - a forced decision overrides plan
-        // membership entirely, same as it overrides the tenant's own choice, and that must be
-        // this handler's own guarantee, not an incidental side effect of its collaborator.
+        // A plan change reconciles the tenant's TenantFeature rows to exactly match the new
+        // plan's feature set: anything the new plan grants that isn't already enabled gets
+        // enabled, anything it no longer grants that's currently enabled gets disabled. A
+        // SuperAdmin-locked feature (TenantFeature.LockedBySuperAdmin) is untouched either way -
+        // a forced decision overrides plan membership entirely. See PlanFeatureReconciler for
+        // the shared rule, also used when a plan's own feature set is edited
+        // (UpdatePlanFeaturesCommandHandler).
         var newPlanFeatureIds = await _tenantRepository.GetPlanFeaturesAsync(plan.Id, ct);
         var currentFeatures = await _tenantRepository.GetTenantFeaturesAsync(request.TenantId, ct);
-        var revocations = currentFeatures
-            .Where(f => f.IsEnabled && !f.LockedBySuperAdmin && !newPlanFeatureIds.Contains(f.FeatureId))
-            .ToDictionary(f => f.FeatureId, _ => false);
+        var updates = PlanFeatureReconciler.ComputeUpdates(currentFeatures, newPlanFeatureIds);
 
-        if (revocations.Count > 0)
-            await _tenantRepository.BulkUpdateFeaturesAsync(request.TenantId, revocations, "PlanChange", ct);
+        if (updates.Count > 0)
+            await _tenantRepository.BulkUpdateFeaturesAsync(request.TenantId, updates, "PlanChange", ct);
 
         await _unitOfWork.SaveChangesAsync(ct);
 

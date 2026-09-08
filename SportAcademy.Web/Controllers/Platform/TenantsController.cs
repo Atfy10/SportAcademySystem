@@ -10,8 +10,10 @@ using SportAcademy.Application.Commands.PlatformCommands.ExtendTenantSubscriptio
 using SportAcademy.Application.Commands.PlatformCommands.SetTenantTrial;
 using SportAcademy.Application.Commands.PlatformCommands.StartImpersonation;
 using SportAcademy.Application.Commands.PlatformCommands.ToggleFeature;
+using SportAcademy.Application.Commands.PlatformCommands.UpdatePlanFeatures;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateTenant;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantDetails;
+using SportAcademy.Application.Queries.PlatformQueries.GetPlanFeatures;
 using SportAcademy.Application.Queries.PlatformQueries.GetSubscriptionPlans;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantFeatures;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenants;
@@ -172,6 +174,29 @@ public class TenantsController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    // Same absolute-route reasoning as GetSubscriptionPlans above: a plan's feature membership
+    // is global catalog data, not scoped to any one tenant.
+    [HttpGet("/api/platform/subscription-plans/{id}/features")]
+    [Authorize(Roles = "SuperAdmin,PlatformSupport")]
+    [Authorize(Policy = "Permission:platform.tenants.read")]
+    public async Task<IActionResult> GetPlanFeatures([FromRoute] int id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetPlanFeaturesQuery(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPut("/api/platform/subscription-plans/{id}/features")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> UpdatePlanFeatures(
+        [FromRoute] int id,
+        [FromBody] UpdatePlanFeaturesRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdatePlanFeaturesCommand(id, request.FeatureIds), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
     [HttpGet("{id}/features")]
     [Authorize(Roles = "SuperAdmin,PlatformSupport")]
     [Authorize(Policy = "Permission:platform.tenants.read")]
@@ -280,6 +305,8 @@ public record ChangeTenantStatusRequest(TenantStatus NewStatus, string? Reason =
 public record ArchiveTenantRequest(string Reason);
 
 public record ChangeTenantPlanRequest(int NewPlanId);
+
+public record UpdatePlanFeaturesRequest(List<Guid> FeatureIds);
 
 // Lock: whether this decision should also stop the tenant from changing it back themselves
 // (LockedBySuperAdmin) - the SuperAdmin decides this explicitly on every toggle rather than it

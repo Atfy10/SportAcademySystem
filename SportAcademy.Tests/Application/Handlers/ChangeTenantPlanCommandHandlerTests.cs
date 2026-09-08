@@ -8,9 +8,10 @@ using SportAcademy.Domain.Entities.Tenants;
 namespace SportAcademy.Tests.Application.Handlers;
 
 // A plan change's only real "spec" in this system is which features it grants
-// (SubscriptionPlanFeature) - these lock in that a downgrade actually revokes anything the
-// tenant no longer has entitlement to, an upgrade doesn't force-enable anything the tenant
-// hasn't opted into, and a SuperAdmin-locked feature is untouched by plan membership entirely.
+// (SubscriptionPlanFeature) - these lock in that a plan change symmetrically reconciles the
+// tenant's features to match the new plan (downgrade revokes what's no longer granted, upgrade
+// grants what's newly available), and that a SuperAdmin-locked feature is untouched by plan
+// membership entirely either way.
 public class ChangeTenantPlanCommandHandlerTests
 {
     private readonly Mock<ITenantRepository> _tenantRepoMock = new();
@@ -73,27 +74,39 @@ public class ChangeTenantPlanCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Upgrade_DoesNotForceEnableAnything()
+    public async Task Handle_Upgrade_EnablesNewlyIncludedFeatures()
     {
         var tenant = CreateTenantWithSubscription(currentPlanId: 1);
         var newlyAvailableFeatureId = Guid.NewGuid();
+        var alreadyEnabledFeatureId = Guid.NewGuid();
+        var lockedOffFeatureId = Guid.NewGuid();
 
         _tenantRepoMock.Setup(r => r.GetDetailByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
         _planRepoMock.Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionPlan { Id = 3, Name = "Enterprise", Code = "ENTERPRISE" });
         _tenantRepoMock.Setup(r => r.GetPlanFeaturesAsync(3, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([newlyAvailableFeatureId]);
-        // Nothing currently enabled - the tenant never opted into the feature their old plan
-        // didn't even offer.
+            .ReturnsAsync([newlyAvailableFeatureId, alreadyEnabledFeatureId, lockedOffFeatureId]);
         _tenantRepoMock.Setup(r => r.GetTenantFeaturesAsync(TenantId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
+            .ReturnsAsync([
+                new TenantFeature { TenantId = TenantId, FeatureId = alreadyEnabledFeatureId, IsEnabled = true },
+                // Locked off despite being in the new plan - a SuperAdmin's forced decision must
+                // survive an upgrade untouched, same as it does on a downgrade.
+                new TenantFeature { TenantId = TenantId, FeatureId = lockedOffFeatureId, IsEnabled = false, LockedBySuperAdmin = true },
+            ]);
+
+        Dictionary<Guid, bool>? capturedUpdates = null;
+        _tenantRepoMock
+            .Setup(r => r.BulkUpdateFeaturesAsync(TenantId, It.IsAny<Dictionary<Guid, bool>>(), "PlanChange", It.IsAny<CancellationToken>()))
+            .Callback<Guid, Dictionary<Guid, bool>, string, CancellationToken>((_, updates, _, _) => capturedUpdates = updates)
+            .Returns(Task.CompletedTask);
 
         var result = await _handler.Handle(new ChangeTenantPlanCommand(TenantId, 3), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        _tenantRepoMock.Verify(
-            r => r.BulkUpdateFeaturesAsync(It.IsAny<Guid>(), It.IsAny<Dictionary<Guid, bool>>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+        capturedUpdates.Should().NotBeNull();
+        capturedUpdates!.Should().ContainKey(newlyAvailableFeatureId).WhoseValue.Should().BeTrue();
+        capturedUpdates.Should().NotContainKey(alreadyEnabledFeatureId);
+        capturedUpdates.Should().NotContainKey(lockedOffFeatureId);
     }
 
     [Fact]

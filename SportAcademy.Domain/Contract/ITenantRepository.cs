@@ -29,6 +29,10 @@ public interface ITenantRepository
     Task<TenantProfile?> GetProfileAsync(Guid tenantId, CancellationToken ct = default);
     void UpdateProfile(TenantProfile profile);
     Task<List<Guid>> GetPlanFeaturesAsync(int planId, CancellationToken ct = default);
+    // Replaces a plan's entire feature set (remove-then-add) - used when a SuperAdmin edits
+    // which features a plan grants.
+    Task ReplacePlanFeaturesAsync(int planId, List<Guid> featureIds, CancellationToken ct = default);
+    Task<List<Guid>> GetTenantIdsSubscribedToPlanAsync(int planId, CancellationToken ct = default);
     Task BulkUpdateFeaturesAsync(Guid tenantId, Dictionary<Guid, bool> featureStates, string enabledBy, CancellationToken ct = default);
     // Single targeted check for FeatureGateBehavior - avoids loading the tenant's full feature
     // list on every gated request. Matches GetTenantFeaturesQueryHandler's semantics: no row
