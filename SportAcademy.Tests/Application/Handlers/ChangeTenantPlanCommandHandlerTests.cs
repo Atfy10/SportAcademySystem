@@ -41,7 +41,7 @@ public class ChangeTenantPlanCommandHandlerTests
         var revokedFeatureId = Guid.NewGuid();
         var lockedFeatureId = Guid.NewGuid();
 
-        _tenantRepoMock.Setup(r => r.GetByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _tenantRepoMock.Setup(r => r.GetDetailByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
         _planRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionPlan { Id = 1, Name = "Basic", Code = "BASIC" });
         // Only keptFeatureId survives into the new (cheaper) plan.
@@ -78,7 +78,7 @@ public class ChangeTenantPlanCommandHandlerTests
         var tenant = CreateTenantWithSubscription(currentPlanId: 1);
         var newlyAvailableFeatureId = Guid.NewGuid();
 
-        _tenantRepoMock.Setup(r => r.GetByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _tenantRepoMock.Setup(r => r.GetDetailByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
         _planRepoMock.Setup(r => r.GetByIdAsync(3, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionPlan { Id = 3, Name = "Enterprise", Code = "ENTERPRISE" });
         _tenantRepoMock.Setup(r => r.GetPlanFeaturesAsync(3, It.IsAny<CancellationToken>()))
@@ -100,7 +100,7 @@ public class ChangeTenantPlanCommandHandlerTests
     public async Task Handle_AlreadyOnThisPlan_ReturnsFailure()
     {
         var tenant = CreateTenantWithSubscription(currentPlanId: 2);
-        _tenantRepoMock.Setup(r => r.GetByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _tenantRepoMock.Setup(r => r.GetDetailByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
         _planRepoMock.Setup(r => r.GetByIdAsync(2, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new SubscriptionPlan { Id = 2, Name = "Professional", Code = "PRO" });
 
@@ -114,7 +114,7 @@ public class ChangeTenantPlanCommandHandlerTests
     public async Task Handle_PlanNotFound_ReturnsFailure404()
     {
         var tenant = CreateTenantWithSubscription(currentPlanId: 1);
-        _tenantRepoMock.Setup(r => r.GetByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _tenantRepoMock.Setup(r => r.GetDetailByIdAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
         _planRepoMock.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((SubscriptionPlan?)null);
 
         var result = await _handler.Handle(new ChangeTenantPlanCommand(TenantId, 99), CancellationToken.None);

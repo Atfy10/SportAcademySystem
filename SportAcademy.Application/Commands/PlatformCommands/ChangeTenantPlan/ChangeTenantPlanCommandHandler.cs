@@ -26,7 +26,7 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
 
     public async Task<Result> Handle(ChangeTenantPlanCommand request, CancellationToken ct)
     {
-        var tenant = await _tenantRepository.GetByIdAsync(request.TenantId, ct);
+        var tenant = await _tenantRepository.GetDetailByIdAsync(request.TenantId, ct);
         if (tenant is null)
             return Result.Failure(_operation, "Tenant not found.", 404);
 
