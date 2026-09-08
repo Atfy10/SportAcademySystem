@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.TenantCommands.ActivateTenant;
+using SportAcademy.Application.Commands.TenantCommands.RecordFirstDashboardLoad;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Queries.DashboardQueries.GetDashboardSummary;
 
@@ -32,6 +33,10 @@ namespace SportAcademy.Web.Controllers
             }
 
             var result = await _mediator.Send(new GetDashboardSummaryQuery(), ct);
+
+            if (result.IsSuccess && tenantId.HasValue && _userContext.UserId.HasValue)
+                await _mediator.Send(new RecordFirstDashboardLoadCommand(tenantId.Value, _userContext.UserId.Value), ct);
+
             return Ok(result);
         }
     }

@@ -5,7 +5,9 @@ using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Events;
 using SportAcademy.Domain.Exceptions.UserExceptions;
 
 namespace SportAcademy.Application.Commands.AuthCommands.Login
@@ -18,6 +20,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly ITenantIdProvider _tenantIdProvider;
         private readonly ITenantRepository _tenantRepository;
+        private readonly IMediator _mediator;
         private readonly string _operation = OperationType.Login.ToString();
         private const int RefreshTokenExpiryDays = 7;
 
@@ -28,7 +31,8 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             IRefreshTokenRepository refreshTokenRepository,
             IMapper mapper,
             ITenantIdProvider tenantIdProvider,
-            ITenantRepository tenantRepository)
+            ITenantRepository tenantRepository,
+            IMediator mediator)
         {
             _jwtTokenService = jwtTokenService;
             _userRepository = userRepository;
@@ -36,6 +40,7 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             _refreshTokenRepository = refreshTokenRepository;
             _tenantIdProvider = tenantIdProvider;
             _tenantRepository = tenantRepository;
+            _mediator = mediator;
         }
 
         public async Task<Result<AuthResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -50,6 +55,13 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             // that middleware for the enforcement that applies to an already-issued token.
             if (tenant.Status is not TenantStatus.Active)
                 throw new UserLoginException();
+
+            // Deliberately not the System tenant: a SuperAdmin's own first login has no other
+            // SuperAdmin to notify, and isn't the "a tenant started using the product" milestone
+            // this event exists to surface. Invite acceptance (AcceptInvitationCommandHandler)
+            // already hands out a live session before this is ever null, so this only fires on a
+            // genuinely later, separate login-form use.
+            var isFirstLogin = tenant.FirstLoginAt is null && tenant.Code != Tenant.SystemTenantCode;
 
             _tenantIdProvider.SetTenantId(tenant.Id);
             var user = await _userRepository.GetByUsernameOrEmailAsync(request.UserNameOrEmail, cancellationToken)
@@ -77,7 +89,17 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
                 CreatedAt = DateTime.UtcNow,
                 IsRevoked = false
             };
+
+            // Credentials are confirmed valid at this point - safe to mark the milestone now.
+            // Set on the same tracked `tenant` before AddAsync below so its own SaveChanges
+            // flushes both in one write; no extra SaveChanges call needed in this handler.
+            if (isFirstLogin)
+                tenant.FirstLoginAt = DateTime.UtcNow;
+
             await _refreshTokenRepository.AddAsync(refreshTokenEntity, cancellationToken);
+
+            if (isFirstLogin)
+                await _mediator.Publish(new FirstTenantLoginEvent(tenant.Id, tenant.DisplayName, user.Id), cancellationToken);
 
             return Result<AuthResponseDto>.Success(new AuthResponseDto(accessToken, plainRefreshToken), _operation);
         }

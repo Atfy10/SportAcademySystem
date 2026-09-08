@@ -3,13 +3,16 @@ using SportAcademy.Domain.Enums;
 namespace SportAcademy.Domain.Entities.Tenants;
 
 // Platform-level record of a Super Admin action against a tenant (create, archive,
-// status/plan change, feature toggle, subscription extend/expire/trial, owner ban/reset-link).
+// status/plan change, feature toggle, subscription extend/expire/trial, owner ban/reset-link) -
+// plus a small number of tenant-initiated milestones significant enough for SuperAdmin to see in
+// the same trail (currently just a tenant's first login, see FirstTenantLoginHandler).
 // Deliberately not ITenantScoped: it's written and read by the platform operator across every
 // tenant, not filtered to "the current tenant" the way business data is.
 //
-// Written exclusively by PlatformAuditBehavior (for every IAuditableCommand, in the same
-// transaction as the handler it audits - see that class) and by PermissionAuthorizationHandler
-// (for a denied platform policy check, which never reaches a handler to audit). Never updated or
+// Written by PlatformAuditBehavior (for every IAuditableCommand, in the same transaction as the
+// handler it audits - see that class), by PermissionAuthorizationHandler (for a denied platform
+// policy check, which never reaches a handler to audit), and by FirstTenantLoginHandler (a
+// standalone write, same reasoning as PermissionAuthorizationHandler's). Never updated or
 // deleted after insert - see AuditImmutabilityInterceptor.
 public class TenantAuditEvent
 {

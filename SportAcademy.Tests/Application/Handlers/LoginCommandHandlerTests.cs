@@ -1,4 +1,5 @@
 using AutoMapper;
+using MediatR;
 using Moq;
 using SportAcademy.Application.Commands.AuthCommands.Login;
 using SportAcademy.Application.Interfaces;
@@ -6,6 +7,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Events;
 using SportAcademy.Domain.Exceptions.UserExceptions;
 
 namespace SportAcademy.Tests.Application.Handlers;
@@ -19,6 +21,7 @@ public class LoginCommandHandlerTests
     private readonly Mock<IMapper> _mapperMock = new();
     private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
     private readonly Mock<ITenantRepository> _tenantRepoMock = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
     private readonly LoginCommandHandler _handler;
 
     public LoginCommandHandlerTests()
@@ -30,15 +33,19 @@ public class LoginCommandHandlerTests
             _refreshTokenRepoMock.Object,
             _mapperMock.Object,
             _tenantIdProviderMock.Object,
-            _tenantRepoMock.Object);
+            _tenantRepoMock.Object,
+            _mediatorMock.Object);
     }
 
-    private static Tenant CreateTenant(TenantStatus status) => new()
+    private static Tenant CreateTenant(TenantStatus status, string code = "TEST", DateTime? firstLoginAt = null) => new()
     {
         Id = Guid.NewGuid(),
         Name = "Test Academy",
+        DisplayName = "Test Academy",
         Slug = "test-academy",
+        Code = code,
         Status = status,
+        FirstLoginAt = firstLoginAt,
     };
 
     private static AppUser CreateUser(Guid tenantId) => new()
@@ -111,5 +118,60 @@ public class LoginCommandHandlerTests
 
         Assert.True(result.IsSuccess);
         _tenantIdProviderMock.Verify(p => p.SetTenantId(tenant.Id), Times.Once);
+    }
+
+    private void SetUpSuccessfulCredentials(Tenant tenant, AppUser user)
+    {
+        _tenantRepoMock.Setup(r => r.GetBySlugAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tenant);
+        _userRepoMock.Setup(r => r.GetByUsernameOrEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _userRepoMock.Setup(r => r.CheckPasswordAsync(user, It.IsAny<string>())).ReturnsAsync(true);
+        _roleRepoMock.Setup(r => r.GetRolesForUser(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(["Owner"]);
+        _jwtTokenServiceMock.Setup(j => j.GenerateJwtToken(user, It.IsAny<string[]>())).ReturnsAsync("access-token");
+        _jwtTokenServiceMock.Setup(j => j.GenerateRefreshToken()).Returns("refresh-token");
+        _jwtTokenServiceMock.Setup(j => j.HashToken(It.IsAny<string>())).Returns("hashed");
+    }
+
+    [Fact]
+    public async Task Handle_TenantsFirstLogin_SetsFirstLoginAtAndPublishesEvent()
+    {
+        var tenant = CreateTenant(TenantStatus.Active, firstLoginAt: null);
+        var user = CreateUser(tenant.Id);
+        SetUpSuccessfulCredentials(tenant, user);
+
+        var result = await _handler.Handle(new LoginCommand("owner", "password", "test-academy"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(tenant.FirstLoginAt);
+        _mediatorMock.Verify(m => m.Publish(
+            It.Is<FirstTenantLoginEvent>(e => e.TenantId == tenant.Id && e.UserId == user.Id),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_TenantAlreadyLoggedInBefore_DoesNotPublishEventAgain()
+    {
+        var tenant = CreateTenant(TenantStatus.Active, firstLoginAt: DateTime.UtcNow.AddDays(-30));
+        var user = CreateUser(tenant.Id);
+        SetUpSuccessfulCredentials(tenant, user);
+
+        await _handler.Handle(new LoginCommand("owner", "password", "test-academy"), CancellationToken.None);
+
+        _mediatorMock.Verify(m => m.Publish(It.IsAny<FirstTenantLoginEvent>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_SystemTenantFirstLogin_DoesNotPublishEvent()
+    {
+        // A SuperAdmin's own first login has no other SuperAdmin to notify and isn't the "a
+        // tenant started using the product" milestone this event exists to surface.
+        var tenant = CreateTenant(TenantStatus.Active, code: Tenant.SystemTenantCode, firstLoginAt: null);
+        var user = CreateUser(tenant.Id);
+        SetUpSuccessfulCredentials(tenant, user);
+
+        await _handler.Handle(new LoginCommand("owner", "password", "system"), CancellationToken.None);
+
+        _mediatorMock.Verify(m => m.Publish(It.IsAny<FirstTenantLoginEvent>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

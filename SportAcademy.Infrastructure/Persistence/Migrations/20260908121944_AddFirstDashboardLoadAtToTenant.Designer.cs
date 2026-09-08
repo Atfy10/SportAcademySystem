@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
@@ -11,9 +12,11 @@ using SportAcademy.Infrastructure.Persistence.DBContext;
 namespace SportAcademy.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260908121944_AddFirstDashboardLoadAtToTenant")]
+    partial class AddFirstDashboardLoadAtToTenant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2113,7 +2116,7 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("SubscriptionPlans", (string)null);
+                    b.ToTable("SubscriptionPlans");
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.SubscriptionPlanFeature", b =>
@@ -3701,7 +3704,7 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                             b1.HasKey("EmployeeId");
 
-                            b1.ToTable("Employees", (string)null);
+                            b1.ToTable("Employees");
 
                             b1.WithOwner()
                                 .HasForeignKey("EmployeeId");
@@ -3720,7 +3723,7 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                             b1.HasKey("EmployeeId");
 
-                            b1.ToTable("Employees", (string)null);
+                            b1.ToTable("Employees");
 
                             b1.WithOwner()
                                 .HasForeignKey("EmployeeId");
@@ -4520,7 +4523,7 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                             b1.HasKey("TraineeId");
 
-                            b1.ToTable("Trainees", (string)null);
+                            b1.ToTable("Trainees");
 
                             b1.WithOwner()
                                 .HasForeignKey("TraineeId");
@@ -4539,7 +4542,7 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                             b1.HasKey("TraineeId");
 
-                            b1.ToTable("Trainees", (string)null);
+                            b1.ToTable("Trainees");
 
                             b1.WithOwner()
                                 .HasForeignKey("TraineeId");
