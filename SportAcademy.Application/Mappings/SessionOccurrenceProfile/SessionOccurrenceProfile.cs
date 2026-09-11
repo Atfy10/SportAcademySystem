@@ -41,10 +41,31 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
                 .ForCtorParam("Status", opt => opt.MapFrom(src => src.Status.ToString()))
                 .ReverseMap();
 
-            CreateMap<CreateSessionOccurrenceCommand, SessionOccurrence>();
+            CreateMap<CreateSessionOccurrenceCommand, SessionOccurrence>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupSchedule, opt => opt.Ignore())
+                .ForMember(dest => dest.Attendances, opt => opt.Ignore());
 
+            // GroupScheduleId isn't updatable through this command (an occurrence doesn't move
+            // to a different recurring schedule) - see UpdateSessionOccurrenceCommand's own
+            // (Id, StartDateTime, Status) shape.
             CreateMap<UpdateSessionOccurrenceCommand, SessionOccurrence>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore());
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupScheduleId, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupSchedule, opt => opt.Ignore())
+                .ForMember(dest => dest.Attendances, opt => opt.Ignore());
         }
     }
 }

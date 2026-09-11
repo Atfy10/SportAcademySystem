@@ -41,6 +41,9 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForCtorParam("BranchName", o => o.MapFrom(s => s.Branch.Name ?? string.Empty))
                 .ForMember(dest => dest.MedicalConditions, o => o.MapFrom(s =>
                     s.MedicalConditions.Select(mc => mc.Condition).ToList()))
+                // Every caller (GetAll/Search/GetById TraineeQueryHandlers) fills this in after
+                // mapping, from a separate attendance-summary query AutoMapper has no access to.
+                .ForMember(dest => dest.AttendanceRate, o => o.Ignore())
                 .ReverseMap();
 
             CreateMap<Trainee, TraineeDetailsDto>()
@@ -54,21 +57,18 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForCtorParam("EnrollmentCount", o => o.MapFrom(s => s.Enrollments.Count))
                 .ForCtorParam("JoinDate", o => o.MapFrom(s => s.JoinDate.ToDateTime(TimeOnly.MinValue)))
                 .ForMember(dest => dest.MedicalConditions, o => o.MapFrom(s =>
-                    s.MedicalConditions.Select(mc => mc.Condition).ToList()));
+                    s.MedicalConditions.Select(mc => mc.Condition).ToList()))
+                .ForMember(dest => dest.AttendanceRate, o => o.Ignore());
 
             // CreateTraineeCommand/UpdateTraineePersonalCommand <-> Trainee are no longer
             // AutoMapper mappings — CreateTraineeCommandHandler/UpdateTraineePersonalCommandHandler
             // use Mappings/Manual/TraineeMapper.cs instead (nothing else referenced these maps).
 
-            CreateMap<Trainee, TraineeDto>()
-                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(st => new SportIdNameDto(st.Sport.Id,
-                    st.Sport.Name
-                )).ToHashSet()))
-                .ReverseMap()
-                .ForMember(dest => dest.Sports, opt => opt.MapFrom(src => src.Sports.Select(s => new SportTrainee
-                {
-                    SportId = s.Id
-                }).ToList()));
+            // Trainee <-> TraineeDto was dead (nothing calls Map<TraineeDto>/Map<Trainee> through
+            // it - TraineeCardDto/TraineeDetailsDto/TraineeDropdownDto below are what's actually
+            // used) and broken: TraineeDto.Sports is HashSet<SportDto> but the forward map built
+            // HashSet<SportIdNameDto> instead, a type AutoMapper can't convert into it. Removed
+            // rather than fixed for a type nothing exercises.
 
             CreateMap<Trainee, TraineeDropdownDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))

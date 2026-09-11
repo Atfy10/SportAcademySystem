@@ -67,7 +67,7 @@ public class AddSportToBranchCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().Be("Sport added to branch successfully.");
-        result.Message.Should().Be(OperationType.Add.ToString());
+        result.Message.Should().Be($"{OperationType.Add} operation done successfully");
         _sportBranchRepoMock.Verify(r => r.AddAsync(It.IsAny<SportBranch>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 

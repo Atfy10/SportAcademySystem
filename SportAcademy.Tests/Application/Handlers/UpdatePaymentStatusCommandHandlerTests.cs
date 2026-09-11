@@ -62,8 +62,7 @@ public class UpdatePaymentStatusCommandHandlerTests
     {
         var command = CreateValidCommand(999);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(999, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Enrollment?)null);
 
         var act = () => _handler.Handle(command, CancellationToken.None);
@@ -77,8 +76,7 @@ public class UpdatePaymentStatusCommandHandlerTests
         var enrollment = CreateEnrollment(1, 5);
         var invoice = CreateInvoice(id: 5, branchId: 3, grandTotal: 50m, amountPaid: 0m);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _invoiceRepoMock.Setup(r => r.GetBySubscriptionDetailsIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invoice);
@@ -99,8 +97,7 @@ public class UpdatePaymentStatusCommandHandlerTests
         var enrollment = CreateEnrollment(1, 5);
         var invoice = CreateInvoice(id: 5, grandTotal: 50m, amountPaid: 50m);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _invoiceRepoMock.Setup(r => r.GetBySubscriptionDetailsIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invoice);
@@ -118,8 +115,7 @@ public class UpdatePaymentStatusCommandHandlerTests
         var command = CreateValidCommand(1, "Paid");
         var enrollment = CreateEnrollment(1, 5);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _invoiceRepoMock.Setup(r => r.GetBySubscriptionDetailsIdAsync(5, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Invoice?)null);
@@ -134,8 +130,7 @@ public class UpdatePaymentStatusCommandHandlerTests
         var command = CreateValidCommand(1, "Pending");
         var enrollment = CreateEnrollment(1, 5);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
 
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -154,8 +149,7 @@ public class UpdatePaymentStatusCommandHandlerTests
         var command = CreateValidCommand(1, status);
         var enrollment = CreateEnrollment(1, 5);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
 
         var result = await _handler.Handle(command, CancellationToken.None);

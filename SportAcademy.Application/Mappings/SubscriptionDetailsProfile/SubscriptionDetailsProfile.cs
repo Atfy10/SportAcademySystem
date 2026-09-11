@@ -71,14 +71,58 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                     dest => dest.Status,
                     opt => opt.MapFrom(src => src.Status)
                 )
+                // No source anywhere in the SubscriptionDetails graph for this - the hand-written
+                // replacement mapper (Mappings/Manual/SubscriptionDetailsMapper.cs) leaves it
+                // unset too, so this matches the already-established, deliberate behavior.
+                .ForMember(
+                    dest => dest.EmployeeName,
+                    opt => opt.Ignore()
+                )
                 .ReverseMap()
                 .ForAllMembers(
                     opt => opt.Condition((src, dest, srcMember) => srcMember != null)
                 );
 
-            CreateMap<CreateSubscriptionDetailsCommand, SubscriptionDetails>();
+            // EndDate/Status/audit/soft-delete/nav fields are entity-owned or server-computed
+            // (see the command's own comment on EndDate) - none of them come from the command.
+            CreateMap<CreateSubscriptionDetailsCommand, SubscriptionDetails>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.EndDate, opt => opt.Ignore())
+                .ForMember(dest => dest.Status, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+                .ForMember(dest => dest.Trainee, opt => opt.Ignore())
+                .ForMember(dest => dest.SportPrice, opt => opt.Ignore())
+                .ForMember(dest => dest.Enrollment, opt => opt.Ignore())
+                .ForMember(dest => dest.InvoiceLines, opt => opt.Ignore());
 
+            // UpdateSubscriptionDetailsCommand genuinely has no Status/GroupType/TrainingDays
+            // fields (not updatable through this command) on top of the same entity-owned/nav
+            // set as above.
             CreateMap<UpdateSubscriptionDetailsCommand, SubscriptionDetails>()
+                .ForMember(dest => dest.Status, opt => opt.Ignore())
+                .ForMember(dest => dest.GroupType, opt => opt.Ignore())
+                .ForMember(dest => dest.TrainingDays, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+                .ForMember(dest => dest.Trainee, opt => opt.Ignore())
+                .ForMember(dest => dest.SportPrice, opt => opt.Ignore())
+                .ForMember(dest => dest.Enrollment, opt => opt.Ignore())
+                .ForMember(dest => dest.InvoiceLines, opt => opt.Ignore())
                 .ForAllMembers(
                     opt => opt.Condition((src, dest, srcMember) => srcMember != null)
                 );

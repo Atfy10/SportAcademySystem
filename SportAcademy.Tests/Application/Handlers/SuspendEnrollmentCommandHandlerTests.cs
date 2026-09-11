@@ -45,8 +45,7 @@ public class SuspendEnrollmentCommandHandlerTests
         var command = CreateValidCommand(1);
         var enrollment = CreateEnrollment(1, isActive: true);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -57,7 +56,7 @@ public class SuspendEnrollmentCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().BeTrue();
-        result.Message.Should().Be(OperationType.Update.ToString());
+        result.Message.Should().Be($"{OperationType.Update} operation done successfully");
         enrollment.IsActive.Should().BeFalse();
         _enrollmentRepoMock.Verify(r => r.UpdateAsync(enrollment, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -68,8 +67,7 @@ public class SuspendEnrollmentCommandHandlerTests
         // Arrange
         var command = CreateValidCommand(999);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(999, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Enrollment?)null);
 
         // Act & Assert
@@ -85,8 +83,7 @@ public class SuspendEnrollmentCommandHandlerTests
         var enrollment = CreateEnrollment(1, isActive: false);
 
         Enrollment? capturedEnrollment = null;
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Callback<Enrollment, CancellationToken>((e, ct) => capturedEnrollment = e)
@@ -108,8 +105,7 @@ public class SuspendEnrollmentCommandHandlerTests
         var enrollment = CreateEnrollment(1, isActive: true);
 
         Enrollment? capturedEnrollment = null;
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Callback<Enrollment, CancellationToken>((e, ct) => capturedEnrollment = e)
@@ -131,8 +127,7 @@ public class SuspendEnrollmentCommandHandlerTests
         var enrollment = CreateEnrollment(1, isActive: true);
         var cancellationTokenSource = new CancellationTokenSource();
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Callback(() => cancellationTokenSource.Token.ThrowIfCancellationRequested())
@@ -155,8 +150,7 @@ public class SuspendEnrollmentCommandHandlerTests
         var command = CreateValidCommand(enrollmentId);
         var enrollment = CreateEnrollment(enrollmentId, isActive: true);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(enrollmentId, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(enrollmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -178,8 +172,7 @@ public class SuspendEnrollmentCommandHandlerTests
         var command = CreateValidCommand(1);
         var enrollment = CreateEnrollment(1, isActive: true);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
@@ -199,8 +192,7 @@ public class SuspendEnrollmentCommandHandlerTests
         enrollment.SessionRemaining = 3;
 
         Enrollment? capturedEnrollment = null;
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Callback<Enrollment, CancellationToken>((e, ct) => capturedEnrollment = e)

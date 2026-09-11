@@ -33,7 +33,7 @@ public class ToggleBranchStatusCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().BeTrue();
-        result.Message.Should().Be(OperationType.Update.ToString());
+        result.Message.Should().Be($"{OperationType.Update} operation done successfully");
     }
 
     [Fact]

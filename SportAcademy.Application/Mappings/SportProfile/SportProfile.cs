@@ -26,6 +26,9 @@ namespace SportAcademy.Application.Mappings.SportProfile
                 .ForMember(dest => dest.Translations, opt => opt.Ignore());
 
             CreateMap<CreateSportCommand, Sport>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore())
                 .ForMember(dest => dest.Coaches, opt => opt.Ignore())
                 .ForMember(dest => dest.SubscriptionTypes, opt => opt.Ignore())
                 .ForMember(dest => dest.Branches, opt => opt.Ignore())

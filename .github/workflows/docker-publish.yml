@@ -27,11 +27,6 @@ jobs:
 
   build-and-push:
     needs: test
-    # Publishes regardless of the test job's outcome (still runs and still reports its real
-    # pass/fail in the Actions UI - see the ~59 pre-existing, unrelated failures tracked as a
-    # separate follow-up) so a known, already-existing test-suite issue doesn't block every image
-    # release. Revert this once that follow-up lands and the suite is green again.
-    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

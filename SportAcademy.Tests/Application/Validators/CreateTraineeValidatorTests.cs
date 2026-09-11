@@ -70,16 +70,18 @@ public class CreateTraineeValidatorTests
         result.ShouldHaveValidationErrorFor(c => c.LastName);
     }
 
+    // SSN is deliberately optional on trainee creation (see CreateTraineeValidator's own
+    // comment on the SSN rule) - not every trainee has an SSN/civil ID on file yet.
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public void Validate_EmptySSN_HasError(string? ssn)
+    public void Validate_EmptySSN_IsValid(string? ssn)
     {
         var command = CreateValidCommand() with { SSN = ssn! };
 
         var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(c => c.SSN);
+        result.ShouldNotHaveValidationErrorFor(c => c.SSN);
     }
 
     [Theory]

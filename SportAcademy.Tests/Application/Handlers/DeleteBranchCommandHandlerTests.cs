@@ -49,7 +49,7 @@ public class DeleteBranchCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().BeTrue();
-        result.Message.Should().Be(OperationType.Delete.ToString());
+        result.Message.Should().Be($"{OperationType.Delete} operation done successfully");
         _branchRepoMock.Verify(r => r.DeleteAsync(branch, It.IsAny<CancellationToken>()), Times.Once);
     }
 

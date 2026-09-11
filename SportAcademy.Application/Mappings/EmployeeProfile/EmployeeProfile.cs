@@ -51,7 +51,22 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
                 // without this, AutoMapper leaves it unmapped and it defaults to
                 // DateTime.MinValue (0001-01-01), which is the "joined date" bug.
                 .ForMember(dest => dest.HireDate,
-                    opt => opt.MapFrom(src => DateTime.UtcNow));
+                    opt => opt.MapFrom(src => DateTime.UtcNow))
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.IsWork, opt => opt.Ignore())
+                .ForMember(dest => dest.AppUserId, opt => opt.Ignore())
+                .ForMember(dest => dest.AppUser, opt => opt.Ignore())
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Coach, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore());
 
             // No ForMember overrides here previously - meant Address (string -> value object)
             // failed to map at all, and HireDate/Nationality/Email were silently left at CLR
@@ -74,7 +89,21 @@ namespace SportAcademy.Application.Mappings.EmployeeProfile
                     opt => opt.MapFrom(src =>
                     Enum.Parse<Nationality>(src.Nationality)))
                 .ForMember(dest => dest.HireDate,
-                    opt => opt.MapFrom(src => DateTime.UtcNow));
+                    opt => opt.MapFrom(src => DateTime.UtcNow))
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.IsWork, opt => opt.Ignore())
+                .ForMember(dest => dest.AppUser, opt => opt.Ignore())
+                .ForMember(dest => dest.Branch, opt => opt.Ignore())
+                .ForMember(dest => dest.Coach, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore());
 
             // UpdateEmployeeCommand -> Employee is no longer an AutoMapper mapping -
             // UpdateEmployeeCommandHandler uses Mappings/Manual/EmployeeMapper.cs instead

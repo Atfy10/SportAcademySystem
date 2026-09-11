@@ -29,7 +29,7 @@ namespace SportAcademy.Domain.Services
         }
 
         public bool IsAdult(DateOnly birthDate) =>
-            CalculateAge(birthDate) >= 18;
+            CalculateAge(birthDate) >= 15;
 
         public bool IsSSNValid(string ssn, DateOnly birthDate)
         {

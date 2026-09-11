@@ -44,8 +44,7 @@ public class DeleteEnrollmentCommandHandlerTests
         var command = CreateValidCommand(1);
         var enrollment = CreateEnrollment(1);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.DeleteAsync(enrollment, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -56,7 +55,7 @@ public class DeleteEnrollmentCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().BeTrue();
-        result.Message.Should().Be(OperationType.Delete.ToString());
+        result.Message.Should().Be($"{OperationType.Delete} operation done successfully");
         _enrollmentRepoMock.Verify(r => r.DeleteAsync(enrollment, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -66,8 +65,7 @@ public class DeleteEnrollmentCommandHandlerTests
         // Arrange
         var command = CreateValidCommand(999);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(999, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Enrollment?)null);
 
         // Act & Assert
@@ -83,8 +81,7 @@ public class DeleteEnrollmentCommandHandlerTests
         var enrollment = CreateEnrollment(1);
         var cts = new CancellationTokenSource();
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.DeleteAsync(enrollment, It.IsAny<CancellationToken>()))
             .Callback(() => cts.Token.ThrowIfCancellationRequested())
@@ -107,8 +104,7 @@ public class DeleteEnrollmentCommandHandlerTests
         var command = CreateValidCommand(enrollmentId);
         var enrollment = CreateEnrollment(enrollmentId);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(enrollmentId, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(enrollmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.DeleteAsync(enrollment, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);

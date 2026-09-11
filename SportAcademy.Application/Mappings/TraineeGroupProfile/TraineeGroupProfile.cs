@@ -93,7 +93,24 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
         // Mappings/Manual/TraineeGroupMapper.cs instead (it must skip BranchId during update,
         // which a declarative map can't express without also breaking create).
 
-        CreateMap<CreateTraineeGroupCommand, TraineeGroup>();
+        // Everything below is entity-owned (audit/tenant/soft-delete) or a navigation/derived
+        // collection the handler populates separately (e.g. GroupSchedules from
+        // command.Schedules) - none of it comes from the command itself.
+        CreateMap<CreateTraineeGroupCommand, TraineeGroup>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
+            .ForMember(dest => dest.InactiveReason, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+            .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+            .ForMember(dest => dest.Branch, opt => opt.Ignore())
+            .ForMember(dest => dest.Coach, opt => opt.Ignore())
+            .ForMember(dest => dest.Enrollments, opt => opt.Ignore())
+            .ForMember(dest => dest.GroupSchedules, opt => opt.Ignore())
+            .ForMember(dest => dest.Translations, opt => opt.Ignore());
 
         // .ForCtorParam() here, not .ConstructUsing() - ConstructUsing opts a mapping out of
         // AutoMapper's LINQ expression-tree translation, which ProjectTo relies on to turn

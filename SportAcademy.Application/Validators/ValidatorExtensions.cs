@@ -30,7 +30,10 @@ namespace SportAcademy.Application.Validators
         this IRuleBuilder<T, string?> ruleBuilder)
         {
             return ruleBuilder
-                .Must(value => value is not null && string.IsNullOrEmpty(value) || !value.Any(char.IsDigit))
+                // Null/empty is not this rule's concern (NotEmpty handles that separately) - and
+                // without the parens, `||` let the right-hand `value.Any(...)` still run against
+                // a null value, throwing ArgumentNullException instead of just passing.
+                .Must(value => string.IsNullOrEmpty(value) || !value.Any(char.IsDigit))
                 .WithMessage("{PropertyName} must not contain digits.");
         }
     }

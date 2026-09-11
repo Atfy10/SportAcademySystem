@@ -15,6 +15,8 @@ namespace SportAcademy.Application.Mappings.AppUserProfile
             CreateMap<AppUser, AppUserCardDto>()
                 .ForMember(dest => dest.Roles,
                     opt => opt.Ignore())
+                .ForMember(dest => dest.Permissions,
+                    opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive,
                     opt => opt.MapFrom(src => !src.IsBanned))
                 .ReverseMap()

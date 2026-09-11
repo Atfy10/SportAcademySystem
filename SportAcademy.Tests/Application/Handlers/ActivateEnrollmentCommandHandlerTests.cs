@@ -45,8 +45,7 @@ public class ActivateEnrollmentCommandHandlerTests
         var command = CreateValidCommand(1);
         var enrollment = CreateEnrollment(1, isActive: false);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -57,7 +56,7 @@ public class ActivateEnrollmentCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Data.Should().BeTrue();
-        result.Message.Should().Be(OperationType.Update.ToString());
+        result.Message.Should().Be($"{OperationType.Update} operation done successfully");
         enrollment.IsActive.Should().BeTrue();
         _enrollmentRepoMock.Verify(r => r.UpdateAsync(enrollment, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -68,8 +67,7 @@ public class ActivateEnrollmentCommandHandlerTests
         // Arrange
         var command = CreateValidCommand(999);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(999, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Enrollment?)null);
 
         // Act & Assert
@@ -85,8 +83,7 @@ public class ActivateEnrollmentCommandHandlerTests
         var enrollment = CreateEnrollment(1, isActive: true);
 
         Enrollment? capturedEnrollment = null;
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Callback<Enrollment, CancellationToken>((e, ct) => capturedEnrollment = e)
@@ -108,8 +105,7 @@ public class ActivateEnrollmentCommandHandlerTests
         var enrollment = CreateEnrollment(1, isActive: false);
         var cancellationTokenSource = new CancellationTokenSource();
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Callback(() => cancellationTokenSource.Token.ThrowIfCancellationRequested())
@@ -132,8 +128,7 @@ public class ActivateEnrollmentCommandHandlerTests
         var command = CreateValidCommand(enrollmentId);
         var enrollment = CreateEnrollment(enrollmentId, isActive: false);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(enrollmentId, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(enrollmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -155,8 +150,7 @@ public class ActivateEnrollmentCommandHandlerTests
         var command = CreateValidCommand(1);
         var enrollment = CreateEnrollment(1, isActive: false);
 
-        _enrollmentRepoMock.Setup(r => ((IBaseRepository<Enrollment, int>)r)
-            .GetByIdAsync(1, It.IsAny<CancellationToken>()))
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));

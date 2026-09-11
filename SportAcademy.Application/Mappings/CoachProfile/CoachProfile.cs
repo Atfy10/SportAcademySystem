@@ -37,50 +37,64 @@ namespace SportAcademy.Application.Mappings.CoachProfile
             // "worst possible rating" rather than "not yet rated"). Adjustable afterward via
             // RateCoachCommand / PATCH api/coach/{id}/rate.
             CreateMap<CreateCoachCommand, Coach>()
-                .ForMember(dest => dest.Rate, opt => opt.MapFrom(src => 3));
+                .ForMember(dest => dest.Rate, opt => opt.MapFrom(src => 3))
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+                .ForMember(dest => dest.Employee, opt => opt.Ignore())
+                .ForMember(dest => dest.Sport, opt => opt.Ignore())
+                .ForMember(dest => dest.TraineeGroups, opt => opt.Ignore());
 
             CreateMap<CreateCoachWithEmployeeCommand, Coach>()
                 .ForMember(
                     dest => dest.Employee,
                     opt => opt.Ignore()
                 )
-                .ForMember(dest => dest.Rate, opt => opt.MapFrom(src => 3));
+                .ForMember(dest => dest.Rate, opt => opt.MapFrom(src => 3))
+                .ForMember(dest => dest.EmployeeId, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.TenantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+                .ForMember(dest => dest.Sport, opt => opt.Ignore())
+                .ForMember(dest => dest.TraineeGroups, opt => opt.Ignore());
 
-            CreateMap<Coach, CoachSummaryDto>().ReverseMap();
+            // CoachSummaryDto and the Coach -> CoachDropdownItemDto direction below are both
+            // dead - nothing calls Map<CoachSummaryDto>/Map<CoachDropdownItemDto> or
+            // ProjectTo<CoachDropdownItemDto> anywhere. The real dropdown path is
+            // CoachRepository.GetAllForDropdownAsync, which projects through
+            // CoachProjections.ToDropdownDto + a manual BranchIds backfill instead. Removed
+            // rather than "fixed" - CoachSummaryDto.BirthDate in particular has no source
+            // anywhere in the Coach/Employee graph (Employee has no BirthDate property), so
+            // inventing a mapping for it would be fabricating behavior nothing exercises.
 
+            // .ForCtorParam() here, not .ConstructUsing() - ConstructUsing satisfies every
+            // constructor argument at runtime (this map is genuinely live, via
+            // GetCoachByIdQueryHandler's plain Map<CoachDetailsDto> call) but AutoMapper's
+            // config validator can't see through a ConstructUsing delegate to know that, so it
+            // flags every one of this record's positional parameters as "unmapped" - same root
+            // cause already documented below for CoachDropdownItemDto. ForCtorParam keeps the
+            // exact same value expressions while giving the validator per-parameter visibility.
             CreateMap<Coach, CoachDetailsDto>()
-                .ConstructUsing(src => new CoachDetailsDto
-                (
-                    src.EmployeeId,
-                    src.Employee.FirstName,
-                    src.Employee.LastName,
-                    src.Employee.Email.ToString(),
-                    src.Employee.PhoneNumber,
-                    src.Employee.Branch.Name,
-                    src.Sport.Name,
-                    src.SkillLevel.ToString(),
-                    null, // Certifications not implemented yet
-                    src.TraineeGroups
-                        .SelectMany(tg => tg.Enrollments)
-                        .Count(e => e.IsActive && !e.IsDeleted),
-                    src.Employee.HireDate,
-                    src.Employee.IsWork,
-                    src.Rate,
-                    src.Employee.ImageUrl
-                ));
-
-            // .ForMember() here, not .ConstructUsing() - ConstructUsing opts a mapping out of
-            // AutoMapper's LINQ expression-tree translation, which ProjectTo relies on to turn
-            // this into a SQL projection. Left as ConstructUsing, this was throwing
-            // InvalidCastException at runtime on the coach dropdown endpoint.
-            CreateMap<Coach, CoachDropdownItemDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.EmployeeId))
-                .ForMember(dest => dest.EmployeeFirstName, opt => opt.MapFrom(src => src.Employee.FirstName))
-                .ForMember(dest => dest.EmployeeLastName, opt => opt.MapFrom(src => src.Employee.LastName))
-                .ForMember(dest => dest.BranchId, opt => opt.MapFrom(src => src.Employee.BranchId))
-                .ForMember(dest => dest.BranchName, opt => opt.MapFrom(src => src.Employee.Branch.Name))
-                .ForMember(dest => dest.SportId, opt => opt.MapFrom(src => src.SportId))
-                .ForMember(dest => dest.SkillLevel, opt => opt.MapFrom(src => src.SkillLevel));
+                .ForCtorParam("Id", opt => opt.MapFrom(src => src.EmployeeId))
+                .ForCtorParam("FirstName", opt => opt.MapFrom(src => src.Employee.FirstName))
+                .ForCtorParam("LastName", opt => opt.MapFrom(src => src.Employee.LastName))
+                .ForCtorParam("Email", opt => opt.MapFrom(src => src.Employee.Email.ToString()))
+                .ForCtorParam("PhoneNumber", opt => opt.MapFrom(src => src.Employee.PhoneNumber))
+                .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Employee.Branch.Name))
+                .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Sport.Name))
+                .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel.ToString()))
+                .ForCtorParam("Certifications", opt => opt.MapFrom(src => (string[]?)null)) // not implemented yet
+                .ForCtorParam("TotalTrainees", opt => opt.MapFrom(src => src.TraineeGroups
+                    .SelectMany(tg => tg.Enrollments)
+                    .Count(e => e.IsActive && !e.IsDeleted)))
+                .ForCtorParam("HireDate", opt => opt.MapFrom(src => src.Employee.HireDate))
+                .ForCtorParam("IsWork", opt => opt.MapFrom(src => src.Employee.IsWork))
+                .ForCtorParam("Rating", opt => opt.MapFrom(src => src.Rate))
+                .ForCtorParam("ImageUrl", opt => opt.MapFrom(src => src.Employee.ImageUrl));
         }
     }
 }
