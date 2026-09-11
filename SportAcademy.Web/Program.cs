@@ -74,6 +74,9 @@ builder.Services.Configure<AppUrlSettings>(
 builder.Services.Configure<TenantArchivalSettings>(
     builder.Configuration.GetSection("TenantArchival"));
 
+builder.Services.Configure<MarketingSettings>(
+    builder.Configuration.GetSection("Marketing"));
+
 builder.Services.AddScoped<AuditingInterceptor>();
 
 builder.Services.AddScoped<SoftDeleteInterceptor>();
@@ -194,6 +197,19 @@ builder.Services.AddRateLimiter(options =>
         {
             PermitLimit = 5,
             Window = TimeSpan.FromMinutes(1),
+        });
+    });
+
+    // Public marketing-site lead form - much tighter than the general "public" policy (20/min):
+    // a real visitor submits this once, so 5/hour/IP still comfortably covers a shared office
+    // or family NAT while making a scripted flood expensive.
+    options.AddPolicy("public-lead", httpContext =>
+    {
+        var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromHours(1),
         });
     });
 });

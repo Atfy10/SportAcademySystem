@@ -31,8 +31,12 @@ public class GetSubscriptionPlansQueryHandler
                 Id = p.Id,
                 Name = p.Name,
                 Code = p.Code,
+                Description = p.Description,
                 MonthlyPrice = p.MonthlyPrice,
                 YearlyPrice = p.YearlyPrice,
+                IsPubliclyListed = p.IsPubliclyListed,
+                DisplayOrder = p.DisplayOrder,
+                IsHighlighted = p.IsHighlighted,
             })
             .ToList();
 

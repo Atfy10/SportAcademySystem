@@ -8,6 +8,10 @@ public record SubscriptionPlanSummaryDto
     public int Id { get; init; }
     public string Name { get; init; } = default!;
     public string Code { get; init; } = default!;
+    public string? Description { get; init; }
     public decimal MonthlyPrice { get; init; }
     public decimal YearlyPrice { get; init; }
+    public bool IsPubliclyListed { get; init; }
+    public int DisplayOrder { get; init; }
+    public bool IsHighlighted { get; init; }
 }
