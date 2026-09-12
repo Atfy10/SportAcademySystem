@@ -241,7 +241,12 @@ var allowedOrigins = configuredOrigins is { Length: > 0 }
         "http://localhost:8080",
         "https://localhost:8081",
         "http://localhost:8081",
-        "https://localhost:44306"
+        "https://localhost:44306",
+        // Astro's dev server default port (aura-marketing-site) - without this, a local
+        // PUBLIC_API_ORIGIN-pointed fetch from `npm run dev` still fails, just with a CORS
+        // error instead of a 404, since 4321 isn't same-origin with this API in dev the way
+        // it is in production (Caddy puts both on auraacademys.com there).
+        "http://localhost:4321"
     ];
 
 builder.Services.AddCors(options =>
