@@ -639,6 +639,52 @@ namespace SportAcademy.Infrastructure.Seeders
             ("backup-restore", "Backup & Restore", "Data backup and restoration", true),
         ];
 
+        // Default bundle-builder pricing for the public marketing site's "build your own plan"
+        // page (DESIGN.md bundle-builder addendum) - applied only when a feature row is first
+        // created (see the `missing` projection in ReconcileFeaturesAsync below), never on an
+        // existing row, so a SuperAdmin's edit via /platform/bundle-pricing is never silently
+        // overwritten on the next app restart. A feature absent from this map defaults to
+        // BundlePrice 0 / IsBundleCore false (not sold as a bundle add-on - matches every
+        // IsImplemented:false catalog entry, which shouldn't be purchasable either way).
+        //
+        // Core set = the five features FeatureDependencies.cs already calls Protected (nothing
+        // can function without them, so they were never meaningfully optional) plus the five
+        // named explicitly as "shared in every bundle" - trainees/employees/coaches/branches/
+        // sports. Modeled as one Feature (BundlePrice) carrying the whole core total rather than
+        // splitting a few dollars across ten rows - the builder UI always displays "core" as one
+        // aggregated line ("Core platform - included"), not ten individually-priced essentials.
+        // Every other IsImplemented:true feature is priced as its own standalone add-on block;
+        // FeatureDependencies' real Requires graph (unchanged, code-defined) still decides what
+        // auto-completes a selection - this table only prices what's already dependency-valid.
+        private static readonly Dictionary<string, (decimal Price, bool IsCore)> BundlePricingDefaults = new()
+        {
+            ["user-management"] = (0m, true),
+            ["role-management"] = (0m, true),
+            ["tenant-settings"] = (0m, true),
+            ["profile-mgmt"] = (0m, true),
+            ["system-settings"] = (0m, true),
+            ["branch-management"] = (0m, true),
+            ["employee-management"] = (0m, true),
+            ["coach-management"] = (0m, true),
+            ["sport-management"] = (0m, true),
+            ["trainee-management"] = (35m, true), // carries the whole core total - see note above
+            ["subscription-plan"] = (10m, false),
+            ["pricing-management"] = (8m, false),
+            ["payment-processing"] = (15m, false),
+            ["group-management"] = (10m, false),
+            ["attendance-tracking"] = (12m, false),
+            ["enrollment-management"] = (12m, false),
+            ["family-management"] = (8m, false),
+            ["nationality-categories"] = (3m, false),
+            ["financial-reports"] = (10m, false),
+            ["attendance-reports"] = (8m, false),
+            ["subscription-reports"] = (8m, false),
+            ["notifications"] = (6m, false),
+            ["discount-offers"] = (7m, false),
+            ["session-management"] = (10m, false),
+            ["backup-restore"] = (6m, false),
+        };
+
         // Fully replaces the old "SeedFeaturesAsync always inserts everything, assumes it only
         // ever runs once" approach. Adds any Feature this catalog defines that the database
         // doesn't have yet (on a genuinely fresh database, that's every feature - this is what
@@ -659,7 +705,11 @@ namespace SportAcademy.Infrastructure.Seeders
 
             var missing = FeatureCatalog
                 .Where(f => !existingNames.Contains(f.Name))
-                .Select(f => CreateFeature(f.Name, f.DisplayName, f.Description, f.IsImplemented))
+                .Select(f =>
+                {
+                    var (price, isCore) = BundlePricingDefaults.GetValueOrDefault(f.Name, (0m, false));
+                    return CreateFeature(f.Name, f.DisplayName, f.Description, f.IsImplemented, price, isCore);
+                })
                 .ToList();
 
             if (missing.Count > 0)
@@ -730,7 +780,9 @@ namespace SportAcademy.Infrastructure.Seeders
                 .ToList();
         }
 
-        private static Feature CreateFeature(string name, string displayName, string description, bool isImplemented = true)
+        private static Feature CreateFeature(
+            string name, string displayName, string description, bool isImplemented = true,
+            decimal bundlePrice = 0m, bool isBundleCore = false)
         {
             return new Feature
             {
@@ -739,7 +791,9 @@ namespace SportAcademy.Infrastructure.Seeders
                 DisplayName = displayName,
                 Description = description,
                 CreatedAt = DateTime.UtcNow,
-                IsImplemented = isImplemented
+                IsImplemented = isImplemented,
+                BundlePrice = bundlePrice,
+                IsBundleCore = isBundleCore
             };
         }
 

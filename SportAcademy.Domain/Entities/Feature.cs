@@ -16,6 +16,14 @@ namespace SportAcademy.Domain.Entities
         // toggle that silently does nothing either way.
         public bool IsImplemented { get; set; } = true;
 
+        // Bundle-builder pricing (the public marketing site's "build your own plan" page) - a
+        // separate concern from plan pricing (SubscriptionPlan.MonthlyPrice) and from the real
+        // dependency-enforcement graph (FeatureDependencies.cs, code-defined, not DB-backed).
+        // A core feature is pre-selected and locked in the builder (its price is part of the
+        // base total, not optional) - see BundleFeatureConfiguration.
+        public decimal BundlePrice { get; set; }
+        public bool IsBundleCore { get; set; }
+
         // Navigation properties
         public virtual ICollection<TenantFeature> TenantFeatures { get; set; } = [];
         public virtual ICollection<SubscriptionPlanFeature> SubscriptionPlans { get; set; } = [];

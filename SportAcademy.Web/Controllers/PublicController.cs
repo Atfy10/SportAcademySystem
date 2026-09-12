@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.MarketingCommands.CreateLead;
 using SportAcademy.Application.Queries.PublicQueries.GetPublicPlans;
+using SportAcademy.Application.Queries.PublicQueries.GetBundleFeatures;
 
 namespace SportAcademy.Web.Controllers;
 
@@ -32,6 +33,18 @@ public class PublicController : ControllerBase
     public async Task<IActionResult> GetPlans(CancellationToken ct)
     {
         var result = await _mediator.Send(new GetPublicPlansQuery(), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    // Backs the public marketing site's bundle-builder page (/pricing/build) - every purchasable
+    // feature block, its price, whether it's core (pre-selected/locked), and the real dependency
+    // edges (FeatureDependencies.cs) the client walks to auto-complete a selection.
+    [HttpGet("bundle-features")]
+    [EnableRateLimiting("public")]
+    [ResponseCache(Duration = 300, Location = ResponseCacheLocation.Any)]
+    public async Task<IActionResult> GetBundleFeatures(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetBundleFeaturesQuery(), ct);
         return StatusCode(result.StatusCode, result);
     }
 
