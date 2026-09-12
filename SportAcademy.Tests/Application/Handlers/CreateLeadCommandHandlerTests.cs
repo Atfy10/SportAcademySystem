@@ -27,7 +27,7 @@ public class CreateLeadCommandHandlerTests
         FullName: "Ahmed Ali",
         AcademyName: "Champions Academy",
         Email: "ahmed@example.com",
-        PhoneNumber: "+201000000000",
+        PhoneNumber: "201000000000",
         City: "Cairo",
         BranchCount: 2,
         TraineeCountBand: 1,
