@@ -74,6 +74,9 @@ builder.Services.Configure<AppUrlSettings>(
 builder.Services.Configure<TenantArchivalSettings>(
     builder.Configuration.GetSection("TenantArchival"));
 
+builder.Services.Configure<MarketingSettings>(
+    builder.Configuration.GetSection("Marketing"));
+
 builder.Services.AddScoped<AuditingInterceptor>();
 
 builder.Services.AddScoped<SoftDeleteInterceptor>();
@@ -196,6 +199,19 @@ builder.Services.AddRateLimiter(options =>
             Window = TimeSpan.FromMinutes(1),
         });
     });
+
+    // Public marketing-site lead form - much tighter than the general "public" policy (20/min):
+    // a real visitor submits this once, so 5/hour/IP still comfortably covers a shared office
+    // or family NAT while making a scripted flood expensive.
+    options.AddPolicy("public-lead", httpContext =>
+    {
+        var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromHours(1),
+        });
+    });
 });
 
 // Cors:AllowedOrigins is read from configuration (appsettings.{Environment}.json or the
@@ -225,7 +241,12 @@ var allowedOrigins = configuredOrigins is { Length: > 0 }
         "http://localhost:8080",
         "https://localhost:8081",
         "http://localhost:8081",
-        "https://localhost:44306"
+        "https://localhost:44306",
+        // Astro's dev server default port (aura-marketing-site) - without this, a local
+        // PUBLIC_API_ORIGIN-pointed fetch from `npm run dev` still fails, just with a CORS
+        // error instead of a 404, since 4321 isn't same-origin with this API in dev the way
+        // it is in production (Caddy puts both on auraacademys.com there).
+        "http://localhost:4321"
     ];
 
 builder.Services.AddCors(options =>

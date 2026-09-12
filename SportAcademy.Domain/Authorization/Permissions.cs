@@ -161,6 +161,10 @@ namespace SportAcademy.Domain.Authorization
             public const string OwnersManage = "platform.owners.manage";
             public const string AuditRead = "platform.audit.read";
             public const string Impersonate = "platform.impersonate";
+            // Marketing-site leads - split read/manage on the same reasoning as
+            // TenantsRead/TenantsManage above.
+            public const string LeadsRead = "platform.leads.read";
+            public const string LeadsManage = "platform.leads.manage";
         }
 
         // All permissions in the catalog, used to validate seed data / diagnostics without
@@ -189,6 +193,7 @@ namespace SportAcademy.Domain.Authorization
             DiscountCode.Manage, DiscountCode.Approve,
             Tenant.ManageSettings, Tenant.ManageUsers,
             Platform.TenantsRead, Platform.TenantsManage, Platform.OwnersManage, Platform.AuditRead, Platform.Impersonate,
+            Platform.LeadsRead, Platform.LeadsManage,
         ];
     }
 }

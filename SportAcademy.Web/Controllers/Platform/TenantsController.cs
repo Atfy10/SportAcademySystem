@@ -11,12 +11,15 @@ using SportAcademy.Application.Commands.PlatformCommands.SetTenantTrial;
 using SportAcademy.Application.Commands.PlatformCommands.StartImpersonation;
 using SportAcademy.Application.Commands.PlatformCommands.ToggleFeature;
 using SportAcademy.Application.Commands.PlatformCommands.UpdatePlanFeatures;
+using SportAcademy.Application.Commands.PlatformCommands.UpdateFeatureBundlePricing;
+using SportAcademy.Application.Commands.PlatformCommands.UpdateSubscriptionPlan;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateTenant;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantDetails;
 using SportAcademy.Application.Queries.PlatformQueries.GetPlanFeatures;
 using SportAcademy.Application.Queries.PlatformQueries.GetSubscriptionPlans;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantFeatures;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenants;
+using SportAcademy.Application.Queries.PublicQueries.GetBundleFeatures;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers.Platform;
@@ -197,6 +200,50 @@ public class TenantsController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    // The plan's commercial face - name/description/price/public listing - as opposed to
+    // UpdatePlanFeatures above, which edits what the plan grants. Read by the public marketing
+    // site's pricing page (GET /api/public/plans), so this is the one place a SuperAdmin
+    // changes what a visitor sees, with no redeploy.
+    [HttpPut("/api/platform/subscription-plans/{id}")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> UpdateSubscriptionPlan(
+        [FromRoute] int id,
+        [FromBody] UpdateSubscriptionPlanRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdateSubscriptionPlanCommand(
+            id, request.Name, request.Description, request.MonthlyPrice, request.YearlyPrice,
+            request.IsPubliclyListed, request.DisplayOrder, request.IsHighlighted), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    // Absolute route, not tenant-scoped: prices for the public marketing site's bundle-builder
+    // (/pricing/build) - same reasoning as the subscription-plans routes above. Reuses
+    // GetBundleFeaturesQuery, the exact same read the anonymous GET /api/public/bundle-features
+    // endpoint uses - there's nothing here worth hiding from an anonymous visitor that the
+    // SuperAdmin editor needs but the public site doesn't.
+    [HttpGet("/api/platform/features/bundle-pricing")]
+    [Authorize(Roles = "SuperAdmin,PlatformSupport")]
+    [Authorize(Policy = "Permission:platform.tenants.read")]
+    public async Task<IActionResult> GetBundlePricing(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetBundleFeaturesQuery(), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPut("/api/platform/features/{id}/bundle-pricing")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> UpdateBundlePricing(
+        [FromRoute] Guid id,
+        [FromBody] UpdateFeatureBundlePricingRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdateFeatureBundlePricingCommand(id, request.BundlePrice, request.IsCore), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
     [HttpGet("{id}/features")]
     [Authorize(Roles = "SuperAdmin,PlatformSupport")]
     [Authorize(Policy = "Permission:platform.tenants.read")]
@@ -307,6 +354,15 @@ public record ArchiveTenantRequest(string Reason);
 public record ChangeTenantPlanRequest(int NewPlanId);
 
 public record UpdatePlanFeaturesRequest(List<Guid> FeatureIds);
+public record UpdateFeatureBundlePricingRequest(decimal BundlePrice, bool IsCore);
+public record UpdateSubscriptionPlanRequest(
+    string Name,
+    string? Description,
+    decimal MonthlyPrice,
+    decimal YearlyPrice,
+    bool IsPubliclyListed,
+    int DisplayOrder,
+    bool IsHighlighted);
 
 // Lock: whether this decision should also stop the tenant from changing it back themselves
 // (LockedBySuperAdmin) - the SuperAdmin decides this explicitly on every toggle rather than it

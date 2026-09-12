@@ -37,6 +37,15 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasDefaultValue(true);
 
+            builder.Property(f => f.BundlePrice)
+                .IsRequired()
+                .HasPrecision(10, 2)
+                .HasDefaultValue(0m);
+
+            builder.Property(f => f.IsBundleCore)
+                .IsRequired()
+                .HasDefaultValue(false);
+
             builder.HasMany(f => f.TenantFeatures)
                 .WithOne(cf => cf.Feature)
                 .HasForeignKey(cf => cf.FeatureId)

@@ -121,6 +121,8 @@ namespace SportAcademy.Infrastructure
             // Register Application URL Provider
             services.AddScoped<IAppUrlProvider, AppUrlProvider>();
 
+            services.AddScoped<IMarketingSettingsProvider, MarketingSettingsProvider>();
+
             return services;
         }
     }
