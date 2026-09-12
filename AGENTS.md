@@ -224,7 +224,12 @@ Controllers: Auth, Attendance, Branch, ChatBot, Coach, Employee, Enrollment, Ses
 
 **JSON serialization:** enums as camelCase strings via `JsonStringEnumConverter(JsonNamingPolicy.CamelCase)`.
 
-**CORS:** `AllowFrontend` policy permits origins `http(s)://localhost:8080` and `http(s)://localhost:8081` with credentials.
+**CORS:** `AllowFrontend` policy, origins read from config (`Cors:AllowedOrigins`, i.e.
+`CORS__AllowedOrigins__0`/`__1`/... as env vars) with credentials allowed. Production **requires**
+this to be set explicitly (fails fast on startup otherwise) - currently `app.auraacademys.com`
+(console), `auraacademys.com`/`www.auraacademys.com` (marketing). With no config present (local
+dev), falls back to `localhost:8080`/`8081`/`44306` (console dev servers) and `localhost:4321`
+(the marketing site's Astro dev server).
 
 **DI registration** in `Program.cs` — all repositories and services registered as `AddScoped`. MediatR auto-discovers handlers from `CreateTraineeCommand` assembly. FluentValidation auto-discovers validators from `CreateTraineeValidator` assembly. AutoMapper auto-discovers profiles from `TraineeProfile` assembly.
 
