@@ -187,6 +187,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 tokens.Select(t => $"\"{t}*\""));
         }
 
+        public async Task<Coach?> GetByEmployeeIdIncludingDeletedAsync(int employeeId, CancellationToken cancellationToken = default)
+        {
+            // IgnoreQueryFilters() drops both the soft-delete AND tenant filters (they're combined
+            // into one filter expression per entity - see ApplicationDbContext.OnModelCreating),
+            // so the tenant check is re-applied explicitly here rather than left to the filter.
+            return await _context.Coachs
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(c => c.EmployeeId == employeeId && c.TenantId == _tenantIdProvider.TenantId, cancellationToken);
+        }
+
         public async Task<Coach?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.Coachs

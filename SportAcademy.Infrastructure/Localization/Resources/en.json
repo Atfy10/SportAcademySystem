@@ -13,6 +13,7 @@
   "errors.search.termTooShort": "Enter at least 2 characters to search.",
   "errors.user.notAuthenticated": "You need to be signed in to do that.",
   "errors.employee.notCoachPosition": "This employee's position is \"{0}\", not Coach. Update their position to Coach before creating a coach record for them.",
+  "errors.employee.alreadyCoach": "This employee already has an active coach record.",
 
   "entity.Trainee": "trainee",
   "entity.Employee": "employee",

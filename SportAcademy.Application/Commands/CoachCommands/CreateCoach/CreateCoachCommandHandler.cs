@@ -9,6 +9,7 @@ using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
+using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
 {
@@ -54,16 +55,33 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
 
             ct.ThrowIfCancellationRequested();
 
-            var coach = new Coach
+            // Coach shares its primary key with Employee 1:1 (see CoachConfiguration), so a prior
+            // soft-deleted Coach row for this employee still occupies that key - inserting a new
+            // row would hit a duplicate-key error. Recover it instead of failing.
+            var existingCoach = await _coachRepository.GetByEmployeeIdIncludingDeletedAsync(request.EmployeeId, ct);
+
+            Coach coach;
+            if (existingCoach != null)
             {
-                EmployeeId = request.EmployeeId,
-                SportId = request.SportId,
-                SkillLevel = request.SkillLevel
-            };
+                if (!existingCoach.IsDeleted)
+                    throw new EmployeeAlreadyCoachException();
 
-            ct.ThrowIfCancellationRequested();
-
-            await _coachRepository.AddAsync(coach, ct);
+                existingCoach.RestoreFromDeleted();
+                existingCoach.SportId = request.SportId;
+                existingCoach.SkillLevel = request.SkillLevel;
+                await _coachRepository.UpdateAsync(existingCoach, ct);
+                coach = existingCoach;
+            }
+            else
+            {
+                coach = new Coach
+                {
+                    EmployeeId = request.EmployeeId,
+                    SportId = request.SportId,
+                    SkillLevel = request.SkillLevel
+                };
+                await _coachRepository.AddAsync(coach, ct);
+            }
 
             // A coach is only assignable to a trainee group at branches they have explicit
             // CoachBranchAccess for (see that entity's own comment) - without this, a brand-new

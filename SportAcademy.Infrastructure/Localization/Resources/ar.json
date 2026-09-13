@@ -13,6 +13,7 @@
   "errors.search.termTooShort": "أدخل حرفين على الأقل للبحث.",
   "errors.user.notAuthenticated": "يجب تسجيل الدخول للقيام بذلك.",
   "errors.employee.notCoachPosition": "منصب هذا الموظف هو \"{0}\"، وليس مدرب. يرجى تغيير منصبه إلى مدرب قبل إنشاء سجل مدرب له.",
+  "errors.employee.alreadyCoach": "لدى هذا الموظف بالفعل سجل مدرب نشط.",
 
   "entity.Trainee": "المتدرب",
   "entity.Employee": "الموظف",
