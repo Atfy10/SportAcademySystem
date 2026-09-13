@@ -15,6 +15,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         private readonly string _operationType = OperationType.Add.ToString();
         private readonly ICoachRepository _coachRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly ICoachBranchAccessRepository _coachBranchAccessRepository;
         private readonly IMapper _mapper;
         private readonly IPersonService _personService;
         private readonly IUserContextService _userContext;
@@ -24,6 +25,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         public CreateCoachWithEmployeeCommandHandler(
             ICoachRepository coachRepository,
             IEmployeeRepository employeeRepository,
+            ICoachBranchAccessRepository coachBranchAccessRepository,
             IMapper mapper,
             IPersonService personService,
             IUserContextService userContext,
@@ -32,6 +34,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         {
             _coachRepository = coachRepository;
             _employeeRepository = employeeRepository;
+            _coachBranchAccessRepository = coachBranchAccessRepository;
             _mapper = mapper;
             _personService = personService;
             _userContext = userContext;
@@ -66,6 +69,12 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             ct.ThrowIfCancellationRequested();
 
             await _coachRepository.AddAsync(coach, ct);
+
+            // See CreateCoachCommandHandler's identical call for why this is required - without
+            // it this brand-new coach has zero CoachBranchAccess rows and never appears in the
+            // group-creation coach picker at any branch, no matter how qualified.
+            await _coachBranchAccessRepository.ReplaceForCoachAsync(
+                coach.EmployeeId, coach.TenantId, [new CoachBranchAccess { BranchId = employee.BranchId }], ct);
 
             var actorName = _userContext.UserId is { } actorId
                 ? await _userRepository.GetDisplayNameAsync(actorId, ct)

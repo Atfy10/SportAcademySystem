@@ -17,6 +17,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
         private readonly string _operationType = OperationType.Add.ToString();
         private readonly ICoachRepository _coachRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly ICoachBranchAccessRepository _coachBranchAccessRepository;
         private readonly IUserContextService _userContext;
         private readonly IUserRepository _userRepository;
         private readonly IPublisher _publisher;
@@ -24,6 +25,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
         public CreateCoachCommandHandler(
             IEmployeeRepository employeeRepository,
             ICoachRepository coachRepository,
+            ICoachBranchAccessRepository coachBranchAccessRepository,
             IPersonService personService,
             IMapper mapper,
             IUserContextService userContext,
@@ -32,6 +34,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
         {
             _employeeRepository = employeeRepository;
             _coachRepository = coachRepository;
+            _coachBranchAccessRepository = coachBranchAccessRepository;
             _userContext = userContext;
             _userRepository = userRepository;
             _publisher = publisher;
@@ -56,6 +59,15 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
             ct.ThrowIfCancellationRequested();
 
             await _coachRepository.AddAsync(coach, ct);
+
+            // A coach is only assignable to a trainee group at branches they have explicit
+            // CoachBranchAccess for (see that entity's own comment) - without this, a brand-new
+            // coach has zero rows and silently never appears in the group-creation coach picker
+            // at any branch, no matter how qualified. Seed the same single row the
+            // AddCoachBranchAccess migration backfilled for pre-existing coaches: their
+            // employment branch. An admin can grant more via "Manage branches" afterward.
+            await _coachBranchAccessRepository.ReplaceForCoachAsync(
+                coach.EmployeeId, coach.TenantId, [new CoachBranchAccess { BranchId = employee.BranchId }], ct);
 
             var actorName = _userContext.UserId is { } actorId
                 ? await _userRepository.GetDisplayNameAsync(actorId, ct)
