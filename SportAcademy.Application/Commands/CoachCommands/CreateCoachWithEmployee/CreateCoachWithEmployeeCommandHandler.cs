@@ -6,6 +6,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.EmployeeExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 
 namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee
@@ -46,6 +47,11 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         {
             var employee = _mapper.Map<Employee>(request.Employee)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+
+            // Same rule as CreateCoachCommandHandler's existing-employee path: a Coach record
+            // can only be created for a Coach-position employee, new or existing.
+            if (employee.Position != Position.Coach)
+                throw new EmployeeNotCoachPositionException(employee.Position.ToString());
 
             var isSSNValid = _personService.IsSSNValid(employee.SSN, employee.BirthDate);
             if (!isSSNValid)

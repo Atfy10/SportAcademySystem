@@ -12,6 +12,7 @@
   "errors.search.termRequired": "Enter something to search for.",
   "errors.search.termTooShort": "Enter at least 2 characters to search.",
   "errors.user.notAuthenticated": "You need to be signed in to do that.",
+  "errors.employee.notCoachPosition": "This employee's position is \"{0}\", not Coach. Update their position to Coach before creating a coach record for them.",
 
   "entity.Trainee": "trainee",
   "entity.Employee": "employee",
@@ -44,6 +45,7 @@
   "enum.Position.HR": "HR",
   "enum.Position.Accountant": "Accountant",
   "enum.Position.IT": "IT",
+  "enum.Position.Employee": "Employee",
   "enum.Gender.Male": "Male",
   "enum.Gender.Female": "Female",
   "enum.Nationality.American": "American",

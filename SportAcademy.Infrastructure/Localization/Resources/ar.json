@@ -12,6 +12,7 @@
   "errors.search.termRequired": "أدخل نصاً للبحث عنه.",
   "errors.search.termTooShort": "أدخل حرفين على الأقل للبحث.",
   "errors.user.notAuthenticated": "يجب تسجيل الدخول للقيام بذلك.",
+  "errors.employee.notCoachPosition": "منصب هذا الموظف هو \"{0}\"، وليس مدرب. يرجى تغيير منصبه إلى مدرب قبل إنشاء سجل مدرب له.",
 
   "entity.Trainee": "المتدرب",
   "entity.Employee": "الموظف",
@@ -44,6 +45,7 @@
   "enum.Position.HR": "موارد بشرية",
   "enum.Position.Accountant": "محاسب",
   "enum.Position.IT": "تقنية المعلومات",
+  "enum.Position.Employee": "موظف",
   "enum.Gender.Male": "ذكر",
   "enum.Gender.Female": "أنثى",
   "enum.Nationality.American": "أمريكي",

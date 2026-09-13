@@ -45,6 +45,13 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
             var employee = await _employeeRepository.GetByIdAsync(request.EmployeeId, ct)
                 ?? throw new EmployeeNotFoundException(request.EmployeeId.ToString());
 
+            // An employee must already hold the Coach position before a Coach record can be
+            // created for them - previously this silently overwrote whatever position they
+            // actually held (HR, Manager, ...), which meant the wrong staff member could end up
+            // teaching a sport with no one having deliberately decided that.
+            if (employee.Position != Position.Coach)
+                throw new EmployeeNotCoachPositionException(employee.Position.ToString());
+
             ct.ThrowIfCancellationRequested();
 
             var coach = new Coach
@@ -53,8 +60,6 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoach
                 SportId = request.SportId,
                 SkillLevel = request.SkillLevel
             };
-
-            employee.Position = Position.Coach;
 
             ct.ThrowIfCancellationRequested();
 

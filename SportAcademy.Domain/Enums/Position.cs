@@ -12,6 +12,8 @@ namespace SportAcademy.Domain.Enums
         Manager,
         HR,
         Accountant,
-        IT
+        IT,
+        // Generic catch-all for staff who don't hold one of the specialized positions above.
+        Employee
     }
 }
