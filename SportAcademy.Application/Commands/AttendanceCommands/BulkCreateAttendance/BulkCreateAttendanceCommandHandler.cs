@@ -23,6 +23,11 @@ public class BulkCreateAttendanceCommandHandler(
         CancellationToken cancellationToken)
     {
         var updatedSessionIds = new HashSet<int>();
+        // Rows that couldn't be saved for a real reason (not the deliberate Excused skip below) -
+        // without this, the handler used to swallow every one of these and still report overall
+        // success, so a coach marking attendance outside the allowed window (or for a bad row)
+        // got a "saved" toast while nothing was actually recorded. See CLAUDE.md §6.
+        var skipped = new List<string>();
 
         // timing.StartDateTime is a tenant wall-clock value (see CreateAttendanceCommandHandler's
         // identical concern) - resolved once per batch, not per item, since every item in one
@@ -33,25 +38,36 @@ public class BulkCreateAttendanceCommandHandler(
         {
             // Excused must go through an ExcuseRequest for Owner/Admin approval, never written
             // directly - same rule CreateAttendanceCommandHandler enforces for the single-mark
-            // endpoint. Skipped (not thrown) so one disallowed row doesn't fail the whole batch,
-            // matching this handler's existing best-effort stance on bad rows below.
+            // endpoint. Skipped (not thrown) so one disallowed row doesn't fail the whole batch -
+            // this one is deliberate, not an error, so it never joins `skipped` below.
             if (item.Status == AttendanceStatus.Excused) continue;
 
             var timing = await sessionOccurrenceRepository.GetTimingAsync(
                 item.SessionOccurrenceId, cancellationToken);
-            if (timing == null) continue;
+            if (timing == null)
+            {
+                skipped.Add($"Trainee {item.TraineeId}: session not found.");
+                continue;
+            }
 
             // Attendance can only be recorded from when the session starts until 120 minutes
             // after it ends - not before it starts either, since there's nothing to attend yet.
             if (tenantNow < timing.Value.StartDateTime
                 || tenantNow > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + 120))
+            {
+                skipped.Add($"Trainee {item.TraineeId}: outside the attendance window (session start through 120 minutes after it ends).");
                 continue;
+            }
 
             var groupId = timing.Value.TraineeGroupId;
 
             var enrollmentId = await enrollmentRepository.GetEnrollmentIdAsync(
                 item.TraineeId, groupId, cancellationToken);
-            if (enrollmentId == null) continue;
+            if (enrollmentId == null)
+            {
+                skipped.Add($"Trainee {item.TraineeId}: not enrolled in this group.");
+                continue;
+            }
 
             var attendance = await attendanceRepository.GetBySessionAndTraineeAsync(
                 item.SessionOccurrenceId, item.TraineeId, cancellationToken);
@@ -87,6 +103,15 @@ public class BulkCreateAttendanceCommandHandler(
 
         await publisher.Publish(
             new BulkAttendanceCreatedEvent(updatedSessionIds), cancellationToken);
+
+        if (skipped.Count > 0)
+        {
+            return Result<bool>.Failure(
+                OperationType.Add.ToString(),
+                $"{skipped.Count} of {request.Items.Count} attendance record(s) could not be saved.",
+                400,
+                new Dictionary<string, string[]> { ["items"] = [.. skipped] });
+        }
 
         return Result<bool>.Success(true, OperationType.Add.ToString());
     }

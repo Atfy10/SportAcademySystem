@@ -96,7 +96,28 @@ public class BulkCreateAttendanceCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_SkipsNullGroupId_ContinuesToNext()
+    public async Task Handle_SessionNotYetStarted_ReportsFailureAndDoesNotSave()
+    {
+        // Arrange - a coach trying to mark attendance before a session starts (the exact scenario
+        // this test guards: it must be rejected, not silently accepted as a false "success").
+        var item = CreateAttendanceItem(1, 1, AttendanceStatus.Present);
+        var command = CreateValidCommand(new List<AttendanceItem> { item });
+
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((1, DateTime.UtcNow.AddHours(1), 60));
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainKey("items").WhoseValue.Should().ContainSingle(e => e.Contains("outside the attendance window"));
+        _attendanceRepoMock.Verify(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>()), Times.Never);
+        _attendanceRepoMock.Verify(r => r.UpdateAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_SkipsNullGroupId_ReportsFailureButStillSavesTheGoodRow()
     {
         // Arrange
         var item1 = CreateAttendanceItem(1, 1, AttendanceStatus.Present);
@@ -112,13 +133,15 @@ public class BulkCreateAttendanceCommandHandlerTests
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
-        result.IsSuccess.Should().BeTrue();
+        // Assert - a skipped row must surface as a failure (see CLAUDE.md §6: a blanket success
+        // here previously masked every skipped row), even though the other row still saved fine.
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainKey("items").WhoseValue.Should().HaveCount(1);
         _attendanceRepoMock.Verify(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_SkipsNullEnrollmentId_ContinuesToNext()
+    public async Task Handle_SkipsNullEnrollmentId_ReportsFailureButStillSavesTheGoodRow()
     {
         // Arrange
         var item1 = CreateAttendanceItem(1, 1, AttendanceStatus.Present);
@@ -127,7 +150,7 @@ public class BulkCreateAttendanceCommandHandlerTests
 
         _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync((int?)null);
-        
+
         _sessionRepoMock.Setup(r => r.GetTimingAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((2, DateTime.UtcNow, 60));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(2, 2, It.IsAny<CancellationToken>())).ReturnsAsync(6);
         _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(2, 2, It.IsAny<CancellationToken>())).ReturnsAsync((Attendance?)null);
@@ -136,8 +159,9 @@ public class BulkCreateAttendanceCommandHandlerTests
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
-        result.IsSuccess.Should().BeTrue();
+        // Assert - see the null-timing test above for why this is now a reported failure.
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainKey("items").WhoseValue.Should().HaveCount(1);
         _attendanceRepoMock.Verify(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
