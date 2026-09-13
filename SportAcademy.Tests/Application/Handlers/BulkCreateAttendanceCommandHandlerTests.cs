@@ -3,6 +3,7 @@ using MediatR;
 using Moq;
 using SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 
@@ -14,15 +15,25 @@ public class BulkCreateAttendanceCommandHandlerTests
     private readonly Mock<ISessionOccurrenceRepository> _sessionRepoMock = new();
     private readonly Mock<IEnrollmentRepository> _enrollmentRepoMock = new();
     private readonly Mock<IPublisher> _publisherMock = new();
+    private readonly Mock<ITenantClock> _tenantClockMock = new();
     private readonly BulkCreateAttendanceCommandHandler _handler;
 
     public BulkCreateAttendanceCommandHandlerTests()
     {
+        // Lazy (call-time, not setup-time) "now" - the handler resolves it once per Handle()
+        // call, which happens after this constructor and each test's own DateTime.UtcNow-based
+        // GetTimingAsync setups have already run, so it always lands a few ms after their
+        // StartDateTime values rather than (fixed at setup time) potentially before them.
+        _tenantClockMock
+            .Setup(c => c.GetLocalNowAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => DateTime.UtcNow);
+
         _handler = new BulkCreateAttendanceCommandHandler(
             _attendanceRepoMock.Object,
             _sessionRepoMock.Object,
             _enrollmentRepoMock.Object,
-            _publisherMock.Object);
+            _publisherMock.Object,
+            _tenantClockMock.Object);
     }
 
     private static BulkCreateAttendanceCommand CreateValidCommand(List<AttendanceItem> items) =>

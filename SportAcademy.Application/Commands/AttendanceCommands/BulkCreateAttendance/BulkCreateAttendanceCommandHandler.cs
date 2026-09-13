@@ -4,6 +4,7 @@ using SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 
@@ -13,7 +14,8 @@ public class BulkCreateAttendanceCommandHandler(
     IAttendanceRepository attendanceRepository,
     ISessionOccurrenceRepository sessionOccurrenceRepository,
     IEnrollmentRepository enrollmentRepository,
-    IPublisher publisher)
+    IPublisher publisher,
+    ITenantClock tenantClock)
     : IRequestHandler<BulkCreateAttendanceCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
@@ -21,6 +23,11 @@ public class BulkCreateAttendanceCommandHandler(
         CancellationToken cancellationToken)
     {
         var updatedSessionIds = new HashSet<int>();
+
+        // timing.StartDateTime is a tenant wall-clock value (see CreateAttendanceCommandHandler's
+        // identical concern) - resolved once per batch, not per item, since every item in one
+        // bulk-mark call belongs to the same tenant/request.
+        var tenantNow = await tenantClock.GetLocalNowAsync(cancellationToken);
 
         foreach (var item in request.Items)
         {
@@ -34,8 +41,10 @@ public class BulkCreateAttendanceCommandHandler(
                 item.SessionOccurrenceId, cancellationToken);
             if (timing == null) continue;
 
-            // No marking attendance more than 15 minutes after the session ended.
-            if (DateTime.UtcNow > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + 15))
+            // Attendance can only be recorded from when the session starts until 120 minutes
+            // after it ends - not before it starts either, since there's nothing to attend yet.
+            if (tenantNow < timing.Value.StartDateTime
+                || tenantNow > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + 120))
                 continue;
 
             var groupId = timing.Value.TraineeGroupId;
@@ -51,14 +60,14 @@ public class BulkCreateAttendanceCommandHandler(
             {
                 var checkInTime = item.CheckInTime != null
                     ? TimeOnly.Parse(item.CheckInTime)
-                    : TimeOnly.FromDateTime(DateTime.UtcNow);
+                    : TimeOnly.FromDateTime(tenantNow);
 
                 attendance = new Attendance
                 {
                     EnrollmentId = enrollmentId.Value,
                     SessionOccurrenceId = item.SessionOccurrenceId,
                     AttendanceStatus = item.Status,
-                    AttendanceDate = DateTime.UtcNow,
+                    AttendanceDate = tenantNow,
                     CheckInTime = checkInTime,
                     CoachNote = string.Empty
                 };

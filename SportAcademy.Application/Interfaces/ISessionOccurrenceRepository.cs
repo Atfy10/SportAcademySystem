@@ -12,7 +12,8 @@ public interface ISessionOccurrenceRepository : IBaseRepository<SessionOccurrenc
     Task<PagedData<SessionOccurrenceDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default);
     Task<int?> GetTraineeGroupIdAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default);
     /// <summary>The session's TraineeGroupId, StartDateTime and duration - used to enforce the
-    /// "no marking attendance more than 15 minutes after a session ends" cutoff.</summary>
+    /// "attendance can only be recorded from session start until 120 minutes after it ends"
+    /// window.</summary>
     Task<(int TraineeGroupId, DateTime StartDateTime, int DurationInMinutes)?> GetTimingAsync(
         int sessionOccurrenceId, CancellationToken cancellationToken = default);
     Task<int> CountAsync(CancellationToken cancellationToken = default);

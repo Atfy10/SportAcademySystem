@@ -52,7 +52,10 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
             // any tenant not in UTC.
             var tenantNow = await _tenantClock.GetLocalNowAsync(cancellationToken);
 
-            if (tenantNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 15))
+            // Attendance can only be recorded from when the session starts until 120 minutes
+            // after it ends - not before it starts either, since there's nothing to attend yet.
+            if (tenantNow < timing.StartDateTime
+                || tenantNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 120))
                 throw new AttendanceWindowClosedException(request.SessionOccurrenceId);
 
             var groupId = timing.TraineeGroupId;
