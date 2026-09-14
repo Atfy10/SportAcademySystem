@@ -162,6 +162,11 @@ public class SessionOccurrenceRepositoryTests
         var group = CreateTraineeGroup(schedule);
         var command = CreateCommand(traineeGroupId: 1, durationInDays: 1);
 
+        // Pinned to a fixed Tuesday, not the real wall clock - see the identical fix/comment on
+        // GenerateSessionOccurrencesCommandHandlerTests.Handle_NoSchedulesMatchDateRange_ReturnsZeroSessions.
+        _tenantClockMock.Setup(c => c.GetLocalNowAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DateTime(2026, 1, 6, 0, 0, 0, DateTimeKind.Utc));
+
         _traineeGroupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(group);
         _sessionOccurrenceRepoMock.Setup(r => r.GetLastOccurrenceDateAsync(1, It.IsAny<CancellationToken>()))

@@ -273,6 +273,13 @@ public class GenerateSessionOccurrencesCommandHandlerTests
         var command = CreateCommand(traineeGroupId: 1, durationInDays: 1);
         var group = CreateTraineeGroup(schedule);
 
+        // Pinned to a fixed Tuesday, not the real wall clock: with lastOccurrence null and a
+        // 1-day window, the handler generates starting from "today" (GetLocalNowAsync) - relying
+        // on the real current date made this test flake to a false failure every Monday, since
+        // that's the one day "no schedules match" stops being true for a Monday-only schedule.
+        _tenantClockMock.Setup(c => c.GetLocalNowAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DateTime(2026, 1, 6, 0, 0, 0, DateTimeKind.Utc));
+
         _traineeGroupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(group);
         _sessionOccurrenceRepoMock.Setup(r => r.GetLastOccurrenceDateAsync(1, It.IsAny<CancellationToken>()))
