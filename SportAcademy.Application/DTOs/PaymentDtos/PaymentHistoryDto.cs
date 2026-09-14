@@ -2,6 +2,7 @@ namespace SportAcademy.Application.DTOs.PaymentDtos
 {
     public record PaymentHistoryDto(
         string PaymentNumber,
+        int PaymentTypeId,
         string PaymentTypeName,
         DateTime PaidDate,
         string BranchName,

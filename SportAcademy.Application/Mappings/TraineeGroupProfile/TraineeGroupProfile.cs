@@ -22,8 +22,10 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 opt => opt.MapFrom(src => src.Coach.SportId))
             .ForMember(dest => dest.SportName,
                 opt => opt.MapFrom(src => src.Coach.Sport.Name))
+            .ForMember(dest => dest.CoachId,
+                opt => opt.MapFrom(src => src.CoachId))
             .ForMember(dest => dest.CoachName,
-                opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+                opt => opt.MapFrom(src => src.Coach.Employee.FirstName + " " + src.Coach.Employee.LastName))
             .ForMember(dest => dest.BranchName,
                 opt => opt.MapFrom(src => src.Branch.Name))
             .ForMember(dest => dest.SkillLevel,
@@ -66,7 +68,7 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForMember(dest => dest.SportName,
                 opt => opt.MapFrom(src => src.Coach.Sport.Name))
             .ForMember(dest => dest.CoachName,
-                opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+                opt => opt.MapFrom(src => src.Coach.Employee.FirstName + " " + src.Coach.Employee.LastName))
             .ForMember(dest => dest.BranchName,
                 opt => opt.MapFrom(src => src.Branch.Name))
             .ForMember(dest => dest.Schedules,
@@ -122,7 +124,7 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
             .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
             .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Coach.Sport.Name))
-            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName + " " + src.Coach.Employee.LastName))
             .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
             .ForCtorParam("DurationInMinutes", opt => opt.MapFrom(src => src.DurationInMinutes))
             .ForCtorParam("TraineesCount", opt => opt.MapFrom(src => src.Enrollments.Count))
@@ -142,7 +144,7 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForCtorParam("Name", opt => opt.MapFrom(src => src.Name))
             .ForCtorParam("SportId", opt => opt.MapFrom(src => src.Coach.SportId))
             .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
-            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName))
+            .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName + " " + src.Coach.Employee.LastName))
             .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel))
             .ForCtorParam("Gender", opt => opt.MapFrom(src => src.Gender))
             .ForCtorParam("Type", opt => opt.MapFrom(src => src.Type))

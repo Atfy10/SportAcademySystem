@@ -35,6 +35,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(x => new
                 {
                     x.Allocation.Payment.PaymentNumber,
+                    x.Allocation.Payment.PaymentTypeId,
                     PaymentTypeName = x.Allocation.Payment.PaymentType.Translations
                         .Where(t => t.LangCode == _languageProvider.Language).Select(t => t.Name).FirstOrDefault()
                         ?? x.Allocation.Payment.PaymentType.Name,
@@ -55,6 +56,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return rows.Select(r => new PaymentHistoryDto(
                 r.PaymentNumber,
+                r.PaymentTypeId,
                 r.PaymentTypeName,
                 r.PaidDate,
                 r.BranchName,

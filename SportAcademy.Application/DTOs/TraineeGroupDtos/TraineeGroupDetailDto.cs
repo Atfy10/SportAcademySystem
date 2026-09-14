@@ -16,6 +16,7 @@ public record TraineeGroupDetailDto
     public int DurationInMinutes { get; init; }
     public int SportId { get; init; }
     public string SportName { get; init; } = null!;
+    public int CoachId { get; init; }
     public string CoachName { get; init; } = null!;
     public string BranchName { get; init; } = null!;
     public int TraineesCount { get; init; }
