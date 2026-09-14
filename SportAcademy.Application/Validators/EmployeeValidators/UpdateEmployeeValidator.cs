@@ -13,32 +13,44 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
                 .GreaterThan(0)
                 .WithMessage("Invalid employee ID.");
 
+            // UpdateEmployeeCommand is a partial-update contract - every field but Id is optional
+            // and left untouched when the caller doesn't send it (see the command's own doc
+            // comment and EmployeeMapper.ApplyUpdate). Every rule below must therefore only run
+            // when the field is actually present, or a legitimate partial update (e.g. the
+            // employee-edit form, which never sends FirstName/LastName at all since those are
+            // read-only there) gets rejected outright even though nothing about it is invalid.
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required.")
                 .NoDigits()
-                .MaximumLength(50).WithMessage("First name can't exceed 50 characters.");
+                .MaximumLength(50).WithMessage("First name can't exceed 50 characters.")
+                .When(x => x.FirstName != null);
 
             RuleFor(x => x.LastName)
                 .NotEmpty().WithMessage("Last name is required.")
                 .NoDigits()
-                .MaximumLength(50).WithMessage("Last name can't exceed 50 characters.");
+                .MaximumLength(50).WithMessage("Last name can't exceed 50 characters.")
+                .When(x => x.LastName != null);
 
             RuleFor(x => x.Salary)
                 .GreaterThan(0).WithMessage("Salary must be greater than zero.")
-                .LessThanOrEqualTo(100000).WithMessage("Salary seems unusually high, please double-check.");
+                .LessThanOrEqualTo(100000).WithMessage("Salary seems unusually high, please double-check.")
+                .When(x => x.Salary.HasValue);
 
             RuleFor(x => x.Street)
                 .NotEmpty().WithMessage("Street is required.")
-                .MaximumLength(100).WithMessage("Street can't exceed 100 characters.");
+                .MaximumLength(100).WithMessage("Street can't exceed 100 characters.")
+                .When(x => x.Street != null);
 
             RuleFor(x => x.City)
                 .NotEmpty().WithMessage("City is required.")
-                .MaximumLength(50).WithMessage("City can't exceed 50 characters.");
+                .MaximumLength(50).WithMessage("City can't exceed 50 characters.")
+                .When(x => x.City != null);
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Phone number is required.")
                 .Matches(@"^(?:\+965)?[569]\d{7}$")
-                .WithMessage("Enter a valid Kuwaiti phone number (8 digits, starting with 5, 6, or 9).");
+                .WithMessage("Enter a valid Kuwaiti phone number (8 digits, starting with 5, 6, or 9).")
+                .When(x => x.PhoneNumber != null);
 
             RuleFor(x => x.SecondPhoneNumber)
                 .Matches(@"^(?:\+965)?[569]\d{7}$")
@@ -46,11 +58,13 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
                 .WithMessage("Enter a valid secondary Kuwaiti phone number.");
 
             RuleFor(x => x.Position)
-                .IsInEnum().WithMessage("Invalid position value.");
+                .IsInEnum().WithMessage("Invalid position value.")
+                .When(x => x.Position.HasValue);
 
             RuleFor(x => x.BranchId)
                 .GreaterThan(0)
-                .WithMessage("Please select a valid branch.");
+                .WithMessage("Please select a valid branch.")
+                .When(x => x.BranchId.HasValue);
         }
     }
 }

@@ -7,10 +7,13 @@ public class UpdateMyProfileCommandValidator : AbstractValidator<UpdateMyProfile
     public UpdateMyProfileCommandValidator()
     {
         // Same pattern CreateUserValidator applies to this same field (AppUser.PhoneNumber) -
-        // only runs When a value was actually sent, since null here means "leave unchanged".
+        // only runs when a value was actually sent, since null here means "leave unchanged".
+        // Empty string is distinct from null: it's the frontend's explicit "clear this field"
+        // value (MyProfile.tsx never sends null for a field it renders), so it must bypass the
+        // format check rather than be rejected as an invalid phone number.
         RuleFor(x => x.PhoneNumber)
             .Matches(@"^(\+965)?[2569]\d{7}$")
-            .When(x => x.PhoneNumber is not null)
+            .When(x => !string.IsNullOrEmpty(x.PhoneNumber))
             .WithMessage("Please enter a valid Kuwait phone number (e.g., +96551234567).");
 
         RuleFor(x => x.Bio)

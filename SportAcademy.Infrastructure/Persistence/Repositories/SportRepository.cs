@@ -50,21 +50,29 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<IReadOnlyList<SportDropDownListDto>> SearchNameAsync(string term, CancellationToken cancellationToken = default)
         {
             var pattern = $"%{term}%";
+            var lang = _languageProvider.Language;
 
             return await _context.Sports
-                .Where(s => EF.Functions.Like(s.Name, pattern))
-                .Select(SportProjections.ToDropDownDto(_languageProvider.Language))
+                .Where(s => EF.Functions.Like(s.Name, pattern)
+                    || s.Translations.Any(t => t.LangCode == lang && EF.Functions.Like(t.Name, pattern)))
+                .Select(SportProjections.ToDropDownDto(lang))
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
         public async Task<PagedData<SportDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default)
-            => await _context.Sports
-                .Where(s => EF.Functions.Like(s.Name, $"%{term}%"))
+        {
+            var pattern = $"%{term}%";
+            var lang = _languageProvider.Language;
+
+            return await _context.Sports
+                .Where(s => EF.Functions.Like(s.Name, pattern)
+                    || s.Translations.Any(t => t.LangCode == lang && EF.Functions.Like(t.Name, pattern)))
                 .OrderBy(s => s.Id)
-                .Select(SportProjections.ToDto(_languageProvider.Language))
+                .Select(SportProjections.ToDto(lang))
                 .AsNoTracking()
                 .ToPagedDataAsync(page, cancellationToken);
+        }
 
         public async Task<bool> AreIdsExistAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
         {

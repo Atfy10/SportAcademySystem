@@ -1,13 +1,13 @@
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
-using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Mappings.Manual
 {
-    // Hand-written replacement for the AutoMapper CreateTraineeCommand/UpdateTraineePersonalCommand
+    // Hand-written replacement for the AutoMapper CreateTraineeCommand/UpdateTraineePersonalInfoCommand
     // <-> Trainee mappings in TraineeProfile.cs. Only covers the command-to-entity direction used
-    // by CreateTraineeCommandHandler/UpdateTraineePersonalCommandHandler; the DTO-facing mappings
+    // by CreateTraineeCommandHandler/UpdateTraineePersonalInfoCommandHandler; the DTO-facing mappings
     // in TraineeProfile stay on AutoMapper until their own handlers are touched.
     public static class TraineeMapper
     {
@@ -39,17 +39,16 @@ namespace SportAcademy.Application.Mappings.Manual
             };
         }
 
-        // Mirrors AutoMapper's Map(request, trainee) for UpdateTraineePersonalCommand -> Trainee:
-        // only overwrites fields the command actually carries, and — same as the AutoMapper
-        // config it replaces — leaves Sports untouched (handled separately via UpdateSports).
-        public static void ApplyPersonalUpdate(Trainee trainee, UpdateTraineePersonalCommand cmd)
+        // Only overwrites fields the command actually carries - a true partial update. Branch
+        // and Sports are academic data, handled entirely by UpdateTraineeAcademicInfoCommand
+        // instead; this method must never touch them.
+        public static void ApplyPersonalInfoUpdate(Trainee trainee, UpdateTraineePersonalInfoCommand cmd)
         {
             if (cmd.FirstName != null) trainee.FirstName = cmd.FirstName;
             if (cmd.LastName != null) trainee.LastName = cmd.LastName;
             if (cmd.GuardianName != null) trainee.GuardianName = cmd.GuardianName;
             if (cmd.ParentNumber != null) trainee.ParentNumber = cmd.ParentNumber;
             if (cmd.ImageUrl != null) trainee.ImageUrl = cmd.ImageUrl;
-            trainee.BranchId = cmd.BranchId;
         }
     }
 }

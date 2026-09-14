@@ -8,6 +8,7 @@ public record CoachDetailsDto(
     string PhoneNumber,
     string BranchName,
     string SportName,
+    int SportId,
     string SkillLevel,
     string[]? Certifications,
     int? TotalTrainees,

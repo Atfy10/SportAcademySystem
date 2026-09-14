@@ -1,5 +1,6 @@
 ﻿using SportAcademy.Application.Commands.Trainees.CreateTrainee;
-using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Commands.Trainees.UpdateTraineeAcademicInfo;
+using SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo;
 using SportAcademy.Web.Features.Trainees.Requests;
 
 namespace SportAcademy.Web.Features.Trainees.Mappings;
@@ -28,7 +29,7 @@ public static class TraineeRequestsToCommand
             City = request.City,
         };
 
-    public static UpdateTraineePersonalCommand ToCommand(this UpdateTraineeRequest request, int id)
+    public static UpdateTraineePersonalInfoCommand ToCommand(this UpdateTraineePersonalInfoRequest request, int id)
         => new()
         {
             Id = id,
@@ -36,7 +37,10 @@ public static class TraineeRequestsToCommand
             LastName = request.LastName,
             GuardianName = request.GuardianName,
             ParentNumber = request.ParentNumber,
-            BranchId = request.BranchId,
-            SportIds = request.SportIds,
+            MedicalConditions = request.MedicalConditions,
+            ImageUrl = request.ImageUrl,
         };
+
+    public static UpdateTraineeAcademicInfoCommand ToCommand(this UpdateTraineeAcademicInfoRequest request, int id)
+        => new(id, request.BranchId, request.SportIds);
 }

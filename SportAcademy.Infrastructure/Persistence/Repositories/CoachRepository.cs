@@ -109,7 +109,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             AND enr.IsDeleted = 0
                         GROUP BY tg.CoachId
                     ) trainee_count ON c.EmployeeId = trainee_count.CoachId
-                    WHERE e.TenantId = @tenantId
+                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0
                     ORDER BY ft.RANK DESC, c.EmployeeId ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
 
@@ -121,7 +121,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         (FirstName, LastName),
                         @term, LANGUAGE 1025
                     ) ft ON e.Id = ft.[KEY]
-                    WHERE e.TenantId = @tenantId;
+                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0;
                 ";
                 parameters = new { term = fullTextTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId, lang = _languageProvider.Language };
             }
@@ -159,14 +159,14 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             AND enr.IsDeleted = 0
                         GROUP BY tg.CoachId
                     ) trainee_count ON c.EmployeeId = trainee_count.CoachId
-                    WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
+                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0 AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
                     ORDER BY c.EmployeeId ASC
                     OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
 
                     SELECT COUNT(*)
                     FROM Coaches c
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
-                    WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
+                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0 AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
                 ";
                 parameters = new { likeTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId, lang = _languageProvider.Language };
             }

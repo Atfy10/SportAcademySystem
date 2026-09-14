@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Commands.Trainees.DeleteTrainee;
 using SportAcademy.Application.Commands.Trainees.ImportTrainees;
-using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Commands.Trainees.UpdateTraineeAcademicInfo;
+using SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.TraineeQueries.ExportTrainees;
@@ -110,12 +111,21 @@ namespace SportAcademy.Web.Controllers
         }
 
         [Authorize(Policy = "Permission:trainee.edit")]
-        [HttpPut("{id}")]
-        public async Task<ActionResult> EditAsync(int id, UpdateTraineeRequest request, CancellationToken ct)
+        [HttpPut("{id}/personal-info")]
+        public async Task<ActionResult> EditPersonalInfoAsync(int id, UpdateTraineePersonalInfoRequest request, CancellationToken ct)
         {
             var command = request.ToCommand(id);
-            var trainee = await _mediator.Send(command, ct);
-            return Ok(trainee);
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:trainee.edit")]
+        [HttpPut("{id}/academic-info")]
+        public async Task<ActionResult> EditAcademicInfoAsync(int id, UpdateTraineeAcademicInfoRequest request, CancellationToken ct)
+        {
+            var command = request.ToCommand(id);
+            var result = await _mediator.Send(command, ct);
+            return Ok(result);
         }
 
         [Authorize(Policy = "Permission:trainee.delete")]

@@ -86,6 +86,7 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                 .ForCtorParam("PhoneNumber", opt => opt.MapFrom(src => src.Employee.PhoneNumber))
                 .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Employee.Branch.Name))
                 .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Sport.Name))
+                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.SportId))
                 .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel.ToString()))
                 .ForCtorParam("Certifications", opt => opt.MapFrom(src => (string[]?)null)) // not implemented yet
                 .ForCtorParam("TotalTrainees", opt => opt.MapFrom(src => src.TraineeGroups

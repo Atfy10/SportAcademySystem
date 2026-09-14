@@ -1,7 +1,6 @@
 using FluentAssertions;
-using MediatR;
 using Moq;
-using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
+using SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
@@ -9,24 +8,18 @@ using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Tests.Application.Handlers;
 
-public class UpdateTraineePersonalCommandHandlerTests
+public class UpdateTraineePersonalInfoCommandHandlerTests
 {
-    private readonly Mock<IBranchRepository> _branchRepoMock = new();
-    private readonly Mock<ITraineeService> _traineeServiceMock = new();
     private readonly Mock<ITraineeRepository> _traineeRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
-    private readonly Mock<IPublisher> _publisherMock = new();
     private readonly Mock<IFileStorageService> _fileStorageMock = new();
-    private readonly UpdateTraineePersonalCommandHandler _handler;
+    private readonly UpdateTraineePersonalInfoCommandHandler _handler;
 
-    public UpdateTraineePersonalCommandHandlerTests()
+    public UpdateTraineePersonalInfoCommandHandlerTests()
     {
-        _handler = new UpdateTraineePersonalCommandHandler(
-            _branchRepoMock.Object,
-            _traineeServiceMock.Object,
+        _handler = new UpdateTraineePersonalInfoCommandHandler(
             _traineeRepoMock.Object,
             _unitOfWorkMock.Object,
-            _publisherMock.Object,
             _fileStorageMock.Object);
     }
 
@@ -50,13 +43,6 @@ public class UpdateTraineePersonalCommandHandlerTests
         _traineeRepoMock
             .Setup(r => r.IsPhoneNumberExistAsync(trainee.PhoneNumber, trainee.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
-        _branchRepoMock.Setup(r => r.IsExistAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        _traineeRepoMock
-            .Setup(r => r.GetSportIdsByTraineeId(trainee.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync([]);
-        _traineeRepoMock
-            .Setup(r => r.UpdateSports(trainee, It.IsAny<IEnumerable<int>>()))
-            .ReturnsAsync([]);
     }
 
     [Fact]
@@ -65,7 +51,7 @@ public class UpdateTraineePersonalCommandHandlerTests
         var trainee = CreateTrainee(imageUrl: "/uploads/people/old.png");
         SetupHappyPath(trainee);
 
-        var command = new UpdateTraineePersonalCommand { Id = 1, BranchId = 1, ImageUrl = "/uploads/people/new.png" };
+        var command = new UpdateTraineePersonalInfoCommand { Id = 1, ImageUrl = "/uploads/people/new.png" };
         var result = await _handler.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -79,11 +65,26 @@ public class UpdateTraineePersonalCommandHandlerTests
         var trainee = CreateTrainee(imageUrl: "/uploads/people/existing.png");
         SetupHappyPath(trainee);
 
-        var command = new UpdateTraineePersonalCommand { Id = 1, BranchId = 1 };
+        var command = new UpdateTraineePersonalInfoCommand { Id = 1 };
         var result = await _handler.Handle(command, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         trainee.ImageUrl.Should().Be("/uploads/people/existing.png");
         _fileStorageMock.Verify(f => f.DeleteImage(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_DoesNotTouchBranchOrSports()
+    {
+        var trainee = CreateTrainee();
+        trainee.BranchId = 7;
+        SetupHappyPath(trainee);
+
+        var command = new UpdateTraineePersonalInfoCommand { Id = 1, FirstName = "Sara" };
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        trainee.BranchId.Should().Be(7);
+        _traineeRepoMock.Verify(r => r.UpdateSports(It.IsAny<Trainee>(), It.IsAny<IEnumerable<int>>()), Times.Never);
     }
 }

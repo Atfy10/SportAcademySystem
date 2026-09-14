@@ -55,9 +55,27 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
             // GroupScheduleId isn't updatable through this command (an occurrence doesn't move
             // to a different recurring schedule) - see UpdateSessionOccurrenceCommand's own
             // (Id, StartDateTime, Status) shape.
+            //
+            // StartDateTime/Status are Nullable<T> on the command specifically so a caller can
+            // update just one of them (e.g. SessionOccurrencesNearbyModal's Complete/Cancel
+            // action, which only ever sends Status) - without the PreCondition guards below,
+            // AutoMapper's default Nullable<T> -> T member mapping calls GetValueOrDefault() on a
+            // null source, which would silently reset the omitted field to DateTime.MinValue /
+            // enum 0 instead of leaving it alone. Same foot-gun EmployeeMapper.ApplyUpdate was
+            // hand-written to avoid.
             CreateMap<UpdateSessionOccurrenceCommand, SessionOccurrence>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.GroupScheduleId, opt => opt.Ignore())
+                .ForMember(dest => dest.StartDateTime, opt =>
+                {
+                    opt.PreCondition(src => src.StartDateTime.HasValue);
+                    opt.MapFrom(src => src.StartDateTime!.Value);
+                })
+                .ForMember(dest => dest.Status, opt =>
+                {
+                    opt.PreCondition(src => src.Status.HasValue);
+                    opt.MapFrom(src => src.Status!.Value);
+                })
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())

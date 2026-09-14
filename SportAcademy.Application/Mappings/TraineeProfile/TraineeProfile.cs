@@ -1,6 +1,5 @@
 using AutoMapper;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
-using SportAcademy.Application.Commands.Trainees.UpdateTrainee;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.DTOs.TraineeDtos;
 using SportAcademy.Domain.Entities;
@@ -50,8 +49,10 @@ namespace SportAcademy.Application.Mappings.TraineeProfile
                 .ForCtorParam("Code", o => o.MapFrom(s => s.TraineeCode.Value))
                 .ForCtorParam("Email", o => o.MapFrom(s => s.Email.ToString()))
                 .ForCtorParam("BranchName", o => o.MapFrom(s => s.Branch.Name ?? string.Empty))
+                .ForCtorParam("BranchId", o => o.MapFrom(s => s.BranchId))
                 .ForCtorParam("Gender", o => o.MapFrom(s => s.Gender.ToString()))
                 .ForCtorParam("Sports", o => o.MapFrom(s => s.Sports.Select(sport => sport.Sport.Name).ToList()))
+                .ForCtorParam("SportIds", o => o.MapFrom(s => s.Sports.Select(sport => sport.SportId).ToList()))
                 .ForCtorParam("IsSubscribed", o => o.MapFrom(s => s.SubscriptionDetails
                     .Any(sd => sd.Status == SubscriptionStatus.Active && !sd.IsDeleted)))
                 .ForCtorParam("EnrollmentCount", o => o.MapFrom(s => s.Enrollments.Count))

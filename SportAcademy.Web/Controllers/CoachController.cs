@@ -67,8 +67,8 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        // Backend-only for now: adjusts a coach's star rating (1-5) after the initial
-        // Rate = 3 default set at creation. No frontend UI calls this yet.
+        // Adjusts a coach's star rating (1-5) after the initial Rate = 3 default set at
+        // creation. Called from CoachProfile.tsx's interactive rating widget.
         [HttpPatch("{id}/rate")]
         [Authorize(Policy = "Permission:coach.manage")]
         public async Task<ActionResult> Rate(int id, [FromBody] int rate, CancellationToken ct)
