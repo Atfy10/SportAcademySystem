@@ -64,6 +64,7 @@ namespace SportAcademy.Infrastructure.BackgroundServices
         {
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var tenantProvider = scope.ServiceProvider.GetRequiredService<ITenantIdProvider>();
 
             var cutoff = DateTime.UtcNow.AddDays(-GracePeriodDays);
 
@@ -94,7 +95,14 @@ namespace SportAcademy.Infrastructure.BackgroundServices
                 enrollment.IsActive = false;
             }
 
-            await context.SaveChangesAsync(ct);
+            // TenantSaveChangesInterceptor rejects any save of ITenantScoped rows with no
+            // ambient tenant unless this scope explicitly acknowledges the cross-tenant batch -
+            // every row above already carries its own real TenantId from the query, never one
+            // this save invents.
+            using (tenantProvider.AllowCrossTenantOperation())
+            {
+                await context.SaveChangesAsync(ct);
+            }
 
             _logger.LogInformation("Closed {Count} lapsed enrollments", lapsed.Count);
 

@@ -400,11 +400,23 @@ using (var scope = app.Services.CreateScope())
     // brand-new Production database with demo seeding off. Only the demo "Salmiya Academy"
     // tenant and its business data stay behind the seedingEnabled gate below.
     var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
-    await seeder.EnsureCoreDataAsync();
 
-    if (seedingEnabled)
+    // The seeder creates the System tenant, its SuperAdmin, and (with demo seeding on) a whole
+    // second tenant from scratch, all before any HTTP request middleware exists to set an
+    // ambient tenant - and it stamps every ITenantScoped row it creates with the right tenant id
+    // itself (see e.g. the TenantFeature block in EnsureSystemTenantAndSuperAdminAsync). This is
+    // exactly the trusted, already-per-row-correct batch TenantSaveChangesInterceptor's
+    // AllowCrossTenantWrite escape hatch exists for - without it, every seeder SaveChanges that
+    // runs before its own SetTenantId call would now be rejected outright.
+    var tenantIdProvider = scope.ServiceProvider.GetRequiredService<ITenantIdProvider>();
+    using (tenantIdProvider.AllowCrossTenantOperation())
     {
-        await seeder.SeedDemoDataAsync();
+        await seeder.EnsureCoreDataAsync();
+
+        if (seedingEnabled)
+        {
+            await seeder.SeedDemoDataAsync();
+        }
     }
 }
 

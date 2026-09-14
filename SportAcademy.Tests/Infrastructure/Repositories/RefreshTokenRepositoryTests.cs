@@ -23,6 +23,7 @@ public class RefreshTokenRepositoryTests
     private sealed class TestTenantIdProvider : ITenantIdProvider
     {
         public Guid? TenantId { get; private set; }
+        public bool AllowCrossTenantWrite { get; private set; }
         public void SetTenantId(Guid? tenantId) => TenantId = tenantId;
 
         public IDisposable Impersonate(Guid tenantId)
@@ -30,6 +31,13 @@ public class RefreshTokenRepositoryTests
             var previous = TenantId;
             TenantId = tenantId;
             return new RestoreScope(() => TenantId = previous);
+        }
+
+        public IDisposable AllowCrossTenantOperation()
+        {
+            var previous = AllowCrossTenantWrite;
+            AllowCrossTenantWrite = true;
+            return new RestoreScope(() => AllowCrossTenantWrite = previous);
         }
 
         private sealed class RestoreScope(Action restore) : IDisposable

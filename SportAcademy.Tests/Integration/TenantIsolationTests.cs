@@ -12,6 +12,7 @@ public class TenantIsolationTests
     private sealed class TestTenantIdProvider : ITenantIdProvider
     {
         public Guid? TenantId { get; private set; }
+        public bool AllowCrossTenantWrite { get; private set; }
         public void SetTenantId(Guid? tenantId) => TenantId = tenantId;
 
         public IDisposable Impersonate(Guid tenantId)
@@ -19,6 +20,13 @@ public class TenantIsolationTests
             var previous = TenantId;
             TenantId = tenantId;
             return new RestoreScope(() => TenantId = previous);
+        }
+
+        public IDisposable AllowCrossTenantOperation()
+        {
+            var previous = AllowCrossTenantWrite;
+            AllowCrossTenantWrite = true;
+            return new RestoreScope(() => AllowCrossTenantWrite = previous);
         }
 
         private sealed class RestoreScope(Action restore) : IDisposable
@@ -211,6 +219,81 @@ public class TenantIsolationTests
 
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ctx.SaveChangesAsync());
             Assert.Contains("TenantId", ex.Message);
+        }
+    }
+
+    // Locks in the guarantee behind this whole file: a write to tenant-scoped data with no
+    // resolved tenant must fail outright, not silently succeed with a blank/invented TenantId.
+    [Fact]
+    public async Task SaveChangesInterceptor_RejectsWrite_WithNoAmbientTenant_AndNoBypass()
+    {
+        var dbName = Guid.NewGuid().ToString();
+
+        using var ctx = CreateContextWithInterceptor(null, dbName);
+        ctx.Database.EnsureCreated();
+
+        var branch = CreateBranch("Orphan Branch");
+        ctx.Set<Branch>().Add(branch);
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ctx.SaveChangesAsync());
+        Assert.Contains("no tenant is resolved", ex.Message);
+    }
+
+    // The narrow, explicit escape hatch trusted background jobs use: no ambient tenant, but the
+    // row already carries its own real TenantId and the caller has explicitly acknowledged the
+    // cross-tenant batch.
+    [Fact]
+    public async Task SaveChangesInterceptor_AllowsWrite_WithNoAmbientTenant_UnderExplicitCrossTenantScope()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        var tenantA = Guid.NewGuid();
+        var tenantIdProvider = new TestTenantIdProvider();
+        var interceptor = new TenantSaveChangesInterceptor(tenantIdProvider);
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(dbName)
+            .AddInterceptors(interceptor)
+            .Options;
+
+        using var ctx = new ApplicationDbContext(options, tenantIdProvider, new TestBranchAccessProvider());
+        ctx.Database.EnsureCreated();
+
+        var branch = CreateBranch("Batch Branch", tenantA);
+        ctx.Set<Branch>().Add(branch);
+
+        using (tenantIdProvider.AllowCrossTenantOperation())
+        {
+            await ctx.SaveChangesAsync();
+        }
+
+        Assert.Equal(tenantA, branch.TenantId);
+    }
+
+    // Same explicit scope, but the row itself was never given a real tenant - the escape hatch
+    // only lets a caller skip the "does this match the ambient tenant" check, it does not let a
+    // truly tenant-less row through.
+    [Fact]
+    public async Task SaveChangesInterceptor_RejectsWrite_UnderCrossTenantScope_WithoutRowTenantId()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        var tenantIdProvider = new TestTenantIdProvider();
+        var interceptor = new TenantSaveChangesInterceptor(tenantIdProvider);
+
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(dbName)
+            .AddInterceptors(interceptor)
+            .Options;
+
+        using var ctx = new ApplicationDbContext(options, tenantIdProvider, new TestBranchAccessProvider());
+        ctx.Database.EnsureCreated();
+
+        var branch = CreateBranch("Unstamped Branch");
+        ctx.Set<Branch>().Add(branch);
+
+        using (tenantIdProvider.AllowCrossTenantOperation())
+        {
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => ctx.SaveChangesAsync());
+            Assert.Contains("missing a TenantId", ex.Message);
         }
     }
 }

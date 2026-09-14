@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
@@ -47,10 +48,15 @@ namespace SportAcademy.Infrastructure.BackgroundServices
         {
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var tenantProvider = scope.ServiceProvider.GetRequiredService<ITenantIdProvider>();
 
             var now = DateTime.UtcNow;
 
+            // No ambient tenant here (outside any request) means the global query filter would
+            // match zero rows across every tenant, same reasoning as EnrollmentLapseService -
+            // IgnoreQueryFilters() is required to see every tenant's stale invitations at once.
             var expiredInvitations = await context.Set<Invitation>()
+                .IgnoreQueryFilters()
                 .Where(i => i.Status == InvitationStatus.Pending && i.ExpiresAt < now)
                 .ToListAsync(ct);
 
@@ -62,7 +68,13 @@ namespace SportAcademy.Infrastructure.BackgroundServices
                 invitation.Expire();
             }
 
-            await context.SaveChangesAsync(ct);
+            // TenantSaveChangesInterceptor rejects a save of ITenantScoped rows with no ambient
+            // tenant unless this scope explicitly acknowledges the cross-tenant batch - every
+            // row above already carries its own real TenantId from the query above.
+            using (tenantProvider.AllowCrossTenantOperation())
+            {
+                await context.SaveChangesAsync(ct);
+            }
 
             _logger.LogInformation("Expired {Count} stale invitations", expiredInvitations.Count);
         }
