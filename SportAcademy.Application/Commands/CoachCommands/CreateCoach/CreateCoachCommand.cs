@@ -9,7 +9,7 @@ public record CreateCoachCommand(
     int EmployeeId,
     int SportId,
     SkillLevel SkillLevel
-) : IRequest<Result<int>>, IRequiresFeature
+) : IRequest<Result<int>>, IRequiresFeature, IRequiresActiveSport
 {
     public string FeatureKey => "coach-management";
 }

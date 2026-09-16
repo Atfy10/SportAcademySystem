@@ -21,7 +21,7 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGr
         int CoachId,
         List<CreateGroupScheduleSlot> Schedules,
         string? NameAr = null
-    ) : IRequest<Result<int>>, IBranchScopedRequest, IRequiresFeature
+    ) : IRequest<Result<int>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch
     {
         public string FeatureKey => "group-management";
     }

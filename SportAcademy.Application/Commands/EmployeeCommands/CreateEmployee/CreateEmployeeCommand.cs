@@ -22,7 +22,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         Position Position,
         int BranchId,
         bool CreateUserAccount = false,
-        string? ImageUrl = null) : IRequest<Result<CreateEmployeeResultDto>>, IRequiresFeature, IBranchScopedRequest
+        string? ImageUrl = null) : IRequest<Result<CreateEmployeeResultDto>>, IRequiresFeature, IBranchScopedRequest, IRequiresActiveBranch
     {
         public string FeatureKey => "employee-management";
     }

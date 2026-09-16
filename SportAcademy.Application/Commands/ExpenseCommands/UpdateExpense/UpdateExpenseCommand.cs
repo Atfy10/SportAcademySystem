@@ -14,5 +14,5 @@ namespace SportAcademy.Application.Commands.ExpenseCommands.UpdateExpense
         DateOnly? ExpenseDate,
         int? PaymentTypeId,
         string? Notes
-    ) : IRequest<Result<ExpenseDto>>, IOptionallyBranchScopedRequest;
+    ) : IRequest<Result<ExpenseDto>>, IOptionallyBranchScopedRequest, IRequiresActiveOptionalBranch;
 }

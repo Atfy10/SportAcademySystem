@@ -6,10 +6,15 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
-    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>, IBranchScopedRequest, IRequiresFeature, IConsumesLimit
+    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>, IBranchScopedRequest, IRequiresFeature, IConsumesLimit, IRequiresActiveBranch, IRequiresActiveSports
     {
         public string FeatureKey => "trainee-management";
         public string ResourceKey => LimitedResources.Trainees;
+
+        // Explicit implementation: SportIds' declared type (HashSet<int>) can't implicitly
+        // satisfy IRequiresActiveSports.SportIds (IEnumerable<int>?) - interface implementation
+        // requires an exact type match, not just assignability.
+        IEnumerable<int>? IRequiresActiveSports.SportIds => SportIds;
 
         public required string FirstName { get; init; }
         public required string LastName { get; init; }

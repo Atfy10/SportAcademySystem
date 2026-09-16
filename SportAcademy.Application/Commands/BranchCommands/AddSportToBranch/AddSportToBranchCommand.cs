@@ -12,7 +12,7 @@ namespace SportAcademy.Application.Commands.BranchCommands.AddSportToBranch
     public record AddSportToBranchCommand(
           int SportId,
           int BranchId
-      ) : IRequest<Result<string>>, IBranchScopedRequest, IRequiresFeature
+      ) : IRequest<Result<string>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch, IRequiresActiveSport
     {
         public string FeatureKey => "branch-management";
     }
