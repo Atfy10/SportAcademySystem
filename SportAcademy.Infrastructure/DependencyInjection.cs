@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Services;
@@ -76,6 +77,12 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<ITenantStatusCache>(sp => sp.GetRequiredService<TenantStatusCache>());
             services.AddScoped<ITenantStatusCacheInvalidator>(sp => sp.GetRequiredService<TenantStatusCache>());
 
+            // Resolves a tenant's effective plan/override limits. Deliberately plain-scoped, no
+            // cache - see EffectiveLimitService's own reasoning.
+            services.AddScoped<IEffectiveLimitService, EffectiveLimitService>();
+            services.AddScoped<ILimitReconciliationService, LimitReconciliationService>();
+            services.AddScoped<ILimitSelectionApplier, LimitSelectionApplier>();
+
             // Register Notification Service
             services.AddScoped<INotificationService, NotificationService>();
 
@@ -93,6 +100,7 @@ namespace SportAcademy.Infrastructure
             services.AddHostedService<TenantArchivalService>();
             services.AddHostedService<EmailQueueCleanupService>();
             services.AddHostedService<EnrollmentLapseService>();
+            services.AddHostedService<LimitReconciliationDeadlineService>();
 
             // Register seeders
             services.AddScoped<Seeders.AppDataSeeder>();

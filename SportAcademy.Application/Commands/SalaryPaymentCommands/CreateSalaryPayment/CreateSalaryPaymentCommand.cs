@@ -1,6 +1,7 @@
 using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.FinanceDtos;
+using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.SalaryPaymentCommands.CreateSalaryPayment
 {
@@ -12,5 +13,5 @@ namespace SportAcademy.Application.Commands.SalaryPaymentCommands.CreateSalaryPa
         DateOnly PeriodMonth,
         int? PaymentTypeId,
         string? Notes
-    ) : IRequest<Result<SalaryPaymentDto>>;
+    ) : IRequest<Result<SalaryPaymentDto>>, IRequiresActiveOptionalBranch;
 }

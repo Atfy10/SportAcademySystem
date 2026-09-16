@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 
@@ -20,9 +21,10 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 			string? NameAr = null,
 			string? CityAr = null,
 			string? CountryAr = null
-		) : IRequest<Result<int>>, IRequiresFeature
+		) : IRequest<Result<int>>, IRequiresFeature, IConsumesLimit
 	{
 		public string FeatureKey => "branch-management";
+		public string ResourceKey => LimitedResources.Branches;
 	}
 
 }

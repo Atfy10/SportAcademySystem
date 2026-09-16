@@ -78,6 +78,25 @@ public class StartImpersonationCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_PendingLimitSelectionTenant_IsAllowed()
+    {
+        // The deliberate exception (R2 in PLAN_LIMITS_DESIGN.md): a SuperAdmin must be able to
+        // impersonate a tenant stuck in a forced-selection window to complete it on the
+        // customer's behalf - refusing here would make that console action always 400.
+        var tenantId = Guid.NewGuid();
+        var tenant = CreateTenant(tenantId, TenantStatus.PendingLimitSelection);
+        var superAdmin = new AppUser { Id = _superAdminId, UserName = "superadmin", Email = "sa@test.com" };
+
+        _tenantRepoMock.Setup(r => r.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+        _userRepoMock.Setup(r => r.GetByIdAsync(_superAdminId, It.IsAny<CancellationToken>())).ReturnsAsync(superAdmin);
+
+        var result = await _handler.Handle(new StartImpersonationCommand(tenantId, "Completing a stuck reconciliation"), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _grantRepoMock.Verify(r => r.AddAsync(It.IsAny<TenantImpersonationGrant>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task Handle_ActiveTenant_CreatesGrantAndIssuesToken()
     {
         var tenantId = Guid.NewGuid();

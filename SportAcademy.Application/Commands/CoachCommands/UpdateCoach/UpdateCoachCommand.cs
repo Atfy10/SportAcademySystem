@@ -5,7 +5,7 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.CoachCommands.UpdateCoach;
 
-public record UpdateCoachCommand : IRequest<Result<bool>>, IRequiresFeature
+public record UpdateCoachCommand : IRequest<Result<bool>>, IRequiresFeature, IRequiresActiveSport
 {
     public int Id { get; init; }
     public int SportId { get; init; }

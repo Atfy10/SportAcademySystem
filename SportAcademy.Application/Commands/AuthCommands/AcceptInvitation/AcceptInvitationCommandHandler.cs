@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Interfaces;
@@ -26,6 +27,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
     private readonly IUserBranchAccessRepository _userBranchAccessRepository;
     private readonly IProfileRepository _profileRepository;
     private readonly IMediator _mediator;
+    private readonly IEffectiveLimitService _limitService;
     private readonly ILogger<AcceptInvitationCommandHandler> _logger;
     private const string Operation = "Accept";
     private const int RefreshTokenExpiryDays = 7;
@@ -42,6 +44,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         IUserBranchAccessRepository userBranchAccessRepository,
         IProfileRepository profileRepository,
         IMediator mediator,
+        IEffectiveLimitService limitService,
         ILogger<AcceptInvitationCommandHandler> logger)
     {
         _tokenService = tokenService;
@@ -55,6 +58,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         _userBranchAccessRepository = userBranchAccessRepository;
         _profileRepository = profileRepository;
         _mediator = mediator;
+        _limitService = limitService;
         _logger = logger;
     }
 
@@ -92,8 +96,22 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
         if (isStaffOnboarding)
         {
+            // Deliberately NOT widened to also allow PendingLimitSelection, unlike Login/refresh/
+            // impersonation - a new user joining mid-reconciliation would add a seat while the
+            // tenant is actively being forced under its cap, working against the very thing this
+            // lock exists to enforce (see PLAN_LIMITS_DESIGN.md R2, item 4).
             if (tenant.Status is not TenantStatus.Active)
                 return Result<AuthResponseDto>.Failure(Operation, "This tenant is not currently active.", 400);
+
+            // Re-check the seat cap here, not just at send time (CreateInvitationCommand's
+            // LimitGateBehavior gate) - headroom that existed when this invite was sent can be
+            // gone by the time it's used (e.g. another invitation was accepted in between).
+            // GetResourceUsageAsync already counts THIS pending invitation as a consumed seat,
+            // so accepting it never double-counts - it only blocks when some OTHER seat was
+            // consumed in the meantime and pushed the tenant to its cap.
+            var userLimit = await _limitService.GetAsync(tenant.Id, LimitedResources.Users, ct);
+            if (!userLimit.HasHeadroom)
+                return Result<AuthResponseDto>.Failure(Operation, userLimit.ToMessage(), 403, userLimit.ToErrorDictionary());
         }
         else if (tenant.Status is not TenantStatus.PendingSetup)
         {

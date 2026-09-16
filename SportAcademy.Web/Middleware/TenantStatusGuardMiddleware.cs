@@ -52,6 +52,33 @@ namespace SportAcademy.Web.Middleware
 
             var status = await tenantStatusCache.GetStatusAsync(tenantId, context.RequestAborted);
 
+            // The read-only-for-7-days window (see LimitReconciliationService): the Owner/Admin
+            // needs to see the whole tenant - trainee counts, revenue, schedules of every
+            // branch, not just the ones they might keep - to actually decide what to select, so
+            // every GET passes through unchanged. /api/trainee/export is the one read that hides
+            // behind a POST verb (checked against every controller - it's the only one); every
+            // other read in this API is a GET. The reconciliation endpoints themselves (the
+            // wizard's load + its one write, the submit) are the only non-GET allowed.
+            if (status == TenantStatus.PendingLimitSelection)
+            {
+                var isReadOnlyGet = HttpMethods.IsGet(context.Request.Method);
+                var isExportRead = HttpMethods.IsPost(context.Request.Method)
+                    && path.EndsWith("/export", StringComparison.OrdinalIgnoreCase);
+                var isReconciliationRoute = path.StartsWith("/api/tenant/limit-reconciliation", StringComparison.OrdinalIgnoreCase);
+
+                if (isReadOnlyGet || isExportRead || isReconciliationRoute)
+                {
+                    await _next(context);
+                    return;
+                }
+
+                await WriteRejectionAsync(
+                    context,
+                    "This academy must complete a required plan-limit selection before making changes.",
+                    "LIMIT_RECONCILIATION_REQUIRED");
+                return;
+            }
+
             // A tenant that has vanished (should be unreachable - a valid token always carries
             // a real tenant id) is treated the same as Archived rather than let through.
             if (status is null or not TenantStatus.Active)
@@ -61,23 +88,28 @@ namespace SportAcademy.Web.Middleware
                     ? "This academy's account has been archived."
                     : "This academy's account is currently suspended.";
 
-                context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                context.Response.ContentType = "application/json";
-
-                var payload = new
-                {
-                    isSuccess = false,
-                    operationType = "TenantStatusGuard",
-                    statusCode = StatusCodes.Status403Forbidden,
-                    message,
-                    errors = new { code },
-                };
-
-                await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+                await WriteRejectionAsync(context, message, code);
                 return;
             }
 
             await _next(context);
+        }
+
+        private static async Task WriteRejectionAsync(HttpContext context, string message, string code)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+
+            var payload = new
+            {
+                isSuccess = false,
+                operationType = "TenantStatusGuard",
+                statusCode = StatusCodes.Status403Forbidden,
+                message,
+                errors = new { code },
+            };
+
+            await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
         }
     }
 }

@@ -28,6 +28,19 @@ public static class TenantStatusPolicy
             // direct (Archived, Active) case: restoring straight to Active would skip that
             // decision.
             (TenantStatus.Archived, TenantStatus.Suspended) => true,
+
+            // A downgrade (plan/limit/override change) that puts the tenant over a
+            // selection-requiring limit locks it here - see LimitReconciliationService, the
+            // only caller that ever makes this transition (ChangeTenantStatusCommand
+            // deliberately refuses to set this status directly - see its validator).
+            (TenantStatus.Active, TenantStatus.PendingLimitSelection) => true,
+            // The Owner/Admin completed the forced selection (SubmitLimitSelectionCommand).
+            (TenantStatus.PendingLimitSelection, TenantStatus.Active) => true,
+            // The 7-day window closed with no selection made (LimitReconciliationDeadlineService).
+            (TenantStatus.PendingLimitSelection, TenantStatus.Suspended) => true,
+            // SuperAdmin reopens a lapsed reconciliation window - a fresh deadline, not a plain
+            // reactivation, so this goes through a dedicated command, not ChangeTenantStatusCommand.
+            (TenantStatus.Suspended, TenantStatus.PendingLimitSelection) => true,
             _ => false,
         };
     }

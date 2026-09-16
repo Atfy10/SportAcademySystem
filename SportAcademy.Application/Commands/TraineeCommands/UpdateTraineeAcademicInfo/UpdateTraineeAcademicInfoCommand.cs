@@ -12,8 +12,13 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTraineeAcademicInfo
         int Id,
         int BranchId,
         List<int> SportIds
-    ) : IRequest<Result<bool>>, IBranchScopedRequest, IRequiresFeature
+    ) : IRequest<Result<bool>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch, IRequiresActiveSports
     {
         public string FeatureKey => "trainee-management";
+
+        // Explicit implementation: SportIds' declared type (List<int>) can't implicitly satisfy
+        // IRequiresActiveSports.SportIds (IEnumerable<int>?) - see CreateTraineeCommand's
+        // identical note.
+        IEnumerable<int>? IRequiresActiveSports.SportIds => SportIds;
     }
 }

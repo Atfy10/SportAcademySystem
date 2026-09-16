@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Features;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
@@ -12,16 +13,19 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
 {
     private readonly ITenantRepository _tenantRepository;
     private readonly IBaseRepository<SubscriptionPlan, int> _planRepository;
+    private readonly ILimitReconciliationService _limitReconciliationService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly string _operation = OperationType.Update.ToString();
 
     public ChangeTenantPlanCommandHandler(
         ITenantRepository tenantRepository,
         IBaseRepository<SubscriptionPlan, int> planRepository,
+        ILimitReconciliationService limitReconciliationService,
         IUnitOfWork unitOfWork)
     {
         _tenantRepository = tenantRepository;
         _planRepository = planRepository;
+        _limitReconciliationService = limitReconciliationService;
         _unitOfWork = unitOfWork;
     }
 
@@ -59,8 +63,25 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
         if (updates.Count > 0)
             await _tenantRepository.BulkUpdateFeaturesAsync(request.TenantId, updates, "PlanChange", ct);
 
+        // Every plan-affecting change is evaluated the same way regardless of "direction" - plan
+        // tiers aren't ranked, so ReconcileAsync just checks whether the tenant is over a
+        // selection-requiring limit under whatever plan is in effect right now and reacts however
+        // its current status calls for.
+        var outcome = await _limitReconciliationService.ReconcileAsync(request.TenantId, ct);
+
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result.Success(_operation, $"Tenant plan changed to {plan.Name}.");
+        var message = outcome switch
+        {
+            LimitReconciliationOutcome.Opened =>
+                $"Tenant plan changed to {plan.Name}. The tenant is now over its new limits and must complete a forced selection before continuing.",
+            LimitReconciliationOutcome.Resolved =>
+                $"Tenant plan changed to {plan.Name}. The tenant is now within its limits again and is active.",
+            LimitReconciliationOutcome.StillPending =>
+                $"Tenant plan changed to {plan.Name}. The tenant remains over one or more limits and must still complete its pending selection.",
+            _ => $"Tenant plan changed to {plan.Name}.",
+        };
+
+        return Result.Success(_operation, message);
     }
 }

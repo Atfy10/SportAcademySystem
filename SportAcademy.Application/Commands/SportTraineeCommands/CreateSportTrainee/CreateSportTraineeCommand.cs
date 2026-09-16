@@ -14,7 +14,7 @@ namespace SportAcademy.Application.Commands.SportTraineeCommands.CreateSportTrai
 		int SportId,
 		int TraineeId,
 		string SkillLevel
-	) : IRequest<Result<SportTraineeDto>>, IRequiresFeature
+	) : IRequest<Result<SportTraineeDto>>, IRequiresFeature, IRequiresActiveSport
 	{
 		public string FeatureKey => "trainee-management";
 	}

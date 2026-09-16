@@ -4,20 +4,30 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.PlatformCommands.ArchiveTenant;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantPlan;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantStatus;
+using SportAcademy.Application.Commands.PlatformCommands.ClonePlan;
+using SportAcademy.Application.Commands.PlatformCommands.ConfirmReconciliationBypass;
 using SportAcademy.Application.Commands.PlatformCommands.CreateTenant;
 using SportAcademy.Application.Commands.PlatformCommands.ExpireTenantSubscription;
 using SportAcademy.Application.Commands.PlatformCommands.ExtendTenantSubscription;
+using SportAcademy.Application.Commands.PlatformCommands.RemoveTenantLimitOverride;
+using SportAcademy.Application.Commands.PlatformCommands.ReopenLimitReconciliation;
+using SportAcademy.Application.Commands.PlatformCommands.RequestReconciliationBypass;
+using SportAcademy.Application.Commands.PlatformCommands.SetTenantLimitOverride;
 using SportAcademy.Application.Commands.PlatformCommands.SetTenantTrial;
 using SportAcademy.Application.Commands.PlatformCommands.StartImpersonation;
 using SportAcademy.Application.Commands.PlatformCommands.ToggleFeature;
 using SportAcademy.Application.Commands.PlatformCommands.UpdatePlanFeatures;
+using SportAcademy.Application.Commands.PlatformCommands.UpdatePlanLimits;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateFeatureBundlePricing;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateSubscriptionPlan;
 using SportAcademy.Application.Commands.PlatformCommands.UpdateTenant;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantDetails;
+using SportAcademy.Application.Queries.PlatformQueries.GetOpenReconciliations;
 using SportAcademy.Application.Queries.PlatformQueries.GetPlanFeatures;
+using SportAcademy.Application.Queries.PlatformQueries.GetPlanLimits;
 using SportAcademy.Application.Queries.PlatformQueries.GetSubscriptionPlans;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenantFeatures;
+using SportAcademy.Application.Queries.PlatformQueries.GetTenantLimits;
 using SportAcademy.Application.Queries.PlatformQueries.GetTenants;
 using SportAcademy.Application.Queries.PublicQueries.GetBundleFeatures;
 using SportAcademy.Domain.Enums;
@@ -316,6 +326,124 @@ public class TenantsController : ControllerBase
         var result = await _mediator.Send(new StartImpersonationCommand(id, request.Reason), ct);
         return StatusCode(result.StatusCode, result);
     }
+
+    // Absolute route, not tenant-scoped - same reasoning as GetPlanFeatures/UpdatePlanFeatures
+    // above: a plan's numeric limits are global catalog data.
+    [HttpGet("/api/platform/subscription-plans/{id}/limits")]
+    [Authorize(Roles = "SuperAdmin,PlatformSupport")]
+    [Authorize(Policy = "Permission:platform.tenants.read")]
+    public async Task<IActionResult> GetPlanLimits([FromRoute] int id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetPlanLimitsQuery(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPut("/api/platform/subscription-plans/{id}/limits")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> UpdatePlanLimits(
+        [FromRoute] int id,
+        [FromBody] UpdatePlanLimitsRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new UpdatePlanLimitsCommand(id, request.Limits), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpGet("{id}/limits")]
+    [Authorize(Roles = "SuperAdmin,PlatformSupport")]
+    [Authorize(Policy = "Permission:platform.tenants.read")]
+    public async Task<IActionResult> GetTenantLimits([FromRoute] Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetTenantLimitsQuery(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPut("{id}/limits/{resourceKey}")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> SetTenantLimitOverride(
+        [FromRoute] Guid id,
+        [FromRoute] string resourceKey,
+        [FromBody] SetTenantLimitOverrideRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(
+            new SetTenantLimitOverrideCommand(id, resourceKey, request.MaxCount, request.Reason), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpDelete("{id}/limits/{resourceKey}")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> RemoveTenantLimitOverride(
+        [FromRoute] Guid id,
+        [FromRoute] string resourceKey,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new RemoveTenantLimitOverrideCommand(id, resourceKey), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    // Every currently-open reconciliation across every tenant, soonest-deadline-first -
+    // PLAN_LIMITS_DESIGN.md §5.3's platform-wide open-reconciliations list.
+    [HttpGet("/api/platform/limit-reconciliations")]
+    [Authorize(Roles = "SuperAdmin,PlatformSupport")]
+    [Authorize(Policy = "Permission:platform.tenants.read")]
+    public async Task<IActionResult> GetOpenReconciliations(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetOpenReconciliationsQuery(), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPost("{id}/limit-reconciliation/reopen")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> ReopenLimitReconciliation([FromRoute] Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ReopenLimitReconciliationCommand(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    // The "refuge" mechanism (PLAN_LIMITS_DESIGN.md) - a tenant stuck in PendingLimitSelection
+    // can be force-reactivated without completing its selection, but only through this two-step,
+    // OTP-confirmed path, never through the generic ChangeTenantStatus action (see that
+    // command's own guard against this exact transition).
+    [HttpPost("{id}/limit-reconciliation/bypass/request")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> RequestReconciliationBypass([FromRoute] Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new RequestReconciliationBypassCommand(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPost("{id}/limit-reconciliation/bypass/confirm")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> ConfirmReconciliationBypass(
+        [FromRoute] Guid id,
+        [FromBody] ConfirmReconciliationBypassRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ConfirmReconciliationBypassCommand(id, request.Code, request.Reason), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    // Absolute route, not tenant-scoped by {id} - the source plan being cloned isn't
+    // necessarily related to the tenant it ends up owned by (e.g. cloning ENTERPRISE as the base
+    // for a small academy's custom deal).
+    [HttpPost("/api/platform/subscription-plans/{id}/clone")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> ClonePlan(
+        [FromRoute] int id,
+        [FromBody] ClonePlanRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ClonePlanCommand(id, request.Name, request.Code, request.OwnerTenantId), ct);
+        return StatusCode(result.StatusCode, result);
+    }
 }
 
 public record StartImpersonationRequest(string Reason);
@@ -372,3 +500,8 @@ public record UpdateSubscriptionPlanRequest(
 public record ToggleFeatureRequest(Guid FeatureId, bool IsEnabled, bool Lock, bool ConfirmProtectedDisable = false);
 
 public record ExtendSubscriptionRequest(int Days);
+
+public record UpdatePlanLimitsRequest(Dictionary<string, int?> Limits);
+public record SetTenantLimitOverrideRequest(int? MaxCount, string Reason);
+public record ClonePlanRequest(string Name, string Code, Guid OwnerTenantId);
+public record ConfirmReconciliationBypassRequest(string Code, string Reason);

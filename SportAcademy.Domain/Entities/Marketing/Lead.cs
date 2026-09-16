@@ -41,6 +41,14 @@ public class Lead
     // makes the funnel measurable end to end (which campaign produced which paying academy).
     public Guid? ConvertedTenantId { get; set; }
 
+    // The plan a visitor composed on the marketing site's bundle-builder (selected feature names
+    // and requested branch/user/sport/trainee limits), as submitted - a point-in-time quote
+    // request, not a live entity, so it's stored as JSON rather than a relational shape. Null for
+    // a lead submitted through the plain contact form (no bundle-builder involved). SuperAdmin
+    // reviews this in the leads inbox and, via ClonePlanCommand, can turn it into a real IsCustom
+    // SubscriptionPlan pre-filled from the spec.
+    public string? RequestedPlanSpecJson { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime? ContactedAt { get; set; }
 }

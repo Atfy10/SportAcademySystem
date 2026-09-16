@@ -30,7 +30,9 @@ namespace SportAcademy.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(FeatureGateBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LimitGateBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(BranchAccessValidationBehavior<,>));
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ActiveResourceGuardBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PaginationNormalizationBehavior<,>));
             // Registered last so it wraps closest to the handler - every other behavior above
             // has already run (and could still short-circuit) before a transaction opens here.

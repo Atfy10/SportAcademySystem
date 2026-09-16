@@ -37,8 +37,16 @@ namespace SportAcademy.Web.Middleware
             var status = await tenantStatusCache.GetStatusAsync(tenantId, context.RequestAborted);
 
             // A tenant that has vanished is treated the same as not-Active rather than let
-            // through, mirroring TenantStatusGuardMiddleware's identical choice.
-            if (status is null or not TenantStatus.Active)
+            // through, mirroring TenantStatusGuardMiddleware's identical choice. Unlike that
+            // middleware, this one has no per-request read/write distinction to make - a file
+            // request has no verb-based "is this a write" question, it's always a read - so
+            // PendingLimitSelection is allowed through unconditionally: the read-only console
+            // (avatars, trainee photos, tenant logo) would otherwise render with every image
+            // broken for the whole 7-day window, which is a bug found in the same audit that
+            // introduced this branch (see PLAN_LIMITS_DESIGN.md R2, item 8) - this middleware was
+            // missed the first time specifically because its identical pattern sits in a
+            // different file from the one everyone remembers to check.
+            if (status is null or not (TenantStatus.Active or TenantStatus.PendingLimitSelection))
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 return;

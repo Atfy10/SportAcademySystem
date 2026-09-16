@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AppUserDtos.AdminDtos;
 using SportAcademy.Application.Interfaces;
@@ -21,7 +22,8 @@ public record AdminCreateUserCommand(
     bool EmailConfirmed = false,
     bool IsActive = true,
     List<int>? BranchIds = null
-) : IRequest<Result<AdminCreateUserResultDto>>, IRequiresFeature
+) : IRequest<Result<AdminCreateUserResultDto>>, IRequiresFeature, IConsumesLimit
 {
     public string FeatureKey => "user-management";
+    public string ResourceKey => LimitedResources.Users;
 }

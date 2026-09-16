@@ -52,12 +52,13 @@ public class StartImpersonationCommandHandler
         if (tenant is null)
             return Result<ImpersonationSessionDto>.Failure(_operation, "Tenant not found.", 404);
 
-        // Impersonating a tenant that is itself locked out is nonsensical (there is nothing for
-        // read-only access to show that the tenant's own users can't already see is blocked) and
-        // makes TenantStatusGuardMiddleware's exemption for /api/platform pointless to reason
-        // about - the underlying tenant data is still fully readable via /api/platform routes,
-        // this just keeps the case from ever coming up.
-        if (tenant.Status is not TenantStatus.Active)
+        // Impersonating a tenant that is itself locked out is nonsensical for Suspended/Archived/
+        // Inactive (there is nothing for read-only access to show that the tenant's own users
+        // can't already see is blocked) - but PendingLimitSelection is the deliberate exception:
+        // it's exactly what lets a SuperAdmin complete a stuck tenant's forced selection on their
+        // behalf (PLAN_LIMITS_DESIGN.md §5's "Complete on behalf of tenant" action). Refusing it
+        // here would make that button always 400.
+        if (tenant.Status is not (TenantStatus.Active or TenantStatus.PendingLimitSelection))
             return Result<ImpersonationSessionDto>.Failure(
                 _operation, $"Cannot start an impersonation session against a tenant that is {tenant.Status}.", 400);
 

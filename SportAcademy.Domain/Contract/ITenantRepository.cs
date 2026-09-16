@@ -38,4 +38,45 @@ public interface ITenantRepository
     // list on every gated request. Matches GetTenantFeaturesQueryHandler's semantics: no row
     // for this tenant+feature counts as disabled, not enabled-by-default.
     Task<bool> IsFeatureEnabledAsync(Guid tenantId, string featureName, CancellationToken ct = default);
+
+    // ---- Plan/tenant limits (quantitative twin of the feature methods above) ----
+
+    /// <summary>Null if the tenant has no active subscription row (shouldn't happen for a real
+    /// tenant, but CreateTenantCommandHandler creates the Subscription in the same call that
+    /// creates the Tenant, so this can't be assumed non-null before that finishes).</summary>
+    Task<int?> GetCurrentPlanIdAsync(Guid tenantId, CancellationToken ct = default);
+    Task<List<PlanLimit>> GetPlanLimitsAsync(int planId, CancellationToken ct = default);
+
+    /// <summary>Replaces a plan's entire limit set (remove-then-add), mirroring
+    /// ReplacePlanFeaturesAsync. A null MaxCount in the dictionary seeds an explicit "unlimited"
+    /// row rather than omitting the resource - see UpdatePlanLimitsCommand.</summary>
+    Task ReplacePlanLimitsAsync(int planId, Dictionary<string, int?> limits, CancellationToken ct = default);
+
+    Task<TenantLimitOverride?> GetTenantLimitOverrideAsync(Guid tenantId, string resourceKey, CancellationToken ct = default);
+    Task<List<TenantLimitOverride>> GetTenantLimitOverridesAsync(Guid tenantId, CancellationToken ct = default);
+    Task SetTenantLimitOverrideAsync(TenantLimitOverride @override, CancellationToken ct = default);
+    Task RemoveTenantLimitOverrideAsync(Guid tenantId, string resourceKey, CancellationToken ct = default);
+
+    /// <summary>Current usage for every LimitedResources key, in one round trip - what a
+    /// tenant is actually consuming right now, not the raw all-time counts
+    /// GetBranchCountByTenantAsync/GetUserCountByTenantAsync/GetSportCountByTenantAsync return
+    /// for the platform dashboard. See EffectiveLimitService for exactly what "used" means per
+    /// resource (active branches, non-banned users + pending invitations, active sports,
+    /// non-deleted trainees).</summary>
+    Task<Dictionary<string, int>> GetResourceUsageAsync(Guid tenantId, CancellationToken ct = default);
+
+    // ---- Downgrade-reconciliation tasks ----
+
+    /// <summary>The tenant's current open (CompletedAt == null) reconciliation, if any. At most
+    /// one may exist at a time - see LimitReconciliationService.</summary>
+    Task<TenantLimitReconciliation?> GetOpenReconciliationAsync(Guid tenantId, CancellationToken ct = default);
+    Task AddReconciliationAsync(TenantLimitReconciliation reconciliation, CancellationToken ct = default);
+
+    /// <summary>Every open reconciliation whose DeadlineAt has passed - for
+    /// LimitReconciliationDeadlineService's sweep.</summary>
+    Task<List<TenantLimitReconciliation>> GetOpenReconciliationsPastDeadlineAsync(DateTime cutoffUtc, CancellationToken ct = default);
+
+    /// <summary>Every currently-open reconciliation, soonest-deadline-first - for the platform
+    /// console's open-reconciliations list.</summary>
+    Task<List<TenantLimitReconciliation>> GetAllOpenReconciliationsAsync(CancellationToken ct = default);
 }

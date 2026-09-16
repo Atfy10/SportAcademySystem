@@ -168,7 +168,11 @@ namespace SportAcademy.Infrastructure.Implementations
             // token for itself just by refreshing - that would let TenantStatusGuardMiddleware's
             // enforcement be sidestepped by any client that still holds a valid refresh token
             // (see LoginCommandHandler for the same check on the initial login).
-            if (storedToken.User.Tenant.Status is not TenantStatus.Active)
+            // PendingLimitSelection is allowed through, same reasoning as LoginCommandHandler:
+            // refusing here would kill the session of the exact Owner/Admin who needs to stay
+            // logged in to complete the forced selection - it would silently undo the "keep
+            // sessions alive" intent of not force-logging tenants out when this status starts.
+            if (storedToken.User.Tenant.Status is not (TenantStatus.Active or TenantStatus.PendingLimitSelection))
                 return null;
 
             // Atomically revoke only if still unrevoked. If a concurrent request already won

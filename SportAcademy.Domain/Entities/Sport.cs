@@ -13,6 +13,15 @@ namespace SportAcademy.Domain.Entities
         public SportCategory Category { get; set; }
         public bool IsRequireHealthTest { get; set; } = true;
 
+        // Mirrors Branch.IsActive exactly, added for plan-limit downgrade reconciliation (a
+        // SuperAdmin-forced sport selection needs something to deactivate). Same scope as
+        // Branch's own flag today: a toggle and a badge, not a read-path filter - existing
+        // queries (GetAllTranslatedAsync, GetAvailableSportsForBranch, dropdown lists) are
+        // deliberately left unfiltered here, matching BranchRepository.GetAllBranchsBase's
+        // current behavior. Filtering pickers to active-only is a deliberate later decision,
+        // not a side effect of adding this column.
+        public bool IsActive { get; set; } = true;
+
         public Guid TenantId { get; set; }
         public Tenant Tenant { get; set; } = null!;
 

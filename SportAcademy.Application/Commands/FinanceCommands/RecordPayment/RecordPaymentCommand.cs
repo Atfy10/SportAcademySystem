@@ -14,4 +14,4 @@ public record RecordPaymentCommand(
     string? Reference,
     string? Notes,
     List<RecordPaymentAllocationRequest> Allocations
-) : IRequest<Result<string>>, IBranchScopedRequest;
+) : IRequest<Result<string>>, IBranchScopedRequest, IRequiresActiveBranch;

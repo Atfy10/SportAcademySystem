@@ -1555,6 +1555,9 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("RequestedPlanSpecJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SourcePage")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
@@ -1952,6 +1955,11 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("IsRequireHealthTest")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -2197,6 +2205,33 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.ToTable("SubscriptionTypes", (string)null);
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.PlanLimit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("MaxCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResourceKey")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("SubscriptionPlanId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubscriptionPlanId", "ResourceKey")
+                        .IsUnique();
+
+                    b.ToTable("PlanLimits", (string)null);
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.SubscriptionPlan", b =>
                 {
                     b.Property<int>("Id")
@@ -2218,6 +2253,9 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsCustom")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsHighlighted")
                         .HasColumnType("bit");
 
@@ -2230,6 +2268,9 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("OwnerTenantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("YearlyPrice")
                         .HasColumnType("decimal(18,2)");
@@ -2463,6 +2504,87 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("TenantImpersonationGrants", (string)null);
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.TenantLimitOverride", b =>
+                {
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResourceKey")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("MaxCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("SetAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SetBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("TenantId", "ResourceKey");
+
+                    b.ToTable("TenantLimitOverrides", (string)null);
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.TenantLimitReconciliation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BypassCodeAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("BypassCodeExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("BypassCodeHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CompletedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DeadlineAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("OpenedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RequiredResourcesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TriggeredByPlanId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("WasBypassedBySuperAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompletedAt", "DeadlineAt");
+
+                    b.HasIndex("TenantId", "CompletedAt");
+
+                    b.ToTable("TenantLimitReconciliations", (string)null);
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.TenantProfile", b =>
@@ -4483,6 +4605,17 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.PlanLimit", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.SubscriptionPlan", "SubscriptionPlan")
+                        .WithMany("Limits")
+                        .HasForeignKey("SubscriptionPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SubscriptionPlan");
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.SubscriptionPlanFeature", b =>
                 {
                     b.HasOne("SportAcademy.Domain.Entities.Feature", "Feature")
@@ -4542,6 +4675,28 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.TenantImpersonationGrant", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.TenantLimitOverride", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.TenantLimitReconciliation", b =>
                 {
                     b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
                         .WithMany()
@@ -5093,6 +5248,8 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SportAcademy.Domain.Entities.Tenants.SubscriptionPlan", b =>
                 {
                     b.Navigation("Features");
+
+                    b.Navigation("Limits");
 
                     b.Navigation("Subscriptions");
                 });

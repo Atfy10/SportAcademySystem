@@ -53,7 +53,12 @@ namespace SportAcademy.Application.Commands.AuthCommands.Login
             // A suspended/archived/deactivated tenant should refuse a brand new login outright,
             // not just let TenantStatusGuardMiddleware reject the request that follows it - see
             // that middleware for the enforcement that applies to an already-issued token.
-            if (tenant.Status is not TenantStatus.Active)
+            // PendingLimitSelection is deliberately allowed through here (unlike every other
+            // non-Active status): its own Owner/Admin need to log in precisely so they can
+            // complete the forced selection - refusing login would lock them out of the one
+            // thing they're being asked to do. GetMyPermissionsQueryHandler's tenantStatus field
+            // is what the frontend actually routes on post-login, not this response.
+            if (tenant.Status is not (TenantStatus.Active or TenantStatus.PendingLimitSelection))
                 throw new UserLoginException();
 
             // Deliberately not the System tenant: a SuperAdmin's own first login has no other

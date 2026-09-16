@@ -13,5 +13,5 @@ namespace SportAcademy.Application.Commands.ExpenseCommands.CreateExpense
         DateOnly ExpenseDate,
         int? PaymentTypeId,
         string? Notes
-    ) : IRequest<Result<ExpenseDto>>, IBranchScopedRequest;
+    ) : IRequest<Result<ExpenseDto>>, IBranchScopedRequest, IRequiresActiveBranch;
 }

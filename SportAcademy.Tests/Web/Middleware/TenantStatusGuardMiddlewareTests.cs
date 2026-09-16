@@ -18,10 +18,11 @@ public class TenantStatusGuardMiddlewareTests
     private readonly Mock<ITenantStatusCache> _statusCacheMock = new();
     private bool _nextCalled;
 
-    private static HttpContext BuildContext(string path)
+    private static HttpContext BuildContext(string path, string method = "GET")
     {
         var context = new DefaultHttpContext();
         context.Request.Path = path;
+        context.Request.Method = method;
         context.Response.Body = new MemoryStream();
         return context;
     }
@@ -150,6 +151,82 @@ public class TenantStatusGuardMiddlewareTests
 
         var body = await ReadJsonBodyAsync(context);
         body.GetProperty("errors").GetProperty("code").GetString().Should().Be("TENANT_ARCHIVED");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_PendingLimitSelection_GetRequest_PassesThrough()
+    {
+        // The read-only window: the Owner/Admin needs to see the whole tenant to decide what to
+        // select, so every GET passes through unchanged.
+        var tenantId = Guid.NewGuid();
+        _userContextMock.Setup(c => c.IsAuthenticated).Returns(true);
+        _userContextMock.Setup(c => c.TenantId).Returns(tenantId);
+        _statusCacheMock
+            .Setup(c => c.GetStatusAsync(tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TenantStatus.PendingLimitSelection);
+        var context = BuildContext("/api/trainees", "GET");
+        var middleware = BuildMiddleware();
+
+        await middleware.InvokeAsync(context, _userContextMock.Object, _statusCacheMock.Object);
+
+        _nextCalled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InvokeAsync_PendingLimitSelection_TraineeExportPost_PassesThrough()
+    {
+        // The one read in the whole API that hides behind a POST verb.
+        var tenantId = Guid.NewGuid();
+        _userContextMock.Setup(c => c.IsAuthenticated).Returns(true);
+        _userContextMock.Setup(c => c.TenantId).Returns(tenantId);
+        _statusCacheMock
+            .Setup(c => c.GetStatusAsync(tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TenantStatus.PendingLimitSelection);
+        var context = BuildContext("/api/trainee/export", "POST");
+        var middleware = BuildMiddleware();
+
+        await middleware.InvokeAsync(context, _userContextMock.Object, _statusCacheMock.Object);
+
+        _nextCalled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InvokeAsync_PendingLimitSelection_ReconciliationSubmitPost_PassesThrough()
+    {
+        // The wizard's own submit - the one write allowed through this lock.
+        var tenantId = Guid.NewGuid();
+        _userContextMock.Setup(c => c.IsAuthenticated).Returns(true);
+        _userContextMock.Setup(c => c.TenantId).Returns(tenantId);
+        _statusCacheMock
+            .Setup(c => c.GetStatusAsync(tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TenantStatus.PendingLimitSelection);
+        var context = BuildContext("/api/tenant/limit-reconciliation/submit", "POST");
+        var middleware = BuildMiddleware();
+
+        await middleware.InvokeAsync(context, _userContextMock.Object, _statusCacheMock.Object);
+
+        _nextCalled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InvokeAsync_PendingLimitSelection_OtherPost_Returns403WithReconciliationRequiredCode()
+    {
+        var tenantId = Guid.NewGuid();
+        _userContextMock.Setup(c => c.IsAuthenticated).Returns(true);
+        _userContextMock.Setup(c => c.TenantId).Returns(tenantId);
+        _statusCacheMock
+            .Setup(c => c.GetStatusAsync(tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TenantStatus.PendingLimitSelection);
+        var context = BuildContext("/api/branch", "POST");
+        var middleware = BuildMiddleware();
+
+        await middleware.InvokeAsync(context, _userContextMock.Object, _statusCacheMock.Object);
+
+        _nextCalled.Should().BeFalse();
+        context.Response.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+
+        var body = await ReadJsonBodyAsync(context);
+        body.GetProperty("errors").GetProperty("code").GetString().Should().Be("LIMIT_RECONCILIATION_REQUIRED");
     }
 
     [Fact]

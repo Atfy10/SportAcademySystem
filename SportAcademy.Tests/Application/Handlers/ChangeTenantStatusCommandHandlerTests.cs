@@ -87,6 +87,44 @@ public class ChangeTenantStatusCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_PendingLimitSelectionToActiveDirectly_IsRejected()
+    {
+        // TenantStatusPolicy permits this transition so SubmitLimitSelectionCommandHandler can
+        // make it once the forced selection is actually complete - reaching Active through this
+        // generic command instead would reactivate a tenant that never resolved being over its
+        // limits, bypassing the whole mechanism. Caught during a frontend button-ladder review
+        // (PLAN_LIMITS_DESIGN.md R2 follow-up), not part of the original 11-site list.
+        var tenantId = Guid.NewGuid();
+        var tenant = CreateTenant(tenantId, TenantStatus.PendingLimitSelection);
+        _tenantRepoMock.Setup(r => r.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+
+        var result = await _handler.Handle(
+            new ChangeTenantStatusCommand(tenantId, TenantStatus.Active), CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.StatusCode.Should().Be(400);
+        tenant.Status.Should().Be(TenantStatus.PendingLimitSelection);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_PendingLimitSelectionToSuspended_IsStillPermitted()
+    {
+        // Unlike ...ToActive above, a SuperAdmin manually suspending a reconciling tenant for an
+        // unrelated reason (without waiting out the 7-day grace) doesn't bypass anything - the
+        // guard only targets the specific transition that would skip the selection entirely.
+        var tenantId = Guid.NewGuid();
+        var tenant = CreateTenant(tenantId, TenantStatus.PendingLimitSelection);
+        _tenantRepoMock.Setup(r => r.GetByIdAsync(tenantId, It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
+
+        var result = await _handler.Handle(
+            new ChangeTenantStatusCommand(tenantId, TenantStatus.Suspended, "Manual override"), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        tenant.Status.Should().Be(TenantStatus.Suspended);
+    }
+
+    [Fact]
     public async Task Handle_ArchivedToSuspended_IsPermitted()
     {
         // The restore path added by F-04: an archived tenant can come back to Suspended (never

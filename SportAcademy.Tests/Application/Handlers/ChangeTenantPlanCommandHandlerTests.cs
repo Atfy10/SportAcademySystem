@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Moq;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantPlan;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
@@ -17,6 +18,7 @@ public class ChangeTenantPlanCommandHandlerTests
 {
     private readonly Mock<ITenantRepository> _tenantRepoMock = new();
     private readonly Mock<IBaseRepository<SubscriptionPlan, int>> _planRepoMock = new();
+    private readonly Mock<ILimitReconciliationService> _limitReconciliationServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly ChangeTenantPlanCommandHandler _handler;
 
@@ -24,12 +26,19 @@ public class ChangeTenantPlanCommandHandlerTests
 
     public ChangeTenantPlanCommandHandlerTests()
     {
-        _handler = new ChangeTenantPlanCommandHandler(_tenantRepoMock.Object, _planRepoMock.Object, _unitOfWorkMock.Object);
+        _handler = new ChangeTenantPlanCommandHandler(
+            _tenantRepoMock.Object, _planRepoMock.Object, _limitReconciliationServiceMock.Object, _unitOfWorkMock.Object);
         // None of these tests exercise a core feature - an empty catalog keeps
         // PlanFeatureReconciler.ComputeUpdates's core-lookup a no-op, same as before this handler
         // started fetching it.
         _tenantRepoMock.Setup(r => r.GetAllFeaturesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Feature>());
+        // Not the focus of these feature-reconciliation tests - default to "nothing changed" so
+        // they don't have to each stub this out. See ChangeTenantPlanOpensLimitReconciliationTests
+        // for coverage of the limit-reconciliation trigger itself.
+        _limitReconciliationServiceMock
+            .Setup(s => s.ReconcileAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(LimitReconciliationOutcome.NoChange);
     }
 
     private static Tenant CreateTenantWithSubscription(int currentPlanId) => new()

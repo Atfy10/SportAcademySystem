@@ -22,7 +22,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         TraineeGroupType GroupType,
         List<DayOfWeek> TrainingDays,
         int PaymentTypeId
-        ) : IRequest<Result<int>>, IBranchScopedRequest, IRequiresFeature
+        ) : IRequest<Result<int>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch, IRequiresActiveSport
     {
         public string FeatureKey => "enrollment-management";
     }
