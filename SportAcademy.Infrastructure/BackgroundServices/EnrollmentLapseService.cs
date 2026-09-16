@@ -81,6 +81,13 @@ namespace SportAcademy.Infrastructure.BackgroundServices
                 .Where(e => !e.IsDeleted)
                 .Where(e => e.EndDate == null)
                 .Where(e => e.ExpiryDate < cutoff)
+                // Deliberately left at == Active rather than widened to include
+                // PendingLimitSelection: a tenant mid-forced-selection has its enrollment lapses
+                // paused for up to 7 days, then this sweep catches up on all of them in one pass
+                // once the tenant is Active again. Acceptable because trainees are grandfathered
+                // during that window anyway (D6, PLAN_LIMITS_DESIGN.md R2 item 6) - nothing about
+                // being over the branch/sport/user cap should make an unrelated subscription
+                // expire any differently.
                 .Where(e => context.Set<Tenant>().Any(t => t.Id == e.TenantId && t.Status == TenantStatus.Active))
                 .ToListAsync(ct);
 

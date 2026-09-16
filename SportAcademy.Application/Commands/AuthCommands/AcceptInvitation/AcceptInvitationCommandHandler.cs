@@ -96,6 +96,10 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
 
         if (isStaffOnboarding)
         {
+            // Deliberately NOT widened to also allow PendingLimitSelection, unlike Login/refresh/
+            // impersonation - a new user joining mid-reconciliation would add a seat while the
+            // tenant is actively being forced under its cap, working against the very thing this
+            // lock exists to enforce (see PLAN_LIMITS_DESIGN.md R2, item 4).
             if (tenant.Status is not TenantStatus.Active)
                 return Result<AuthResponseDto>.Failure(Operation, "This tenant is not currently active.", 400);
 

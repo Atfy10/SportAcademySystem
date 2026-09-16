@@ -1,12 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.PlatformCommands.SubmitLimitSelection;
 using SportAcademy.Application.Commands.TenantCommands.BulkUpdateTenantFeatures;
 using SportAcademy.Application.Commands.TenantCommands.ImportTenantSettings;
 using SportAcademy.Application.Commands.TenantCommands.UpdateTenantFeature;
 using SportAcademy.Application.Commands.TenantCommands.UpdateTenantSettings;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Queries.TenantQueries.ExportTenantSettings;
+using SportAcademy.Application.Queries.TenantQueries.GetMyLimitReconciliation;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantFeatures;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantProfile;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantSettings;
@@ -128,6 +130,27 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken ct)
         {
             var result = await _mediator.Send(new GetTenantImpersonationHistoryQuery(page, pageSize), ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        // No extra policy on the read - any authenticated user of a PendingLimitSelection tenant
+        // should be able to see that it's locked and why, same as every other GET the read-only
+        // window leaves open (TenantStatusGuardMiddleware). Completing it is Owner/Admin-only.
+        [HttpGet("limit-reconciliation")]
+        public async Task<IActionResult> GetMyLimitReconciliation(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetMyLimitReconciliationQuery(), ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        // The one write TenantStatusGuardMiddleware allows through while PendingLimitSelection -
+        // see that middleware's own comment on why the whole route prefix is exempted.
+        [Authorize(Policy = "Permission:tenant.limit_reconciliation.manage")]
+        [HttpPost("limit-reconciliation/submit")]
+        public async Task<IActionResult> SubmitLimitSelection(
+            [FromBody] SubmitLimitSelectionCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command, ct);
             return StatusCode(result.StatusCode, result);
         }
     }
