@@ -64,4 +64,19 @@ public interface ITenantRepository
     /// resource (active branches, non-banned users + pending invitations, active sports,
     /// non-deleted trainees).</summary>
     Task<Dictionary<string, int>> GetResourceUsageAsync(Guid tenantId, CancellationToken ct = default);
+
+    // ---- Downgrade-reconciliation tasks ----
+
+    /// <summary>The tenant's current open (CompletedAt == null) reconciliation, if any. At most
+    /// one may exist at a time - see LimitReconciliationService.</summary>
+    Task<TenantLimitReconciliation?> GetOpenReconciliationAsync(Guid tenantId, CancellationToken ct = default);
+    Task AddReconciliationAsync(TenantLimitReconciliation reconciliation, CancellationToken ct = default);
+
+    /// <summary>Every open reconciliation whose DeadlineAt has passed - for
+    /// LimitReconciliationDeadlineService's sweep.</summary>
+    Task<List<TenantLimitReconciliation>> GetOpenReconciliationsPastDeadlineAsync(DateTime cutoffUtc, CancellationToken ct = default);
+
+    /// <summary>Every currently-open reconciliation, soonest-deadline-first - for the platform
+    /// console's open-reconciliations list.</summary>
+    Task<List<TenantLimitReconciliation>> GetAllOpenReconciliationsAsync(CancellationToken ct = default);
 }

@@ -80,6 +80,8 @@ namespace SportAcademy.Infrastructure
             // Resolves a tenant's effective plan/override limits. Deliberately plain-scoped, no
             // cache - see EffectiveLimitService's own reasoning.
             services.AddScoped<IEffectiveLimitService, EffectiveLimitService>();
+            services.AddScoped<ILimitReconciliationService, LimitReconciliationService>();
+            services.AddScoped<ILimitSelectionApplier, LimitSelectionApplier>();
 
             // Register Notification Service
             services.AddScoped<INotificationService, NotificationService>();

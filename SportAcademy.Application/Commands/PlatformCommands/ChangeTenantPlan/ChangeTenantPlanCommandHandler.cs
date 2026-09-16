@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Common.Features;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
@@ -12,16 +13,19 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
 {
     private readonly ITenantRepository _tenantRepository;
     private readonly IBaseRepository<SubscriptionPlan, int> _planRepository;
+    private readonly ILimitReconciliationService _limitReconciliationService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly string _operation = OperationType.Update.ToString();
 
     public ChangeTenantPlanCommandHandler(
         ITenantRepository tenantRepository,
         IBaseRepository<SubscriptionPlan, int> planRepository,
+        ILimitReconciliationService limitReconciliationService,
         IUnitOfWork unitOfWork)
     {
         _tenantRepository = tenantRepository;
         _planRepository = planRepository;
+        _limitReconciliationService = limitReconciliationService;
         _unitOfWork = unitOfWork;
     }
 
@@ -59,8 +63,16 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
         if (updates.Count > 0)
             await _tenantRepository.BulkUpdateFeaturesAsync(request.TenantId, updates, "PlanChange", ct);
 
+        // The new plan's own numeric limits may be lower than what the tenant is currently
+        // using (e.g. 8 branches, moving to a plan capped at 1) - EvaluateAsync stages a
+        // forced-selection lock in that case, committed atomically with the plan change itself
+        // by the SaveChangesAsync below.
+        var reconciliationOpened = await _limitReconciliationService.EvaluateAsync(request.TenantId, ct);
+
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result.Success(_operation, $"Tenant plan changed to {plan.Name}.");
+        return Result.Success(_operation, reconciliationOpened
+            ? $"Tenant plan changed to {plan.Name}. The tenant is now over its new limits and must complete a forced selection before continuing."
+            : $"Tenant plan changed to {plan.Name}.");
     }
 }

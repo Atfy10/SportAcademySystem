@@ -16,6 +16,12 @@ public class TenantStatusPolicyTests
         [TenantStatus.Suspended, TenantStatus.Archived],
         [TenantStatus.Inactive, TenantStatus.Archived],
         [TenantStatus.Archived, TenantStatus.Suspended],
+        // Plan/limit downgrade reconciliation - see LimitReconciliationService and
+        // PLAN_LIMITS_DESIGN.md §5.
+        [TenantStatus.Active, TenantStatus.PendingLimitSelection],
+        [TenantStatus.PendingLimitSelection, TenantStatus.Active],
+        [TenantStatus.PendingLimitSelection, TenantStatus.Suspended],
+        [TenantStatus.Suspended, TenantStatus.PendingLimitSelection],
     ];
 
     [Theory]

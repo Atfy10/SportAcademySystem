@@ -98,6 +98,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; }
         public DbSet<PlanLimit> PlanLimits { get; set; }
         public DbSet<TenantLimitOverride> TenantLimitOverrides { get; set; }
+        public DbSet<TenantLimitReconciliation> TenantLimitReconciliations { get; set; }
         public DbSet<Domain.Entities.Marketing.Lead> Leads { get; set; }
 
         //  View for reporting purposes

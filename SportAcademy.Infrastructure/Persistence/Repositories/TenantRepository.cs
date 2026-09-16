@@ -302,4 +302,25 @@ public class TenantRepository : ITenantRepository
             [LimitedResources.Trainees] = trainees,
         };
     }
+
+    // ---- Downgrade-reconciliation tasks ----
+
+    public Task<TenantLimitReconciliation?> GetOpenReconciliationAsync(Guid tenantId, CancellationToken ct = default)
+        => _context.TenantLimitReconciliations
+            .FirstOrDefaultAsync(r => r.TenantId == tenantId && r.CompletedAt == null, ct);
+
+    public async Task AddReconciliationAsync(TenantLimitReconciliation reconciliation, CancellationToken ct = default)
+        => await _context.TenantLimitReconciliations.AddAsync(reconciliation, ct);
+
+    public Task<List<TenantLimitReconciliation>> GetOpenReconciliationsPastDeadlineAsync(DateTime cutoffUtc, CancellationToken ct = default)
+        => _context.TenantLimitReconciliations
+            .Where(r => r.CompletedAt == null && r.DeadlineAt < cutoffUtc)
+            .ToListAsync(ct);
+
+    public Task<List<TenantLimitReconciliation>> GetAllOpenReconciliationsAsync(CancellationToken ct = default)
+        => _context.TenantLimitReconciliations
+            .Include(r => r.Tenant)
+            .Where(r => r.CompletedAt == null)
+            .OrderBy(r => r.DeadlineAt)
+            .ToListAsync(ct);
 }

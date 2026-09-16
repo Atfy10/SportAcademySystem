@@ -54,11 +54,16 @@ public class ChangeTenantStatusCommandHandler : IRequestHandler<ChangeTenantStat
         // of up to the cache's 5-minute sliding window.
         _tenantStatusCache.Invalidate(tenant.Id);
 
-        // Moving away from Active must kill every affected user's live session immediately
-        // (F-02), not just leave a held refresh token to fail the next time it's actually
-        // presented. Never fires for a transition INTO Active (Suspended/Inactive/Archived ->
-        // Active) - a reactivated tenant's users should simply be able to log back in normally.
-        if (request.NewStatus != TenantStatus.Active)
+        // Moving to a genuinely locked-out state must kill every affected user's live session
+        // immediately (F-02), not just leave a held refresh token to fail the next time it's
+        // actually presented. Never fires for a transition INTO Active (Suspended/Inactive/
+        // Archived -> Active) - a reactivated tenant's users should simply be able to log back
+        // in normally. This validator already refuses NewStatus == PendingLimitSelection for
+        // this command, but the condition is spelled out defensively rather than as `!= Active`:
+        // that status is a "come back and fix this" state, not a lockout - its own users must
+        // keep their sessions so they can actually complete the wizard, and forcing everyone out
+        // the instant they're told to go choose something would be exactly backwards.
+        if (request.NewStatus is TenantStatus.Suspended or TenantStatus.Inactive or TenantStatus.Archived)
         {
             var userIds = await _userRepository.GetUserIdsByTenantIgnoringTenantAsync(tenant.Id, ct);
             await _refreshTokenRepository.RevokeAllTokensForUsersAsync(userIds, ct);

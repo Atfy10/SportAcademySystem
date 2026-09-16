@@ -147,6 +147,9 @@ namespace SportAcademy.Domain.Authorization
         {
             public const string ManageSettings = "tenant.settings.manage";
             public const string ManageUsers = "tenant.users.manage";
+            // Completing the forced branch/sport/user selection a plan downgrade can trigger -
+            // seeded to Owner and Admin only (see PLAN_LIMITS_DESIGN.md §4.2).
+            public const string ManageLimitReconciliation = "tenant.limit_reconciliation.manage";
         }
 
         public static class Platform
@@ -191,7 +194,7 @@ namespace SportAcademy.Domain.Authorization
             Expense.Manage, Expense.View,
             Salary.Create, Salary.Approve, Salary.MarkPaid, Salary.View,
             DiscountCode.Manage, DiscountCode.Approve,
-            Tenant.ManageSettings, Tenant.ManageUsers,
+            Tenant.ManageSettings, Tenant.ManageUsers, Tenant.ManageLimitReconciliation,
             Platform.TenantsRead, Platform.TenantsManage, Platform.OwnersManage, Platform.AuditRead, Platform.Impersonate,
             Platform.LeadsRead, Platform.LeadsManage,
         ];
