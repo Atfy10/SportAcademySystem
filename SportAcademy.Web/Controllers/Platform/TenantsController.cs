@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.PlatformCommands.ArchiveTenant;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantPlan;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantStatus;
+using SportAcademy.Application.Commands.PlatformCommands.ClonePlan;
 using SportAcademy.Application.Commands.PlatformCommands.CreateTenant;
 using SportAcademy.Application.Commands.PlatformCommands.ExpireTenantSubscription;
 using SportAcademy.Application.Commands.PlatformCommands.ExtendTenantSubscription;
@@ -401,6 +402,21 @@ public class TenantsController : ControllerBase
         var result = await _mediator.Send(new ReopenLimitReconciliationCommand(id), ct);
         return StatusCode(result.StatusCode, result);
     }
+
+    // Absolute route, not tenant-scoped by {id} - the source plan being cloned isn't
+    // necessarily related to the tenant it ends up owned by (e.g. cloning ENTERPRISE as the base
+    // for a small academy's custom deal).
+    [HttpPost("/api/platform/subscription-plans/{id}/clone")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> ClonePlan(
+        [FromRoute] int id,
+        [FromBody] ClonePlanRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ClonePlanCommand(id, request.Name, request.Code, request.OwnerTenantId), ct);
+        return StatusCode(result.StatusCode, result);
+    }
 }
 
 public record StartImpersonationRequest(string Reason);
@@ -460,3 +476,4 @@ public record ExtendSubscriptionRequest(int Days);
 
 public record UpdatePlanLimitsRequest(Dictionary<string, int?> Limits);
 public record SetTenantLimitOverrideRequest(int? MaxCount, string Reason);
+public record ClonePlanRequest(string Name, string Code, Guid OwnerTenantId);

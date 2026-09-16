@@ -25,7 +25,11 @@ public class GetPublicPlansQueryHandler : IRequestHandler<GetPublicPlansQuery, R
     {
         var plans = await _planRepository.GetAllAsync(ct);
         var visiblePlans = plans
-            .Where(p => p.IsActive && p.IsPubliclyListed)
+            // !IsCustom is belt-and-braces alongside IsPubliclyListed: a custom plan should
+            // never have IsPubliclyListed set true in the first place, but a custom plan is by
+            // definition negotiated pricing for one specific customer, and a mis-set flag must
+            // never be the only thing standing between that and the public marketing site.
+            .Where(p => p.IsActive && p.IsPubliclyListed && !p.IsCustom)
             .OrderBy(p => p.DisplayOrder)
             .ThenBy(p => p.MonthlyPrice)
             .ToList();

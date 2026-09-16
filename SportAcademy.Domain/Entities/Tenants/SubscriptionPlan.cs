@@ -25,6 +25,18 @@ public class SubscriptionPlan
     public int DisplayOrder { get; set; }
     public bool IsHighlighted { get; set; }
 
+    // A private plan built for one specific customer via ClonePlanCommand - never publicly
+    // listed regardless of IsPubliclyListed (belt-and-braces, see GetPublicPlansQueryHandler),
+    // and never offered in the create-tenant plan picker except for OwnerTenantId itself. A
+    // one-off numeric/feature tweak for a single tenant is a TenantLimitOverride/
+    // TenantFeature.LockedBySuperAdmin instead and creates no plan row at all - this is only for
+    // a shape that will genuinely be resold or reused as this tenant's named plan.
+    public bool IsCustom { get; set; }
+
+    /// <summary>Which tenant this custom plan was built for. Null for every ordinary
+    /// (non-custom) plan; always set when IsCustom is true.</summary>
+    public Guid? OwnerTenantId { get; set; }
+
     public ICollection<TenantSubscription> Subscriptions { get; set; } = [];
     public ICollection<SubscriptionPlanFeature> Features { get; set; } = [];
     public ICollection<PlanLimit> Limits { get; set; } = [];
