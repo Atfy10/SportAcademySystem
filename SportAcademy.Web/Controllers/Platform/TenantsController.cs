@@ -5,11 +5,13 @@ using SportAcademy.Application.Commands.PlatformCommands.ArchiveTenant;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantPlan;
 using SportAcademy.Application.Commands.PlatformCommands.ChangeTenantStatus;
 using SportAcademy.Application.Commands.PlatformCommands.ClonePlan;
+using SportAcademy.Application.Commands.PlatformCommands.ConfirmReconciliationBypass;
 using SportAcademy.Application.Commands.PlatformCommands.CreateTenant;
 using SportAcademy.Application.Commands.PlatformCommands.ExpireTenantSubscription;
 using SportAcademy.Application.Commands.PlatformCommands.ExtendTenantSubscription;
 using SportAcademy.Application.Commands.PlatformCommands.RemoveTenantLimitOverride;
 using SportAcademy.Application.Commands.PlatformCommands.ReopenLimitReconciliation;
+using SportAcademy.Application.Commands.PlatformCommands.RequestReconciliationBypass;
 using SportAcademy.Application.Commands.PlatformCommands.SetTenantLimitOverride;
 using SportAcademy.Application.Commands.PlatformCommands.SetTenantTrial;
 using SportAcademy.Application.Commands.PlatformCommands.StartImpersonation;
@@ -403,6 +405,31 @@ public class TenantsController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    // The "refuge" mechanism (PLAN_LIMITS_DESIGN.md) - a tenant stuck in PendingLimitSelection
+    // can be force-reactivated without completing its selection, but only through this two-step,
+    // OTP-confirmed path, never through the generic ChangeTenantStatus action (see that
+    // command's own guard against this exact transition).
+    [HttpPost("{id}/limit-reconciliation/bypass/request")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> RequestReconciliationBypass([FromRoute] Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new RequestReconciliationBypassCommand(id), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPost("{id}/limit-reconciliation/bypass/confirm")]
+    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Policy = "Permission:platform.tenants.manage")]
+    public async Task<IActionResult> ConfirmReconciliationBypass(
+        [FromRoute] Guid id,
+        [FromBody] ConfirmReconciliationBypassRequest request,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ConfirmReconciliationBypassCommand(id, request.Code, request.Reason), ct);
+        return StatusCode(result.StatusCode, result);
+    }
+
     // Absolute route, not tenant-scoped by {id} - the source plan being cloned isn't
     // necessarily related to the tenant it ends up owned by (e.g. cloning ENTERPRISE as the base
     // for a small academy's custom deal).
@@ -477,3 +504,4 @@ public record ExtendSubscriptionRequest(int Days);
 public record UpdatePlanLimitsRequest(Dictionary<string, int?> Limits);
 public record SetTenantLimitOverrideRequest(int? MaxCount, string Reason);
 public record ClonePlanRequest(string Name, string Code, Guid OwnerTenantId);
+public record ConfirmReconciliationBypassRequest(string Code, string Reason);

@@ -12,6 +12,11 @@ public record LimitReconciliationResponse
     public DateTime DeadlineAt { get; init; }
     public bool IsCompleted { get; init; }
 
+    /// <summary>True if this reconciliation closed via the SuperAdmin force-reactivate "refuge"
+    /// (ConfirmReconciliationBypassCommand) rather than the tenant actually completing its
+    /// selection - the tenant may still be over its limit(s).</summary>
+    public bool WasBypassedBySuperAdmin { get; init; }
+
     /// <summary>resourceKey -> the used count that was over cap at the moment this opened.</summary>
     public Dictionary<string, int> RequiredResources { get; init; } = [];
 }

@@ -32,5 +32,30 @@ public class TenantLimitReconciliation
     /// </summary>
     public string RequiredResourcesJson { get; set; } = null!;
 
+    // ---- SuperAdmin force-reactivate bypass ----
+    //
+    // A deliberate "refuge" so a tenant can never be left permanently stuck if the wizard itself
+    // is somehow unusable - but gated behind an OTP emailed to the acting SuperAdmin's own
+    // address (proving deliberate intent, not a misclick or a hijacked session), mirroring
+    // Invitation's own email-verification-code fields exactly (same hash/expiry/attempt-cap
+    // shape - see RequestReconciliationBypassCommandHandler/ConfirmReconciliationBypassCommandHandler).
+    // A tenant reactivated this way is NOT reconciled - it goes back to Active still over
+    // whichever limit(s) it was locked for. WasBypassedBySuperAdmin is what tells a later reader
+    // (the audit trail, GetOpenReconciliationsQuery) that this row closed via the escape hatch,
+    // not via SubmitLimitSelectionCommand actually resolving anything.
+    public string? BypassCodeHash { get; set; }
+    public DateTime? BypassCodeExpiresAt { get; set; }
+    public int BypassCodeAttempts { get; set; }
+    public bool WasBypassedBySuperAdmin { get; set; }
+
+    /// <summary>Same "reset the attempt counter so an earlier round of wrong guesses can't carry
+    /// over" reasoning as Invitation.SetVerificationCode.</summary>
+    public void SetBypassCode(string codeHash, DateTime expiresAt)
+    {
+        BypassCodeHash = codeHash;
+        BypassCodeExpiresAt = expiresAt;
+        BypassCodeAttempts = 0;
+    }
+
     public Tenant Tenant { get; set; } = null!;
 }

@@ -15,6 +15,15 @@ public class TenantLimitReconciliationConfiguration : IEntityTypeConfiguration<T
         builder.Property(r => r.RequiredResourcesJson)
             .IsRequired();
 
+        // Same hex-SHA256 shape as Invitation.VerificationCodeHash - same max length for the
+        // same reason.
+        builder.Property(r => r.BypassCodeHash)
+            .HasMaxLength(128);
+
+        builder.Property(r => r.WasBypassedBySuperAdmin)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         // Fast lookup for "does this tenant already have an open one" (LimitReconciliationService)
         // and for the deadline sweep's "every open one past its deadline" query.
         builder.HasIndex(r => new { r.TenantId, r.CompletedAt });

@@ -29,6 +29,7 @@ public class GetOpenReconciliationsQueryHandler : IRequestHandler<GetOpenReconci
             OpenedAt = r.OpenedAt,
             DeadlineAt = r.DeadlineAt,
             IsCompleted = r.CompletedAt is not null,
+            WasBypassedBySuperAdmin = r.WasBypassedBySuperAdmin,
             RequiredResources = JsonSerializer.Deserialize<Dictionary<string, int>>(r.RequiredResourcesJson) ?? [],
         }).ToList();
 
