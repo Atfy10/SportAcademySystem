@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SportAcademy.Application.Commands.AuthCommands.AcceptInvitation;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AuthDtos;
 using SportAcademy.Application.Interfaces;
@@ -28,12 +29,20 @@ public class AcceptInvitationCommandHandlerTests
     private readonly Mock<IUserBranchAccessRepository> _userBranchAccessRepoMock = new();
     private readonly Mock<IProfileRepository> _profileRepoMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<IEffectiveLimitService> _limitServiceMock = new();
     private readonly AcceptInvitationCommandHandler _handler;
 
     public AcceptInvitationCommandHandlerTests()
     {
         _userManagerMock = new Mock<UserManager<AppUser>>(
             Mock.Of<IUserStore<AppUser>>(), null, null, null, null, null, null, null, null);
+
+        // Unlimited by default so existing tests exercising the staff-onboarding path aren't
+        // affected by the acceptance-time seat re-check - tests that specifically want to
+        // exercise LIMIT_EXCEEDED override this per-test.
+        _limitServiceMock
+            .Setup(s => s.GetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EffectiveLimit(LimitedResources.Users, null, LimitSource.Unlimited, 0, null));
 
         _handler = new AcceptInvitationCommandHandler(
             _tokenServiceMock.Object,
@@ -47,6 +56,7 @@ public class AcceptInvitationCommandHandlerTests
             _userBranchAccessRepoMock.Object,
             _profileRepoMock.Object,
             _mediatorMock.Object,
+            _limitServiceMock.Object,
             Mock.Of<ILogger<AcceptInvitationCommandHandler>>());
     }
 

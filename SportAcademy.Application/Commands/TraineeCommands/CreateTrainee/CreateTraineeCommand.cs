@@ -1,13 +1,15 @@
 using MediatR;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 {
-    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>, IBranchScopedRequest, IRequiresFeature
+    public record CreateTraineeCommand : IRequest<Result<CreateTraineeResponse>>, IBranchScopedRequest, IRequiresFeature, IConsumesLimit
     {
         public string FeatureKey => "trainee-management";
+        public string ResourceKey => LimitedResources.Trainees;
 
         public required string FirstName { get; init; }
         public required string LastName { get; init; }

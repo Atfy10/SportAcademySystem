@@ -1,15 +1,19 @@
 using MediatR;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.InvitationDtos;
 using SportAcademy.Application.Interfaces;
 
 namespace SportAcademy.Application.Commands.AuthCommands.CreateInvitation;
 
-// IRequiresFeature only actually applies to the staff-invite path (Role set): the legacy
-// "claim a brand-new tenant" invite (Role null) is sent by the Platform SuperAdmin creating the
-// tenant, whose JWT carries no tenant claim - FeatureGateBehavior skips gating entirely when
-// IUserContextService.TenantId is null, so that bootstrapping flow is unaffected regardless of
-// this tenant's user-management setting.
+// IRequiresFeature/IConsumesLimit only actually apply to the staff-invite path (Role set): the
+// legacy "claim a brand-new tenant" invite (Role null) is sent by the Platform SuperAdmin
+// creating the tenant, whose JWT carries no tenant claim - FeatureGateBehavior and
+// LimitGateBehavior both skip gating entirely when IUserContextService.TenantId is null, so that
+// bootstrapping flow is unaffected regardless of this tenant's user-management setting or seat
+// count. A pending invitation counts as a consumed user seat (see
+// ITenantRepository.GetResourceUsageAsync) - otherwise an Owner could send far more invitations
+// than their plan allows and bypass the cap wholesale once they're all accepted.
 public record CreateInvitationCommand(
     Guid TenantId,
     string Email,
@@ -21,7 +25,8 @@ public record CreateInvitationCommand(
     DateTime? ExpiresAt = null,
     // Required (non-empty) when Role == "Employee" - the only branch-restricted role. Ignored
     // for every other role.
-    List<int>? BranchIds = null) : IRequest<Result<InvitationResponse>>, IRequiresFeature
+    List<int>? BranchIds = null) : IRequest<Result<InvitationResponse>>, IRequiresFeature, IConsumesLimit
 {
     public string FeatureKey => "user-management";
+    public string ResourceKey => LimitedResources.Users;
 }

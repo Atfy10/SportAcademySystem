@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MediatR;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.SportDtos;
 using SportAcademy.Application.Interfaces;
@@ -18,8 +19,9 @@ namespace SportAcademy.Application.Commands.SportCommands.CreateSport
         bool IsRequireHealthTest,
         string? NameAr = null,
         string? DescriptionAr = null
-    ) : IRequest<Result<int>>, IRequiresFeature
+    ) : IRequest<Result<int>>, IRequiresFeature, IConsumesLimit
     {
         public string FeatureKey => "sport-management";
+        public string ResourceKey => LimitedResources.Sports;
     }
 }

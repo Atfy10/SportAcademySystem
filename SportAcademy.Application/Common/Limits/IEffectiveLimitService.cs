@@ -23,6 +23,26 @@ public record EffectiveLimit(string ResourceKey, int? MaxCount, LimitSource Sour
     public bool HasHeadroom => MaxCount is not { } max || Used < max;
 }
 
+// Shared LIMIT_EXCEEDED payload construction - used by LimitGateBehavior (the create-time gate)
+// and directly by the branch/sport/user toggle handlers (whose reactivation-only check can't go
+// through that behavior - see ToggleBranchStatusCommandHandler's own comment on why) - so both
+// paths report the same shape to the client.
+public static class LimitExceededError
+{
+    public const string Code = "LIMIT_EXCEEDED";
+
+    public static string ToMessage(this EffectiveLimit limit) =>
+        $"Your plan allows {limit.MaxCount} {limit.ResourceKey} and you're using {limit.Used}. Upgrade your plan or free up a slot to continue.";
+
+    public static Dictionary<string, string[]> ToErrorDictionary(this EffectiveLimit limit) => new()
+    {
+        ["code"] = [Code],
+        ["resourceKey"] = [limit.ResourceKey],
+        ["used"] = [limit.Used.ToString()],
+        ["max"] = [limit.MaxCount?.ToString() ?? ""],
+    };
+}
+
 // Resolves what a tenant's ceiling actually is for one resource, and how much of it is
 // currently used. Deliberately NOT cached (contrast ITenantStatusCache/PermissionResolver):
 // this backs write-path enforcement (LimitGateBehavior), where a stale usage count could either
