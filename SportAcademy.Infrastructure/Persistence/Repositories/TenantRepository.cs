@@ -270,16 +270,31 @@ public class TenantRepository : ITenantRepository
     // regardless of IsActive/IsBanned. IsDeleted is not checked explicitly for AppUser/Trainee -
     // both are ISoftDeletable, and the global soft-delete query filter already excludes deleted
     // rows from every unfiltered query, this one included.
+    //
+    // IgnoreQueryFilters() is required, not optional, on every query below - Branch/Sport/
+    // AppUser/Trainee/Invitation are all ITenantScoped, and every caller that actually matters
+    // for this method (ChangeTenantPlanCommandHandler, UpdatePlanLimitsCommandHandler,
+    // SetTenantLimitOverrideCommandHandler, the reopen/bypass commands) runs under the SuperAdmin's
+    // OWN ambient tenant (the platform's System tenant), not the tenantId parameter. Without this,
+    // the global filter silently ANDs in "AND TenantId == SystemTenantId" on top of the explicit
+    // "AND TenantId == tenantId" below, matching zero rows for any real customer tenant - usage
+    // was permanently computed as 0 and PendingLimitSelection could never trigger from the only
+    // path that ever triggers it. The explicit "TenantId == tenantId" filter already provides the
+    // real tenant boundary, so this is exactly as safe as
+    // GetUserIdsByTenantIgnoringTenantAsync's identical pattern above.
     public async Task<Dictionary<string, int>> GetResourceUsageAsync(Guid tenantId, CancellationToken ct = default)
     {
         var branches = await _context.Set<Branch>()
+            .IgnoreQueryFilters()
             .CountAsync(b => b.TenantId == tenantId && b.IsActive, ct);
 
         var sports = await _context.Set<Sport>()
+            .IgnoreQueryFilters()
             .CountAsync(s => s.TenantId == tenantId && s.IsActive, ct);
 
         var trainees = await _context.Set<Trainee>()
-            .CountAsync(t => t.TenantId == tenantId, ct);
+            .IgnoreQueryFilters()
+            .CountAsync(t => t.TenantId == tenantId && !t.IsDeleted, ct);
 
         // A pending, non-expired invitation reserves the seat it would fill on acceptance -
         // otherwise an Owner could send far more invitations than their plan allows (each one
@@ -289,10 +304,12 @@ public class TenantRepository : ITenantRepository
         // sent can be gone by the time it's used.
         var now = DateTime.UtcNow;
         var pendingInvitations = await _context.Set<Invitation>()
+            .IgnoreQueryFilters()
             .CountAsync(i => i.TenantId == tenantId && i.Status == InvitationStatus.Pending && i.ExpiresAt > now, ct);
 
         var users = await _context.Set<AppUser>()
-            .CountAsync(u => u.TenantId == tenantId && !u.IsBanned, ct);
+            .IgnoreQueryFilters()
+            .CountAsync(u => u.TenantId == tenantId && !u.IsBanned && !u.IsDeleted, ct);
 
         return new Dictionary<string, int>
         {
