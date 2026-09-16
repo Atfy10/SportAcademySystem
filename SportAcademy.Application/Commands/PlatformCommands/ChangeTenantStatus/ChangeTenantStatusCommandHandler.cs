@@ -42,6 +42,19 @@ public class ChangeTenantStatusCommandHandler : IRequestHandler<ChangeTenantStat
         if (tenant.Status == request.NewStatus)
             return Result.Failure(_operation, $"Tenant is already {request.NewStatus}.", 400);
 
+        // TenantStatusPolicy permits (PendingLimitSelection, Active), but only so
+        // SubmitLimitSelectionCommandHandler can make it once the Owner/Admin has actually
+        // completed the forced selection. Reaching Active through this generic command instead
+        // would reactivate a tenant that never resolved being over its limits - exactly the
+        // bypass this whole mechanism exists to prevent. Every other transition out of
+        // PendingLimitSelection (currently just -> Suspended) is still a legitimate manual
+        // SuperAdmin call - e.g. suspending a reconciling tenant for an unrelated reason,
+        // without waiting out the 7-day grace.
+        if (tenant.Status == TenantStatus.PendingLimitSelection && request.NewStatus == TenantStatus.Active)
+            return Result.Failure(_operation,
+                "This tenant has an unresolved plan-limit selection. It must complete the selection " +
+                "itself, or be suspended and its window reopened, before it can be reactivated.", 400);
+
         if (!TenantStatusPolicy.CanTransition(tenant.Status, request.NewStatus))
             return Result.Failure(_operation,
                 $"Cannot transition from {tenant.Status} to {request.NewStatus}.", 400);
