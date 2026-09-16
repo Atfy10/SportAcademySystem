@@ -203,11 +203,21 @@ public class TenantRepository : ITenantRepository
 
     // ---- Plan/tenant limits ----
 
-    public Task<int?> GetCurrentPlanIdAsync(Guid tenantId, CancellationToken ct = default)
-        => _context.TenantSubscriptions
-            .Where(s => s.TenantId == tenantId)
-            .Select(s => (int?)s.SubscriptionPlanId)
-            .FirstOrDefaultAsync(ct);
+    // Deliberately NOT a .Select(s => s.SubscriptionPlanId) projection: a projected scalar query
+    // always hits the database directly and ignores the change tracker, even for a row that's
+    // already tracked with a pending, unsaved edit. ChangeTenantPlanCommandHandler sets the new
+    // SubscriptionPlanId on the tracked TenantSubscription and only saves AFTER calling
+    // EvaluateAsync/RecheckAsync (which reach this method via IEffectiveLimitService) - a
+    // projection here would read the OLD plan's limits for that entire evaluation, regardless of
+    // which plan the tenant is actually being moved to. Materializing the full entity instead
+    // lets EF Core's identity resolution return the already-tracked (in-memory, edited) instance,
+    // so this reflects the new plan even before SaveChangesAsync runs.
+    public async Task<int?> GetCurrentPlanIdAsync(Guid tenantId, CancellationToken ct = default)
+    {
+        var subscription = await _context.TenantSubscriptions
+            .FirstOrDefaultAsync(s => s.TenantId == tenantId, ct);
+        return subscription?.SubscriptionPlanId;
+    }
 
     public Task<List<PlanLimit>> GetPlanLimitsAsync(int planId, CancellationToken ct = default)
         => _context.PlanLimits

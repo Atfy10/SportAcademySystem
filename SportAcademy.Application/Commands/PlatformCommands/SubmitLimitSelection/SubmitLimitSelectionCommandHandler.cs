@@ -108,9 +108,14 @@ public class SubmitLimitSelectionCommandHandler : IRequestHandler<SubmitLimitSel
         reconciliation.CompletedByUserId = _userContext.UserId;
 
         tenant.Status = TenantStatus.Active;
-        _tenantStatusCache.Invalidate(tenantId.Value);
 
+        // Commit BEFORE invalidating the cache / notifying - otherwise a concurrent request
+        // (e.g. another open tab's permission poll) can land in the gap, miss the cache, read
+        // the still-PendingLimitSelection row, and re-cache that stale status for the full
+        // sliding TTL even though this transaction is about to make it wrong.
         await _unitOfWork.SaveChangesAsync(ct);
+
+        _tenantStatusCache.Invalidate(tenantId.Value);
 
         // Tells every connected client the lock is lifted - the same channel used to enter
         // PendingLimitSelection in the first place (LimitReconciliationService).

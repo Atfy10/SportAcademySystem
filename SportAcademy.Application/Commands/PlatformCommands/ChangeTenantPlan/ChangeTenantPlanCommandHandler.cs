@@ -63,16 +63,25 @@ public class ChangeTenantPlanCommandHandler : IRequestHandler<ChangeTenantPlanCo
         if (updates.Count > 0)
             await _tenantRepository.BulkUpdateFeaturesAsync(request.TenantId, updates, "PlanChange", ct);
 
-        // The new plan's own numeric limits may be lower than what the tenant is currently
-        // using (e.g. 8 branches, moving to a plan capped at 1) - EvaluateAsync stages a
-        // forced-selection lock in that case, committed atomically with the plan change itself
-        // by the SaveChangesAsync below.
-        var reconciliationOpened = await _limitReconciliationService.EvaluateAsync(request.TenantId, ct);
+        // Every plan-affecting change is evaluated the same way regardless of "direction" - plan
+        // tiers aren't ranked, so ReconcileAsync just checks whether the tenant is over a
+        // selection-requiring limit under whatever plan is in effect right now and reacts however
+        // its current status calls for.
+        var outcome = await _limitReconciliationService.ReconcileAsync(request.TenantId, ct);
 
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result.Success(_operation, reconciliationOpened
-            ? $"Tenant plan changed to {plan.Name}. The tenant is now over its new limits and must complete a forced selection before continuing."
-            : $"Tenant plan changed to {plan.Name}.");
+        var message = outcome switch
+        {
+            LimitReconciliationOutcome.Opened =>
+                $"Tenant plan changed to {plan.Name}. The tenant is now over its new limits and must complete a forced selection before continuing.",
+            LimitReconciliationOutcome.Resolved =>
+                $"Tenant plan changed to {plan.Name}. The tenant is now within its limits again and is active.",
+            LimitReconciliationOutcome.StillPending =>
+                $"Tenant plan changed to {plan.Name}. The tenant remains over one or more limits and must still complete its pending selection.",
+            _ => $"Tenant plan changed to {plan.Name}.",
+        };
+
+        return Result.Success(_operation, message);
     }
 }

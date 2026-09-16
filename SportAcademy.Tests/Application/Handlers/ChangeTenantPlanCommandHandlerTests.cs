@@ -33,12 +33,12 @@ public class ChangeTenantPlanCommandHandlerTests
         // started fetching it.
         _tenantRepoMock.Setup(r => r.GetAllFeaturesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Feature>());
-        // Not the focus of these feature-reconciliation tests - default to "nothing opened" so
+        // Not the focus of these feature-reconciliation tests - default to "nothing changed" so
         // they don't have to each stub this out. See ChangeTenantPlanOpensLimitReconciliationTests
         // for coverage of the limit-reconciliation trigger itself.
         _limitReconciliationServiceMock
-            .Setup(s => s.EvaluateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+            .Setup(s => s.ReconcileAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(LimitReconciliationOutcome.NoChange);
     }
 
     private static Tenant CreateTenantWithSubscription(int currentPlanId) => new()

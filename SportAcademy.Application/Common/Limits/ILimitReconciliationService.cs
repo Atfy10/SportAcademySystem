@@ -8,13 +8,38 @@ namespace SportAcademy.Application.Common.Limits;
 public interface ILimitReconciliationService
 {
     /// <summary>
-    /// Checks whether the tenant is currently over any selection-requiring limit
-    /// (LimitedResources.RequiresSelection) and, if so and it isn't already mid-reconciliation,
-    /// opens one and moves the tenant to PendingLimitSelection. Stages changes only - the
-    /// caller's own SaveChangesAsync persists them, in the same transaction as whatever change
-    /// triggered this evaluation. Returns true iff a new reconciliation was opened.
+    /// Re-evaluates a tenant against its current effective limits and reacts however its CURRENT
+    /// status calls for - callers never need to know or branch on that status themselves, and
+    /// never need to care whether whatever just changed (plan swap, plan limit edit, override
+    /// change) was "up" or "down": plan tiers aren't ranked (SubscriptionPlan has no rank/tier
+    /// field, only a cosmetic DisplayOrder), so the only question this method ever asks is
+    /// whether the tenant is over a selection-requiring limit (LimitedResources.RequiresSelection)
+    /// right now, under whatever plan/override is in effect right now. Safe to call
+    /// unconditionally after any limit-affecting change, for any tenant status.
+    ///
+    /// - Active and now over a selection-requiring limit: opens a new reconciliation (fresh
+    ///   deadline, snapshot of over-limit resources) and moves the tenant to
+    ///   PendingLimitSelection. Returns Opened.
+    /// - Active and not over: nothing to do. Returns NoChange.
+    /// - PendingLimitSelection and no longer over anything: closes the open reconciliation
+    ///   (CompletedAt/CompletedByUserId) and moves the tenant back to Active - nothing left to
+    ///   hand-pick since capacity now covers everything already in use. Returns Resolved.
+    /// - PendingLimitSelection and still over at least one resource: leaves the tenant locked but
+    ///   refreshes the existing reconciliation's required-resources snapshot in place (same
+    ///   deadline), since the exact set of over-limit resources may have shifted even though the
+    ///   lock itself hasn't lifted. Returns StillPending.
+    /// - Tenant not found, or in any other status (Suspended/Archived/PendingSetup): untouched.
+    ///   Returns NoChange. (A tenant in one of those statuses has a bigger problem than its seat
+    ///   count - this method never reactivates or newly locks it; TenantStatusPolicy only allows
+    ///   the (Active, PendingLimitSelection) and (PendingLimitSelection, Active) transitions here.)
+    ///
+    /// Commits immediately itself (rather than staging for the caller's own SaveChangesAsync) for
+    /// every branch that changes tenant status, so the cache invalidation and realtime
+    /// notification that follow can't race a concurrent read against an uncommitted status
+    /// change. The StillPending branch also commits immediately (the refreshed snapshot), for
+    /// consistency, even though it has no cache/notify step of its own.
     /// </summary>
-    Task<bool> EvaluateAsync(Guid tenantId, CancellationToken ct = default);
+    Task<LimitReconciliationOutcome> ReconcileAsync(Guid tenantId, CancellationToken ct = default);
 
     /// <summary>
     /// SuperAdmin explicitly reopens a lapsed reconciliation window for a Suspended tenant - a
@@ -25,4 +50,25 @@ public interface ILimitReconciliationService
     /// Stages changes only, same convention as EvaluateAsync.
     /// </summary>
     Task ReopenAsync(Guid tenantId, CancellationToken ct = default);
+}
+
+/// <summary>Outcome of ILimitReconciliationService.ReconcileAsync - lets a caller build its
+/// response message without re-deriving what happened from tenant status before/after.</summary>
+public enum LimitReconciliationOutcome
+{
+    /// <summary>Tenant not found, not in {Active, PendingLimitSelection}, or evaluated and
+    /// nothing needed to change.</summary>
+    NoChange,
+
+    /// <summary>Was Active, is now over a selection-requiring limit; a new reconciliation was
+    /// opened and the tenant moved to PendingLimitSelection.</summary>
+    Opened,
+
+    /// <summary>Was PendingLimitSelection, is now within every limit; the reconciliation was
+    /// closed and the tenant moved back to Active.</summary>
+    Resolved,
+
+    /// <summary>Was and remains PendingLimitSelection; the required-resources snapshot was
+    /// refreshed but the tenant is still locked.</summary>
+    StillPending,
 }

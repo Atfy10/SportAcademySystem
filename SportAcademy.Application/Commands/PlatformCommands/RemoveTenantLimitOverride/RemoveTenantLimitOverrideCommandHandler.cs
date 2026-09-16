@@ -34,14 +34,29 @@ public class RemoveTenantLimitOverrideCommandHandler : IRequestHandler<RemoveTen
 
         await _tenantRepository.RemoveTenantLimitOverrideAsync(request.TenantId, request.ResourceKey, ct);
 
-        // Falling back to the plan's own limit can itself put the tenant over cap (the override
-        // being removed may have been raising the ceiling, not lowering it).
-        var reconciliationOpened = await _limitReconciliationService.EvaluateAsync(request.TenantId, ct);
-
+        // Must commit before ReconcileAsync reads overrides back - RemoveTenantLimitOverrideAsync
+        // only stages a Remove (marks the entity Deleted), and a pending-Delete entity's property
+        // values are still returned as-is by a fresh query in the same DbContext until the DELETE
+        // actually lands (the mirror image of the "new override" staleness case - see
+        // SetTenantLimitOverrideCommandHandler). Without this, ReconcileAsync would still see the
+        // override that's being removed, evaluating against the wrong ceiling.
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result.Success(_operation, reconciliationOpened
-            ? $"{request.ResourceKey} limit reset to the plan default. The tenant is now over this limit and must complete a forced selection before continuing."
-            : $"{request.ResourceKey} limit reset to the plan default.");
+        // Falling back to the plan's own limit can itself put the tenant over cap (the override
+        // being removed may have been raising the ceiling, not lowering it) - or resolve an
+        // existing lock if it was the override itself holding the tenant back. ReconcileAsync
+        // looks at the tenant's current status itself, so it doesn't matter which.
+        var outcome = await _limitReconciliationService.ReconcileAsync(request.TenantId, ct);
+
+        var message = outcome switch
+        {
+            LimitReconciliationOutcome.Opened =>
+                $"{request.ResourceKey} limit reset to the plan default. The tenant is now over this limit and must complete a forced selection before continuing.",
+            LimitReconciliationOutcome.Resolved =>
+                $"{request.ResourceKey} limit reset to the plan default. The tenant is now within its limits again and is active.",
+            _ => $"{request.ResourceKey} limit reset to the plan default.",
+        };
+
+        return Result.Success(_operation, message);
     }
 }

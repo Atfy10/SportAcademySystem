@@ -92,8 +92,12 @@ public class ConfirmReconciliationBypassCommandHandler : IRequestHandler<Confirm
         reconciliation.BypassCodeExpiresAt = null;
         reconciliation.BypassCodeAttempts = 0;
 
-        _tenantStatusCache.Invalidate(request.TenantId);
+        // Commit BEFORE invalidating the cache / notifying - see SubmitLimitSelectionCommandHandler
+        // for why the order matters (a concurrent read in the gap can re-cache the stale status
+        // for the full sliding TTL).
         await _unitOfWork.SaveChangesAsync(ct);
+
+        _tenantStatusCache.Invalidate(request.TenantId);
 
         // Same channel SubmitLimitSelectionCommandHandler uses on legitimate completion - the
         // frontend's realtime handler already treats "Active" as "lock lifted", not a logout

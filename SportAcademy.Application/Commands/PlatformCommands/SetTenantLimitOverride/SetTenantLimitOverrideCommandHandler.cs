@@ -46,15 +46,28 @@ public class SetTenantLimitOverrideCommandHandler : IRequestHandler<SetTenantLim
             Reason = request.Reason,
         }, ct);
 
-        // An override can move the effective limit in either direction - re-evaluate regardless
-        // (EvaluateAsync is a no-op if the tenant still has headroom everywhere).
-        var reconciliationOpened = await _limitReconciliationService.EvaluateAsync(request.TenantId, ct);
-
+        // Must commit before ReconcileAsync reads overrides back - for a brand-new override (no
+        // prior row for this tenant/resource), SetTenantLimitOverrideAsync only stages an AddAsync,
+        // and a newly-added, unsaved entity never appears in a fresh query's results (the SQL
+        // executes against the database, which doesn't have the row yet). Without this, setting a
+        // tenant's first-ever override on a resource would reconcile against the plan's own limit
+        // instead of the override just requested.
         await _unitOfWork.SaveChangesAsync(ct);
 
+        // An override can move the effective limit in either direction - ReconcileAsync looks at
+        // the tenant's current status itself, so it doesn't matter which.
+        var outcome = await _limitReconciliationService.ReconcileAsync(request.TenantId, ct);
+
         var limitDescription = request.MaxCount?.ToString() ?? "unlimited";
-        return Result.Success(_operation, reconciliationOpened
-            ? $"{request.ResourceKey} limit set to {limitDescription}. The tenant is now over this limit and must complete a forced selection before continuing."
-            : $"{request.ResourceKey} limit set to {limitDescription}.");
+        var message = outcome switch
+        {
+            LimitReconciliationOutcome.Opened =>
+                $"{request.ResourceKey} limit set to {limitDescription}. The tenant is now over this limit and must complete a forced selection before continuing.",
+            LimitReconciliationOutcome.Resolved =>
+                $"{request.ResourceKey} limit set to {limitDescription}. The tenant is now within its limits again and is active.",
+            _ => $"{request.ResourceKey} limit set to {limitDescription}.",
+        };
+
+        return Result.Success(_operation, message);
     }
 }
