@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportCommands.AddSkillLevel;
 using SportAcademy.Application.Commands.SportCommands.CreateSport;
 using SportAcademy.Application.Commands.SportCommands.DeleteSport;
+using SportAcademy.Application.Commands.SportCommands.ToggleSportStatus;
 using SportAcademy.Application.Commands.SportCommands.UpdateSport;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
@@ -50,6 +51,14 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> Delete(int sportId)
         {
             var result = await _mediator.Send(new DeleteSportCommand(sportId));
+            return Ok(result);
+        }
+
+        [HttpPatch("{id}/toggle-status")]
+        [Authorize(Policy = "Permission:sport.manage")]
+        public async Task<IActionResult> ToggleStatus(int id, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new ToggleSportStatusCommand(id), cancellationToken);
             return Ok(result);
         }
 

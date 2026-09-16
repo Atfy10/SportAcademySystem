@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Domain.Authorization;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
@@ -119,6 +120,7 @@ namespace SportAcademy.Infrastructure.Seeders
             await SeedRolesAsync();
             var featureIds = await ReconcileFeaturesAsync();
             await ReconcileSubscriptionPlansAsync(featureIds);
+            await ReconcilePlanLimitsAsync();
             await ReconcileNationalityCategoriesAsync();
             await EnsureSystemTenantAndSuperAdminAsync(featureIds);
         }
@@ -804,6 +806,30 @@ namespace SportAcademy.Infrastructure.Seeders
             ("Enterprise", "ENTERPRISE", "Complete suite with AI and advanced analytics", 199, 1999)
         ];
 
+        // Named by feature Name, not sliced by catalog position - see R6 in
+        // documents/PLAN_LIMITS_DESIGN.md. The previous featureIds.Take(15)/.Take(28) slicing
+        // meant reordering FeatureCatalog silently changed what every plan grants; naming the
+        // set explicitly makes a plan's grant reviewable in a diff and immune to catalog
+        // reordering. These three sets reproduce exactly what Take(15)/Take(28)/all produced
+        // against the catalog's order at the time this was written - Basic is core day-to-day
+        // operations, Professional adds reporting/communication/admin features, Enterprise adds
+        // the rest (currently just backup-restore beyond Professional).
+        private static readonly string[] BasicFeatureNames =
+        [
+            "user-management", "role-management", "tenant-settings", "branch-management",
+            "trainee-management", "employee-management", "coach-management", "sport-management",
+            "subscription-plan", "pricing-management", "payment-processing", "group-management",
+            "schedule-management", "attendance-tracking", "enrollment-management",
+        ];
+
+        private static readonly string[] ProfessionalOnlyFeatureNames =
+        [
+            "family-management", "nationality-categories", "financial-reports",
+            "attendance-reports", "subscription-reports", "notifications", "chat-system",
+            "discount-offers", "session-management", "audit-trail", "system-settings",
+            "profile-mgmt", "ai-assistant",
+        ];
+
         // Same reconciliation shape as ReconcileFeaturesAsync above (add-missing-by-Code, safe on
         // every startup) - this is the platform-wide plan catalog CreateTenantCommand references,
         // so it must exist before a SuperAdmin can create the very first real tenant.
@@ -833,9 +859,22 @@ namespace SportAcademy.Infrastructure.Seeders
             _context.SubscriptionPlans.AddRange(missing);
             await _context.SaveChangesAsync();
 
-            var basicFeatures = featureIds.Take(15).ToList();
-            var professionalFeatures = featureIds.Take(28).ToList();
-            var enterpriseFeatures = featureIds.ToList();
+            // Looked up by name from what ReconcileFeaturesAsync (which always runs first, see
+            // EnsureCoreDataAsync) has just guaranteed exists, rather than relying on featureIds'
+            // incoming order - featureIds is still accepted as a parameter only because this
+            // method must run after the catalog exists, not because its order matters here.
+            var idByName = await _context.Set<Feature>()
+                .Where(f => featureIds.Contains(f.Id))
+                .ToDictionaryAsync(f => f.Name, f => f.Id);
+
+            var basicFeatures = BasicFeatureNames
+                .Where(idByName.ContainsKey)
+                .Select(n => idByName[n])
+                .ToList();
+            var professionalFeatures = basicFeatures
+                .Concat(ProfessionalOnlyFeatureNames.Where(idByName.ContainsKey).Select(n => idByName[n]))
+                .ToList();
+            var enterpriseFeatures = idByName.Values.ToList();
 
             foreach (var plan in missing)
             {
@@ -859,6 +898,79 @@ namespace SportAcademy.Infrastructure.Seeders
 
             await _context.SaveChangesAsync();
             _logger.LogInformation("Subscription plan catalog reconciled successfully.");
+        }
+
+        // Default numeric limits for the three built-in plans - see PLAN_LIMITS_DESIGN.md §1
+        // (the user's own worked example: Basic 1 branch/5 users/5 sports, Pro up to 5
+        // branches/12 users/5 sports, Enterprise up to 10 branches/50 users/unlimited sports).
+        // A resource with no entry here means unlimited for that plan (see PlanLimit's own
+        // comment) - Enterprise's "unlimited sports" is simply the absence of a Sports entry,
+        // not an explicit large number. Trainees are deliberately absent from every plan: no
+        // default cap exists yet pending a product decision (PLAN_LIMITS_DESIGN.md R7), so every
+        // plan is unlimited on trainees until a SuperAdmin sets one explicitly via the console.
+        private static readonly Dictionary<string, Dictionary<string, int?>> PlanLimitDefaults = new()
+        {
+            ["BASIC"] = new()
+            {
+                [LimitedResources.Branches] = 1,
+                [LimitedResources.Users] = 5,
+                [LimitedResources.Sports] = 5,
+            },
+            ["PRO"] = new()
+            {
+                [LimitedResources.Branches] = 5,
+                [LimitedResources.Users] = 12,
+                [LimitedResources.Sports] = 5,
+            },
+            ["ENTERPRISE"] = new()
+            {
+                [LimitedResources.Branches] = 10,
+                [LimitedResources.Users] = 50,
+            },
+        };
+
+        // Separate from ReconcileSubscriptionPlansAsync (which only assigns limits to a plan at
+        // the moment that plan row is first created) so an already-seeded production database -
+        // one whose BASIC/PRO/ENTERPRISE plans predate the PlanLimit table entirely - still gets
+        // default limits the first time this runs post-deploy, the same "safe on every startup,
+        // add-missing-only" shape every other Reconcile*Async method in this class already uses.
+        private async Task ReconcilePlanLimitsAsync()
+        {
+            var plans = await _context.SubscriptionPlans
+                .Where(p => PlanLimitDefaults.Keys.Contains(p.Code))
+                .ToListAsync();
+            if (plans.Count == 0)
+                return;
+
+            var planIds = plans.Select(p => p.Id).ToList();
+            var planIdsWithLimits = await _context.PlanLimits
+                .Where(pl => planIds.Contains(pl.SubscriptionPlanId))
+                .Select(pl => pl.SubscriptionPlanId)
+                .Distinct()
+                .ToListAsync();
+
+            var missing = plans.Where(p => !planIdsWithLimits.Contains(p.Id)).ToList();
+            if (missing.Count == 0)
+                return;
+
+            _logger.LogInformation("Seeding default plan limits for {Count} plan(s): {Codes}",
+                missing.Count, string.Join(", ", missing.Select(p => p.Code)));
+
+            foreach (var plan in missing)
+            {
+                foreach (var (resourceKey, maxCount) in PlanLimitDefaults[plan.Code])
+                {
+                    _context.PlanLimits.Add(new PlanLimit
+                    {
+                        SubscriptionPlanId = plan.Id,
+                        ResourceKey = resourceKey,
+                        MaxCount = maxCount,
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Plan limit defaults seeded successfully.");
         }
 
         private static readonly (string Code, string Name)[] NationalityCategoryCatalog =

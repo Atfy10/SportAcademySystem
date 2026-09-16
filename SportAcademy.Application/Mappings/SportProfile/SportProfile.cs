@@ -29,6 +29,9 @@ namespace SportAcademy.Application.Mappings.SportProfile
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.TenantId, opt => opt.Ignore())
                 .ForMember(dest => dest.Tenant, opt => opt.Ignore())
+                // A newly created sport always starts active - IsActive is set by
+                // ToggleSportStatusCommand after creation, never by the create command itself.
+                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Coaches, opt => opt.Ignore())
                 .ForMember(dest => dest.SubscriptionTypes, opt => opt.Ignore())
                 .ForMember(dest => dest.Branches, opt => opt.Ignore())

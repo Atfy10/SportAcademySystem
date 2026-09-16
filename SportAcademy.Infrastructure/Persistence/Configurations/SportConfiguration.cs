@@ -30,6 +30,10 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
                 .IsRequired()
                 .HasDefaultValue(true);
 
+            builder.Property(s => s.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
+
             //  Relationships
             //  1:M  Coach
             builder.HasMany(s => s.Coaches)

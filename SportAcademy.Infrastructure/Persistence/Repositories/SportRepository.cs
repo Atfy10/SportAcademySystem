@@ -108,5 +108,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Sports
                 .Include(s => s.Translations)
                 .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
+        public async Task<bool?> ToggleIsActiveAsync(int id, CancellationToken cancellationToken = default)
+        {
+            var sport = await _context.Sports.FindAsync(new object[] { id }, cancellationToken);
+            if (sport is null)
+                return null;
+
+            sport.IsActive = !sport.IsActive;
+            await _context.SaveChangesAsync(cancellationToken);
+            return sport.IsActive;
+        }
     }
 }

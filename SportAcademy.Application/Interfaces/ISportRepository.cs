@@ -13,6 +13,15 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<SportDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default);
         Task<bool> AreIdsExistAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default);
 
+        /// <summary>
+        /// Flips IsActive and returns the new value, or null if no sport with this id exists.
+        /// Nullable rather than bool (contrast BranchRepository.ToggleIsActiveAsync, whose bool
+        /// return can't distinguish "not found" from "toggled to false" - its handler currently
+        /// misreports a successful deactivation as not-found) so the handler here doesn't
+        /// inherit that ambiguity.
+        /// </summary>
+        Task<bool?> ToggleIsActiveAsync(int id, CancellationToken cancellationToken = default);
+
         /// <summary>All sports with Name/Description in the request language (falls back to English).</summary>
         Task<IReadOnlyList<SportDto>> GetAllTranslatedAsync(CancellationToken cancellationToken = default);
 

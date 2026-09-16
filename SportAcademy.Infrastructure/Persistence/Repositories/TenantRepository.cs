@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common.Limits;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
@@ -198,5 +199,107 @@ public class TenantRepository : ITenantRepository
                 }, ct);
             }
         }
+    }
+
+    // ---- Plan/tenant limits ----
+
+    public Task<int?> GetCurrentPlanIdAsync(Guid tenantId, CancellationToken ct = default)
+        => _context.TenantSubscriptions
+            .Where(s => s.TenantId == tenantId)
+            .Select(s => (int?)s.SubscriptionPlanId)
+            .FirstOrDefaultAsync(ct);
+
+    public Task<List<PlanLimit>> GetPlanLimitsAsync(int planId, CancellationToken ct = default)
+        => _context.PlanLimits
+            .Where(pl => pl.SubscriptionPlanId == planId)
+            .ToListAsync(ct);
+
+    public async Task ReplacePlanLimitsAsync(int planId, Dictionary<string, int?> limits, CancellationToken ct = default)
+    {
+        var existing = await _context.PlanLimits
+            .Where(pl => pl.SubscriptionPlanId == planId)
+            .ToListAsync(ct);
+        _context.PlanLimits.RemoveRange(existing);
+
+        _context.PlanLimits.AddRange(limits.Select(kv => new PlanLimit
+        {
+            SubscriptionPlanId = planId,
+            ResourceKey = kv.Key,
+            MaxCount = kv.Value
+        }));
+    }
+
+    public Task<TenantLimitOverride?> GetTenantLimitOverrideAsync(Guid tenantId, string resourceKey, CancellationToken ct = default)
+        => _context.TenantLimitOverrides
+            .FirstOrDefaultAsync(o => o.TenantId == tenantId && o.ResourceKey == resourceKey, ct);
+
+    public Task<List<TenantLimitOverride>> GetTenantLimitOverridesAsync(Guid tenantId, CancellationToken ct = default)
+        => _context.TenantLimitOverrides
+            .Where(o => o.TenantId == tenantId)
+            .ToListAsync(ct);
+
+    public async Task SetTenantLimitOverrideAsync(TenantLimitOverride @override, CancellationToken ct = default)
+    {
+        var existing = await _context.TenantLimitOverrides
+            .FirstOrDefaultAsync(o => o.TenantId == @override.TenantId && o.ResourceKey == @override.ResourceKey, ct);
+
+        if (existing is null)
+        {
+            await _context.TenantLimitOverrides.AddAsync(@override, ct);
+            return;
+        }
+
+        existing.MaxCount = @override.MaxCount;
+        existing.SetBy = @override.SetBy;
+        existing.SetAt = @override.SetAt;
+        existing.Reason = @override.Reason;
+    }
+
+    public async Task RemoveTenantLimitOverrideAsync(Guid tenantId, string resourceKey, CancellationToken ct = default)
+    {
+        var existing = await _context.TenantLimitOverrides
+            .FirstOrDefaultAsync(o => o.TenantId == tenantId && o.ResourceKey == resourceKey, ct);
+
+        if (existing is not null)
+            _context.TenantLimitOverrides.Remove(existing);
+    }
+
+    // "Used" here means "currently consuming a seat" - a materially different question from the
+    // raw, all-time GetBranchCountByTenantAsync/GetUserCountByTenantAsync/
+    // GetSportCountByTenantAsync above, which back the platform dashboard and count every row
+    // regardless of IsActive/IsBanned. IsDeleted is not checked explicitly for AppUser/Trainee -
+    // both are ISoftDeletable, and the global soft-delete query filter already excludes deleted
+    // rows from every unfiltered query, this one included.
+    public async Task<Dictionary<string, int>> GetResourceUsageAsync(Guid tenantId, CancellationToken ct = default)
+    {
+        var branches = await _context.Set<Branch>()
+            .CountAsync(b => b.TenantId == tenantId && b.IsActive, ct);
+
+        var sports = await _context.Set<Sport>()
+            .CountAsync(s => s.TenantId == tenantId && s.IsActive, ct);
+
+        var trainees = await _context.Set<Trainee>()
+            .CountAsync(t => t.TenantId == tenantId, ct);
+
+        // A pending, non-expired invitation reserves the seat it would fill on acceptance -
+        // otherwise an Owner could send far more invitations than their plan allows (each one
+        // individually under the cap at send time) and the cap would be bypassed wholesale the
+        // moment they're all accepted. AcceptInvitationCommandHandler still re-checks
+        // independently at acceptance time, since headroom that existed when the invite was
+        // sent can be gone by the time it's used.
+        var now = DateTime.UtcNow;
+        var pendingInvitations = await _context.Set<Invitation>()
+            .CountAsync(i => i.TenantId == tenantId && i.Status == InvitationStatus.Pending && i.ExpiresAt > now, ct);
+
+        var users = await _context.Set<AppUser>()
+            .CountAsync(u => u.TenantId == tenantId && !u.IsBanned, ct);
+
+        return new Dictionary<string, int>
+        {
+            [LimitedResources.Branches] = branches,
+            [LimitedResources.Users] = users + pendingInvitations,
+            [LimitedResources.Sports] = sports,
+            [LimitedResources.Trainees] = trainees,
+        };
     }
 }

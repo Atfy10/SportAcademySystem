@@ -27,5 +27,6 @@ public class SubscriptionPlan
 
     public ICollection<TenantSubscription> Subscriptions { get; set; } = [];
     public ICollection<SubscriptionPlanFeature> Features { get; set; } = [];
+    public ICollection<PlanLimit> Limits { get; set; } = [];
 
 }
