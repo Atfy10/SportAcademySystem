@@ -44,10 +44,10 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
             var employee = _mapper.Map<Employee>(request)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-            var isSSNValid = _employeeService.IsSSNValid(employee.SSN, employee.BirthDate);
-
-            if (!isSSNValid)
-                throw new SSNSyntaxErrorException();
+            // SSN format/checksum is already enforced by CreateEmployeeValidator
+            // (ApplyNationalIdRuleFor, country-aware via IRegionalValidationService) in the
+            // ValidationBehavior pipeline before this handler ever runs - a second, Kuwait-only
+            // IsSSNValid gate here used to reject every non-Kuwait tenant's already-valid SSN.
 
             var isSSNExist = await _employeeRepository
                 .IsSSNExistAsync(employee.SSN, cancellationToken);

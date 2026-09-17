@@ -18,7 +18,6 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         private readonly IEmployeeRepository _employeeRepository;
         private readonly ICoachBranchAccessRepository _coachBranchAccessRepository;
         private readonly IMapper _mapper;
-        private readonly IPersonService _personService;
         private readonly IUserContextService _userContext;
         private readonly IUserRepository _userRepository;
         private readonly IPublisher _publisher;
@@ -28,7 +27,6 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             IEmployeeRepository employeeRepository,
             ICoachBranchAccessRepository coachBranchAccessRepository,
             IMapper mapper,
-            IPersonService personService,
             IUserContextService userContext,
             IUserRepository userRepository,
             IPublisher publisher)
@@ -37,7 +35,6 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             _employeeRepository = employeeRepository;
             _coachBranchAccessRepository = coachBranchAccessRepository;
             _mapper = mapper;
-            _personService = personService;
             _userContext = userContext;
             _userRepository = userRepository;
             _publisher = publisher;
@@ -53,10 +50,10 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             if (employee.Position != Position.Coach)
                 throw new EmployeeNotCoachPositionException(employee.Position.ToString());
 
-            var isSSNValid = _personService.IsSSNValid(employee.SSN, employee.BirthDate);
-            if (!isSSNValid)
-                throw new SSNSyntaxErrorException();
-
+            // SSN format/checksum is already enforced by CreateEmployeeDtoValidator
+            // (ApplyNationalIdRuleFor, country-aware via IRegionalValidationService) in the
+            // ValidationBehavior pipeline before this handler ever runs - a second, Kuwait-only
+            // IsSSNValid gate here used to reject every non-Kuwait tenant's already-valid SSN.
             var isSSNExist = await _employeeRepository.IsSSNExistAsync(employee.SSN, ct);
             if (isSSNExist)
                 throw new SSNNotUniqueException();
