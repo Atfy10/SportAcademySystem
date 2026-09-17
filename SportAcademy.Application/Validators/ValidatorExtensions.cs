@@ -45,6 +45,20 @@ namespace SportAcademy.Application.Validators
                 })
                 .WithMessage("{PropertyName} is not a valid National ID for the configured region.");
         }
+        /// <summary>Digits-only, at-least-<paramref name="minLength"/>-characters check with no
+        /// country/format constraint - for a field that's numeric but deliberately NOT a
+        /// validated phone number (e.g. Employee's secondary number, which is a free-form
+        /// contact number, not a formal phone field). Empty is treated as valid here, same
+        /// convention as ApplyPhoneRuleFor.</summary>
+        public static IRuleBuilderOptions<T, string?> ApplyDigitsMinLengthFor<T>(
+            this IRuleBuilder<T, string?> ruleBuilder,
+            int minLength)
+        {
+            return ruleBuilder
+                .Must(value => string.IsNullOrWhiteSpace(value) || (value.Length >= minLength && value.All(char.IsDigit)))
+                .WithMessage($"{{PropertyName}} must be numeric and at least {minLength} digits.");
+        }
+
         public static IRuleBuilderOptions<T, int> ApplyIdRuleFor<T>(
             this IRuleBuilderInitial<T, int> ruleBuilder,
             string entityName)

@@ -56,9 +56,7 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
                 .When(x => x.PhoneNumber != null);
 
             RuleFor(x => x.SecondPhoneNumber)
-                .ApplyPhoneRuleFor(regionalValidation, countryReader)
-                .When(x => !string.IsNullOrWhiteSpace(x.SecondPhoneNumber))
-                .WithMessage("Secondary phone number is not valid for the configured region.");
+                .ApplyDigitsMinLengthFor(8);
 
             RuleFor(x => x.Position)
                 .IsInEnum().WithMessage("Invalid position value.")
