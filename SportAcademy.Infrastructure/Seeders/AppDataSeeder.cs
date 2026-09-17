@@ -250,6 +250,44 @@ namespace SportAcademy.Infrastructure.Seeders
                     "Enabled {Count} feature(s) for the System tenant.", missingFeatureIds.Count);
             }
 
+            // The System tenant never goes through CreateTenantCommand either (that's the only
+            // place Profile/Settings rows normally get created, alongside Features above) - so
+            // without this it carries neither forever, and every SuperAdmin session's background
+            // GET /api/tenant/settings + GET /api/tenant/profile (fired unconditionally by
+            // useFormat()/AppSidebar for any authenticated user, tenant business or not) 404s.
+            // Same reconciliation shape as the TenantFeatures backfill just above, and the same
+            // defaults CreateTenantCommandHandler gives a brand-new real tenant.
+            var hasSettings = await _context.Set<TenantSettings>()
+                .AnyAsync(s => s.TenantId == systemTenant.Id);
+            if (!hasSettings)
+            {
+                _context.Set<TenantSettings>().Add(new TenantSettings
+                {
+                    TenantId = systemTenant.Id,
+                    TimeZone = "UTC",
+                    Language = "en",
+                    DateFormat = "dd/MM/yyyy",
+                    TimeFormat = "HH:mm",
+                    Currency = "USD"
+                });
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Created default TenantSettings for the System tenant.");
+            }
+
+            var hasProfile = await _context.Set<TenantProfile>()
+                .AnyAsync(p => p.TenantId == systemTenant.Id);
+            if (!hasProfile)
+            {
+                _context.Set<TenantProfile>().Add(new TenantProfile
+                {
+                    TenantId = systemTenant.Id,
+                    OrganizationName = systemTenant.DisplayName,
+                    IsSetupComplete = true
+                });
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Created default TenantProfile for the System tenant.");
+            }
+
             // Must happen before the very next line, not after: AppUser is ITenantScoped, so
             // FindByEmailAsync is filtered by whatever the ambient tenant currently is. Checking
             // before this point (the previous version of this method did) filters on

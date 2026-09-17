@@ -16,8 +16,8 @@ public class GetTenantSettingsOptionsQueryHandler : IRequestHandler<GetTenantSet
             Timezones =
             [
                 "Asia/Kuwait", "UTC", "Asia/Riyadh", "Asia/Dubai", "Asia/Bahrain", "Asia/Qatar",
-                "Asia/Muscat", "Asia/Baghdad", "Asia/Tehran", "Europe/London", "America/New_York",
-                "America/Los_Angeles", "Europe/Paris", "Europe/Berlin", "Asia/Tokyo"
+                "Asia/Muscat", "Asia/Baghdad", "Asia/Tehran", "Africa/Cairo", "Europe/London",
+                "America/New_York", "America/Los_Angeles", "Europe/Paris", "Europe/Berlin", "Asia/Tokyo"
             ],
             Languages =
             [
