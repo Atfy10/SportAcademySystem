@@ -55,12 +55,13 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             trainee.JoinDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
             // SSN is optional at creation (e.g. trainee doesn't have one issued yet) - only
-            // validate format/uniqueness when one was actually entered.
+            // check uniqueness when one was actually entered. Format/checksum is already
+            // enforced by CreateTraineeValidator (ApplyNationalIdRuleFor, country-aware via
+            // IRegionalValidationService) in the ValidationBehavior pipeline before this handler
+            // ever runs - a second, Kuwait-only PersonValidationHelper.IsValidSSN gate here used
+            // to reject every non-Kuwait tenant's already-valid SSN.
             if (!string.IsNullOrWhiteSpace(trainee.SSN))
             {
-                if (!PersonValidationHelper.IsValidSSN(trainee.SSN, trainee.BirthDate))
-                    throw new SSNSyntaxErrorException();
-
                 var isSSNExist = await _traineeRepository
                     .IsSSNExistAsync(trainee.SSN, cancellationToken);
                 if (isSSNExist)
