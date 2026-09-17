@@ -16,14 +16,23 @@ public class CreateEmployeeCommandHandlerTests
 {
     private readonly Mock<IMapper> _mapperMock = new();
     private readonly Mock<IPersonService> _personServiceMock = new();
+    private readonly Mock<IPhoneNumberNormalizer> _phoneNormalizerMock = new();
     private readonly Mock<IEmployeeRepository> _employeeRepoMock = new();
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly CreateEmployeeCommandHandler _handler;
 
     public CreateEmployeeCommandHandlerTests()
     {
+        // Pass-through: these tests assert against the exact phone string the fixture sets, so
+        // normalization (a country-aware transform this class doesn't need to exercise) must
+        // not change it.
+        _phoneNormalizerMock
+            .Setup(p => p.NormalizeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string? phone, CancellationToken _) => phone);
+
         _handler = new CreateEmployeeCommandHandler(
             _personServiceMock.Object,
+            _phoneNormalizerMock.Object,
             _mapperMock.Object,
             _employeeRepoMock.Object,
             _userRepoMock.Object,

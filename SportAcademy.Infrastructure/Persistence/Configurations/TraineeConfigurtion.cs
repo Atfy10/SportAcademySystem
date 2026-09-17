@@ -70,7 +70,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Ignore(t => t.IsSubscribed);
 
             builder.Property(t => t.ParentNumber)
-                .HasMaxLength(13);
+                .HasMaxLength(20);
 
             builder.Property(t => t.GuardianName)
                 .HasMaxLength(50);

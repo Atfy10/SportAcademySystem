@@ -15,16 +15,19 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorage;
+        private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateEmployeeCommandHandler(
             IEmployeeRepository employeeRepository,
             IUnitOfWork unitOfWork,
-            IFileStorageService fileStorage)
+            IFileStorageService fileStorage,
+            IPhoneNumberNormalizer phoneNormalizer)
         {
             _employeeRepository = employeeRepository;
             _unitOfWork = unitOfWork;
             _fileStorage = fileStorage;
+            _phoneNormalizer = phoneNormalizer;
         }
 
         public async Task<Result<EmployeeDto>> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
@@ -32,10 +35,17 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
             var employee = await _employeeRepository.GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new EmployeeNotFoundException($"{request.Id}");
 
-            if (request.PhoneNumber != null && request.PhoneNumber != employee.PhoneNumber)
+            // Normalized to E.164 before the uniqueness check below - see the matching comment
+            // in CreateEmployeeCommandHandler. SecondPhoneNumber is untouched (not a validated
+            // phone field).
+            var normalizedPhone = request.PhoneNumber != null
+                ? await _phoneNormalizer.NormalizeAsync(request.PhoneNumber, cancellationToken)
+                : null;
+
+            if (normalizedPhone != null && normalizedPhone != employee.PhoneNumber)
             {
                 var isPhoneNumberExist = await _employeeRepository
-                    .IsPhoneNumberExistAsync(request.PhoneNumber, employee.Id, cancellationToken);
+                    .IsPhoneNumberExistAsync(normalizedPhone, employee.Id, cancellationToken);
                 if (isPhoneNumberExist)
                     throw new PhoneNumberNotUniqueException();
             }
@@ -43,7 +53,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
             if (request.ImageUrl != null && request.ImageUrl != employee.ImageUrl)
                 _fileStorage.DeleteImage(employee.ImageUrl);
 
-            EmployeeMapper.ApplyUpdate(employee, request);
+            EmployeeMapper.ApplyUpdate(employee, request with { PhoneNumber = normalizedPhone ?? request.PhoneNumber });
 
             cancellationToken.ThrowIfCancellationRequested();
 

@@ -13,18 +13,26 @@ namespace SportAcademy.Application.Commands.BranchCommands.CreateBranch
 	{
 		private readonly IBranchRepository _branchRepository;
 		private readonly IMapper _mapper;
+		private readonly IPhoneNumberNormalizer _phoneNormalizer;
 		private readonly string _operationType = Domain.Enums.OperationType.Add.ToString();
 		public CreateBranchCommandHandler(
 			IBranchRepository branchRepository,
-			IMapper mapper)
+			IMapper mapper,
+			IPhoneNumberNormalizer phoneNormalizer)
 		{
 			_branchRepository = branchRepository;
 			_mapper = mapper;
+			_phoneNormalizer = phoneNormalizer;
 		}
 		public async Task<Result<int>> Handle(CreateBranchCommand request, CancellationToken cancellationToken)
 		{
 			var branch = _mapper.Map<Branch>(request)
 				?? throw new AutoMapperMappingException("Error occurred while mapping.");
+
+			// Normalized to E.164 before the uniqueness check below - see the matching comment
+			// in CreateEmployeeCommandHandler.
+			branch.PhoneNumber = await _phoneNormalizer.NormalizeAsync(branch.PhoneNumber, cancellationToken)
+				?? branch.PhoneNumber;
 
 			// Store blank coordinates as null, not "" - the (CoX, CoY) unique index would
 			// otherwise treat every branch left without coordinates as a duplicate of the

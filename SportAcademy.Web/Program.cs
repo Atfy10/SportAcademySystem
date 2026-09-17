@@ -64,6 +64,7 @@ builder.Services.AddScoped<ITenantSettingsLanguageReader, TenantSettingsLanguage
 builder.Services.AddScoped<ITenantSettingsCurrencyReader, TenantSettingsCurrencyReader>();
 builder.Services.AddScoped<ITenantSettingsCountryReader, TenantSettingsCountryReader>();
 builder.Services.AddSingleton<IRegionalValidationService, RegionalValidationService>();
+builder.Services.AddScoped<IPhoneNumberNormalizer, PhoneNumberNormalizer>();
 builder.Services.AddScoped<ITenantClock, TenantClock>();
 builder.Services.AddScoped<ILocalizationService, JsonLocalizationService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();

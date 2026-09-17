@@ -20,6 +20,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         private readonly IMapper _mapper;
         private readonly IUserContextService _userContext;
         private readonly IUserRepository _userRepository;
+        private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly IPublisher _publisher;
 
         public CreateCoachWithEmployeeCommandHandler(
@@ -29,6 +30,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             IMapper mapper,
             IUserContextService userContext,
             IUserRepository userRepository,
+            IPhoneNumberNormalizer phoneNormalizer,
             IPublisher publisher)
         {
             _coachRepository = coachRepository;
@@ -37,6 +39,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             _mapper = mapper;
             _userContext = userContext;
             _userRepository = userRepository;
+            _phoneNormalizer = phoneNormalizer;
             _publisher = publisher;
         }
 
@@ -54,6 +57,9 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             // (ApplyNationalIdRuleFor, country-aware via IRegionalValidationService) in the
             // ValidationBehavior pipeline before this handler ever runs - a second, Kuwait-only
             // IsSSNValid gate here used to reject every non-Kuwait tenant's already-valid SSN.
+            employee.PhoneNumber = await _phoneNormalizer.NormalizeAsync(employee.PhoneNumber, ct)
+                ?? employee.PhoneNumber;
+
             var isSSNExist = await _employeeRepository.IsSSNExistAsync(employee.SSN, ct);
             if (isSSNExist)
                 throw new SSNNotUniqueException();

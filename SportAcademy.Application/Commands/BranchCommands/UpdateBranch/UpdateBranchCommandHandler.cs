@@ -14,14 +14,17 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 	{
 		private readonly IMapper _mapper;
 		private readonly IBranchRepository _branchRepository;
+		private readonly IPhoneNumberNormalizer _phoneNormalizer;
 		private readonly string _operationType = OperationType.Update.ToString();
 
 		public UpdateBranchCommandHandler(
 			IMapper mapper,
-			IBranchRepository branchRepository)
+			IBranchRepository branchRepository,
+			IPhoneNumberNormalizer phoneNormalizer)
 		{
 			_mapper = mapper;
 			_branchRepository = branchRepository;
+			_phoneNormalizer = phoneNormalizer;
 		}
 		public async Task<Result<BranchDto>> Handle(UpdateBranchCommand request, CancellationToken cancellationToken)
 		{
@@ -45,16 +48,22 @@ namespace SportAcademy.Application.Commands.BranchCommands.UpdateBranch
 					throw new CoordinateExistException();
 			}
 
-			var isPhoneChanged = !string.IsNullOrEmpty(request.PhoneNumber) 
-				&& request.PhoneNumber != branch.PhoneNumber;
+			// Normalized to E.164 before the uniqueness check below - see the matching comment
+			// in CreateEmployeeCommandHandler.
+			var normalizedPhone = !string.IsNullOrEmpty(request.PhoneNumber)
+				? await _phoneNormalizer.NormalizeAsync(request.PhoneNumber, cancellationToken)
+				: request.PhoneNumber;
+
+			var isPhoneChanged = !string.IsNullOrEmpty(normalizedPhone)
+				&& normalizedPhone != branch.PhoneNumber;
             if (isPhoneChanged)
 			{
-				var phoneExists = await _branchRepository.IsPhoneNumberExistAsync(request.PhoneNumber, cancellationToken);
+				var phoneExists = await _branchRepository.IsPhoneNumberExistAsync(normalizedPhone, cancellationToken);
 				if (phoneExists)
 					throw new PhoneExistException();
 			}
 
-			_mapper.Map(request, branch);
+			_mapper.Map(request with { PhoneNumber = normalizedPhone }, branch);
 			branch.CoX = newCoX;
 			branch.CoY = newCoY;
 

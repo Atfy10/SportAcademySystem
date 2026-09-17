@@ -14,11 +14,16 @@ public class CreateBranchCommandHandlerTests
 {
     private readonly Mock<IBranchRepository> _branchRepoMock = new();
     private readonly Mock<IMapper> _mapperMock = new();
+    private readonly Mock<IPhoneNumberNormalizer> _phoneNormalizerMock = new();
     private readonly CreateBranchCommandHandler _handler;
 
     public CreateBranchCommandHandlerTests()
     {
-        _handler = new CreateBranchCommandHandler(_branchRepoMock.Object, _mapperMock.Object);
+        _phoneNormalizerMock
+            .Setup(p => p.NormalizeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string? phone, CancellationToken _) => phone);
+
+        _handler = new CreateBranchCommandHandler(_branchRepoMock.Object, _mapperMock.Object, _phoneNormalizerMock.Object);
     }
 
     private static CreateBranchCommand CreateValidCommand(

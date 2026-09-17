@@ -13,14 +13,20 @@ public class UpdateTraineePersonalInfoCommandHandlerTests
     private readonly Mock<ITraineeRepository> _traineeRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IFileStorageService> _fileStorageMock = new();
+    private readonly Mock<IPhoneNumberNormalizer> _phoneNormalizerMock = new();
     private readonly UpdateTraineePersonalInfoCommandHandler _handler;
 
     public UpdateTraineePersonalInfoCommandHandlerTests()
     {
+        _phoneNormalizerMock
+            .Setup(p => p.NormalizeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string? phone, CancellationToken _) => phone);
+
         _handler = new UpdateTraineePersonalInfoCommandHandler(
             _traineeRepoMock.Object,
             _unitOfWorkMock.Object,
-            _fileStorageMock.Object);
+            _fileStorageMock.Object,
+            _phoneNormalizerMock.Object);
     }
 
     private static Trainee CreateTrainee(int id = 1, string? imageUrl = null) => new()

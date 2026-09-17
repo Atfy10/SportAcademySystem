@@ -33,7 +33,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
 
             builder.Property(b => b.PhoneNumber)
                 .IsRequired()
-                .HasMaxLength(13);
+                .HasMaxLength(20);
 
             builder.Property(b => b.Email)
                 .HasMaxLength(50);
