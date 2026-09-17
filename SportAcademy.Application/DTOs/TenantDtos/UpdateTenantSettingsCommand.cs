@@ -9,7 +9,8 @@ public record UpdateTenantSettingsCommand(
     string? Language,
     string? DateFormat,
     string? TimeFormat,
-    string? Currency
+    string? Currency,
+    string? Country
 ) : IRequest<Result>, IRequiresFeature
 {
     public string FeatureKey => "tenant-settings";

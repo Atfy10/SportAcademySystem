@@ -268,7 +268,8 @@ namespace SportAcademy.Infrastructure.Seeders
                     Language = "en",
                     DateFormat = "dd/MM/yyyy",
                     TimeFormat = "HH:mm",
-                    Currency = "USD"
+                    Currency = "USD",
+                    Country = "KW"
                 });
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Created default TenantSettings for the System tenant.");
@@ -1061,7 +1062,8 @@ namespace SportAcademy.Infrastructure.Seeders
                 Language = "ar-KW",
                 DateFormat = "dd/MM/yyyy",
                 TimeFormat = "HH:mm",
-                Currency = "KWD"
+                Currency = "KWD",
+                Country = "KW"
             });
 
             _context.TenantSubscriptions.Add(new TenantSubscription

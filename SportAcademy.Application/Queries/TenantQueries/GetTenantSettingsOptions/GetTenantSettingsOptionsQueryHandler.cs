@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Common.Regional;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Domain.Enums;
@@ -36,7 +37,16 @@ public class GetTenantSettingsOptionsQueryHandler : IRequestHandler<GetTenantSet
                 new CurrencyOption("BHD", "\u0628.\u0639")
             ],
             DateFormats = ["dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd.MM.yyyy"],
-            TimeFormats = ["HH:mm", "hh:mm tt", "HH:mm:ss"]
+            TimeFormats = ["HH:mm", "hh:mm tt", "HH:mm:ss"],
+            Countries = CountryRegionalRegistry.Countries.Values
+                .Select(c => new CountryOption(
+                    c.IsoCode,
+                    c.Name,
+                    c.DialCode,
+                    c.NationalIdRule.FixedLength,
+                    c.NationalIdRule.Pattern.ToString()))
+                .OrderBy(c => c.Name)
+                .ToList()
         };
 
         return Task.FromResult(Result<TenantSettingsOptionsDto>.Success(result, _operation));

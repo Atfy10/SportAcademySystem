@@ -1,11 +1,15 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.DTOs.EmployeeDtos;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Application.Validators.EmployeeValidators
 {
     public class CreateEmployeeDtoValidator : AbstractValidator<CreateEmployeeDto>
     {
-        public CreateEmployeeDtoValidator()
+        public CreateEmployeeDtoValidator(
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader)
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 
@@ -22,7 +26,7 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
 
             RuleFor(x => x.SSN)
                 .NotEmpty().WithMessage("National ID (SSN) is required.")
-                .Matches(@"^\d{10,14}$").WithMessage("SSN must be between 10 and 14 digits.");
+                .ApplyNationalIdRuleFor(regionalValidation, countryReader, dto => dto.BirthDate);
 
             RuleFor(x => x.Email)
                 .NotEmpty()
@@ -48,12 +52,12 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Phone number is required.")
-                .Matches(@"^(?:\+965)?[569]\d{7}$").WithMessage("Enter a valid Kuwaiti phone number (8 digits, starting with 5, 6, or 9).");
+                .ApplyPhoneRuleFor(regionalValidation, countryReader);
 
             RuleFor(x => x.SecondNumber)
-                .Matches(@"^(?:\+965)?[569]\d{7}$")
+                .ApplyPhoneRuleFor(regionalValidation, countryReader)
                 .When(x => !string.IsNullOrWhiteSpace(x.SecondNumber))
-                .WithMessage("Enter a valid secondary Kuwaiti phone number.");
+                .WithMessage("Secondary phone number is not valid for the configured region.");
 
             RuleFor(x => x.Position)
                 .IsInEnum().WithMessage("Invalid position value.");

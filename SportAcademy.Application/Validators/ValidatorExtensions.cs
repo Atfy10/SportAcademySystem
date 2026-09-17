@@ -1,9 +1,50 @@
 ﻿using FluentValidation;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Application.Validators
 {
     internal static class ValidatorExtensions
     {
+        /// <summary>Country-aware phone format check (libphonenumber, via
+        /// IRegionalValidationService) using the current tenant's configured country. Empty is
+        /// treated as valid here - pair with a separate NotEmpty() when the field is required,
+        /// same convention every other rule in this codebase follows.</summary>
+        public static IRuleBuilderOptions<T, string?> ApplyPhoneRuleFor<T>(
+            this IRuleBuilder<T, string?> ruleBuilder,
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader)
+        {
+            return ruleBuilder
+                .MustAsync(async (phone, ct) =>
+                {
+                    if (string.IsNullOrWhiteSpace(phone))
+                        return true;
+                    var country = await countryReader.GetCountryAsync(ct);
+                    return regionalValidation.IsValidPhoneNumber(phone, country);
+                })
+                .WithMessage("{PropertyName} is not a valid phone number for the configured region.");
+        }
+
+        /// <summary>Country-aware National ID format check (CountryRegionalRegistry, via
+        /// IRegionalValidationService) using the current tenant's configured country.
+        /// <paramref name="birthDateSelector"/> supplies the birth date for countries whose
+        /// rule cross-checks it (Kuwait today) - pass a selector returning null when the entity
+        /// being validated has no birth date to check against.</summary>
+        public static IRuleBuilderOptions<T, string?> ApplyNationalIdRuleFor<T>(
+            this IRuleBuilder<T, string?> ruleBuilder,
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader,
+            Func<T, DateOnly?> birthDateSelector)
+        {
+            return ruleBuilder
+                .MustAsync(async (instance, nationalId, ct) =>
+                {
+                    var country = await countryReader.GetCountryAsync(ct);
+                    return regionalValidation.IsValidNationalId(nationalId, country, birthDateSelector(instance));
+                })
+                .WithMessage("{PropertyName} is not a valid National ID for the configured region.");
+        }
         public static IRuleBuilderOptions<T, int> ApplyIdRuleFor<T>(
             this IRuleBuilderInitial<T, int> ruleBuilder,
             string entityName)

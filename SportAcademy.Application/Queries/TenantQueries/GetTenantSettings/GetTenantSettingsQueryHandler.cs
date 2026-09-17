@@ -35,7 +35,8 @@ public class GetTenantSettingsQueryHandler : IRequestHandler<GetTenantSettingsQu
             Language = settings.Language,
             DateFormat = settings.DateFormat,
             TimeFormat = settings.TimeFormat,
-            Currency = settings.Currency
+            Currency = settings.Currency,
+            Country = settings.Country
         };
 
         return Result<TenantSettingsDto>.Success(dto, _operation);

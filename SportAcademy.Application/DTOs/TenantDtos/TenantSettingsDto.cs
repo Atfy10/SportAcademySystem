@@ -7,4 +7,5 @@ public record TenantSettingsDto
     public string DateFormat { get; init; } = default!;
     public string TimeFormat { get; init; } = default!;
     public string Currency { get; init; } = default!;
+    public string Country { get; init; } = default!;
 }

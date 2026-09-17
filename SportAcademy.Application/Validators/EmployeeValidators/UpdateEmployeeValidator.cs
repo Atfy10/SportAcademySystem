@@ -1,11 +1,15 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Application.Validators.EmployeeValidators
 {
     public class UpdateEmployeeValidator : AbstractValidator<UpdateEmployeeCommand>
     {
-        public UpdateEmployeeValidator()
+        public UpdateEmployeeValidator(
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader)
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 
@@ -48,14 +52,13 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
 
             RuleFor(x => x.PhoneNumber)
                 .NotEmpty().WithMessage("Phone number is required.")
-                .Matches(@"^(?:\+965)?[569]\d{7}$")
-                .WithMessage("Enter a valid Kuwaiti phone number (8 digits, starting with 5, 6, or 9).")
+                .ApplyPhoneRuleFor(regionalValidation, countryReader)
                 .When(x => x.PhoneNumber != null);
 
             RuleFor(x => x.SecondPhoneNumber)
-                .Matches(@"^(?:\+965)?[569]\d{7}$")
+                .ApplyPhoneRuleFor(regionalValidation, countryReader)
                 .When(x => !string.IsNullOrWhiteSpace(x.SecondPhoneNumber))
-                .WithMessage("Enter a valid secondary Kuwaiti phone number.");
+                .WithMessage("Secondary phone number is not valid for the configured region.");
 
             RuleFor(x => x.Position)
                 .IsInEnum().WithMessage("Invalid position value.")

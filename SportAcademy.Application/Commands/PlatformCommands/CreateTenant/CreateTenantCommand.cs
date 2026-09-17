@@ -18,7 +18,8 @@ public record CreateTenantCommand(
     string? Address = null,
     string? TimeZone = null,
     string? Language = null,
-    string? Currency = null
+    string? Currency = null,
+    string? Country = null
 ) : IRequest<Result<TenantDetailResponse>>, IAuditableCommand
 {
     public string AuditEventType => "tenant.created";

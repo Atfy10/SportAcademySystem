@@ -1,5 +1,7 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.UserCommands.UserCreate;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +12,9 @@ namespace SportAcademy.Application.Validators.UserValidators
 {
     public class CreateUserValidator : AbstractValidator<CreateUserCommand>
     {
-        public CreateUserValidator()
+        public CreateUserValidator(
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader)
         {
             RuleFor(x => x.UserName)
                 .Cascade(CascadeMode.Stop)
@@ -30,8 +34,7 @@ namespace SportAcademy.Application.Validators.UserValidators
             RuleFor(x => x.PhoneNumber)
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("Please enter your phone number.")
-                .Matches(@"^(\+965)?[2569]\d{7}$")
-                .WithMessage("Please enter a valid Kuwait phone number (e.g., +96551234567).");
+                .ApplyPhoneRuleFor(regionalValidation, countryReader);
         }
     }
 }
