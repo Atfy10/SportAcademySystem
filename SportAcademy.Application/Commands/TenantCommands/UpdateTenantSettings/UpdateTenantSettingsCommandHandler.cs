@@ -1,5 +1,4 @@
 using MediatR;
-using SportAcademy.Application.Common.Regional;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Interfaces;
@@ -40,12 +39,6 @@ public class UpdateTenantSettingsCommandHandler : IRequestHandler<UpdateTenantSe
         if (request.DateFormat is not null) settings.DateFormat = request.DateFormat;
         if (request.TimeFormat is not null) settings.TimeFormat = request.TimeFormat;
         if (request.Currency is not null) settings.Currency = request.Currency;
-        if (request.Country is not null)
-        {
-            if (!CountryRegionalRegistry.Countries.ContainsKey(request.Country))
-                return Result.Failure(_operation, "Unsupported country.", 400);
-            settings.Country = request.Country;
-        }
 
         _tenantRepository.UpdateSettings(settings);
         await _unitOfWork.SaveChangesAsync(ct);
