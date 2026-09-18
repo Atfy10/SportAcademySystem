@@ -14,18 +14,21 @@ public class UpdateMyProfileCommandHandler : IRequestHandler<UpdateMyProfileComm
     private readonly IProfileRepository _profileRepository;
     private readonly IUserContextService _userContext;
     private readonly IFileStorageService _fileStorage;
+    private readonly IPhoneNumberNormalizer _phoneNormalizer;
     private readonly string _operation = OperationType.Update.ToString();
 
     public UpdateMyProfileCommandHandler(
         IUserRepository userRepository,
         IProfileRepository profileRepository,
         IUserContextService userContext,
-        IFileStorageService fileStorage)
+        IFileStorageService fileStorage,
+        IPhoneNumberNormalizer phoneNormalizer)
     {
         _userRepository = userRepository;
         _profileRepository = profileRepository;
         _userContext = userContext;
         _fileStorage = fileStorage;
+        _phoneNormalizer = phoneNormalizer;
     }
 
     public async Task<Result<MeResponse>> Handle(UpdateMyProfileCommand request, CancellationToken ct)
@@ -39,7 +42,10 @@ public class UpdateMyProfileCommandHandler : IRequestHandler<UpdateMyProfileComm
 
         if (request.PhoneNumber is not null)
         {
-            user.PhoneNumber = request.PhoneNumber;
+            // Normalized to E.164 (empty string, the frontend's explicit "clear this field"
+            // value, passes through NormalizeAsync unchanged) - see the matching comment in
+            // CreateEmployeeCommandHandler.
+            user.PhoneNumber = await _phoneNormalizer.NormalizeAsync(request.PhoneNumber, ct);
             await _userRepository.UpdateAsync(user, ct);
         }
 

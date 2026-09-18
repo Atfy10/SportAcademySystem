@@ -14,18 +14,21 @@ public class SendInvitationVerificationCodeCommandHandler : IRequestHandler<Send
     private readonly IInvitationTokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IInvitationEmailSender _emailSender;
+    private readonly ITenantIdProvider _tenantIdProvider;
     private readonly string _operation = OperationType.Add.ToString();
 
     public SendInvitationVerificationCodeCommandHandler(
         IInvitationRepository invitationRepository,
         IInvitationTokenService tokenService,
         IUnitOfWork unitOfWork,
-        IInvitationEmailSender emailSender)
+        IInvitationEmailSender emailSender,
+        ITenantIdProvider tenantIdProvider)
     {
         _invitationRepository = invitationRepository;
         _tokenService = tokenService;
         _unitOfWork = unitOfWork;
         _emailSender = emailSender;
+        _tenantIdProvider = tenantIdProvider;
     }
 
     public async Task<Result> Handle(SendInvitationVerificationCodeCommand request, CancellationToken ct)
@@ -41,7 +44,14 @@ public class SendInvitationVerificationCodeCommandHandler : IRequestHandler<Send
         var code = _tokenService.GenerateNumericCode();
         var codeHash = _tokenService.HashToken(code);
         invitation.SetVerificationCode(codeHash, DateTime.UtcNow.Add(CodeLifetime));
-        await _unitOfWork.SaveChangesAsync(ct);
+
+        // Anonymous route (the invitee holds a link, not a session) - there is no ambient tenant
+        // for request middleware to have set, even though this write is scoped to exactly one
+        // already-known tenant (the invitation's own). Same pattern as BanOwnerCommandHandler.
+        using (_tenantIdProvider.Impersonate(invitation.TenantId))
+        {
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
 
         // Explicit action the invitee is actively waiting on - unlike a courtesy notification, a
         // failure here must surface (they have no other way to get this code), so it is

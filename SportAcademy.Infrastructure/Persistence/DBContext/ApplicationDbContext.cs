@@ -219,7 +219,11 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                         .Entity(entityType.ClrType)
                         .Property<string>("SSN")
                         .IsRequired()
-                        .HasMaxLength(14);
+                        // 20 matches CountryRegionalRegistry's own generic-fallback max length -
+                        // the widest launch-country National ID (UAE, 15 digits) already exceeds
+                        // the old 14-char cap this column was sized for back when every tenant
+                        // was Kuwait (12 digits).
+                        .HasMaxLength(20);
 
                     modelBuilder
                         .Entity(entityType.ClrType)
@@ -242,12 +246,16 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                         .Entity(entityType.ClrType)
                         .Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasMaxLength(12);
+                        // 20 matches AppUser.PhoneNumber's existing column - the old 12-char cap
+                        // only fit Kuwait's +965XXXXXXXX shape; E.164's own ceiling is "+" plus
+                        // 15 digits (16 chars), and a few more chars of headroom absorbs any
+                        // formatting that slips through unnormalized.
+                        .HasMaxLength(20);
 
                     modelBuilder
                         .Entity(entityType.ClrType)
                         .Property<string?>("SecondPhoneNumber")
-                        .HasMaxLength(12);
+                        .HasMaxLength(20);
                 }
             }
 

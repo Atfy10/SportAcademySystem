@@ -15,6 +15,7 @@ public class UpdateMyProfileCommandHandlerTests
     private readonly Mock<IProfileRepository> _profileRepoMock = new();
     private readonly Mock<IUserContextService> _userContextMock = new();
     private readonly Mock<IFileStorageService> _fileStorageMock = new();
+    private readonly Mock<IPhoneNumberNormalizer> _phoneNormalizerMock = new();
     private readonly UpdateMyProfileCommandHandler _handler;
 
     public UpdateMyProfileCommandHandlerTests()
@@ -22,9 +23,12 @@ public class UpdateMyProfileCommandHandlerTests
         _userContextMock.Setup(c => c.UserId).Returns(UserId);
         _userRepoMock.Setup(r => r.GetUserRoleAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(["Owner"]);
+        _phoneNormalizerMock
+            .Setup(p => p.NormalizeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string? phone, CancellationToken _) => phone);
 
         _handler = new UpdateMyProfileCommandHandler(
-            _userRepoMock.Object, _profileRepoMock.Object, _userContextMock.Object, _fileStorageMock.Object);
+            _userRepoMock.Object, _profileRepoMock.Object, _userContextMock.Object, _fileStorageMock.Object, _phoneNormalizerMock.Object);
     }
 
     private static AppUser CreateUser(string? phoneNumber = null) => new()

@@ -18,6 +18,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IMapper _mapper;
         private readonly IPersonService _employeeService;
+        private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly string _operationType = OperationType.Add.ToString();
         private readonly IUserRepository _userRepository;
         private readonly IUserContextService _userContext;
@@ -25,6 +26,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
 
         public CreateEmployeeCommandHandler(
             IPersonService employeeService,
+            IPhoneNumberNormalizer phoneNormalizer,
             IMapper mapper,
             IEmployeeRepository employeeRepository,
             IUserRepository userRepository,
@@ -33,6 +35,7 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
         {
             _mapper = mapper;
             _employeeService = employeeService;
+            _phoneNormalizer = phoneNormalizer;
             _employeeRepository = employeeRepository;
             _userRepository = userRepository;
             _userContext = userContext;
@@ -44,10 +47,17 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee
             var employee = _mapper.Map<Employee>(request)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-            var isSSNValid = _employeeService.IsSSNValid(employee.SSN, employee.BirthDate);
+            // SSN format/checksum is already enforced by CreateEmployeeValidator
+            // (ApplyNationalIdRuleFor, country-aware via IRegionalValidationService) in the
+            // ValidationBehavior pipeline before this handler ever runs - a second, Kuwait-only
+            // IsSSNValid gate here used to reject every non-Kuwait tenant's already-valid SSN.
 
-            if (!isSSNValid)
-                throw new SSNSyntaxErrorException();
+            // Normalized to E.164 before the uniqueness check and save - the DB stores one
+            // canonical form regardless of how the client formatted what the user typed.
+            // SecondNumber is deliberately NOT touched here - it's a free-form contact number
+            // with no country/format validation (see ApplyDigitsMinLengthFor).
+            employee.PhoneNumber = await _phoneNormalizer.NormalizeAsync(employee.PhoneNumber, cancellationToken)
+                ?? employee.PhoneNumber;
 
             var isSSNExist = await _employeeRepository
                 .IsSSNExistAsync(employee.SSN, cancellationToken);

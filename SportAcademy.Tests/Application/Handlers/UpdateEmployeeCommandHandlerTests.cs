@@ -13,12 +13,17 @@ public class UpdateEmployeeCommandHandlerTests
     private readonly Mock<IEmployeeRepository> _employeeRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IFileStorageService> _fileStorageMock = new();
+    private readonly Mock<IPhoneNumberNormalizer> _phoneNormalizerMock = new();
     private readonly UpdateEmployeeCommandHandler _handler;
 
     public UpdateEmployeeCommandHandlerTests()
     {
+        _phoneNormalizerMock
+            .Setup(p => p.NormalizeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string? phone, CancellationToken _) => phone);
+
         _handler = new UpdateEmployeeCommandHandler(
-            _employeeRepoMock.Object, _unitOfWorkMock.Object, _fileStorageMock.Object);
+            _employeeRepoMock.Object, _unitOfWorkMock.Object, _fileStorageMock.Object, _phoneNormalizerMock.Object);
     }
 
     private static Employee CreateEmployee(int id = 1, string? imageUrl = null) => new()

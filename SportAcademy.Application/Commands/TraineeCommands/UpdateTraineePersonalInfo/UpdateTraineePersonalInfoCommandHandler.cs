@@ -15,16 +15,19 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo
         private readonly ITraineeRepository _traineeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IFileStorageService _fileStorage;
+        private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly string _operationType = OperationType.Update.ToString();
 
         public UpdateTraineePersonalInfoCommandHandler(
             ITraineeRepository traineeRepository,
             IUnitOfWork unitOfWork,
-            IFileStorageService fileStorage)
+            IFileStorageService fileStorage,
+            IPhoneNumberNormalizer phoneNormalizer)
         {
             _traineeRepository = traineeRepository;
             _unitOfWork = unitOfWork;
             _fileStorage = fileStorage;
+            _phoneNormalizer = phoneNormalizer;
         }
 
         public async Task<Result<bool>> Handle(UpdateTraineePersonalInfoCommand request, CancellationToken cancellationToken)
@@ -36,6 +39,11 @@ namespace SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo
                 _fileStorage.DeleteImage(trainee.ImageUrl);
 
             TraineeMapper.ApplyPersonalInfoUpdate(trainee, request);
+
+            // ParentNumber (guardian phone) normalized to E.164 after the mapper applies it -
+            // see the matching comment in CreateEmployeeCommandHandler.
+            if (!string.IsNullOrWhiteSpace(trainee.ParentNumber))
+                trainee.ParentNumber = await _phoneNormalizer.NormalizeAsync(trainee.ParentNumber, cancellationToken);
 
             // Parity with the pre-split handler: this doesn't depend on anything this command
             // actually changes (PhoneNumber isn't editable here), it just re-checks the

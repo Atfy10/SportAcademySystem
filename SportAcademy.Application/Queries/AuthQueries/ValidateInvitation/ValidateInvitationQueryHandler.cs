@@ -13,16 +13,19 @@ public class ValidateInvitationQueryHandler
     private readonly IInvitationRepository _invitationRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IInvitationTokenService _tokenService;
+    private readonly ITenantIdProvider _tenantIdProvider;
     private readonly string _operation = OperationType.Get.ToString();
 
     public ValidateInvitationQueryHandler(
         IInvitationRepository invitationRepository,
         IUnitOfWork unitOfWork,
-        IInvitationTokenService tokenService)
+        IInvitationTokenService tokenService,
+        ITenantIdProvider tenantIdProvider)
     {
         _invitationRepository = invitationRepository;
         _unitOfWork = unitOfWork;
         _tokenService = tokenService;
+        _tenantIdProvider = tenantIdProvider;
     }
 
     public async Task<Result<InvitationResponse>> Handle(
@@ -44,7 +47,15 @@ public class ValidateInvitationQueryHandler
         if (invitation.ExpiresAt < DateTime.UtcNow)
         {
             invitation.Expire();
-            await _unitOfWork.SaveChangesAsync(ct);
+
+            // Anonymous route - no ambient tenant for request middleware to have set, even
+            // though this write is scoped to exactly one already-known tenant (the invitation's
+            // own). Same pattern as BanOwnerCommandHandler.
+            using (_tenantIdProvider.Impersonate(invitation.TenantId))
+            {
+                await _unitOfWork.SaveChangesAsync(ct);
+            }
+
             return Result<InvitationResponse>.Failure(
                 _operation, "Invitation has expired.", 400);
         }

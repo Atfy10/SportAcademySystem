@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Commands.AuthCommands.CreateInvitation;
+using SportAcademy.Application.Common.Regional;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.PlatformDtos;
 using SportAcademy.Application.Mappings;
@@ -80,7 +81,12 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
                 Language = request.Language ?? "en",
                 DateFormat = "dd/MM/yyyy",
                 TimeFormat = "HH:mm",
-                Currency = request.Currency ?? "USD"
+                Currency = request.Currency ?? "USD",
+                // Placeholder only - the tenant's own Owner chooses the real country once, during
+                // the post-invite onboarding wizard (UpdateTenantProfileCommand), not the
+                // SuperAdmin at creation time. See RegionalSettingsCard for why it's locked
+                // immediately after that choice is made.
+                Country = CountryRegionalRegistry.DefaultCountry
             },
             Subscription = new TenantSubscription
             {

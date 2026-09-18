@@ -30,12 +30,15 @@ public class AcceptInvitationCommandHandlerTests
     private readonly Mock<IProfileRepository> _profileRepoMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<IEffectiveLimitService> _limitServiceMock = new();
+    private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
     private readonly AcceptInvitationCommandHandler _handler;
 
     public AcceptInvitationCommandHandlerTests()
     {
         _userManagerMock = new Mock<UserManager<AppUser>>(
             Mock.Of<IUserStore<AppUser>>(), null, null, null, null, null, null, null, null);
+
+        _tenantIdProviderMock.Setup(p => p.Impersonate(It.IsAny<Guid>())).Returns(Mock.Of<IDisposable>());
 
         // Unlimited by default so existing tests exercising the staff-onboarding path aren't
         // affected by the acceptance-time seat re-check - tests that specifically want to
@@ -57,6 +60,7 @@ public class AcceptInvitationCommandHandlerTests
             _profileRepoMock.Object,
             _mediatorMock.Object,
             _limitServiceMock.Object,
+            _tenantIdProviderMock.Object,
             Mock.Of<ILogger<AcceptInvitationCommandHandler>>());
     }
 

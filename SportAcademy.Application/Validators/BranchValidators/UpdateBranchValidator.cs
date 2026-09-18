@@ -5,12 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 using FluentValidation;
 using SportAcademy.Application.Commands.BranchCommands.UpdateBranch;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Application.Validators.BranchValidators
 {
 	public class UpdateBranchValidator : AbstractValidator<UpdateBranchCommand>
 	{
-		public UpdateBranchValidator()
+		public UpdateBranchValidator(
+			IRegionalValidationService regionalValidation,
+			ITenantSettingsCountryReader countryReader)
 		{
 			RuleFor(b => b.Name)
 				.NotEmpty().WithMessage("Branch name is required.")
@@ -23,7 +27,7 @@ namespace SportAcademy.Application.Validators.BranchValidators
 				.MaximumLength(50).WithMessage("Country cannot exceed 50 characters.");
 			RuleFor(b => b.PhoneNumber)
 				.NotEmpty().WithMessage("Phone number is required.")
-				.Length(8).WithMessage("Phone number must be exactly 8 characters.");
+				.ApplyPhoneRuleFor(regionalValidation, countryReader);
 			RuleFor(b => b.Email)
 				.EmailAddress().WithMessage("Invalid email format.")
 				.MaximumLength(100).WithMessage("Email cannot exceed 100 characters.")

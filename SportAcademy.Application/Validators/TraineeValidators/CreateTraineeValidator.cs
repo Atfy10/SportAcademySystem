@@ -1,12 +1,15 @@
 using FluentValidation;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
-using SportAcademy.Domain.Helpers;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Application.Validators.TraineeValidators
 {
     public class CreateTraineeValidator : AbstractValidator<CreateTraineeCommand>
     {
-        public CreateTraineeValidator()
+        public CreateTraineeValidator(
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader)
         {
             RuleFor(t => t.FirstName)
                 .NotEmpty().WithMessage("First name is required.")
@@ -18,14 +21,11 @@ namespace SportAcademy.Application.Validators.TraineeValidators
                 .NoDigits()
                 .MaximumLength(50).WithMessage("Last name cannot exceed 50 characters.");
 
-            // SSN is optional - the trailing .When() already scopes every check in this chain
-            // (including a NotEmpty(), if one were added) to "only when a value was provided".
+            // SSN is optional - ApplyNationalIdRuleFor itself treats empty as valid, so no
+            // separate .When() gate is needed the way the old length/regex chain needed one.
             RuleFor(t => t.SSN)
-                .Length(12).WithMessage("SSN must be exactly 12 digits.")
-                .Matches(@"^\d{12}$").WithMessage("SSN must contain only numeric digits.")
-                .Must((cmd, ssn) => PersonValidationHelper.IsValidSSN(ssn, cmd.BirthDate))
-                .WithMessage("SSN must start with birth date components (YYMMDD prefix matching birth year).")
-                .When(t => !string.IsNullOrEmpty(t.SSN));
+                .ApplyNationalIdRuleFor(regionalValidation, countryReader, cmd => cmd.BirthDate)
+                .WithMessage("SSN is not a valid National ID for the configured region.");
 
             RuleFor(t => t.BirthDate)
                 .LessThan(DateOnly.FromDateTime(DateTime.UtcNow.Date))
@@ -36,14 +36,13 @@ namespace SportAcademy.Application.Validators.TraineeValidators
                 .When(t => !string.IsNullOrEmpty(t.GuardianName));
 
             RuleFor(t => t.ParentNumber)
-                .MinimumLength(8).WithMessage("Parent phone number must be at least 8 characters.")
-                .MaximumLength(13).WithMessage("Parent phone number cannot exceed 13 characters.")
+                .ApplyPhoneRuleFor(regionalValidation, countryReader)
+                .WithMessage("Parent phone number is not valid for the configured region.")
                 .When(t => !string.IsNullOrEmpty(t.ParentNumber));
 
             RuleFor(t => t.PhoneNumber)
                 .NotEmpty().WithMessage("Phone number is required.")
-                .MinimumLength(8).WithMessage("Phone number must be at least 8 characters.")
-                .MaximumLength(12).WithMessage("Phone number cannot exceed 12 characters.");
+                .ApplyPhoneRuleFor(regionalValidation, countryReader);
 
             RuleFor(t => t.Email)
                 .NotEmpty().WithMessage("Email is required.")

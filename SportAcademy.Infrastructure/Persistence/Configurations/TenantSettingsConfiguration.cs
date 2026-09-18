@@ -38,6 +38,11 @@ public sealed class TenantSettingsConfiguration : IEntityTypeConfiguration<Tenan
             .HasMaxLength(10)
             .HasDefaultValue("KWD");
 
+        builder.Property(ts => ts.Country)
+            .IsRequired()
+            .HasMaxLength(2)
+            .HasDefaultValue("KW");
+
         builder.HasOne(ts => ts.Tenant)
             .WithOne(t => t.Settings)
             .HasForeignKey<TenantSettings>(ts => ts.TenantId)

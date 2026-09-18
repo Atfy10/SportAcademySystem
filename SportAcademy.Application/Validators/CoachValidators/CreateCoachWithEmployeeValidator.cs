@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
 using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.DTOs.EmployeeDtos;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Validators.EmployeeValidators;
+using SportAcademy.Domain.Contract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +14,9 @@ namespace SportAcademy.Application.Validators.CoachValidators
 {
     public class CreateCoachWithEmployeeValidator : AbstractValidator<CreateCoachWithEmployeeCommand>
     {
-        public CreateCoachWithEmployeeValidator()
+        public CreateCoachWithEmployeeValidator(
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader)
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 
@@ -25,7 +29,7 @@ namespace SportAcademy.Application.Validators.CoachValidators
                 .ApplyIdRuleFor("Sport");
 
             RuleFor(c => c.Employee)
-                .SetValidator(new CreateEmployeeDtoValidator());
+                .SetValidator(new CreateEmployeeDtoValidator(regionalValidation, countryReader));
         }
     }
 }

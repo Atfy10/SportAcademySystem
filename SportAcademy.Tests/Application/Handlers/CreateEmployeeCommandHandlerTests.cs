@@ -16,14 +16,23 @@ public class CreateEmployeeCommandHandlerTests
 {
     private readonly Mock<IMapper> _mapperMock = new();
     private readonly Mock<IPersonService> _personServiceMock = new();
+    private readonly Mock<IPhoneNumberNormalizer> _phoneNormalizerMock = new();
     private readonly Mock<IEmployeeRepository> _employeeRepoMock = new();
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly CreateEmployeeCommandHandler _handler;
 
     public CreateEmployeeCommandHandlerTests()
     {
+        // Pass-through: these tests assert against the exact phone string the fixture sets, so
+        // normalization (a country-aware transform this class doesn't need to exercise) must
+        // not change it.
+        _phoneNormalizerMock
+            .Setup(p => p.NormalizeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string? phone, CancellationToken _) => phone);
+
         _handler = new CreateEmployeeCommandHandler(
             _personServiceMock.Object,
+            _phoneNormalizerMock.Object,
             _mapperMock.Object,
             _employeeRepoMock.Object,
             _userRepoMock.Object,
@@ -85,7 +94,6 @@ public class CreateEmployeeCommandHandlerTests
         var appUser = CreateMappedAppUser();
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _personServiceMock.Setup(s => s.GenerateUserName(employee.FirstName, employee.LastName)).Returns("mohammad.al-sabah");
@@ -114,7 +122,6 @@ public class CreateEmployeeCommandHandlerTests
         var employee = CreateMappedEmployee();
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.AddAsync(It.IsAny<Employee>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -134,21 +141,6 @@ public class CreateEmployeeCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_InvalidSSN_ThrowsSSNSyntaxErrorException()
-    {
-        // Arrange
-        var command = CreateValidCommand();
-        var employee = CreateMappedEmployee();
-
-        _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(false);
-
-        // Act & Assert
-        var act = () => _handler.Handle(command, CancellationToken.None);
-        await act.Should().ThrowAsync<SSNSyntaxErrorException>();
-    }
-
-    [Fact]
     public async Task Handle_DuplicateSSN_ThrowsSSNNotUniqueException()
     {
         // Arrange
@@ -156,7 +148,6 @@ public class CreateEmployeeCommandHandlerTests
         var employee = CreateMappedEmployee();
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         // Act & Assert
@@ -172,7 +163,6 @@ public class CreateEmployeeCommandHandlerTests
         var employee = CreateMappedEmployee();
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
@@ -194,7 +184,6 @@ public class CreateEmployeeCommandHandlerTests
         var failedResult = Microsoft.AspNetCore.Identity.IdentityResult.Failed(errors.ToArray());
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _personServiceMock.Setup(s => s.GenerateUserName(employee.FirstName, employee.LastName)).Returns("mohammad.al-sabah");
@@ -229,7 +218,6 @@ public class CreateEmployeeCommandHandlerTests
         var cancellationTokenSource = new CancellationTokenSource();
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _personServiceMock.Setup(s => s.GenerateUserName(employee.FirstName, employee.LastName)).Returns("mohammad.al-sabah");
@@ -260,7 +248,6 @@ public class CreateEmployeeCommandHandlerTests
         var appUser = CreateMappedAppUser();
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _personServiceMock.Setup(s => s.GenerateUserName(employee.FirstName, employee.LastName)).Returns("mohammad.al-sabah");
@@ -287,7 +274,6 @@ public class CreateEmployeeCommandHandlerTests
         var appUser = CreateMappedAppUser();
 
         _mapperMock.Setup(m => m.Map<Employee>(command)).Returns(employee);
-        _personServiceMock.Setup(s => s.IsSSNValid(employee.SSN, employee.BirthDate)).Returns(true);
         _employeeRepoMock.Setup(r => r.IsSSNExistAsync(employee.SSN, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _employeeRepoMock.Setup(r => r.IsPhoneNumberExistAsync(employee.PhoneNumber, 0, It.IsAny<CancellationToken>())).ReturnsAsync(false);
         _personServiceMock.Setup(s => s.GenerateUserName(employee.FirstName, employee.LastName)).Returns("mohammad.al-sabah");

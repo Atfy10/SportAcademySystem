@@ -26,6 +26,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         private readonly ISportRepository _sportRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
+        private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateTraineeCommandHandler(
@@ -36,6 +37,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             IPasswordHasher<AppUser> passwordHasher,
             ISportRepository sportRepository,
             IUnitOfWork unitOfWork,
+            IPhoneNumberNormalizer phoneNormalizer,
             IPublisher publisher)
         {
             _traineeCodeGenerator = traineeCodeGenerator;
@@ -45,6 +47,7 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             _passwordHasher = passwordHasher;
             _sportRepository = sportRepository;
             _unitOfWork = unitOfWork;
+            _phoneNormalizer = phoneNormalizer;
             _publisher = publisher;
         }
 
@@ -54,13 +57,21 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             trainee.JoinDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
+            // Normalized to E.164 before the uniqueness/save below - see the matching comment
+            // in CreateEmployeeCommandHandler.
+            trainee.PhoneNumber = await _phoneNormalizer.NormalizeAsync(trainee.PhoneNumber, cancellationToken)
+                ?? trainee.PhoneNumber;
+            if (!string.IsNullOrWhiteSpace(trainee.ParentNumber))
+                trainee.ParentNumber = await _phoneNormalizer.NormalizeAsync(trainee.ParentNumber, cancellationToken);
+
             // SSN is optional at creation (e.g. trainee doesn't have one issued yet) - only
-            // validate format/uniqueness when one was actually entered.
+            // check uniqueness when one was actually entered. Format/checksum is already
+            // enforced by CreateTraineeValidator (ApplyNationalIdRuleFor, country-aware via
+            // IRegionalValidationService) in the ValidationBehavior pipeline before this handler
+            // ever runs - a second, Kuwait-only PersonValidationHelper.IsValidSSN gate here used
+            // to reject every non-Kuwait tenant's already-valid SSN.
             if (!string.IsNullOrWhiteSpace(trainee.SSN))
             {
-                if (!PersonValidationHelper.IsValidSSN(trainee.SSN, trainee.BirthDate))
-                    throw new SSNSyntaxErrorException();
-
                 var isSSNExist = await _traineeRepository
                     .IsSSNExistAsync(trainee.SSN, cancellationToken);
                 if (isSSNExist)

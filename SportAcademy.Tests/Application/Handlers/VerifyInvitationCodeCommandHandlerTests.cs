@@ -12,11 +12,14 @@ public class VerifyInvitationCodeCommandHandlerTests
     private readonly Mock<IInvitationRepository> _invitationRepoMock = new();
     private readonly Mock<IInvitationTokenService> _tokenServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
     private readonly VerifyInvitationCodeCommandHandler _handler;
 
     public VerifyInvitationCodeCommandHandlerTests()
     {
-        _handler = new VerifyInvitationCodeCommandHandler(_invitationRepoMock.Object, _tokenServiceMock.Object, _unitOfWorkMock.Object);
+        _tenantIdProviderMock.Setup(p => p.Impersonate(It.IsAny<Guid>())).Returns(Mock.Of<IDisposable>());
+        _handler = new VerifyInvitationCodeCommandHandler(
+            _invitationRepoMock.Object, _tokenServiceMock.Object, _unitOfWorkMock.Object, _tenantIdProviderMock.Object);
     }
 
     private static Invitation PendingInvitationWithCode(string codeHash, int attempts = 0) => new()

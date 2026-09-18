@@ -12,13 +12,16 @@ namespace SportAcademy.Application.Commands.UserCommands.UserUpdate
     {
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
+        private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly string _operation = OperationType.Update.ToString();
 
         public UpdateUserCommandHandler(IUserRepository userRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IPhoneNumberNormalizer phoneNormalizer)
         {
             _userRepository = userRepository;
             _mapper = mapper;
+            _phoneNormalizer = phoneNormalizer;
         }
 
         public async Task<Result<AppUserDto>> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
@@ -30,6 +33,11 @@ namespace SportAcademy.Application.Commands.UserCommands.UserUpdate
                 ?? throw new UserNotFoundException();
 
             _mapper.Map(request, user);
+
+            // Normalized to E.164 after the map - see the matching comment in
+            // CreateEmployeeCommandHandler.
+            if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
+                user.PhoneNumber = await _phoneNormalizer.NormalizeAsync(user.PhoneNumber, cancellationToken);
 
             await _userRepository.UpdateAsync(user, cancellationToken);
 

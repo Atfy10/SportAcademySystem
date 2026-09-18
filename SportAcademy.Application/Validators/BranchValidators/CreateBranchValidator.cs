@@ -5,12 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 using FluentValidation;
 using SportAcademy.Application.Commands.BranchCommands.CreateBranch;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Application.Validators.BranchValidators
 {
 	public class CreateBranchValidator : AbstractValidator<CreateBranchCommand>
 	{
-		public CreateBranchValidator()
+		public CreateBranchValidator(
+			IRegionalValidationService regionalValidation,
+			ITenantSettingsCountryReader countryReader)
 		{
 			RuleFor(x => x.Name)
 				.NotEmpty().WithMessage("Branch name is required.")
@@ -26,7 +30,7 @@ namespace SportAcademy.Application.Validators.BranchValidators
 
 			RuleFor(x => x.PhoneNumber)
 				.NotEmpty().WithMessage("Phone number is required.")
-				.Matches(@"^\+?[0-9]{8,15}$").WithMessage("Invalid phone number format.");
+				.ApplyPhoneRuleFor(regionalValidation, countryReader);
 
 			RuleFor(x => x.Email)
 				.EmailAddress().When(x => !string.IsNullOrEmpty(x.Email))

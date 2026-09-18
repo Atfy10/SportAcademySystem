@@ -1,11 +1,15 @@
 using FluentValidation;
 using SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo;
+using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 
 namespace SportAcademy.Application.Validators.TraineeValidators
 {
     public class UpdateTraineePersonalInfoValidator : AbstractValidator<UpdateTraineePersonalInfoCommand>
     {
-        public UpdateTraineePersonalInfoValidator()
+        public UpdateTraineePersonalInfoValidator(
+            IRegionalValidationService regionalValidation,
+            ITenantSettingsCountryReader countryReader)
         {
             RuleFor(t => t.Id)
                 .GreaterThan(0)
@@ -31,7 +35,7 @@ namespace SportAcademy.Application.Validators.TraineeValidators
                 .When(t => !string.IsNullOrEmpty(t.GuardianName));
 
             RuleFor(t => t.ParentNumber)
-                .Length(8).WithMessage("Parent phone number must be exactly 8 characters.")
+                .ApplyPhoneRuleFor(regionalValidation, countryReader)
                 .When(t => !string.IsNullOrEmpty(t.ParentNumber));
         }
     }

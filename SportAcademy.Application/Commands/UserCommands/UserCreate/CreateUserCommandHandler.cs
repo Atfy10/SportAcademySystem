@@ -16,13 +16,16 @@ namespace SportAcademy.Application.Commands.UserCommands.UserCreate
     {
         private readonly IMapper _mapper;
         private readonly IUserRepository _userRepository;
+        private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly string _operationType = OperationType.Add.ToString();
 
         public CreateUserCommandHandler(IUserRepository userRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IPhoneNumberNormalizer phoneNormalizer)
         {
             _userRepository = userRepository;
             _mapper = mapper;
+            _phoneNormalizer = phoneNormalizer;
         }
 
         public async Task<Result<string>> Handle(CreateUserCommand request, CancellationToken cancellationToken)
@@ -32,6 +35,11 @@ namespace SportAcademy.Application.Commands.UserCommands.UserCreate
 
             var user = _mapper.Map<AppUser>(request)
                 ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+
+            // Normalized to E.164 before save - see the matching comment in
+            // CreateEmployeeCommandHandler.
+            user.PhoneNumber = await _phoneNormalizer.NormalizeAsync(user.PhoneNumber, cancellationToken)
+                ?? user.PhoneNumber;
 
             await _userRepository.AddAsync(user, cancellationToken);
             return Result<string>.Success(user.Id.ToString(), _operationType);

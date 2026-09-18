@@ -1,6 +1,7 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
+using SportAcademy.Application.Common.Regional;
 using SportAcademy.Application.Validators.TraineeValidators;
 using SportAcademy.Domain.Enums;
 
@@ -8,7 +9,8 @@ namespace SportAcademy.Tests.Application.Validators;
 
 public class CreateTraineeValidatorTests
 {
-    private readonly CreateTraineeValidator _validator = new();
+    private readonly CreateTraineeValidator _validator =
+        new(new RegionalValidationService(), new FixedCountryReader("KW"));
 
     private static CreateTraineeCommand CreateValidCommand() => new()
     {
@@ -27,11 +29,11 @@ public class CreateTraineeValidatorTests
     };
 
     [Fact]
-    public void Validate_ValidCommand_HasNoErrors()
+    public async Task Validate_ValidCommand_HasNoErrors()
     {
         var command = CreateValidCommand();
 
-        var result = _validator.TestValidate(command);
+        var result = await _validator.TestValidateAsync(command);
 
         result.ShouldNotHaveAnyValidationErrors();
     }
@@ -39,21 +41,21 @@ public class CreateTraineeValidatorTests
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public void Validate_EmptyFirstName_HasError(string? firstName)
+    public async Task Validate_EmptyFirstName_HasError(string? firstName)
     {
         var command = CreateValidCommand() with { FirstName = firstName! };
 
-        var result = _validator.TestValidate(command);
+        var result = await _validator.TestValidateAsync(command);
 
         result.ShouldHaveValidationErrorFor(c => c.FirstName);
     }
 
     [Fact]
-    public void Validate_FirstNameTooLong_HasError()
+    public async Task Validate_FirstNameTooLong_HasError()
     {
         var command = CreateValidCommand() with { FirstName = new string('A', 51) };
 
-        var result = _validator.TestValidate(command);
+        var result = await _validator.TestValidateAsync(command);
 
         result.ShouldHaveValidationErrorFor(c => c.FirstName);
     }
@@ -61,11 +63,11 @@ public class CreateTraineeValidatorTests
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public void Validate_EmptyLastName_HasError(string? lastName)
+    public async Task Validate_EmptyLastName_HasError(string? lastName)
     {
         var command = CreateValidCommand() with { LastName = lastName! };
 
-        var result = _validator.TestValidate(command);
+        var result = await _validator.TestValidateAsync(command);
 
         result.ShouldHaveValidationErrorFor(c => c.LastName);
     }
@@ -75,11 +77,11 @@ public class CreateTraineeValidatorTests
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public void Validate_EmptySSN_IsValid(string? ssn)
+    public async Task Validate_EmptySSN_IsValid(string? ssn)
     {
         var command = CreateValidCommand() with { SSN = ssn! };
 
-        var result = _validator.TestValidate(command);
+        var result = await _validator.TestValidateAsync(command);
 
         result.ShouldNotHaveValidationErrorFor(c => c.SSN);
     }
@@ -87,24 +89,24 @@ public class CreateTraineeValidatorTests
     [Theory]
     [InlineData("12345678901")] // 11 chars
     [InlineData("1234567890123")] // 13 chars
-    public void Validate_SSNWrongLength_HasError(string ssn)
+    public async Task Validate_SSNWrongLength_HasError(string ssn)
     {
         var command = CreateValidCommand() with { SSN = ssn };
 
-        var result = _validator.TestValidate(command);
+        var result = await _validator.TestValidateAsync(command);
 
         result.ShouldHaveValidationErrorFor(c => c.SSN);
     }
 
     [Fact]
-    public void Validate_FutureBirthDate_HasError()
+    public async Task Validate_FutureBirthDate_HasError()
     {
         var command = CreateValidCommand() with
         {
             BirthDate = DateOnly.FromDateTime(DateTime.Now.AddDays(1))
         };
 
-        var result = _validator.TestValidate(command);
+        var result = await _validator.TestValidateAsync(command);
 
         result.ShouldHaveValidationErrorFor(c => c.BirthDate);
     }
