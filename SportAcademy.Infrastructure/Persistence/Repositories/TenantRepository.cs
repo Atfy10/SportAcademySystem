@@ -80,14 +80,23 @@ public class TenantRepository : ITenantRepository
     public Task<int> GetTotalBranchesAsync(CancellationToken ct = default)
         => _context.Set<Branch>().IgnoreQueryFilters().CountAsync(ct);
 
+    // IgnoreQueryFilters() is required, not optional - every caller of these three (the Platform
+    // tenant-details page's stat cards) runs under the SuperAdmin's OWN ambient tenant (the
+    // platform's System tenant), not the tenantId parameter. Without it, the global tenant query
+    // filter silently ANDs in "AND TenantId == SystemTenantId" on top of the explicit
+    // "AND TenantId == tenantId" below, matching zero rows for any real tenant - every tenant's
+    // stats were permanently stuck at 0/0/0 regardless of actual data. Same pattern/reasoning as
+    // GetResourceUsageAsync above. AppUser is ISoftDeletable (Branch/Sport are not) - IsDeleted
+    // must be re-checked explicitly since IgnoreQueryFilters() also drops the soft-delete filter,
+    // and this raw "how many users does this tenant have" count was never meant to include them.
     public Task<int> GetUserCountByTenantAsync(Guid tenantId, CancellationToken ct = default)
-        => _context.Set<AppUser>().CountAsync(u => u.TenantId == tenantId, ct);
+        => _context.Set<AppUser>().IgnoreQueryFilters().CountAsync(u => u.TenantId == tenantId && !u.IsDeleted, ct);
 
     public Task<int> GetBranchCountByTenantAsync(Guid tenantId, CancellationToken ct = default)
-        => _context.Set<Branch>().CountAsync(b => b.TenantId == tenantId, ct);
+        => _context.Set<Branch>().IgnoreQueryFilters().CountAsync(b => b.TenantId == tenantId, ct);
 
     public Task<int> GetSportCountByTenantAsync(Guid tenantId, CancellationToken ct = default)
-        => _context.Set<Sport>().CountAsync(s => s.TenantId == tenantId, ct);
+        => _context.Set<Sport>().IgnoreQueryFilters().CountAsync(s => s.TenantId == tenantId, ct);
 
     public async Task<bool> IsSlugUniqueAsync(string slug, Guid? excludeId = null, CancellationToken ct = default)
     {
