@@ -14,12 +14,15 @@ public class SendInvitationVerificationCodeCommandHandlerTests
     private readonly Mock<IInvitationTokenService> _tokenServiceMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IInvitationEmailSender> _emailSenderMock = new();
+    private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
     private readonly SendInvitationVerificationCodeCommandHandler _handler;
 
     public SendInvitationVerificationCodeCommandHandlerTests()
     {
+        _tenantIdProviderMock.Setup(p => p.Impersonate(It.IsAny<Guid>())).Returns(Mock.Of<IDisposable>());
         _handler = new SendInvitationVerificationCodeCommandHandler(
-            _invitationRepoMock.Object, _tokenServiceMock.Object, _unitOfWorkMock.Object, _emailSenderMock.Object);
+            _invitationRepoMock.Object, _tokenServiceMock.Object, _unitOfWorkMock.Object, _emailSenderMock.Object,
+            _tenantIdProviderMock.Object);
     }
 
     [Fact]

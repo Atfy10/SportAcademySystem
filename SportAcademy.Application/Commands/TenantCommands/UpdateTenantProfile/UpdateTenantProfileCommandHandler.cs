@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Common.Regional;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Interfaces;
@@ -36,6 +37,27 @@ public class UpdateTenantProfileCommandHandler : IRequestHandler<UpdateTenantPro
         var profile = await _tenantRepository.GetProfileAsync(tenantId.Value, ct);
         if (profile is null)
             return Result.Failure(_operation, "Profile not found.", 404);
+
+        // Checked against the profile's state as loaded, before this same request's own
+        // MarkSetupComplete (below) can flip it - so the one onboarding submit that legitimately
+        // sets both Country and MarkSetupComplete together still goes through, while any later
+        // request (onboarding already done) is rejected outright, even if it also happens to
+        // resend MarkSetupComplete.
+        if (request.Country is not null)
+        {
+            if (profile.IsSetupComplete)
+                return Result.Failure(_operation, "Country cannot be changed after setup is complete.", 400);
+
+            if (!CountryRegionalRegistry.Countries.ContainsKey(request.Country))
+                return Result.Failure(_operation, "Invalid country.", 400);
+
+            var settings = await _tenantRepository.GetSettingsAsync(tenantId.Value, ct);
+            if (settings is null)
+                return Result.Failure(_operation, "Settings not found.", 404);
+
+            settings.Country = request.Country;
+            _tenantRepository.UpdateSettings(settings);
+        }
 
         if (request.OrganizationName is not null) profile.OrganizationName = request.OrganizationName;
 

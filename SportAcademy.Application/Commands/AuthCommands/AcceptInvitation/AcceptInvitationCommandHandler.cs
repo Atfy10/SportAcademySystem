@@ -28,6 +28,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
     private readonly IProfileRepository _profileRepository;
     private readonly IMediator _mediator;
     private readonly IEffectiveLimitService _limitService;
+    private readonly ITenantIdProvider _tenantIdProvider;
     private readonly ILogger<AcceptInvitationCommandHandler> _logger;
     private const string Operation = "Accept";
     private const int RefreshTokenExpiryDays = 7;
@@ -45,6 +46,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         IProfileRepository profileRepository,
         IMediator mediator,
         IEffectiveLimitService limitService,
+        ITenantIdProvider tenantIdProvider,
         ILogger<AcceptInvitationCommandHandler> logger)
     {
         _tokenService = tokenService;
@@ -59,6 +61,7 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         _profileRepository = profileRepository;
         _mediator = mediator;
         _limitService = limitService;
+        _tenantIdProvider = tenantIdProvider;
         _logger = logger;
     }
 
@@ -69,6 +72,12 @@ public class AcceptInvitationCommandHandler : IRequestHandler<AcceptInvitationCo
         var invitation = await _invitationRepository.FindByTokenHashAsync(tokenHash, ct);
         if (invitation is null)
             return Result<AuthResponseDto>.Failure(Operation, "Invalid invitation.", 404);
+
+        // Anonymous route (the invitee holds a link, not a session) - there is no ambient tenant
+        // for request middleware to have set, even though every write below (the invitation
+        // itself, the new AppUser, its permission/branch overrides) is scoped to exactly one
+        // already-known tenant (the invitation's own). Same pattern as BanOwnerCommandHandler.
+        using var _ = _tenantIdProvider.Impersonate(invitation.TenantId);
 
         if (invitation.Status is not InvitationStatus.Pending)
             return Result<AuthResponseDto>.Failure(Operation, "Invalid invitation.", 400);

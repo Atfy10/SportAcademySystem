@@ -82,9 +82,11 @@ public class CreateTenantCommandHandler : IRequestHandler<CreateTenantCommand, R
                 DateFormat = "dd/MM/yyyy",
                 TimeFormat = "HH:mm",
                 Currency = request.Currency ?? "USD",
-                Country = request.Country is not null && CountryRegionalRegistry.Countries.ContainsKey(request.Country)
-                    ? request.Country
-                    : CountryRegionalRegistry.DefaultCountry
+                // Placeholder only - the tenant's own Owner chooses the real country once, during
+                // the post-invite onboarding wizard (UpdateTenantProfileCommand), not the
+                // SuperAdmin at creation time. See RegionalSettingsCard for why it's locked
+                // immediately after that choice is made.
+                Country = CountryRegionalRegistry.DefaultCountry
             },
             Subscription = new TenantSubscription
             {

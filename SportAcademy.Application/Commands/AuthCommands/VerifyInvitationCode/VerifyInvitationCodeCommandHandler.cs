@@ -15,16 +15,19 @@ public class VerifyInvitationCodeCommandHandler : IRequestHandler<VerifyInvitati
     private readonly IInvitationRepository _invitationRepository;
     private readonly IInvitationTokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantIdProvider _tenantIdProvider;
     private readonly string _operation = OperationType.Update.ToString();
 
     public VerifyInvitationCodeCommandHandler(
         IInvitationRepository invitationRepository,
         IInvitationTokenService tokenService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ITenantIdProvider tenantIdProvider)
     {
         _invitationRepository = invitationRepository;
         _tokenService = tokenService;
         _unitOfWork = unitOfWork;
+        _tenantIdProvider = tenantIdProvider;
     }
 
     public async Task<Result> Handle(VerifyInvitationCodeCommand request, CancellationToken ct)
@@ -45,6 +48,11 @@ public class VerifyInvitationCodeCommandHandler : IRequestHandler<VerifyInvitati
 
         if (invitation.VerificationCodeAttempts >= MaxAttempts)
             return Result.Failure(_operation, "Too many incorrect attempts. Request a new code.", 400);
+
+        // Anonymous route (the invitee holds a link, not a session) - there is no ambient tenant
+        // for request middleware to have set, even though every write below is scoped to exactly
+        // one already-known tenant (the invitation's own). Same pattern as BanOwnerCommandHandler.
+        using var _ = _tenantIdProvider.Impersonate(invitation.TenantId);
 
         var submittedHash = _tokenService.HashToken(request.Code);
         if (submittedHash != invitation.VerificationCodeHash)

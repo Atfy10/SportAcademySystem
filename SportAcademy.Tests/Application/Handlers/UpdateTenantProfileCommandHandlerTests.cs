@@ -99,4 +99,54 @@ public class UpdateTenantProfileCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.StatusCode.Should().Be(404);
     }
+
+    [Fact]
+    public async Task Handle_CountrySentDuringOnboarding_SetsItOnTenantSettings()
+    {
+        var profile = new TenantProfile { TenantId = TenantId, OrganizationName = "Acme Academy", IsSetupComplete = false };
+        var settings = new TenantSettings { TenantId = TenantId, Country = "KW" };
+        _tenantRepoMock.Setup(r => r.GetProfileAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(profile);
+        _tenantRepoMock.Setup(r => r.GetSettingsAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(settings);
+
+        var command = new UpdateTenantProfileCommand(
+            null, null, null, null, null, null, null, null, null, MarkSetupComplete: true, Country: "EG");
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        settings.Country.Should().Be("EG");
+        _tenantRepoMock.Verify(r => r.UpdateSettings(settings), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_CountrySentAfterSetupIsComplete_IsRejected()
+    {
+        var profile = new TenantProfile { TenantId = TenantId, OrganizationName = "Acme Academy", IsSetupComplete = true };
+        var settings = new TenantSettings { TenantId = TenantId, Country = "KW" };
+        _tenantRepoMock.Setup(r => r.GetProfileAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(profile);
+
+        var command = new UpdateTenantProfileCommand(
+            null, null, null, null, null, null, null, null, null, Country: "EG");
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.StatusCode.Should().Be(400);
+        settings.Country.Should().Be("KW");
+        _tenantRepoMock.Verify(r => r.GetSettingsAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _tenantRepoMock.Verify(r => r.UpdateSettings(It.IsAny<TenantSettings>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_InvalidCountryCode_ReturnsFailure400()
+    {
+        var profile = new TenantProfile { TenantId = TenantId, OrganizationName = "Acme Academy", IsSetupComplete = false };
+        _tenantRepoMock.Setup(r => r.GetProfileAsync(TenantId, It.IsAny<CancellationToken>())).ReturnsAsync(profile);
+
+        var command = new UpdateTenantProfileCommand(
+            null, null, null, null, null, null, null, null, null, Country: "ZZ");
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.StatusCode.Should().Be(400);
+        _tenantRepoMock.Verify(r => r.UpdateSettings(It.IsAny<TenantSettings>()), Times.Never);
+    }
 }

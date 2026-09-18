@@ -15,14 +15,17 @@ public class ValidateInvitationQueryHandlerTests
     private readonly Mock<IInvitationRepository> _invitationRepoMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly Mock<IInvitationTokenService> _tokenServiceMock = new();
+    private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
     private readonly ValidateInvitationQueryHandler _handler;
 
     public ValidateInvitationQueryHandlerTests()
     {
+        _tenantIdProviderMock.Setup(p => p.Impersonate(It.IsAny<Guid>())).Returns(Mock.Of<IDisposable>());
         _handler = new ValidateInvitationQueryHandler(
             _invitationRepoMock.Object,
             _unitOfWorkMock.Object,
-            _tokenServiceMock.Object);
+            _tokenServiceMock.Object,
+            _tenantIdProviderMock.Object);
     }
 
     private static Invitation CreateValidInvitation()
