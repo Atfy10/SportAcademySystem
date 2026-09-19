@@ -579,10 +579,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(c => !alreadyEnrolledInSport.Contains(c.Id))
                 .Where(c => c.Subscription is not null)
                 // NotSpecified/missing = "no skill on record" - never a disqualifier, matching
-                // CreateEnrollmentCommandHandler's own stance.
+                // CreateEnrollmentCommandHandler's own stance. A trainee already above this
+                // group's skill level is excluded - CreateEnrollmentCommandHandler rejects
+                // joining a group below one's own recorded level; a trainee at or below it is
+                // eligible, and joining raises their skill level to match this group's.
                 .Where(c => c.SportTrainee is null
                     || c.SportTrainee == SkillLevel.NotSpecified
-                    || c.SportTrainee >= group.SkillLevel)
+                    || c.SportTrainee <= group.SkillLevel)
                 .Select(c => new EligibleTraineeForGroupDto(
                     c.Id,
                     c.FullName,

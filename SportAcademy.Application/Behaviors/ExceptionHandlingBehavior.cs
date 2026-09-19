@@ -277,12 +277,12 @@ namespace SportAcademy.Application.Behaviors
 
                 return CreateFailure<TResponse>(requestType, ex.Message, 409);
             }
-            catch (TraineeSkillLevelTooLowException ex)
+            catch (GroupSkillLevelTooLowException ex)
             {
                 var requestType = request.GetType().Name;
 
                 _logger.LogWarning(ex,
-                    "Trainee skill level too low for {RequestType}. Message: {Message}",
+                    "Group skill level too low for trainee in {RequestType}. Message: {Message}",
                     requestType,
                     ex.Message);
 

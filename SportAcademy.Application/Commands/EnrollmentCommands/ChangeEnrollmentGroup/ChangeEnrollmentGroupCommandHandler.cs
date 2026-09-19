@@ -69,8 +69,23 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentG
             {
                 var sportTrainee = await _sportTraineeRepository.GetByIdWithIncludesAsync(
                     newSportId.Value, enrollment.TraineeId, cancellationToken);
-                if (sportTrainee is not null && newGroup.SkillLevel > sportTrainee.SkillLevel)
-                    throw new TraineeSkillLevelTooLowException(enrollment.TraineeId, request.NewTraineeGroupId);
+                if (sportTrainee is not null)
+                {
+                    // Same rule as CreateEnrollment: never move a trainee down to a group below
+                    // their own recorded skill level.
+                    if (sportTrainee.SkillLevel != SkillLevel.NotSpecified
+                        && newGroup.SkillLevel < sportTrainee.SkillLevel)
+                        throw new GroupSkillLevelTooLowException(enrollment.TraineeId, request.NewTraineeGroupId);
+
+                    // Moving up (or having no skill on record yet) raises the trainee's skill
+                    // level to match the new group - the frontend warns about this before
+                    // submitting.
+                    if (newGroup.SkillLevel > sportTrainee.SkillLevel)
+                    {
+                        sportTrainee.SkillLevel = newGroup.SkillLevel;
+                        await _sportTraineeRepository.UpdateAsync(sportTrainee, cancellationToken);
+                    }
+                }
             }
 
             var activeCount = await _enrollmentRepository.GetActiveEnrollmentCountForGroupAsync(

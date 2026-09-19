@@ -64,7 +64,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
 
         public async Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(
-            int? sportId = null, SkillLevel? maxSkillLevel = null, Gender? gender = null,
+            int? sportId = null, SkillLevel? minSkillLevel = null, Gender? gender = null,
             TraineeGroupType? groupType = null, IReadOnlyCollection<DayOfWeek>? trainingDays = null,
             CancellationToken cancellationToken = default)
         {
@@ -78,8 +78,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             };
 
             // sportId/gender filter in SQL (both are equality checks against HasConversion<string>
-            // columns, which EF translates correctly). SkillLevel does NOT: comparing "at or below
-            // maxSkillLevel" is an ordinal comparison, and EF would either fail to translate it
+            // columns, which EF translates correctly). SkillLevel does NOT: comparing "at or above
+            // minSkillLevel" is an ordinal comparison, and EF would either fail to translate it
             // against a converted column or - worse - silently translate it into a lexicographic
             // string comparison that doesn't match the enum's declared order ("Advanced" sorts
             // before "Beginner" alphabetically). ToDropdownDto already projects SkillLevel back to
@@ -97,8 +97,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(TraineeGroupProjections.ToDropdownRow(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
 
-            if (maxSkillLevel.HasValue)
-                items = items.Where(i => i.SkillLevel <= maxSkillLevel.Value).ToList();
+            // A trainee may never join a group below their own recorded skill level - only a
+            // group at or above it is offered (joining a higher one upgrades their skill level
+            // to match, see CreateEnrollmentCommandHandler/ChangeEnrollmentGroupCommandHandler).
+            if (minSkillLevel.HasValue)
+                items = items.Where(i => i.SkillLevel >= minSkillLevel.Value).ToList();
 
             // Set equality against the subscription's chosen pattern, done in memory for the same
             // reason SkillLevel is above: this is a whole-set comparison, not something EF can

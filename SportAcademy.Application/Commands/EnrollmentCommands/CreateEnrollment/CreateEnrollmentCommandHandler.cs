@@ -112,7 +112,8 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                 .ToDateTime(TimeOnly.MinValue);
 
             // A trainee can only join a group whose gender policy accepts them (Mixed accepts
-            // anyone) and whose required skill level is at or below their own for this sport.
+            // anyone) and whose required skill level is at or above their own for this sport -
+            // see the skill-level check below for what happens when it's above.
             var trainee = await _traineeRepository.GetFullTrainee(request.TraineeId, cancellationToken);
             var genderOk = trainee is null || group.Gender switch
             {
@@ -129,13 +130,28 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                 var sportTrainee = await _sportTraineeRepository.GetByIdWithIncludesAsync(
                     sportId.Value, request.TraineeId, cancellationToken);
                 // NotSpecified means "no skill on record" (including the SportTrainee row
-                // CreateSubscriptionDetailsCommandHandler auto-backfills at subscription time)
-                // just as much as sportTrainee being null does - nothing to enforce against
-                // absent data either way.
-                if (sportTrainee is not null
-                    && sportTrainee.SkillLevel != SkillLevel.NotSpecified
-                    && group.SkillLevel > sportTrainee.SkillLevel)
-                    throw new TraineeSkillLevelTooLowException(request.TraineeId, request.TraineeGroupId);
+                // CreateSubscriptionDetailsCommandHandler auto-backfills at subscription time) -
+                // nothing to enforce against absent data, so sportTrainee being null is a no-op
+                // here too.
+                if (sportTrainee is not null)
+                {
+                    // A trainee may never join a group below their own recorded skill level -
+                    // downgrading isn't a thing a group assignment does.
+                    if (sportTrainee.SkillLevel != SkillLevel.NotSpecified
+                        && group.SkillLevel < sportTrainee.SkillLevel)
+                        throw new GroupSkillLevelTooLowException(request.TraineeId, request.TraineeGroupId);
+
+                    // Joining a group above their recorded level - or their very first group for
+                    // this sport, when nothing is on record yet - raises the trainee's skill
+                    // level to match. The group placement is what defines the skill level, not
+                    // the other way around; the frontend warns the user about this upgrade before
+                    // submitting.
+                    if (group.SkillLevel > sportTrainee.SkillLevel)
+                    {
+                        sportTrainee.SkillLevel = group.SkillLevel;
+                        await _sportTraineeRepository.UpdateAsync(sportTrainee, cancellationToken);
+                    }
+                }
             }
 
             var daysPerMonth = SubscriptionDetailsService.CalculateAllowedSessions(subDetails);

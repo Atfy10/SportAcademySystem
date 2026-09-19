@@ -7,7 +7,8 @@ using SportAcademy.Domain.Enums;
 namespace SportAcademy.Application.Queries.TraineeGroupQueries.GetAllForDropdown;
 
 // SkillLevel is the trainee's own recorded level for SportId - the query returns only groups
-// whose required SkillLevel is at or below it (a trainee can always join an easier group).
+// whose required SkillLevel is at or above it (a trainee may never be enrolled into an easier
+// group than their own level; joining a harder one upgrades their recorded skill level to match).
 // Gender is the trainee's own gender - the query returns only groups whose gender policy
 // accepts them (Mixed groups always match). Both null = unfiltered on that axis, same as
 // SportId - used for the "no trainee/subscription picked yet" case.

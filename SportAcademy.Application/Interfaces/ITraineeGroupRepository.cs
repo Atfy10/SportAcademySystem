@@ -10,7 +10,7 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default);
         Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, CancellationToken cancellationToken = default);
         Task<TraineeGroupDetailDto?> GetDetailsByIdAsync(int id, CancellationToken cancellationToken = default);
-        Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(int? sportId = null, Domain.Enums.SkillLevel? maxSkillLevel = null, Domain.Enums.Gender? gender = null, Domain.Enums.TraineeGroupType? groupType = null, IReadOnlyCollection<DayOfWeek>? trainingDays = null, CancellationToken cancellationToken = default);
+        Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(int? sportId = null, Domain.Enums.SkillLevel? minSkillLevel = null, Domain.Enums.Gender? gender = null, Domain.Enums.TraineeGroupType? groupType = null, IReadOnlyCollection<DayOfWeek>? trainingDays = null, CancellationToken cancellationToken = default);
         Task<TraineeGroup?> GetByIdWithSchedulesAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>

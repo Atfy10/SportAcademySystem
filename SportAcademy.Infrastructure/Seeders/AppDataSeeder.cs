@@ -1819,11 +1819,15 @@ namespace SportAcademy.Infrastructure.Seeders
                 if (candidates.Count == 0)
                     continue; // no compatible group seeded for this sport/gender - leave the subscription unclaimed, same as a real not-yet-enrolled trainee
 
+                // A trainee may never be enrolled into a group below their own recorded skill
+                // level (CreateEnrollmentCommandHandler rejects it) - only groups at or above
+                // are candidates. Joining one above raises the recorded skill to match, same as
+                // the app itself does.
                 var key = (sd.TraineeId, sd.SportId);
                 var recordedSkill = skillByTraineeSport.TryGetValue(key, out var s) ? s : (SkillLevel?)null;
 
                 var fitting = recordedSkill.HasValue
-                    ? candidates.Where(g => g.SkillLevel <= recordedSkill.Value).ToList()
+                    ? candidates.Where(g => g.SkillLevel >= recordedSkill.Value).ToList()
                     : candidates;
 
                 var group = fitting.Count > 0
