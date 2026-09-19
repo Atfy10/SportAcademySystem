@@ -67,6 +67,20 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
             RuleFor(x => x.NameAr)
                 .MaximumLength(150).WithMessage("Arabic group name can't exceed 150 characters.")
                 .When(x => !string.IsNullOrEmpty(x.NameAr));
+
+            // Schedules == null means "leave the weekly schedule untouched" (see
+            // UpdateTraineeGroupCommand) - only validated when the caller actually sent a
+            // replacement list, same shape as CreateTraineeGroupValidator's rules.
+            RuleFor(x => x.Schedules)
+                .NotEmpty().WithMessage("Please add at least one schedule slot for this group.")
+                .When(x => x.Schedules is not null);
+
+            RuleForEach(x => x.Schedules).ChildRules(schedule =>
+            {
+                schedule.RuleFor(s => s.StartTime)
+                    .Must(t => TimeOnly.TryParse(t, out _))
+                    .WithMessage("Invalid start time - use HH:mm format.");
+            }).When(x => x.Schedules is not null);
         }
     }
 }

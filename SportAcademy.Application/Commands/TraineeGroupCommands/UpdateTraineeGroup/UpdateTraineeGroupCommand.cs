@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Interfaces;
@@ -27,7 +28,12 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
         TraineeGroupGender? Gender,
         int CoachId,
         string? Name = null,
-        string? NameAr = null
+        string? NameAr = null,
+        // Null: leave the weekly schedule untouched. Non-null: replace it wholesale with this
+        // list (see UpdateTraineeGroupCommandHandler for how existing slots are diffed so
+        // unaffected GroupSchedule rows - and the SessionOccurrences already generated against
+        // them - keep their identity).
+        List<CreateGroupScheduleSlot>? Schedules = null
     ) : IRequest<Result<TraineeGroupDto>>, IRequiresFeature
     {
         public string FeatureKey => "group-management";

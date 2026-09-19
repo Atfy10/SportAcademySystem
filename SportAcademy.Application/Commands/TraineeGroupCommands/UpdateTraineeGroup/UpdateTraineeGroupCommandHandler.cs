@@ -17,6 +17,8 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
     {
         private readonly ITraineeGroupRepository _traineeGroupRepository;
         private readonly ICoachRepository _coachRepository;
+        private readonly ISessionOccurrenceRepository _sessionOccurrenceRepository;
+        private readonly ITenantClock _tenantClock;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
         private readonly string _operationType = OperationType.Update.ToString();
@@ -24,11 +26,15 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
         public UpdateTraineeGroupCommandHandler(
             ITraineeGroupRepository traineeGroupRepository,
             ICoachRepository coachRepository,
+            ISessionOccurrenceRepository sessionOccurrenceRepository,
+            ITenantClock tenantClock,
             IUnitOfWork unitOfWork,
             IPublisher publisher)
         {
             _traineeGroupRepository = traineeGroupRepository;
             _coachRepository = coachRepository;
+            _sessionOccurrenceRepository = sessionOccurrenceRepository;
+            _tenantClock = tenantClock;
             _unitOfWork = unitOfWork;
             _publisher = publisher;
         }
@@ -78,6 +84,42 @@ namespace SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGr
                 {
                     traineeGroup.Translations.Add(new TraineeGroupTranslation { LangCode = "ar", Name = trimmedName });
                 }
+            }
+
+            // Schedules == null: leave the weekly pattern untouched. Non-null: replace it,
+            // diffing by (Day, StartTime) so an unchanged slot keeps its GroupScheduleId - and
+            // every SessionOccurrence already generated against it stays valid. Only slots that
+            // were actually removed or moved get their still-Scheduled, not-yet-started
+            // occurrences cleaned up; nothing that already started or has attendance is touched.
+            if (request.Schedules is not null)
+            {
+                var newSlots = request.Schedules
+                    .Select(s => (s.Day, StartTime: TimeOnly.Parse(s.StartTime)))
+                    .ToList();
+
+                var existingSlots = traineeGroup.GroupSchedules.ToList();
+
+                var removedSlots = existingSlots
+                    .Where(e => !newSlots.Any(n => n.Day == e.Day && n.StartTime == e.StartTime))
+                    .ToList();
+
+                var addedSlots = newSlots
+                    .Where(n => !existingSlots.Any(e => e.Day == n.Day && e.StartTime == n.StartTime))
+                    .Select(n => new GroupSchedule { Day = n.Day, StartTime = n.StartTime })
+                    .ToList();
+
+                if (removedSlots.Count > 0)
+                {
+                    var tenantNow = await _tenantClock.GetLocalNowAsync(cancellationToken);
+                    await _sessionOccurrenceRepository.DeleteFutureScheduledOccurrencesAsync(
+                        removedSlots.Select(r => r.Id).ToList(), tenantNow, cancellationToken);
+
+                    foreach (var removed in removedSlots)
+                        traineeGroup.GroupSchedules.Remove(removed);
+                }
+
+                foreach (var added in addedSlots)
+                    traineeGroup.GroupSchedules.Add(added);
             }
 
             cancellationToken.ThrowIfCancellationRequested();

@@ -164,6 +164,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<TraineeGroup?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default)
             => await _context.TraineeGroups
                 .Include(g => g.Translations)
+                .Include(g => g.GroupSchedules)
                 .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
 
         public async Task<string?> GetTranslatedNameAsync(int id, string lang, CancellationToken cancellationToken = default)
