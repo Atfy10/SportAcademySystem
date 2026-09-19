@@ -24,7 +24,7 @@ public static class SessionOccurrenceProjections
         s.GroupSchedule!.TraineeGroup!.Branch!.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? s.GroupSchedule!.TraineeGroup!.Branch!.Name,
         s.StartDateTime.ToString("HH:mm:ss"),
         s.GroupSchedule!.TraineeGroup!.DurationInMinutes,
-        s.GroupSchedule!.TraineeGroup!.Enrollments.Count(e => e.IsActive),
+        s.GroupSchedule!.TraineeGroup!.Enrollments.Count(e => e.Status == EnrollmentStatus.Active),
         s.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present),
         s.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Late),
         s.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Absent),

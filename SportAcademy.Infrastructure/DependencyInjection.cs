@@ -100,6 +100,7 @@ namespace SportAcademy.Infrastructure
             services.AddHostedService<TenantArchivalService>();
             services.AddHostedService<EmailQueueCleanupService>();
             services.AddHostedService<EnrollmentLapseService>();
+            services.AddHostedService<SessionOccurrenceCompletionService>();
             services.AddHostedService<LimitReconciliationDeadlineService>();
 
             // Register seeders

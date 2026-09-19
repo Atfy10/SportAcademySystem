@@ -78,7 +78,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(s => (int?)s.GroupSchedule!.TraineeGroupId)
                 .FirstOrDefaultAsync(cancellationToken);
 
-        public async Task<(int TraineeGroupId, DateTime StartDateTime, int DurationInMinutes)?> GetTimingAsync(
+        public async Task<(int TraineeGroupId, DateTime StartDateTime, int DurationInMinutes, SessionStatus Status)?> GetTimingAsync(
             int sessionOccurrenceId, CancellationToken cancellationToken = default)
         {
             var row = await _context.SessionOccurrences
@@ -87,11 +87,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 {
                     TraineeGroupId = s.GroupSchedule!.TraineeGroupId,
                     s.StartDateTime,
-                    DurationInMinutes = s.GroupSchedule!.TraineeGroup.DurationInMinutes
+                    DurationInMinutes = s.GroupSchedule!.TraineeGroup.DurationInMinutes,
+                    s.Status
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            return row is null ? null : (row.TraineeGroupId, row.StartDateTime, row.DurationInMinutes);
+            return row is null ? null : (row.TraineeGroupId, row.StartDateTime, row.DurationInMinutes, row.Status);
         }
 
         public async Task<int> CountAsync(CancellationToken cancellationToken = default)
@@ -161,6 +162,24 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             past.Reverse();
             return [.. past, .. current, .. future];
+        }
+
+        public async Task<int> DeleteFutureScheduledOccurrencesAsync(
+            IReadOnlyCollection<int> groupScheduleIds, DateTime asOf, CancellationToken cancellationToken = default)
+        {
+            if (groupScheduleIds.Count == 0) return 0;
+
+            var stale = await _context.SessionOccurrences
+                .Where(s => groupScheduleIds.Contains(s.GroupScheduleId)
+                    && s.Status == SessionStatus.Scheduled
+                    && s.StartDateTime > asOf)
+                .ToListAsync(cancellationToken);
+
+            if (stale.Count == 0) return 0;
+
+            _context.SessionOccurrences.RemoveRange(stale);
+            await _context.SaveChangesAsync(cancellationToken);
+            return stale.Count;
         }
     }
 }

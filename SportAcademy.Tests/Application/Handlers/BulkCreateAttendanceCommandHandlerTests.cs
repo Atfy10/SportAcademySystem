@@ -82,7 +82,7 @@ public class BulkCreateAttendanceCommandHandlerTests
         var item = CreateAttendanceItem(1, 1, AttendanceStatus.Present, "10:30");
         var command = CreateValidCommand(new List<AttendanceItem> { item });
 
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60, SessionStatus.Scheduled));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(5);
         _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync((Attendance?)null);
         _attendanceRepoMock.Setup(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -104,7 +104,7 @@ public class BulkCreateAttendanceCommandHandlerTests
         var command = CreateValidCommand(new List<AttendanceItem> { item });
 
         _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((1, DateTime.UtcNow.AddHours(1), 60));
+            .ReturnsAsync((1, DateTime.UtcNow.AddHours(1), 60, SessionStatus.Scheduled));
 
         // Act
         var result = await _handler.Handle(command, CancellationToken.None);
@@ -124,8 +124,8 @@ public class BulkCreateAttendanceCommandHandlerTests
         var item2 = CreateAttendanceItem(2, 2, AttendanceStatus.Present);
         var command = CreateValidCommand(new List<AttendanceItem> { item1, item2 });
 
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(((int TraineeGroupId, DateTime StartDateTime, int DurationInMinutes)?)null);
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((2, DateTime.UtcNow, 60));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(((int TraineeGroupId, DateTime StartDateTime, int DurationInMinutes, SessionStatus Status)?)null);
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((2, DateTime.UtcNow, 60, SessionStatus.Scheduled));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(2, 2, It.IsAny<CancellationToken>())).ReturnsAsync(6);
         _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(2, 2, It.IsAny<CancellationToken>())).ReturnsAsync((Attendance?)null);
         _attendanceRepoMock.Setup(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -148,10 +148,10 @@ public class BulkCreateAttendanceCommandHandlerTests
         var item2 = CreateAttendanceItem(2, 2, AttendanceStatus.Present);
         var command = CreateValidCommand(new List<AttendanceItem> { item1, item2 });
 
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60, SessionStatus.Scheduled));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync((int?)null);
 
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((2, DateTime.UtcNow, 60));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((2, DateTime.UtcNow, 60, SessionStatus.Scheduled));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(2, 2, It.IsAny<CancellationToken>())).ReturnsAsync(6);
         _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(2, 2, It.IsAny<CancellationToken>())).ReturnsAsync((Attendance?)null);
         _attendanceRepoMock.Setup(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -173,7 +173,7 @@ public class BulkCreateAttendanceCommandHandlerTests
         var command = CreateValidCommand(new List<AttendanceItem> { item });
         var existingAttendance = CreateAttendance(1, 5);
 
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60, SessionStatus.Scheduled));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(5);
         _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(existingAttendance);
         _attendanceRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -195,7 +195,7 @@ public class BulkCreateAttendanceCommandHandlerTests
         var item = CreateAttendanceItem(1, 1, AttendanceStatus.Present, null);
         var command = CreateValidCommand(new List<AttendanceItem> { item });
 
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60, SessionStatus.Scheduled));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(5);
         _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync((Attendance?)null);
         _attendanceRepoMock.Setup(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -219,8 +219,8 @@ public class BulkCreateAttendanceCommandHandlerTests
         var command = CreateValidCommand(new List<AttendanceItem> { newItem, updateItem });
         var existingAttendance = CreateAttendance(2, 6);
 
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60));
-        _sessionRepoMock.Setup(r => r.GetTimingAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((2, DateTime.UtcNow, 60));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((1, DateTime.UtcNow, 60, SessionStatus.Scheduled));
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync((2, DateTime.UtcNow, 60, SessionStatus.Scheduled));
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(5);
         _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(2, 2, It.IsAny<CancellationToken>())).ReturnsAsync(6);
         _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync((Attendance?)null);
@@ -252,7 +252,7 @@ public class BulkCreateAttendanceCommandHandlerTests
         foreach (var item in items)
         {
             _sessionRepoMock.Setup(r => r.GetTimingAsync(item.SessionOccurrenceId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((item.TraineeId, DateTime.UtcNow, 60));
+                .ReturnsAsync((item.TraineeId, DateTime.UtcNow, 60, SessionStatus.Scheduled));
             _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(item.TraineeId, item.TraineeId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(item.TraineeId + 10);
             _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(item.SessionOccurrenceId, item.TraineeId, It.IsAny<CancellationToken>()))

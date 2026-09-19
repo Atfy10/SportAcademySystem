@@ -46,16 +46,23 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
                 request.SessionOccurrenceId, cancellationToken)
                 ?? throw new SessionOccurrenceNotFoundException(request.SessionOccurrenceId.ToString());
 
+            // Checked before the time window, not instead of it: a session can be
+            // Completed/Canceled/CancelledTemporary either by SessionOccurrenceCompletionService
+            // (once its window closes) or by staff marking it by hand early, before the window
+            // itself would have caught it.
+            if (timing.Status != SessionStatus.Scheduled)
+                throw new SessionNotScheduledException(request.SessionOccurrenceId, timing.Status.ToString());
+
             // timing.StartDateTime is written (session generation) and compared here as the
             // tenant's own wall-clock time, never converted to real UTC - "now" has to be
             // resolved the same way, or this comparison silently mixes two different clocks for
             // any tenant not in UTC.
             var tenantNow = await _tenantClock.GetLocalNowAsync(cancellationToken);
 
-            // Attendance can only be recorded from when the session starts until 120 minutes
+            // Attendance can only be recorded from when the session starts until 90 minutes
             // after it ends - not before it starts either, since there's nothing to attend yet.
             if (tenantNow < timing.StartDateTime
-                || tenantNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + 120))
+                || tenantNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + AttendanceWindowClosedException.GraceMinutesAfterEnd))
                 throw new AttendanceWindowClosedException(request.SessionOccurrenceId);
 
             var groupId = timing.TraineeGroupId;

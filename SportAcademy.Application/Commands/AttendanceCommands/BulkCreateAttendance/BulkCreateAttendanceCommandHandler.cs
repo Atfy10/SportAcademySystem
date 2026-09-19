@@ -7,6 +7,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.AttendanceExceptions;
 
 namespace SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 
@@ -50,12 +51,22 @@ public class BulkCreateAttendanceCommandHandler(
                 continue;
             }
 
-            // Attendance can only be recorded from when the session starts until 120 minutes
-            // after it ends - not before it starts either, since there's nothing to attend yet.
-            if (tenantNow < timing.Value.StartDateTime
-                || tenantNow > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + 120))
+            // Checked before the time window, not instead of it: a session can be
+            // Completed/Canceled/CancelledTemporary either by SessionOccurrenceCompletionService
+            // (once its window closes) or by staff marking it by hand early.
+            if (timing.Value.Status != SessionStatus.Scheduled)
             {
-                skipped.Add($"Trainee {item.TraineeId}: outside the attendance window (session start through 120 minutes after it ends).");
+                skipped.Add($"Trainee {item.TraineeId}: session is {timing.Value.Status}, not Scheduled.");
+                continue;
+            }
+
+            // Attendance can only be recorded from when the session starts until
+            // AttendanceWindowClosedException.GraceMinutesAfterEnd minutes after it ends - not
+            // before it starts either, since there's nothing to attend yet.
+            if (tenantNow < timing.Value.StartDateTime
+                || tenantNow > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + AttendanceWindowClosedException.GraceMinutesAfterEnd))
+            {
+                skipped.Add($"Trainee {item.TraineeId}: outside the attendance window (session start through {AttendanceWindowClosedException.GraceMinutesAfterEnd} minutes after it ends).");
                 continue;
             }
 

@@ -7,6 +7,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 using SportAcademy.Domain.Exceptions.PaymentTypeExceptions;
+using SportAcademy.Domain.Exceptions.AttendanceExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
@@ -222,6 +223,50 @@ namespace SportAcademy.Application.Behaviors
 
                 return CreateFailure<TResponse>(requestType, ex.Message, 409);
             }
+            catch (TraineeHasSuspendedEnrollmentException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Trainee has a suspended enrollment for this sport for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (EnrollmentAlreadyExpiredException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Enrollment already expired/ended for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (EnrollmentSuspendedException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Enrollment is suspended for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (EnrollmentNotSuspendedException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Enrollment isn't suspended for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
             catch (EnrollmentGroupSportMismatchException ex)
             {
                 var requestType = request.GetType().Name;
@@ -265,6 +310,39 @@ namespace SportAcademy.Application.Behaviors
                     ex.Message);
 
                 return CreateFailure<TResponse>(requestType, ex.Message, 409);
+            }
+            catch (AttendanceWindowClosedException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Attendance window closed for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
+            }
+            catch (SessionNotScheduledException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Session not Scheduled for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
+            }
+            catch (ExcusedRequiresApprovalException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Excused status attempted directly for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, ex.Message, 400);
             }
             catch (TraineeGenderMismatchException ex)
             {

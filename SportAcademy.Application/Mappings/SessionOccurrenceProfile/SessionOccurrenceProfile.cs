@@ -27,7 +27,7 @@ namespace SportAcademy.Application.Mappings.SessionOccurrenceProfile
                 .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Branch!.Name))
                 .ForCtorParam("StartTime", opt => opt.MapFrom(src => src.StartDateTime.ToString("HH:mm:ss")))
                 .ForCtorParam("DurationInMinutes", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.DurationInMinutes))
-                .ForCtorParam("TotalEnrolled", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Enrollments.Count(e => e.IsActive)))
+                .ForCtorParam("TotalEnrolled", opt => opt.MapFrom(src => src.GroupSchedule!.TraineeGroup!.Enrollments.Count(e => e.Status == EnrollmentStatus.Active)))
                 // Previously hardcoded to 0 - these never reflected actual marks, so the
                 // session summary counters never moved no matter what a coach marked. Counting
                 // straight off this session's own Attendances (not the roster/Enrollments) is
