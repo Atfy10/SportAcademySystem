@@ -19,12 +19,14 @@ namespace SportAcademy.Application.Mappings.Manual
             SubscriptionDetailsId = cmd.SubscriptionDetailsId,
         };
 
-        // Partial update: only overwrites fields the command actually carries.
+        // Partial update: only overwrites fields the command actually carries. Status is
+        // deliberately not settable here - Suspend/Reactivate/DeleteEnrollment are the only
+        // commands allowed to change it, each with its own rules (can't suspend an expired
+        // enrollment, reactivating recomputes ExpiryDate, etc.) that a raw PUT would bypass.
         public static void ApplyUpdate(Enrollment enrollment, UpdateEnrollmentCommand cmd)
         {
             if (cmd.ExpiryDate.HasValue) enrollment.ExpiryDate = cmd.ExpiryDate.Value;
             if (cmd.SessionRemaining.HasValue) enrollment.SessionRemaining = cmd.SessionRemaining.Value;
-            if (cmd.IsActive.HasValue) enrollment.IsActive = cmd.IsActive.Value;
         }
 
         public static EnrollmentDto ToDto(Enrollment enrollment) => new(
@@ -33,7 +35,7 @@ namespace SportAcademy.Application.Mappings.Manual
             enrollment.ExpiryDate,
             enrollment.SessionAllowed,
             enrollment.SessionRemaining,
-            enrollment.IsActive,
+            enrollment.Status.ToString(),
             enrollment.TraineeId,
             enrollment.TraineeGroupId,
             enrollment.SubscriptionDetailsId

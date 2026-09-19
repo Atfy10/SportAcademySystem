@@ -34,6 +34,12 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment
                 .GetByIdAsync(request.Id, cancellationToken)
                 ?? throw new EnrollmentNotFoundException($"{request.Id}");
 
+            // No path exists yet to decide what happens to a suspended enrollment's remaining
+            // sessions before discarding it - reactivate first, or wait for a dedicated close
+            // flow (not built yet).
+            if (enrollment.Status == EnrollmentStatus.Suspended)
+                throw new EnrollmentSuspendedException(enrollment.Id);
+
             cancellationToken.ThrowIfCancellationRequested();
 
             await _enrollmentRepository.DeleteAsync(enrollment, cancellationToken);

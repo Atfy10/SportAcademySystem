@@ -40,11 +40,13 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetCoachHistory
                     DateTime? nextAssignment = i + 1 < chain.Count ? chain[i + 1].EffectiveDate : null;
 
                     // Bound 2: the enrollment this stint rode along with being closed out
-                    // (soft-deleted, suspended, or expired) without a formal reassignment.
+                    // (soft-deleted, ended, or expired) without a formal reassignment. Suspended
+                    // no longer counts as "closed out" here - the trainee still holds their spot
+                    // with this coach while paused, same as it no longer frees a group slot.
                     DateTime? enrollmentClosed = current.Enrollment switch
                     {
                         { IsDeleted: true, DeletedAt: not null } e => e.DeletedAt,
-                        { IsActive: false } e => e.UpdatedAt,
+                        { Status: EnrollmentStatus.Ended } e => e.UpdatedAt,
                         { ExpiryDate: var exp } e when exp < DateTime.UtcNow => exp,
                         _ => null
                     };

@@ -69,7 +69,16 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                 var existingEnrollment = await _enrollmentRepository.GetCurrentEnrollmentForSportAsync(
                     request.TraineeId, sportId.Value, cancellationToken);
                 if (existingEnrollment is not null)
+                {
+                    // A Suspended enrollment is a distinct, actionable situation - guide the
+                    // caller to reactivate/close it instead of the generic "already enrolled"
+                    // message, which reads as if nothing can be done about it.
+                    if (existingEnrollment.Status == EnrollmentStatus.Suspended)
+                        throw new TraineeHasSuspendedEnrollmentException(
+                            request.TraineeId, sportId.Value, existingEnrollment.Id);
+
                     throw new TraineeAlreadyEnrolledInSportException(request.TraineeId, sportId.Value);
+                }
             }
 
             // Set initial values
@@ -157,7 +166,7 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             var daysPerMonth = SubscriptionDetailsService.CalculateAllowedSessions(subDetails);
             enrollment.SessionAllowed = daysPerMonth;
             enrollment.SessionRemaining = enrollment.SessionAllowed;
-            enrollment.IsActive = true;
+            enrollment.Status = EnrollmentStatus.Active;
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -174,7 +183,7 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             if (reopened is not null)
             {
                 reopened.EndDate = null;
-                reopened.IsActive = true;
+                reopened.Status = EnrollmentStatus.Active;
                 reopened.SubscriptionDetailsId = request.SubscriptionDetailsId;
                 reopened.ExpiryDate = enrollment.ExpiryDate;
                 reopened.SessionAllowed = enrollment.SessionAllowed;

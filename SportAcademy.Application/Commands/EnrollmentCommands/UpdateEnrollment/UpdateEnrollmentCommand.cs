@@ -8,8 +8,7 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment
     public record UpdateEnrollmentCommand(
         int Id,
         DateTime? ExpiryDate,
-        int? SessionRemaining,
-        bool? IsActive
+        int? SessionRemaining
     ) : IRequest<Result<EnrollmentDto>>, IRequiresFeature
     {
         public string FeatureKey => "enrollment-management";

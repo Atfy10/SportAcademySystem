@@ -85,7 +85,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<BranchStatsDto> GetBranchStatsAsync(int branchId, CancellationToken cancellationToken = default)
         {
             var totalTrainees = await _context.Enrollments
-                .Where(e => e.TraineeGroup!.BranchId == branchId && e.IsActive)
+                .Where(e => e.TraineeGroup!.BranchId == branchId && e.Status != EnrollmentStatus.Ended)
                 .Select(e => e.TraineeId)
                 .Distinct()
                 .CountAsync(cancellationToken);

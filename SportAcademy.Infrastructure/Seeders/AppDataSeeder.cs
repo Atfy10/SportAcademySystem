@@ -1849,7 +1849,7 @@ namespace SportAcademy.Infrastructure.Seeders
                     ExpiryDate = sd.EndDate.ToDateTime(TimeOnly.MinValue),
                     SessionAllowed = sessionsAllowed,
                     SessionRemaining = random.Next(0, sessionsAllowed + 1),
-                    IsActive = true,
+                    Status = EnrollmentStatus.Active,
                     TraineeId = sd.TraineeId,
                     TraineeGroupId = group.Id,
                     SubscriptionDetailsId = sd.Id,

@@ -12,7 +12,7 @@ namespace SportAcademy.Application.DTOs.EnrollmentDtos
         DateTime ExpiryDate,
         int SessionAllowed,
         int SessionRemaining,
-        bool IsActive,
+        string Status,
         int TraineeId,
         int TraineeGroupId,
         int SubscriptionDetailsId

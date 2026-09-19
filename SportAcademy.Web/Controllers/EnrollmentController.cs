@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using SportAcademy.Application.Common.Pagination;
-using SportAcademy.Application.Commands.EnrollmentCommands.ActivateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentGroup;
 using SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.DeleteEnrollment;
+using SportAcademy.Application.Commands.EnrollmentCommands.ReactivateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.SuspendEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdateEnrollment;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdatePaymentStatus;
@@ -177,12 +177,13 @@ namespace SportAcademy.Web.Controllers
         }
 
         [Authorize(Policy = "Permission:enrollment.activate")]
-        [HttpPatch("{id}/activate")]
-        public async Task<IActionResult> Activate(
+        [HttpPatch("{id}/reactivate")]
+        public async Task<IActionResult> Reactivate(
             [FromRoute] int id,
+            [FromBody] ReactivateEnrollmentCommand command,
             CancellationToken ct)
         {
-            var result = await _mediator.Send(new ActivateEnrollmentCommand(id), ct);
+            var result = await _mediator.Send(command with { Id = id }, ct);
             return Ok(result);
         }
 

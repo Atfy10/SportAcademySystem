@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Infrastructure.Persistence.Projections;
 
@@ -22,7 +23,7 @@ public static class CoachProjections
         c.Employee.PhoneNumber,
         c.Employee.Address.ToString(),
         c.Employee.HireDate,
-        c.TraineeGroups.SelectMany(tg => tg.Enrollments).Count(e => e.IsActive && !e.IsDeleted),
+        c.TraineeGroups.SelectMany(tg => tg.Enrollments).Count(e => e.Status != EnrollmentStatus.Ended && !e.IsDeleted),
         c.SkillLevel,
         c.Sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? c.Sport.Name,
         c.Employee.ImageUrl);

@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +27,16 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
 
             builder.Property(e => e.ExpiryDate)
                    .IsRequired();
+
+            var statusConverter = new ValueConverter<EnrollmentStatus, string>(
+                v => v.ToString(),
+                v => (EnrollmentStatus)Enum.Parse(typeof(EnrollmentStatus), v, true));
+
+            builder.Property(e => e.Status)
+                   .IsRequired()
+                   .HasConversion(statusConverter)
+                   .HasMaxLength(20)
+                   .HasDefaultValue(EnrollmentStatus.Active);
 
             // Relationships
 

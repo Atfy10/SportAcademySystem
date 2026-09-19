@@ -1,52 +1,64 @@
 using FluentAssertions;
 using Moq;
-using SportAcademy.Application.Commands.EnrollmentCommands.ActivateEnrollment;
+using SportAcademy.Application.Commands.EnrollmentCommands.ReactivateEnrollment;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 
 namespace SportAcademy.Tests.Application.Handlers;
 
-public class ActivateEnrollmentCommandHandlerTests
+public class ReactivateEnrollmentCommandHandlerTests
 {
     private readonly Mock<IEnrollmentRepository> _enrollmentRepoMock = new();
-    private readonly ActivateEnrollmentCommandHandler _handler;
+    private readonly Mock<ITraineeGroupRepository> _groupRepoMock = new();
+    private readonly ReactivateEnrollmentCommandHandler _handler;
 
-    public ActivateEnrollmentCommandHandlerTests()
+    public ReactivateEnrollmentCommandHandlerTests()
     {
-        _handler = new ActivateEnrollmentCommandHandler(
+        _handler = new ReactivateEnrollmentCommandHandler(
             _enrollmentRepoMock.Object,
+            _groupRepoMock.Object,
             new Mock<IUserContextService>().Object,
             new Mock<IUserRepository>().Object,
             new Mock<MediatR.IPublisher>().Object);
     }
 
-    private static ActivateEnrollmentCommand CreateValidCommand(int enrollmentId = 1) =>
-        new(Id: enrollmentId);
+    private static ReactivateEnrollmentCommand CreateValidCommand(int enrollmentId = 1, int sessionRemaining = 4) =>
+        new(Id: enrollmentId, SessionRemaining: sessionRemaining);
 
-    private static Enrollment CreateEnrollment(int id = 1, bool isActive = false) => new()
+    private static Enrollment CreateEnrollment(int id = 1, EnrollmentStatus status = EnrollmentStatus.Suspended, int sessionAllowed = 8) => new()
     {
         Id = id,
         TraineeId = 1,
         TraineeGroupId = 1,
         SubscriptionDetailsId = 1,
-        EnrollmentDate = DateTime.UtcNow,
-        ExpiryDate = DateTime.UtcNow.AddMonths(1),
-        SessionAllowed = 8,
-        SessionRemaining = 8,
-        IsActive = isActive
+        EnrollmentDate = DateTime.UtcNow.AddMonths(-1),
+        ExpiryDate = DateTime.UtcNow.AddDays(-3),
+        SessionAllowed = sessionAllowed,
+        SessionRemaining = sessionAllowed,
+        Status = status
+    };
+
+    private static TraineeGroup CreateGroupWithSchedule(int id = 1) => new()
+    {
+        Id = id,
+        GroupSchedules = [new GroupSchedule { Id = 1, TraineeGroupId = id, Day = DateTime.UtcNow.DayOfWeek }],
     };
 
     [Fact]
-    public async Task Handle_ValidEnrollmentId_ActivatesAndReturnsSuccess()
+    public async Task Handle_SuspendedEnrollment_ReactivatesAndRecomputesExpiry()
     {
         // Arrange
-        var command = CreateValidCommand(1);
-        var enrollment = CreateEnrollment(1, isActive: false);
+        var command = CreateValidCommand(1, sessionRemaining: 4);
+        var enrollment = CreateEnrollment(1, EnrollmentStatus.Suspended);
+        var group = CreateGroupWithSchedule(1);
 
         _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
+        _groupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(group);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
@@ -55,9 +67,9 @@ public class ActivateEnrollmentCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Data.Should().BeTrue();
-        result.Message.Should().Be($"{OperationType.Update} operation done successfully");
-        enrollment.IsActive.Should().BeTrue();
+        enrollment.Status.Should().Be(EnrollmentStatus.Active);
+        enrollment.SessionRemaining.Should().Be(4);
+        enrollment.ExpiryDate.Should().BeOnOrAfter(DateTime.UtcNow.Date);
         _enrollmentRepoMock.Verify(r => r.UpdateAsync(enrollment, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -76,46 +88,33 @@ public class ActivateEnrollmentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_AlreadyActive_SetsToActiveAgain()
+    public async Task Handle_EnrollmentNotSuspended_ThrowsEnrollmentNotSuspendedException()
     {
         // Arrange
         var command = CreateValidCommand(1);
-        var enrollment = CreateEnrollment(1, isActive: true);
+        var enrollment = CreateEnrollment(1, EnrollmentStatus.Active);
 
-        Enrollment? capturedEnrollment = null;
         _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
-        _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
-            .Callback<Enrollment, CancellationToken>((e, ct) => capturedEnrollment = e)
-            .Returns(Task.CompletedTask);
 
-        // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        result.IsSuccess.Should().BeTrue();
-        capturedEnrollment!.IsActive.Should().BeTrue();
+        // Act & Assert
+        var act = () => _handler.Handle(command, CancellationToken.None);
+        await act.Should().ThrowAsync<EnrollmentNotSuspendedException>();
     }
 
     [Fact]
-    public async Task Handle_CancellationRequested_ThrowsOperationCanceledException()
+    public async Task Handle_SessionRemainingExceedsAllowed_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var command = CreateValidCommand(1);
-        var enrollment = CreateEnrollment(1, isActive: false);
-        var cancellationTokenSource = new CancellationTokenSource();
+        var command = CreateValidCommand(1, sessionRemaining: 20);
+        var enrollment = CreateEnrollment(1, EnrollmentStatus.Suspended, sessionAllowed: 8);
 
         _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
-        _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
-            .Callback(() => cancellationTokenSource.Token.ThrowIfCancellationRequested())
-            .Returns(Task.CompletedTask);
-
-        cancellationTokenSource.Cancel();
 
         // Act & Assert
-        var act = () => _handler.Handle(command, cancellationTokenSource.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
+        var act = () => _handler.Handle(command, CancellationToken.None);
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
 
     [Theory]
@@ -125,11 +124,14 @@ public class ActivateEnrollmentCommandHandlerTests
     public async Task Handle_DifferentEnrollmentIds_FetchesAndUpdatesCorrectOne(int enrollmentId)
     {
         // Arrange
-        var command = CreateValidCommand(enrollmentId);
-        var enrollment = CreateEnrollment(enrollmentId, isActive: false);
+        var command = CreateValidCommand(enrollmentId, sessionRemaining: 3);
+        var enrollment = CreateEnrollment(enrollmentId, EnrollmentStatus.Suspended);
+        var group = CreateGroupWithSchedule(1);
 
         _enrollmentRepoMock.Setup(r => r.GetByIdAsync(enrollmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
+        _groupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(group);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
@@ -148,10 +150,13 @@ public class ActivateEnrollmentCommandHandlerTests
     {
         // Arrange
         var command = CreateValidCommand(1);
-        var enrollment = CreateEnrollment(1, isActive: false);
+        var enrollment = CreateEnrollment(1, EnrollmentStatus.Suspended);
+        var group = CreateGroupWithSchedule(1);
 
         _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(enrollment);
+        _groupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(group);
         _enrollmentRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 

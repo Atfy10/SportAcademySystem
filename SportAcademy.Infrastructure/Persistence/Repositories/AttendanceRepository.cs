@@ -92,7 +92,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             if (traineeGroupId == null) return [];
 
             var roster = await _context.Enrollments
-                .Where(e => e.TraineeGroupId == traineeGroupId.Value && e.IsActive)
+                .Where(e => e.TraineeGroupId == traineeGroupId.Value && e.Status == EnrollmentStatus.Active)
                 .Select(e => new { e.TraineeId, TraineeName = e.Trainee.FirstName + " " + e.Trainee.LastName })
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);

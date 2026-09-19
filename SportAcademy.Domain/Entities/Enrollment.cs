@@ -15,15 +15,15 @@ namespace SportAcademy.Domain.Entities
         /// which only says how long the backing subscription paid for. Null means the trainee
         /// is still in the group, including during the 7-day grace window after a subscription
         /// expires (nothing changes at expiry; only EnrollmentLapseService's sweep past that
-        /// window sets this, together with IsActive = false). Cleared again if they renew and
-        /// rejoin the same group. Also distinct from IsActive, which stays a staff-controlled
-        /// manual suspend/resume toggle.
+        /// window sets this, together with Status = Ended) and while Suspended. Cleared again
+        /// if they renew and rejoin the same group. Only ever set alongside Status.Ended - never
+        /// set by Suspend.
         /// </summary>
         public DateTime? EndDate { get; set; }
 
         public int SessionAllowed { get; set; }
         public int SessionRemaining { get; set; }
-        public bool IsActive { get; set; }
+        public EnrollmentStatus Status { get; set; }
         public int TraineeId { get; set; }
         public int TraineeGroupId { get; set; }
         public int SubscriptionDetailsId { get; set; }
@@ -55,8 +55,9 @@ namespace SportAcademy.Domain.Entities
 
         public string GetStatus()
         {
+            if (Status == EnrollmentStatus.Ended) return "Ended";
+            if (Status == EnrollmentStatus.Suspended) return "Suspended";
             if (ExpiryDate < DateTime.UtcNow) return "Expired";
-            if (!IsActive) return "Suspended";
             return "Active";
         }
 

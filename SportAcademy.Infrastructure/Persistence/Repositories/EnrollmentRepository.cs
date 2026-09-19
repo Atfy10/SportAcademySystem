@@ -79,10 +79,19 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var fromDate = from ?? DateTime.UtcNow.AddDays(-30);
             var toDate = to ?? DateTime.UtcNow;
 
-            var sportsPage = await _context.Enrollments
+            var distinctSports = _context.Enrollments
                 .Where(e => e.EnrollmentDate >= fromDate && e.EnrollmentDate < toDate)
                 .Select(e => e.TraineeGroup!.Coach!.Sport!.Name)
-                .Distinct()
+                .Distinct();
+
+            // The real total distinct-sport count, not sportsPage.Count (which is already
+            // capped at page.PageSize) - grouped below is built ONLY from sportsPage's slice, so
+            // re-paginating it again with .ToPagedData(page) (as this used to do) would apply
+            // Skip/Take a second time on an already-page-sized list: correct by accident on page
+            // 1, empty on every page after it.
+            var totalSports = await distinctSports.CountAsync(ct);
+
+            var sportsPage = await distinctSports
                 .OrderBy(s => s)
                 .Skip((page.Page - 1) * page.PageSize)
                 .Take(page.PageSize)
@@ -103,22 +112,30 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(g => new EnrollmentsSportsDto(g.ToList(), g.Key))
                 .ToList();
 
-            return grouped.ToPagedData(page);
+            return new PagedData<EnrollmentsSportsDto>
+            {
+                Items = grouped,
+                TotalCount = totalSports,
+                Page = page.Page,
+                PageSize = page.PageSize
+            };
         }
 
         public async Task<int?> GetEnrollmentIdAsync(int traineeId, int traineeGroupId, CancellationToken ct = default)
             => await _context.Enrollments
-                .Where(e => e.TraineeId == traineeId && e.TraineeGroupId == traineeGroupId && e.IsActive)
+                .Where(e => e.TraineeId == traineeId && e.TraineeGroupId == traineeGroupId && e.Status == EnrollmentStatus.Active)
                 .Select(e => (int?)e.Id)
                 .FirstOrDefaultAsync(ct);
 
+        // Counts Active AND Suspended - a suspended trainee still holds their seat (they paused,
+        // they weren't removed), so the group isn't actually any less full while they're out.
         public async Task<int> GetActiveEnrollmentCountForGroupAsync(int traineeGroupId, CancellationToken ct = default)
             => await _context.Enrollments
-                .CountAsync(e => e.TraineeGroupId == traineeGroupId && e.IsActive, ct);
+                .CountAsync(e => e.TraineeGroupId == traineeGroupId && e.Status != EnrollmentStatus.Ended, ct);
 
         public async Task<List<Enrollment>> GetActiveEnrollmentsForGroupAsync(int traineeGroupId, CancellationToken ct = default)
             => await _context.Enrollments
-                .Where(e => e.TraineeGroupId == traineeGroupId && e.IsActive)
+                .Where(e => e.TraineeGroupId == traineeGroupId && e.Status != EnrollmentStatus.Ended)
                 .ToListAsync(ct);
 
         public async Task<List<EnrollmentDetailDto>> GetAllDetailsByTraineeIdAsync(int traineeId, CancellationToken ct = default)
@@ -183,11 +200,16 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             if (!string.IsNullOrWhiteSpace(status))
             {
+                // Mirrors EnrollmentMappingProfile's display precedence exactly: Suspended is
+                // checked before the expiry-date comparison, since suspension freezes the
+                // enrollment - a suspended row whose ExpiryDate happens to have passed while
+                // paused still displays (and filters) as Suspended, never Expired.
                 query = status switch
                 {
-                    "Expired" => query.Where(e => e.ExpiryDate < DateTime.UtcNow),
-                    "Suspended" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow && !e.IsActive),
-                    "Active" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow && e.IsActive),
+                    "Ended" => query.Where(e => e.Status == EnrollmentStatus.Ended),
+                    "Suspended" => query.Where(e => e.Status == EnrollmentStatus.Suspended),
+                    "Expired" => query.Where(e => e.Status == EnrollmentStatus.Active && e.ExpiryDate < DateTime.UtcNow),
+                    "Active" => query.Where(e => e.Status == EnrollmentStatus.Active && e.ExpiryDate >= DateTime.UtcNow),
                     _ => query.Where(e => false),
                 };
             }
@@ -214,7 +236,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             => await _context.Enrollments.CountAsync(ct);
 
         public async Task<int> CountActiveAsync(CancellationToken ct = default)
-            => await _context.Enrollments.CountAsync(e => e.IsActive, ct);
+            => await _context.Enrollments.CountAsync(e => e.Status == EnrollmentStatus.Active, ct);
 
         public async Task<int> CountPendingPaymentAsync(CancellationToken ct = default)
             => await _context.Enrollments

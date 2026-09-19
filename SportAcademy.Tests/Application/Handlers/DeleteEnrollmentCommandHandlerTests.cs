@@ -24,7 +24,7 @@ public class DeleteEnrollmentCommandHandlerTests
 
     private static DeleteEnrollmentCommand CreateValidCommand(int id = 1) => new(Id: id);
 
-    private static Enrollment CreateEnrollment(int id = 1) => new()
+    private static Enrollment CreateEnrollment(int id = 1, EnrollmentStatus status = EnrollmentStatus.Active) => new()
     {
         Id = id,
         TraineeId = 1,
@@ -34,7 +34,7 @@ public class DeleteEnrollmentCommandHandlerTests
         ExpiryDate = DateTime.UtcNow.AddMonths(1),
         SessionAllowed = 8,
         SessionRemaining = 4,
-        IsActive = true
+        Status = status
     };
 
     [Fact]
@@ -71,6 +71,22 @@ public class DeleteEnrollmentCommandHandlerTests
         // Act & Assert
         var act = () => _handler.Handle(command, CancellationToken.None);
         await act.Should().ThrowAsync<EnrollmentNotFoundException>();
+    }
+
+    [Fact]
+    public async Task Handle_SuspendedEnrollment_ThrowsEnrollmentSuspendedException()
+    {
+        // Arrange
+        var command = CreateValidCommand(1);
+        var enrollment = CreateEnrollment(1, EnrollmentStatus.Suspended);
+
+        _enrollmentRepoMock.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(enrollment);
+
+        // Act & Assert
+        var act = () => _handler.Handle(command, CancellationToken.None);
+        await act.Should().ThrowAsync<EnrollmentSuspendedException>();
+        _enrollmentRepoMock.Verify(r => r.DeleteAsync(It.IsAny<Enrollment>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -16,8 +16,10 @@ namespace SportAcademy.Infrastructure.BackgroundServices
     /// Closes enrollments whose subscription expired and was never renewed. A trainee keeps their
     /// place in the group for a week after expiry - nothing changes during that window, and
     /// renewing inside it carries the same enrollment forward untouched (see
-    /// SubscriptionCreationService). Once the week passes, they've left: EndDate is stamped,
-    /// IsActive goes false, and the group slot frees up for someone else.
+    /// SubscriptionCreationService). Once the week passes, they've left: EndDate is stamped and
+    /// Status becomes Ended. Never touches a Suspended enrollment - staff paused it deliberately,
+    /// so this sweep leaves it alone regardless of how long it's been past its expiry date; it
+    /// only closes Active ones that were simply never renewed.
     /// </summary>
     public class EnrollmentLapseService : BackgroundService
     {
@@ -79,15 +81,15 @@ namespace SportAcademy.Infrastructure.BackgroundServices
             var lapsed = await context.Set<Enrollment>()
                 .IgnoreQueryFilters()
                 .Where(e => !e.IsDeleted)
-                .Where(e => e.EndDate == null)
+                .Where(e => e.Status == EnrollmentStatus.Active)
                 .Where(e => e.ExpiryDate < cutoff)
-                // Deliberately left at == Active rather than widened to include
-                // PendingLimitSelection: a tenant mid-forced-selection has its enrollment lapses
-                // paused for up to 7 days, then this sweep catches up on all of them in one pass
-                // once the tenant is Active again. Acceptable because trainees are grandfathered
-                // during that window anyway (D6, PLAN_LIMITS_DESIGN.md R2 item 6) - nothing about
-                // being over the branch/sport/user cap should make an unrelated subscription
-                // expire any differently.
+                // Deliberately compared against the Tenant's own Status == Active rather than
+                // widened to include PendingLimitSelection: a tenant mid-forced-selection has its
+                // enrollment lapses paused for up to 7 days, then this sweep catches up on all of
+                // them in one pass once the tenant is Active again. Acceptable because trainees
+                // are grandfathered during that window anyway (D6, PLAN_LIMITS_DESIGN.md R2 item
+                // 6) - nothing about being over the branch/sport/user cap should make an
+                // unrelated subscription expire any differently.
                 .Where(e => context.Set<Tenant>().Any(t => t.Id == e.TenantId && t.Status == TenantStatus.Active))
                 .ToListAsync(ct);
 
@@ -99,7 +101,7 @@ namespace SportAcademy.Infrastructure.BackgroundServices
                 // Stamped from the expiry date, not from "now" - the trainee left the day their
                 // grace period ran out, whichever day this sweep happens to run.
                 enrollment.EndDate = enrollment.ExpiryDate.AddDays(GracePeriodDays);
-                enrollment.IsActive = false;
+                enrollment.Status = EnrollmentStatus.Ended;
             }
 
             // TenantSaveChangesInterceptor rejects any save of ITenantScoped rows with no

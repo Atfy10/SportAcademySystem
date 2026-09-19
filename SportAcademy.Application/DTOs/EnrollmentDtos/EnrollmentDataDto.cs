@@ -12,7 +12,7 @@ public record EnrollmentDataDto(
     DateTime ExpiryDate,
     int SessionAllowed,
     int SessionRemaining,
-    bool IsActive,
+    string Status,
     string TraineeName,
     string TraineeGroupCoachName,
     int SubscriptionDetailsId

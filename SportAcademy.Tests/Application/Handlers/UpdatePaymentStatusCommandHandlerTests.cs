@@ -41,7 +41,7 @@ public class UpdatePaymentStatusCommandHandlerTests
         ExpiryDate = DateTime.UtcNow.AddMonths(1),
         SessionAllowed = 8,
         SessionRemaining = 8,
-        IsActive = true
+        Status = EnrollmentStatus.Active
     };
 
     private static Invoice CreateInvoice(int id = 5, int branchId = 3, decimal grandTotal = 50m, decimal amountPaid = 0m) => new()

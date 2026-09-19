@@ -2,6 +2,7 @@
 using SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmployee;
 using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Mappings.CoachProfile
 {
@@ -25,9 +26,11 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                 .ForCtorParam("PhoneNumber", opt => opt.MapFrom(src => src.Employee.PhoneNumber))
                 .ForCtorParam("Address", opt => opt.MapFrom(src => src.Employee.Address.ToString()))
                 .ForCtorParam("HireDate", opt => opt.MapFrom(src => src.Employee.HireDate))
+                // Suspended trainees still count here - they still hold their spot with this
+                // coach, they've just paused (same as the group-capacity check).
                 .ForCtorParam("TotalTrainees", opt => opt.MapFrom(src => src.TraineeGroups
                     .SelectMany(tg => tg.Enrollments)
-                    .Count(e => e.IsActive && !e.IsDeleted)))
+                    .Count(e => e.Status != EnrollmentStatus.Ended && !e.IsDeleted)))
                 .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel))
                 .ForCtorParam("SportName", opt => opt.MapFrom(src => src.Sport.Name))
                 .ForCtorParam("ImageUrl", opt => opt.MapFrom(src => src.Employee.ImageUrl))
@@ -89,9 +92,11 @@ namespace SportAcademy.Application.Mappings.CoachProfile
                 .ForCtorParam("SportId", opt => opt.MapFrom(src => src.SportId))
                 .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel.ToString()))
                 .ForCtorParam("Certifications", opt => opt.MapFrom(src => (string[]?)null)) // not implemented yet
+                // Suspended trainees still count here - they still hold their spot with this
+                // coach, they've just paused (same as the group-capacity check).
                 .ForCtorParam("TotalTrainees", opt => opt.MapFrom(src => src.TraineeGroups
                     .SelectMany(tg => tg.Enrollments)
-                    .Count(e => e.IsActive && !e.IsDeleted)))
+                    .Count(e => e.Status != EnrollmentStatus.Ended && !e.IsDeleted)))
                 .ForCtorParam("HireDate", opt => opt.MapFrom(src => src.Employee.HireDate))
                 .ForCtorParam("IsWork", opt => opt.MapFrom(src => src.Employee.IsWork))
                 .ForCtorParam("Rating", opt => opt.MapFrom(src => src.Rate))

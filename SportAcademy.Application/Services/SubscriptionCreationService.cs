@@ -140,7 +140,7 @@ namespace SportAcademy.Application.Services
                         sportPrice.SportSubscriptionType.SubscriptionType.NumberOfMonths);
                     existingEnrollment.SessionRemaining = existingEnrollment.SessionAllowed;
                     existingEnrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
-                    existingEnrollment.IsActive = true;
+                    existingEnrollment.Status = EnrollmentStatus.Active;
                     await _enrollmentRepository.UpdateAsync(existingEnrollment, ct);
 
                     // Expire the superseded subscription immediately rather than waiting for the

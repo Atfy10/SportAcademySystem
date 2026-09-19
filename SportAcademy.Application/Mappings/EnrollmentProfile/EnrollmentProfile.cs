@@ -29,7 +29,16 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("ExpiryDate", opt => opt.MapFrom(src => src.ExpiryDate))
                 .ForCtorParam("SessionAllowed", opt => opt.MapFrom(src => src.SessionAllowed))
                 .ForCtorParam("SessionRemaining", opt => opt.MapFrom(src => src.SessionRemaining))
-                .ForCtorParam("IsActive", opt => opt.MapFrom(src => src.IsActive))
+                .ForCtorParam("Status", opt => opt.MapFrom(src =>
+                    // Suspended checked before Expired: suspension freezes the enrollment - the
+                    // wall clock passing an ExpiryDate that was never touched while paused isn't
+                    // meaningful (nothing auto-lapses a suspended row either, see
+                    // EnrollmentLapseService), so it must keep showing as Suspended, still
+                    // reactivatable, not flip to a display state that looks terminal.
+                    src.Status == EnrollmentStatus.Ended ? "Ended" :
+                    src.Status == EnrollmentStatus.Suspended ? "Suspended" :
+                    src.ExpiryDate < DateTime.UtcNow ? "Expired" :
+                    "Active"))
                 .ForCtorParam("TraineeName", opt => opt.MapFrom(src => src.Trainee.FirstName + " " + src.Trainee.LastName))
                 .ForCtorParam("TraineeGroupCoachName", opt => opt.MapFrom(src => src.TraineeGroup.Coach.Employee.FirstName + " " + src.TraineeGroup.Coach.Employee.LastName))
                 .ForCtorParam("SubscriptionDetailsId", opt => opt.MapFrom(src => src.SubscriptionDetailsId));
@@ -52,8 +61,14 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                         src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
+                    // Suspended checked before Expired: suspension freezes the enrollment - the
+                    // wall clock passing an ExpiryDate that was never touched while paused isn't
+                    // meaningful (nothing auto-lapses a suspended row either, see
+                    // EnrollmentLapseService), so it must keep showing as Suspended, still
+                    // reactivatable, not flip to a display state that looks terminal.
+                    src.Status == EnrollmentStatus.Ended ? "Ended" :
+                    src.Status == EnrollmentStatus.Suspended ? "Suspended" :
                     src.ExpiryDate < DateTime.UtcNow ? "Expired" :
-                    !src.IsActive ? "Suspended" :
                     "Active"))
                 .ForCtorParam("SessionsCompleted", opt => opt.MapFrom(src => src.Attendances.Count(a =>
                     a.AttendanceStatus == AttendanceStatus.Present || a.AttendanceStatus == AttendanceStatus.Late)))
@@ -81,8 +96,14 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                         src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
+                    // Suspended checked before Expired: suspension freezes the enrollment - the
+                    // wall clock passing an ExpiryDate that was never touched while paused isn't
+                    // meaningful (nothing auto-lapses a suspended row either, see
+                    // EnrollmentLapseService), so it must keep showing as Suspended, still
+                    // reactivatable, not flip to a display state that looks terminal.
+                    src.Status == EnrollmentStatus.Ended ? "Ended" :
+                    src.Status == EnrollmentStatus.Suspended ? "Suspended" :
                     src.ExpiryDate < DateTime.UtcNow ? "Expired" :
-                    !src.IsActive ? "Suspended" :
                     "Active"))
                 .ForCtorParam("SessionsCompleted", opt => opt.MapFrom(src => src.Attendances.Count(a =>
                     a.AttendanceStatus == AttendanceStatus.Present || a.AttendanceStatus == AttendanceStatus.Late)))
