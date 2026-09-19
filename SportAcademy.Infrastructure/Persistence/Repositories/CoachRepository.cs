@@ -7,6 +7,7 @@ using SportAcademy.Application.DTOs.CoachDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 using SportAcademy.Infrastructure.Persistence.Projections;
@@ -45,11 +46,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<PagedData<CoachCardDto>> SearchAsync(
             string term,
             PageRequest pageReq,
+            int? sportId,
+            int? branchId,
             CancellationToken cancellationToken)
         {
             var offset = (pageReq.Page - 1) * pageReq.PageSize;
             var fullTextTerm = BuildFullTextTerm(term);
-            var likeTerm = $"%{term}%";
 
             var connection = _context.Database.GetDbConnection();
 
@@ -67,115 +69,130 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     THEN 1 ELSE 0
                 END") == 1;
 
-            string sql;
-            object parameters;
+            var filterConditions = new List<string>();
+            var filterParams = new Dictionary<string, object>
+            {
+                ["offset"] = offset,
+                ["pageSize"] = pageReq.PageSize,
+                ["tenantId"] = _tenantIdProvider.TenantId!,
+                ["lang"] = _languageProvider.Language
+            };
+
+            if (sportId.HasValue)
+            {
+                filterConditions.Add("c.SportId = @sportId");
+                filterParams["sportId"] = sportId.Value;
+            }
+            if (branchId.HasValue)
+            {
+                filterConditions.Add("e.BranchId = @branchId");
+                filterParams["branchId"] = branchId.Value;
+            }
+
+            // baseJoin: what both the COUNT and the SELECT filter against. displayJoins: extra
+            // lookups (branch/sport names, trainee count) only the SELECT needs - kept separate
+            // so the COUNT query doesn't pay for joins it never uses.
+            string baseJoin;
+            string orderBy;
 
             if (ftsAvailable)
             {
-                sql = @"
-                    SELECT
-                        c.EmployeeId AS Id,
-                        e.FirstName,
-                        e.LastName,
-                        e.Position,
-                        ISNULL(bt.Name, b.Name) AS BranchName,
-                        e.Email,
-                        e.IsWork,
-                        e.PhoneNumber,
-                        (e.City + ', ' + e.Street) AS Address,
-                        e.HireDate,
-                        ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
-                        c.SkillLevel,
-                        ISNULL(st.Name, s.Name) AS SportName,
-                        e.ImageUrl
-                    FROM Coaches c
-                    INNER JOIN Employees e ON c.EmployeeId = e.Id
-                    INNER JOIN CONTAINSTABLE(
-                        Employees,
-                        (FirstName, LastName),
-                        @term, LANGUAGE 1025
-                    ) ft ON e.Id = ft.[KEY]
-                    INNER JOIN Branches b ON e.BranchId = b.Id
-                    LEFT JOIN BranchTranslations bt ON bt.BranchId = b.Id AND bt.LangCode = @lang
-                    INNER JOIN Sports s ON c.SportId = s.Id
-                    LEFT JOIN SportTranslations st ON st.SportId = s.Id AND st.LangCode = @lang
-                    LEFT JOIN (
-                        SELECT
-                            tg.CoachId,
-                            COUNT(enr.Id) AS TotalTrainees
-                        FROM TraineeGroups tg
-                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId
-                            AND enr.IsActive = 1
-                            AND enr.IsDeleted = 0
-                        GROUP BY tg.CoachId
-                    ) trainee_count ON c.EmployeeId = trainee_count.CoachId
-                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0
-                    ORDER BY ft.RANK DESC, c.EmployeeId ASC
-                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+                filterParams["term"] = fullTextTerm;
 
-                    SELECT COUNT(*)
+                baseJoin = @"
                     FROM Coaches c
                     INNER JOIN Employees e ON c.EmployeeId = e.Id
                     INNER JOIN CONTAINSTABLE(
                         Employees,
                         (FirstName, LastName),
                         @term, LANGUAGE 1025
-                    ) ft ON e.Id = ft.[KEY]
-                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0;
-                ";
-                parameters = new { term = fullTextTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId, lang = _languageProvider.Language };
+                    ) ft ON e.Id = ft.[KEY]";
+                orderBy = "ORDER BY ft.RANK DESC, c.EmployeeId ASC";
             }
             else
             {
-                sql = @"
-                    SELECT
-                        c.EmployeeId AS Id,
-                        e.FirstName,
-                        e.LastName,
-                        e.Position,
-                        ISNULL(bt.Name, b.Name) AS BranchName,
-                        e.Email,
-                        e.IsWork,
-                        e.PhoneNumber,
-                        (e.City + ', ' + e.Street) AS Address,
-                        e.HireDate,
-                        ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
-                        c.SkillLevel,
-                        ISNULL(st.Name, s.Name) AS SportName,
-                        e.ImageUrl
-                    FROM Coaches c
-                    INNER JOIN Employees e ON c.EmployeeId = e.Id
-                    INNER JOIN Branches b ON e.BranchId = b.Id
-                    LEFT JOIN BranchTranslations bt ON bt.BranchId = b.Id AND bt.LangCode = @lang
-                    INNER JOIN Sports s ON c.SportId = s.Id
-                    LEFT JOIN SportTranslations st ON st.SportId = s.Id AND st.LangCode = @lang
-                    LEFT JOIN (
-                        SELECT
-                            tg.CoachId,
-                            COUNT(enr.Id) AS TotalTrainees
-                        FROM TraineeGroups tg
-                        LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId
-                            AND enr.IsActive = 1
-                            AND enr.IsDeleted = 0
-                        GROUP BY tg.CoachId
-                    ) trainee_count ON c.EmployeeId = trainee_count.CoachId
-                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0 AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
-                    ORDER BY c.EmployeeId ASC
-                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+                // Same reasoning as TraineeRepository.SearchAsync's fallback: a single
+                // "%whole term%" against each column separately never matches a full name split
+                // across FirstName/LastName ("John Smith" won't match FirstName="John",
+                // LastName="Smith"). Tokenize and require every token to appear somewhere, and
+                // run both sides through dbo.NormalizeArabicText so "أحمد"/"احمد" match
+                // regardless of which spelling is stored vs typed.
+                var tokens = term.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var tokenConditions = new List<string>();
+                for (var i = 0; i < tokens.Length; i++)
+                {
+                    var p = $"likeTerm{i}";
+                    tokenConditions.Add(
+                        $"(dbo.NormalizeArabicText(e.FirstName) LIKE dbo.NormalizeArabicText(@{p}) OR " +
+                        $"dbo.NormalizeArabicText(e.LastName) LIKE dbo.NormalizeArabicText(@{p}) OR " +
+                        $"dbo.NormalizeArabicText(e.FirstName + ' ' + e.LastName) LIKE dbo.NormalizeArabicText(@{p}))");
+                    filterParams[p] = $"%{tokens[i]}%";
+                }
+                if (tokenConditions.Count > 0)
+                    filterConditions.Add(string.Join(" AND ", tokenConditions));
 
-                    SELECT COUNT(*)
+                baseJoin = @"
                     FROM Coaches c
-                    INNER JOIN Employees e ON c.EmployeeId = e.Id
-                    WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0 AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
-                ";
-                parameters = new { likeTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId, lang = _languageProvider.Language };
+                    INNER JOIN Employees e ON c.EmployeeId = e.Id";
+                orderBy = "ORDER BY c.EmployeeId ASC";
             }
 
-            using var multi = await connection.QueryMultipleAsync(sql, parameters);
+            var whereClause = $@"
+                WHERE e.TenantId = @tenantId AND e.IsDeleted = 0 AND c.IsDeleted = 0
+                {(filterConditions.Count > 0 ? "AND " + string.Join(" AND ", filterConditions) : "")}";
 
+            var displayJoins = @"
+                INNER JOIN Branches b ON e.BranchId = b.Id
+                LEFT JOIN BranchTranslations bt ON bt.BranchId = b.Id AND bt.LangCode = @lang
+                INNER JOIN Sports s ON c.SportId = s.Id
+                LEFT JOIN SportTranslations st ON st.SportId = s.Id AND st.LangCode = @lang
+                LEFT JOIN (
+                    SELECT
+                        tg.CoachId,
+                        COUNT(enr.Id) AS TotalTrainees
+                    FROM TraineeGroups tg
+                    LEFT JOIN Enrollments enr ON tg.Id = enr.TraineeGroupId
+                        AND enr.Status <> 'Ended'
+                        AND enr.IsDeleted = 0
+                    GROUP BY tg.CoachId
+                ) trainee_count ON c.EmployeeId = trainee_count.CoachId";
+
+            var countSql = $"SELECT COUNT(*) {baseJoin} {whereClause}";
+            var sql = $@"
+                SELECT
+                    c.EmployeeId AS Id,
+                    e.FirstName,
+                    e.LastName,
+                    e.Position,
+                    ISNULL(bt.Name, b.Name) AS BranchName,
+                    e.Email,
+                    e.IsWork,
+                    e.PhoneNumber,
+                    (e.City + ', ' + e.Street) AS Address,
+                    e.HireDate,
+                    ISNULL(trainee_count.TotalTrainees, 0) AS TotalTrainees,
+                    c.SkillLevel,
+                    ISNULL(st.Name, s.Name) AS SportName,
+                    e.ImageUrl
+                {baseJoin}
+                {displayJoins}
+                {whereClause}
+                {orderBy}
+                OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
+
+            var parameters = new DynamicParameters(filterParams);
+            using var multi = await connection.QueryMultipleAsync($"{countSql}; {sql}", parameters);
+
+            var totalCount = await multi.ReadSingleAsync<int>();
             var coaches = (await multi.ReadAsync<CoachCardDto>()).ToList();
 
-            return coaches.ToPagedData(pageReq);
+            return new PagedData<CoachCardDto>
+            {
+                Items = coaches,
+                TotalCount = totalCount,
+                Page = pageReq.Page,
+                PageSize = pageReq.PageSize
+            };
         }
 
         private static string BuildFullTextTerm(string term)
@@ -207,7 +224,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(c => c.Sport)
                     .ThenInclude(s => s.Translations)
                 .Include(c => c.TraineeGroups)
-                    .ThenInclude(tg => tg.Enrollments.Where(e => e.IsActive && !e.IsDeleted))
+                    .ThenInclude(tg => tg.Enrollments.Where(e => e.Status != EnrollmentStatus.Ended && !e.IsDeleted))
                 .AsNoTracking()
                 .FirstOrDefaultAsync(cancellationToken);
         }

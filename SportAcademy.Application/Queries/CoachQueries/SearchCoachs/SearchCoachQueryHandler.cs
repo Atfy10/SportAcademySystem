@@ -32,7 +32,8 @@ namespace SportAcademy.Application.Queries.CoachQueries.SearchCoachs
             if (request.Term.Trim().Length < 2)
                 return Result<PagedData<CoachCardDto>>.Failure(nameof(SearchCoachQuery), "Minimum 2 characters");
 
-            var coaches = await _coachRepository.SearchAsync(request.SearchTerm, request.Page, cancellationToken);
+            var coaches = await _coachRepository.SearchAsync(
+                request.SearchTerm, request.Page, request.SportId, request.BranchId, cancellationToken);
 
             sw.Stop();
 

@@ -137,10 +137,12 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] string searchTerm,
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] int? sportId,
+            [FromQuery] int? branchId,
             CancellationToken ct)
         {
             var result = await _mediator.Send(new SearchCoachQuery(
-                                        searchTerm, PageRequest.Create(page, pageSize)), ct);
+                                        searchTerm, PageRequest.Create(page, pageSize), sportId, branchId), ct);
             return Ok(result);
         }
     }

@@ -8,7 +8,9 @@ namespace SportAcademy.Application.Queries.CoachQueries.SearchCoachs;
 
 public record SearchCoachQuery(
     string SearchTerm,
-    PageRequest Page
+    PageRequest Page,
+    int? SportId = null,
+    int? BranchId = null
 ) : IRequest<Result<PagedData<CoachCardDto>>>, IPaginatedRequest, ISearchRequest
 {
     public PageRequest Page { get; set; } = Page;

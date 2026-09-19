@@ -34,12 +34,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _languageProvider = languageProvider;
         }
 
-        public async Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, CancellationToken ct = default)
-            => await _context.Coachs
-                .AsNoTracking()
+        public async Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, int? sportId = null, int? branchId = null, CancellationToken ct = default)
+        {
+            var query = _context.Coachs.AsNoTracking().AsQueryable();
+
+            if (sportId.HasValue)
+                query = query.Where(c => c.SportId == sportId.Value);
+            if (branchId.HasValue)
+                query = query.Where(c => c.Employee.BranchId == branchId.Value);
+
+            return await query
                 .OrderBy(c => c.EmployeeId)
                 .Select(CoachProjections.ToCardDto(_languageProvider.Language))
                 .ToPagedDataAsync(page, ct);
+        }
 
         public async Task<int> GetActiveEmployeesCountAsync(CancellationToken ct = default)
             => await ApplyBranchFilter(_context.Employees)
@@ -149,7 +157,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         {
             var offset = (pageReq.Page - 1) * pageReq.PageSize;
             var fullTextTerm = BuildFullTextTerm(term);
-            var likeTerm = $"%{term}%";
 
             var connection = _context.Database.GetDbConnection();
 
@@ -167,79 +174,94 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     THEN 1 ELSE 0
                 END") == 1;
 
-            string sql;
-            object parameters;
+            var filterConditions = new List<string>();
+            var filterParams = new Dictionary<string, object>
+            {
+                ["offset"] = offset,
+                ["pageSize"] = pageReq.PageSize,
+                ["tenantId"] = _tenantIdProvider.TenantId!
+            };
+
+            // baseJoin: what both the COUNT and the SELECT filter against. Branches is only
+            // needed for the SELECT's display column, so it's added separately below.
+            string baseJoin;
+            string orderBy;
 
             if (ftsAvailable)
             {
-                sql = @"
-                    SELECT 
-                        e.Id,
-                        e.FirstName,
-                        e.LastName,
-                        e.Position,
-                        b.Name AS BranchName,
-                        e.Email,
-                        e.IsWork,
-                        e.PhoneNumber,
-                        (e.City + ', ' + e.Street) AS Address,
-                        e.HireDate,
-                        e.ImageUrl
+                filterParams["term"] = fullTextTerm;
+                baseJoin = @"
                     FROM Employees e
                     INNER JOIN CONTAINSTABLE(
                         Employees,
                         (FirstName, LastName),
                         @term, LANGUAGE 1025
-                    ) ft ON e.Id = ft.[KEY]
-                    INNER JOIN Branches b ON e.BranchId = b.Id
-                    WHERE e.TenantId = @tenantId
-                    ORDER BY ft.RANK DESC, e.Id ASC
-                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
-
-                    SELECT COUNT(*)
-                    FROM Employees e
-                    INNER JOIN CONTAINSTABLE(
-                        Employees,
-                        (FirstName, LastName),
-                        @term, LANGUAGE 1025
-                    ) ft ON e.Id = ft.[KEY]
-                    WHERE e.TenantId = @tenantId;
-                ";
-                parameters = new { term = fullTextTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId };
+                    ) ft ON e.Id = ft.[KEY]";
+                orderBy = "ORDER BY ft.RANK DESC, e.Id ASC";
             }
             else
             {
-                sql = @"
-                    SELECT 
-                        e.Id,
-                        e.FirstName,
-                        e.LastName,
-                        e.Position,
-                        b.Name AS BranchName,
-                        e.Email,
-                        e.IsWork,
-                        e.PhoneNumber,
-                        (e.City + ', ' + e.Street) AS Address,
-                        e.HireDate,
-                        e.ImageUrl
-                    FROM Employees e
-                    INNER JOIN Branches b ON e.BranchId = b.Id
-                    WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm)
-                    ORDER BY e.Id ASC
-                    OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;
+                // Same fix as CoachRepository/TraineeRepository's fallback: tokenize instead of
+                // matching the whole term as one substring against a single column, so a full
+                // name ("John Smith") matches even though it's split across FirstName/LastName.
+                var tokens = term.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var tokenConditions = new List<string>();
+                for (var i = 0; i < tokens.Length; i++)
+                {
+                    var p = $"likeTerm{i}";
+                    tokenConditions.Add(
+                        $"(dbo.NormalizeArabicText(e.FirstName) LIKE dbo.NormalizeArabicText(@{p}) OR " +
+                        $"dbo.NormalizeArabicText(e.LastName) LIKE dbo.NormalizeArabicText(@{p}) OR " +
+                        $"dbo.NormalizeArabicText(e.FirstName + ' ' + e.LastName) LIKE dbo.NormalizeArabicText(@{p}))");
+                    filterParams[p] = $"%{tokens[i]}%";
+                }
+                if (tokenConditions.Count > 0)
+                    filterConditions.Add(string.Join(" AND ", tokenConditions));
 
-                    SELECT COUNT(*)
-                    FROM Employees e
-                    WHERE e.TenantId = @tenantId AND (e.FirstName LIKE @likeTerm OR e.LastName LIKE @likeTerm);
-                ";
-                parameters = new { likeTerm, offset, pageReq.PageSize, tenantId = _tenantIdProvider.TenantId };
+                baseJoin = "FROM Employees e";
+                orderBy = "ORDER BY e.Id ASC";
             }
 
-            using var multi = await connection.QueryMultipleAsync(sql, parameters);
+            // e.IsDeleted = 0 was missing entirely before this fix (both branches only checked
+            // TenantId), so a deleted employee - including one who was also a coach - still came
+            // back in search.
+            var whereClause = $@"
+                WHERE e.TenantId = @tenantId AND e.IsDeleted = 0
+                {(filterConditions.Count > 0 ? "AND " + string.Join(" AND ", filterConditions) : "")}";
 
+            var countSql = $"SELECT COUNT(*) {baseJoin} {whereClause}";
+            var sql = $@"
+                SELECT
+                    e.Id,
+                    e.FirstName,
+                    e.LastName,
+                    e.Position,
+                    b.Name AS BranchName,
+                    e.Email,
+                    e.IsWork,
+                    e.PhoneNumber,
+                    (e.City + ', ' + e.Street) AS Address,
+                    e.HireDate,
+                    e.ImageUrl
+                {baseJoin}
+                INNER JOIN Branches b ON e.BranchId = b.Id
+                {whereClause}
+                {orderBy}
+                OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY;";
+
+            var parameters = new DynamicParameters(filterParams);
+            using var multi = await connection.QueryMultipleAsync($"{countSql}; {sql}", parameters);
+
+            var totalCount = await multi.ReadSingleAsync<int>();
             var employees = (await multi.ReadAsync<EmployeeCardDto>()).ToList();
 
-            return employees.ToPagedData(pageReq);
+            return new PagedData<EmployeeCardDto>
+            {
+                Items = employees,
+                TotalCount = totalCount,
+                Page = pageReq.Page,
+                PageSize = pageReq.PageSize
+            };
         }
 
         private static string BuildFullTextTerm(string term)

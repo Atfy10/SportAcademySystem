@@ -9,7 +9,7 @@ namespace SportAcademy.Application.Interfaces
 {
     public interface IEmployeeRepository : IBaseRepository<Employee, int>, IPersonRepository
     {
-        Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, CancellationToken ct = default);
+        Task<PagedData<CoachCardDto>> GetAllCoaches(PageRequest page, int? sportId = null, int? branchId = null, CancellationToken ct = default);
         Task<PagedData<EmployeeCardDto>> SearchAsync(
             string term,
             PageRequest pageReq,

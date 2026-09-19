@@ -12,6 +12,8 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<CoachCardDto>> SearchAsync(
             string term,
             PageRequest pageReq,
+            int? sportId,
+            int? branchId,
             CancellationToken cancellationToken);
         Task<Coach?> GetByIdWithDetailsAsync(int id, CancellationToken cancellationToken = default);
         /// <summary>Looks up a Coach row for this employee even if it was soft-deleted - Coach

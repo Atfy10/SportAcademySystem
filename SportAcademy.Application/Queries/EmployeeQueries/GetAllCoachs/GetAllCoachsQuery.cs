@@ -6,7 +6,9 @@ using SportAcademy.Application.DTOs.CoachDtos;
 namespace SportAcademy.Application.Queries.EmployeeQueries.GetAllCoachs;
 
 public record GetAllCoachsQuery(
-    PageRequest Page
+    PageRequest Page,
+    int? SportId = null,
+    int? BranchId = null
 ) : IRequest<Result<PagedData<CoachCardDto>>>, IPaginatedRequest
 {
     public PageRequest Page { get; set; } = Page;

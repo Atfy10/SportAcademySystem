@@ -192,10 +192,12 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetAllCoaches(
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
+            [FromQuery] int? sportId,
+            [FromQuery] int? branchId,
             CancellationToken ct)
         {
             var result = await _mediator.Send(new GetAllCoachsQuery(
-                                        PageRequest.Create(page, pageSize)), ct);
+                                        PageRequest.Create(page, pageSize), sportId, branchId), ct);
             return Ok(result);
         }
     }

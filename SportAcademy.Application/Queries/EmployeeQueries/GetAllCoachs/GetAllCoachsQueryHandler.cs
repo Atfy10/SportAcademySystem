@@ -17,7 +17,8 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetAllCoachs
 
         public async Task<Result<PagedData<CoachCardDto>>> Handle(GetAllCoachsQuery request, CancellationToken cancellationToken)
         {
-            var coaches = await _employeeRepository.GetAllCoaches(request.Page, cancellationToken);
+            var coaches = await _employeeRepository.GetAllCoaches(
+                request.Page, request.SportId, request.BranchId, cancellationToken);
 
             return Result<PagedData<CoachCardDto>>.Success(coaches, nameof(GetAllCoachsQuery));
         }
