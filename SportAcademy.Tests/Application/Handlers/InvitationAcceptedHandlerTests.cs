@@ -6,6 +6,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Tests.Application.Handlers;
 
@@ -39,7 +40,7 @@ public class InvitationAcceptedHandlerTests
         await act.Should().NotThrowAsync();
         _notificationServiceMock.Verify(
             n => n.SendNotificationAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<NotificationType>(), It.IsAny<string?>()),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<NotificationType>(), It.IsAny<string?>()),
             Times.Never);
         _userRepoMock.Verify(r => r.GetDisplayNameAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -59,6 +60,7 @@ public class InvitationAcceptedHandlerTests
 
         _notificationServiceMock.Verify(
             n => n.SendNotificationAsync(
+                NotificationEventTypes.InvitationAccepted,
                 invitedByUserId.ToString(),
                 "Invitation Accepted",
                 It.Is<string>(m => m.Contains("Jane Doe")),

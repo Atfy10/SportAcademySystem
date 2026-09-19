@@ -12,6 +12,7 @@ public sealed class TraineeGroupDeletedHandler(INotificationService notification
     public async Task Handle(TraineeGroupDeletedEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.TraineeGroupDeleted,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "Trainee Group Deleted",
             $"Trainee group \"{notification.TraineeGroupName}\" was deleted by {notification.ActorName}",

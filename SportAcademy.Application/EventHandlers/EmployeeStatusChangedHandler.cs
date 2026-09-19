@@ -13,6 +13,7 @@ public sealed class EmployeeStatusChangedHandler(INotificationService notificati
     {
         var status = notification.IsWork ? "reactivated" : "deactivated";
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.EmployeeStatusChanged,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "Employee Status Changed",
             $"Employee #{notification.EmployeeId} was {status} by {notification.ActorName}",

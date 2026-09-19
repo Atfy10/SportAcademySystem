@@ -4,6 +4,7 @@ using SportAcademy.Application.EventHandlers;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Tests.Application.Handlers;
 
@@ -35,6 +36,7 @@ public class ImpersonationStartedHandlerTests
 
         _notificationServiceMock.Verify(
             n => n.SendNotificationAsync(
+                NotificationEventTypes.ImpersonationStarted,
                 ownerId.ToString(),
                 It.IsAny<string>(),
                 It.Is<string>(m => m.Contains("John Admin") && m.Contains("Support ticket #123")),

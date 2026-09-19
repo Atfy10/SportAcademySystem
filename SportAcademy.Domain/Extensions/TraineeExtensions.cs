@@ -9,8 +9,11 @@ namespace SportAcademy.Domain.Extensions
 {
     public static class TraineeExtensions
     {
+        // Delegates to Trainee.GetAge() instead of its own copy of the math - this had its own
+        // independent (and buggy: UtcNow + DayOfYear comparison, wrong around a birthday for any
+        // tenant not in UTC+0, and wrong across a leap-year boundary) implementation until now.
         public static int CalculateAge(this Trainee trainee) =>
-            DateTime.UtcNow.Year - trainee.BirthDate.Year - (DateTime.UtcNow.DayOfYear < trainee.BirthDate.DayOfYear ? 1 : 0);
+            trainee.GetAge();
         public static bool IsAdult(this Trainee trainee) =>
             trainee.CalculateAge() >= 15;
     }

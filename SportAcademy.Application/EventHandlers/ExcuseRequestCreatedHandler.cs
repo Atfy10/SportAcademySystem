@@ -26,6 +26,7 @@ public sealed class ExcuseRequestCreatedHandler(
 
         // Only whoever can actually act on it - Admins and Owners hold attendance.approve_excuse.
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.ExcuseRequestCreated,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "New Excuse Request",
             $"Excuse request #{notification.ExcuseRequestId} filed by {actorName} needs approval",

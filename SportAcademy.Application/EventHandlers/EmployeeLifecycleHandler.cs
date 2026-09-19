@@ -12,6 +12,7 @@ public sealed class EmployeeLifecycleHandler(INotificationService notificationSe
     public async Task Handle(EmployeeLifecycleEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.EmployeeLifecycle,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             $"Employee {notification.Action}",
             $"Employee \"{notification.EmployeeName}\" was {notification.Action.ToLowerInvariant()} by {notification.ActorName}",

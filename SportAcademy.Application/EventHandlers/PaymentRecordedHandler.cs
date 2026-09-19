@@ -12,6 +12,7 @@ public sealed class PaymentRecordedHandler(INotificationService notificationServ
     public async Task Handle(PaymentRecordedEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.PaymentRecorded,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "Payment Recorded",
             $"Payment {notification.PaymentNumber} of {notification.Amount} {notification.Currency} recorded by {notification.ActorName}",

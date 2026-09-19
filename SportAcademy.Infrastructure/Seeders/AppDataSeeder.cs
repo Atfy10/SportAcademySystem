@@ -122,6 +122,8 @@ namespace SportAcademy.Infrastructure.Seeders
             await ReconcileSubscriptionPlansAsync(featureIds);
             await ReconcilePlanLimitsAsync();
             await ReconcileNationalityCategoriesAsync();
+            var eventTypeIds = await SeedNotificationEventTypesAsync();
+            await ReconcileTenantNotificationChannelRulesAsync(eventTypeIds);
             await EnsureSystemTenantAndSuperAdminAsync(featureIds);
         }
 
@@ -670,6 +672,9 @@ namespace SportAcademy.Infrastructure.Seeders
             ("attendance-reports", "Attendance Reports", "Full attendance history, filterable and printable", true),
             ("subscription-reports", "Subscription Reports", "Full subscription history, filterable and printable", true),
             ("notifications", "Notification System", "Send and manage system notifications", true),
+            ("notifications-email", "Email Notifications", "Deliver business notifications by email in addition to in-app", true),
+            ("notifications-push", "Push Notifications", "Deliver business notifications as browser/mobile push", true),
+            ("notifications-whatsapp", "WhatsApp Notifications", "Deliver business notifications via WhatsApp", false),
             ("chat-system", "In-App Chat", "Internal messaging and communication", false),
             ("discount-offers", "Discounts & Offers", "Manage promotions and discounts", true),
             ("session-management", "Session Management", "Manage training sessions", true),
@@ -721,6 +726,8 @@ namespace SportAcademy.Infrastructure.Seeders
             ["attendance-reports"] = (8m, false),
             ["subscription-reports"] = (8m, false),
             ["notifications"] = (6m, false),
+            ["notifications-email"] = (4m, false),
+            ["notifications-push"] = (4m, false),
             ["discount-offers"] = (7m, false),
             ["session-management"] = (10m, false),
             ["backup-restore"] = (6m, false),
@@ -821,6 +828,120 @@ namespace SportAcademy.Infrastructure.Seeders
                 .ToList();
         }
 
+        // Simpler than ReconcileFeaturesAsync above: NotificationEventType is a flat, one-time/
+        // reconcile catalog with no per-tenant fan-out of its own (that's what
+        // TenantNotificationChannelRule, seeded next, is for) - "add missing by Key, leave
+        // existing alone."
+        private async Task<Dictionary<string, Guid>> SeedNotificationEventTypesAsync()
+        {
+            var existing = await _context.Set<Domain.Entities.NotificationEventType>().ToListAsync();
+            var existingKeys = existing.Select(e => e.Key).ToHashSet();
+
+            var missing = Domain.Helpers.NotificationEventTypes.Catalog
+                .Where(c => !existingKeys.Contains(c.Key))
+                .Select(c => new Domain.Entities.NotificationEventType
+                {
+                    Id = Guid.NewGuid(),
+                    Key = c.Key,
+                    DisplayName = c.DisplayName,
+                    Description = c.Description,
+                    DefaultStyle = c.DefaultStyle,
+                    CreatedAt = DateTime.UtcNow,
+                })
+                .ToList();
+
+            if (missing.Count > 0)
+            {
+                _context.Set<Domain.Entities.NotificationEventType>().AddRange(missing);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Seeded {Count} new notification event type(s): {Keys}",
+                    missing.Count, string.Join(", ", missing.Select(m => m.Key)));
+            }
+
+            return existing.Concat(missing).ToDictionary(e => e.Key, e => e.Id);
+        }
+
+        // Seeds the actual visible TenantNotificationChannelRule rows for every existing tenant -
+        // deliberately explicit rather than leaving the dispatcher's in-code default (see
+        // NotificationEventTypes.DefaultEmailOnKeys) as the only source of truth, so an
+        // Owner/Admin opening the new settings page sees real toggled state immediately, not a
+        // blank grid, and can override it. Only Email gets rows this phase: Push/WhatsApp aren't
+        // implemented yet (IsImplemented:false on their Feature rows), so the settings UI renders
+        // them as disabled regardless of any row here. Runs on every startup, same
+        // add-missing-only shape as ReconcileFeaturesAsync - a tenant created after this pass
+        // (e.g. via CreateTenantCommand) is simply covered by the next one; until then the
+        // dispatcher's own fallback produces identical behavior.
+        // (Channel, whether it defaults on for a given event key) pairs seeded as real, visible
+        // rows for every tenant - Push defaults on for every event (it rides along with every
+        // SignalR/InApp push, same as the bell/toast does, unless a tenant explicitly turns it
+        // off in the routing settings), Email only for the narrower personally-actionable set.
+        // WhatsApp gets no seeded rows at all: no real provider is configured yet (see
+        // IWhatsAppApiClient), so there's nothing for a tenant to meaningfully turn on.
+        private static bool DefaultEnabledFor(Domain.Enums.NotificationChannel channel, string eventTypeKey) => channel switch
+        {
+            Domain.Enums.NotificationChannel.Email => Domain.Helpers.NotificationEventTypes.DefaultEmailOnKeys.Contains(eventTypeKey),
+            Domain.Enums.NotificationChannel.Push => true,
+            _ => false,
+        };
+
+        private static readonly Domain.Enums.NotificationChannel[] SeededChannels =
+            [Domain.Enums.NotificationChannel.Email, Domain.Enums.NotificationChannel.Push];
+
+        private async Task ReconcileTenantNotificationChannelRulesAsync(Dictionary<string, Guid> eventTypeIds)
+        {
+            if (eventTypeIds.Count == 0) return;
+
+            var tenantIds = await _context.Tenants.IgnoreQueryFilters().Select(t => t.Id).ToListAsync();
+            if (tenantIds.Count == 0) return;
+
+            // IgnoreQueryFilters is required, not optional: TenantNotificationChannelRule is
+            // ITenantScoped, and this method runs at startup with no ambient tenant set - without
+            // this, the global query filter silently matches zero rows (TenantId == null is
+            // never true), so every already-seeded row looked "missing" on every restart and
+            // this tried to re-insert it, violating the unique index the second time it ran.
+            var existingPairs = (await _context.Set<Domain.Entities.TenantNotificationChannelRule>()
+                    .IgnoreQueryFilters()
+                    .Where(r => SeededChannels.Contains(r.Channel))
+                    .Select(r => new { r.TenantId, r.EventTypeId, r.Channel })
+                    .ToListAsync())
+                .Select(r => (r.TenantId, r.EventTypeId, r.Channel))
+                .ToHashSet();
+
+            var now = DateTime.UtcNow;
+            var missing = new List<Domain.Entities.TenantNotificationChannelRule>();
+            foreach (var tenantId in tenantIds)
+            {
+                foreach (var (key, eventTypeId) in eventTypeIds)
+                {
+                    foreach (var channel in SeededChannels)
+                    {
+                        if (existingPairs.Contains((tenantId, eventTypeId, channel))) continue;
+
+                        missing.Add(new Domain.Entities.TenantNotificationChannelRule
+                        {
+                            TenantId = tenantId,
+                            EventTypeId = eventTypeId,
+                            Channel = channel,
+                            IsEnabled = DefaultEnabledFor(channel, key),
+                            UpdatedAt = now,
+                            UpdatedBy = "System",
+                        });
+                    }
+                }
+            }
+
+            if (missing.Count == 0) return;
+
+            using (_tenantIdProvider.AllowCrossTenantOperation())
+            {
+                _context.Set<Domain.Entities.TenantNotificationChannelRule>().AddRange(missing);
+                await _context.SaveChangesAsync();
+            }
+            _logger.LogInformation(
+                "Seeded {Count} default TenantNotificationChannelRule row(s) across {TenantCount} tenant(s).",
+                missing.Count, tenantIds.Count);
+        }
+
         private static Feature CreateFeature(
             string name, string displayName, string description, bool isImplemented = true,
             decimal bundlePrice = 0m, bool isBundleCore = false)
@@ -864,7 +985,7 @@ namespace SportAcademy.Infrastructure.Seeders
         private static readonly string[] ProfessionalOnlyFeatureNames =
         [
             "family-management", "nationality-categories", "financial-reports",
-            "attendance-reports", "subscription-reports", "notifications", "chat-system",
+            "attendance-reports", "subscription-reports", "notifications", "notifications-email", "notifications-push", "chat-system",
             "discount-offers", "session-management", "audit-trail", "system-settings",
             "profile-mgmt", "ai-assistant",
         ];

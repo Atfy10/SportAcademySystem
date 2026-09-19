@@ -24,6 +24,7 @@ public sealed class SubscriptionDiscountRequestCreatedHandler(
         // permission set) and Accountant (granted DiscountCode.Approve explicitly) hold
         // discountcode.approve. Employee (the usual requester) is deliberately excluded.
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.SubscriptionDiscountRequestCreated,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners, NotificationGroupNames.Accountants],
             "New Discount Request",
             $"Discount code \"{request.DiscountCode}\" requested for {traineeName} by {actorName} needs approval",
