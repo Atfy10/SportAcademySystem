@@ -12,6 +12,7 @@ public sealed class PaymentVoidedHandler(INotificationService notificationServic
     public async Task Handle(PaymentVoidedEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.PaymentVoided,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "Payment Voided",
             $"Payment {notification.PaymentNumber} was voided by {notification.ActorName}",

@@ -5,6 +5,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Application.EventHandlers;
 
@@ -67,6 +68,7 @@ public sealed class FirstTenantDashboardLoadHandler : INotificationHandler<First
             if (superAdminIds.Count > 0)
             {
                 await _notificationService.SendNotificationToUsersAsync(
+                    NotificationEventTypes.FirstTenantDashboardLoad,
                     superAdminIds,
                     "New Tenant Onboarded",
                     $"{notification.TenantDisplayName}: {userDisplayName} completed onboarding and reached the dashboard for the first time.",

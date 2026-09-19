@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Application.EventHandlers;
 
@@ -30,6 +31,7 @@ public sealed class SubscriptionDiscountRequestReviewedHandler(
         // ExcuseRequestReviewedHandler's org-wide announcement) - whether a specific
         // employee's discount request was approved/rejected isn't other staff's business.
         await notificationService.SendNotificationToUsersAsync(
+            NotificationEventTypes.SubscriptionDiscountRequestReviewed,
             [request.RequestedByUserId],
             title,
             message,

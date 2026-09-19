@@ -70,6 +70,11 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
         public DbSet<NotificationGroupMember> NotificationGroupMembers { get; set; }
+        public DbSet<NotificationEventType> NotificationEventTypes { get; set; } = null!;
+        public DbSet<TenantNotificationChannelRule> TenantNotificationChannelRules { get; set; } = null!;
+        public DbSet<UserNotificationPreference> UserNotificationPreferences { get; set; } = null!;
+        public DbSet<NotificationDelivery> NotificationDeliveries { get; set; } = null!;
+        public DbSet<PushSubscription> PushSubscriptions { get; set; } = null!;
         public DbSet<TraineeCodesHistory> TraineeCodesHistory { get; set; }
         public DbSet<TraineeCareerEvent> TraineeCareerEvents { get; set; }
         public DbSet<Family> Families { get; set; }

@@ -6,6 +6,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Tests.Application.Handlers;
 
@@ -77,6 +78,7 @@ public class FirstTenantDashboardLoadHandlerTests
 
         _tenantIdProviderMock.Verify(p => p.Impersonate(SystemTenantId), Times.Once);
         _notificationServiceMock.Verify(n => n.SendNotificationToUsersAsync(
+            NotificationEventTypes.FirstTenantDashboardLoad,
             superAdminIds,
             It.IsAny<string>(),
             It.Is<string>(m => m.Contains("Salmiya Academy") && m.Contains("Jane Owner")),
@@ -92,6 +94,6 @@ public class FirstTenantDashboardLoadHandlerTests
         await _handler.Handle(new FirstTenantDashboardLoadEvent(Guid.NewGuid(), "Salmiya Academy", userId), CancellationToken.None);
 
         _notificationServiceMock.Verify(n => n.SendNotificationToUsersAsync(
-            It.IsAny<IEnumerable<Guid>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<NotificationType>()), Times.Never);
+            It.IsAny<string>(), It.IsAny<IEnumerable<Guid>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<NotificationType>()), Times.Never);
     }
 }

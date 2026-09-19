@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Application.EventHandlers;
 
@@ -24,6 +25,7 @@ public sealed class ImpersonationStartedHandler : INotificationHandler<Impersona
         var superAdminName = await _userRepository.GetDisplayNameAsync(notification.SuperAdminUserId, cancellationToken);
 
         await _notificationService.SendNotificationAsync(
+            NotificationEventTypes.ImpersonationStarted,
             notification.OwnerId.ToString(),
             "Support Access Started",
             $"{superAdminName} from the platform team started viewing your account " +

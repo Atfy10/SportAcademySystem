@@ -12,6 +12,7 @@ public sealed class EnrollmentLifecycleHandler(INotificationService notification
     public async Task Handle(EnrollmentLifecycleEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.EnrollmentLifecycle,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             $"Enrollment {notification.Action}",
             $"Enrollment #{notification.EnrollmentId} was {notification.Action.ToLowerInvariant()} by {notification.ActorName}",
