@@ -6,8 +6,16 @@ namespace SportAcademy.Domain.Services
 {
     public class TraineeService : ITraineeService
     {
-        public int CalculateAge(DateOnly birthDate) =>
-            DateTime.UtcNow.Year - birthDate.Year - (DateTime.UtcNow.DayOfYear < birthDate.DayOfYear ? 1 : 0);
+        public int CalculateAge(DateOnly birthDate)
+        {
+            // Local time + full-date comparison, not UtcNow + DayOfYear - see PersonService's
+            // identical fix for why (calendar-date concept compared as a UTC instant, and a
+            // leap-year DayOfYear mismatch, are two separate bugs the old version had at once).
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            var age = today.Year - birthDate.Year;
+            if (birthDate > today.AddYears(-age)) age--;
+            return age;
+        }
 
         public int CreateTraineeCode(Trainee trainee, int branchId)
         {
