@@ -8,15 +8,16 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
-using SportAcademy.Domain.Exceptions.AttendanceExceptions;
+using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.BackgroundServices
 {
     /// <summary>
     /// Flips a Scheduled session occurrence to Completed once its attendance window has closed
-    /// (session start + group duration + the same grace period CreateAttendanceCommandHandler/
-    /// BulkCreateAttendanceCommandHandler enforce) - nothing else in the codebase ever sets this
+    /// (midnight at the end of the session's own day - see AttendanceWindow, the same rule
+    /// CreateAttendanceCommandHandler/BulkCreateAttendanceCommandHandler enforce) - nothing else
+    /// in the codebase ever sets this
     /// automatically, so without this sweep every occurrence sits at Scheduled forever unless a
     /// coach manually updates it via SessionOccurrencesNearbyModal. "Completed" is what the
     /// attendance handlers now check to reject a mark attempt outright (in addition to their own
@@ -89,7 +90,6 @@ namespace SportAcademy.Infrastructure.BackgroundServices
                 {
                     Occurrence = s,
                     s.TenantId,
-                    DurationInMinutes = s.GroupSchedule.TraineeGroup.DurationInMinutes,
                 })
                 .ToListAsync(ct);
 
@@ -118,8 +118,7 @@ namespace SportAcademy.Infrastructure.BackgroundServices
 
                 foreach (var candidate in tenantGroup)
                 {
-                    var windowCloses = candidate.Occurrence.StartDateTime
-                        .AddMinutes(candidate.DurationInMinutes + AttendanceWindowClosedException.GraceMinutesAfterEnd);
+                    var windowCloses = AttendanceWindow.ClosesAt(candidate.Occurrence.StartDateTime);
 
                     if (tenantNow < windowCloses)
                         continue;

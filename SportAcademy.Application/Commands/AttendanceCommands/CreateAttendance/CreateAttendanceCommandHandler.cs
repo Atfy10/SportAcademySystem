@@ -8,6 +8,7 @@ using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.AttendanceExceptions;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
+using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
 {
@@ -59,10 +60,10 @@ namespace SportAcademy.Application.Commands.AttendanceCommands.CreateAttendance
             // any tenant not in UTC.
             var tenantNow = await _tenantClock.GetLocalNowAsync(cancellationToken);
 
-            // Attendance can only be recorded from when the session starts until 90 minutes
-            // after it ends - not before it starts either, since there's nothing to attend yet.
-            if (tenantNow < timing.StartDateTime
-                || tenantNow > timing.StartDateTime.AddMinutes(timing.DurationInMinutes + AttendanceWindowClosedException.GraceMinutesAfterEnd))
+            // Attendance can only be recorded from when the session starts until midnight at the
+            // end of that same day - not before it starts either, since there's nothing to attend
+            // yet. See AttendanceWindow.
+            if (!AttendanceWindow.IsOpen(tenantNow, timing.StartDateTime))
                 throw new AttendanceWindowClosedException(request.SessionOccurrenceId);
 
             var groupId = timing.TraineeGroupId;

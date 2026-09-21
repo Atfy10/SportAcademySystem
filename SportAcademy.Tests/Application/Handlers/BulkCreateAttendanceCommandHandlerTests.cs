@@ -117,6 +117,48 @@ public class BulkCreateAttendanceCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_HoursAfterTheSessionEndedButBeforeMidnight_StillRecords()
+    {
+        // The window runs from the session's start until midnight the same day: a 17:30 session
+        // (60 minutes) is still markable at 22:15, which the old "90 minutes after it ends" rule
+        // would have refused. Fixed dates so this never depends on when the suite runs.
+        _tenantClockMock
+            .Setup(c => c.GetLocalNowAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DateTime(2026, 9, 21, 22, 15, 0));
+        var command = CreateValidCommand(new List<AttendanceItem> { CreateAttendanceItem(1, 1, AttendanceStatus.Present, "22:15") });
+
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((1, new DateTime(2026, 9, 21, 17, 30, 0), 60, SessionStatus.Scheduled));
+        _enrollmentRepoMock.Setup(r => r.GetEnrollmentIdAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync(5);
+        _attendanceRepoMock.Setup(r => r.GetBySessionAndTraineeAsync(1, 1, It.IsAny<CancellationToken>())).ReturnsAsync((Attendance?)null);
+        _attendanceRepoMock.Setup(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        _attendanceRepoMock.Verify(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_AtOrAfterMidnightOfTheSessionsDay_ReportsFailureAndDoesNotSave()
+    {
+        _tenantClockMock
+            .Setup(c => c.GetLocalNowAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new DateTime(2026, 9, 22, 0, 0, 0));
+        var command = CreateValidCommand(new List<AttendanceItem> { CreateAttendanceItem(1, 1, AttendanceStatus.Present) });
+
+        _sessionRepoMock.Setup(r => r.GetTimingAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((1, new DateTime(2026, 9, 21, 17, 30, 0), 60, SessionStatus.Scheduled));
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainKey("items").WhoseValue.Should().ContainSingle(e => e.Contains("outside the attendance window") && e.Contains("midnight"));
+        _attendanceRepoMock.Verify(r => r.AddAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>()), Times.Never);
+        _attendanceRepoMock.Verify(r => r.UpdateAsync(It.IsAny<Attendance>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_SkipsNullGroupId_ReportsFailureButStillSavesTheGoodRow()
     {
         // Arrange

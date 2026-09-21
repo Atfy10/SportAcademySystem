@@ -8,6 +8,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.AttendanceExceptions;
+using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Commands.AttendanceCommands.BulkCreateAttendance;
 
@@ -60,13 +61,12 @@ public class BulkCreateAttendanceCommandHandler(
                 continue;
             }
 
-            // Attendance can only be recorded from when the session starts until
-            // AttendanceWindowClosedException.GraceMinutesAfterEnd minutes after it ends - not
-            // before it starts either, since there's nothing to attend yet.
-            if (tenantNow < timing.Value.StartDateTime
-                || tenantNow > timing.Value.StartDateTime.AddMinutes(timing.Value.DurationInMinutes + AttendanceWindowClosedException.GraceMinutesAfterEnd))
+            // Attendance can only be recorded from when the session starts until midnight at the
+            // end of that same day - not before it starts either, since there's nothing to attend
+            // yet. See AttendanceWindow.
+            if (!AttendanceWindow.IsOpen(tenantNow, timing.Value.StartDateTime))
             {
-                skipped.Add($"Trainee {item.TraineeId}: outside the attendance window (session start through {AttendanceWindowClosedException.GraceMinutesAfterEnd} minutes after it ends).");
+                skipped.Add($"Trainee {item.TraineeId}: outside the attendance window (from the session's start until midnight the same day).");
                 continue;
             }
 

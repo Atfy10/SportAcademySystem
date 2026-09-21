@@ -12,8 +12,8 @@ public interface ISessionOccurrenceRepository : IBaseRepository<SessionOccurrenc
     Task<PagedData<SessionOccurrenceDto>> SearchAsync(string term, PageRequest page, CancellationToken cancellationToken = default);
     Task<int?> GetTraineeGroupIdAsync(int sessionOccurrenceId, CancellationToken cancellationToken = default);
     /// <summary>The session's TraineeGroupId, StartDateTime, duration and Status - used to
-    /// enforce the "attendance can only be recorded from session start until
-    /// AttendanceWindowClosedException.GraceMinutesAfterEnd minutes after it ends" window, and
+    /// enforce the "attendance can only be recorded from session start until midnight the same
+    /// day" window (see AttendanceWindow), and
     /// to reject marking once the session is no longer Scheduled (Completed/Canceled/
     /// CancelledTemporary).</summary>
     Task<(int TraineeGroupId, DateTime StartDateTime, int DurationInMinutes, SessionStatus Status)?> GetTimingAsync(
