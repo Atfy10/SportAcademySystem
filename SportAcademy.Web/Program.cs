@@ -56,6 +56,7 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IUserContextService, UserContextService>();
+builder.Services.AddSingleton<IHostEnvironmentInfo, HostEnvironmentInfo>();
 
 builder.Services.AddScoped<ITenantIdProvider, TenantIdProvider>();
 builder.Services.AddScoped<IBranchAccessProvider, BranchAccessProvider>();
@@ -270,15 +271,6 @@ builder.Services.AddApplicationServices();
 // Add Infrastructure layer services (Repositories, External Clients, JWT)
 builder.Services.AddInfrastructureServices();
 
-// Seeding stays opt-in outside Development via Seeding:Enabled (Seeding__Enabled env var) so
-// a real production deploy never gets demo data unless someone explicitly asks for it - e.g.
-// a local IIS test box that needs a login-capable account and wants the demo dataset to test
-// against. Computed here, ahead of the migration/seed call site below, purely so it's available
-// in one place before builder.Build() - the file-logging email fallback below no longer depends
-// on this at all, it now applies in every environment.
-var seedingEnabled = builder.Environment.IsDevelopment()
-    || builder.Configuration.GetValue<bool>("Seeding:Enabled");
-
 // Register external HTTP client services (web layer specific). Both providers are registered so
 // Email:Provider can choose between them at startup - switching is then a config change plus a
 // restart, not a redeploy, and the one that isn't selected costs nothing but a typed HttpClient.
@@ -393,7 +385,7 @@ app.Logger.LogInformation(
 
 // Configure the HTTP request pipeline.
 // Migrations run in every environment (single-instance IIS deploys have no migration
-// step of their own). seedingEnabled was computed above, before builder.Build().
+// step of their own).
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -401,12 +393,13 @@ using (var scope = app.Services.CreateScope())
 
     // Roles, the Feature/subscription-plan/nationality-category catalogs, and the SuperAdmin
     // account are cross-tenant shared data that must exist in every environment - including a
-    // brand-new Production database with demo seeding off. Only the demo "Salmiya Academy"
-    // tenant and its business data stay behind the seedingEnabled gate below.
+    // brand-new Production database. The fictional "AURA" demo tenant is NOT seeded here: it is
+    // created on demand by a SuperAdmin (POST /api/platform/demo-data/seed, Development only), so
+    // a fresh database starts with no tenants and can be used empty.
     var seeder = scope.ServiceProvider.GetRequiredService<AppDataSeeder>();
 
-    // The seeder creates the System tenant, its SuperAdmin, and (with demo seeding on) a whole
-    // second tenant from scratch, all before any HTTP request middleware exists to set an
+    // The seeder creates the System tenant and its SuperAdmin from scratch, all before any HTTP
+    // request middleware exists to set an
     // ambient tenant - and it stamps every ITenantScoped row it creates with the right tenant id
     // itself (see e.g. the TenantFeature block in EnsureSystemTenantAndSuperAdminAsync). This is
     // exactly the trusted, already-per-row-correct batch TenantSaveChangesInterceptor's
@@ -416,11 +409,6 @@ using (var scope = app.Services.CreateScope())
     using (tenantIdProvider.AllowCrossTenantOperation())
     {
         await seeder.EnsureCoreDataAsync();
-
-        if (seedingEnabled)
-        {
-            await seeder.SeedDemoDataAsync();
-        }
     }
 }
 

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Limits;
+using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Authorization;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
@@ -16,7 +17,7 @@ using System.Security.Claims;
 
 namespace SportAcademy.Infrastructure.Seeders
 {
-    public class AppDataSeeder
+    public class AppDataSeeder : IDemoDataSeeder
     {
         /// <summary>
         /// What a private group's place costs relative to the same plan's public price. Demo
@@ -27,6 +28,13 @@ namespace SportAcademy.Infrastructure.Seeders
         // Used only for the demo Owner account below - the real SuperAdmin's password comes from
         // required config, never a hardcoded literal (see EnsureSystemTenantAndSuperAdminAsync).
         private const string DefaultPassword = "Admin@123";
+
+        // Identifiers of the fictional demo tenant. Deliberately NOT the obvious "aura"/"AURA":
+        // tenant Slug and Code are globally unique, and someone recording an empty tenant first
+        // will naturally name it after the brand - the demo must never collide with that.
+        public const string DemoTenantSlug = "aura-demo";
+        private const string DemoTenantCode = "AURADEMO";
+        public const string DemoOwnerUserName = "mohammed.alatfy";
 
         private const string SuperAdminUserName = "abdulrahman";
         private const string SuperAdminEmail = "abdulrahmanalatfy@auraacademys.com";
@@ -125,61 +133,85 @@ namespace SportAcademy.Infrastructure.Seeders
             await EnsureSystemTenantAndSuperAdminAsync(featureIds);
         }
 
-        // Demo-only: the fictional "Salmiya Academy" tenant and its full business dataset, plus a
-        // test Accountant login. Never runs in Production (see Seeding:Enabled in
-        // appsettings.Production.json / Program.cs) - real deployments call EnsureCoreDataAsync
-        // above only, so the platform launches with the SuperAdmin and shared reference data
-        // above but zero customer-shaped tenants.
-        public async Task SeedDemoDataAsync()
+        /// <summary>
+        /// Seeds the fictional "AURA" demo tenant and its full business dataset, plus a test
+        /// Accountant login. Called on demand - by a SuperAdmin through
+        /// SeedDemoDataCommand, never at startup - so a fresh database launches with only
+        /// EnsureCoreDataAsync's shared data and one can record an empty tenant first.
+        /// </summary>
+        /// <remarks>
+        /// Whether this environment may seed at all (Development only) is decided by the
+        /// caller, not here. Runs inside an HTTP request now, so unlike the old startup call it
+        /// must (a) join the ambient transaction PlatformAuditBehavior has already opened
+        /// instead of starting a second one, and (b) put the caller's ambient tenant back
+        /// afterwards - the seed switches it to the new tenant to stamp every row.
+        /// </remarks>
+        public async Task<DemoSeedResult> SeedAsync(CancellationToken ct = default)
         {
-            // Must run unconditionally within this method (not just on a fresh database) - a
-            // test Accountant login needs to exist even against an already-seeded dev database,
-            // even though the rest of this method is about to no-op below.
-            await EnsureTestAccountantUserAsync();
+            var existing = await _context.Tenants
+                .IgnoreQueryFilters()
+                .Where(t => t.Slug == DemoTenantSlug)
+                .Select(t => new { t.Id })
+                .FirstOrDefaultAsync(ct);
 
-            if (await _context.Tenants.IgnoreQueryFilters().AnyAsync(t => t.Code != Tenant.SystemTenantCode))
+            if (existing is not null)
             {
                 _logger.LogInformation("Demo tenant already seeded. Skipping demo/business-data seeding.");
-                return;
+                return new DemoSeedResult(DemoSeedOutcome.AlreadySeeded, existing.Id, DemoTenantSlug, DemoOwnerUserName);
             }
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var callerTenantId = _tenantIdProvider.TenantId;
+            using var crossTenantScope = _tenantIdProvider.AllowCrossTenantOperation();
+
+            var ownsTransaction = _context.Database.CurrentTransaction is null;
+            await using var transaction = ownsTransaction
+                ? await _context.Database.BeginTransactionAsync(ct)
+                : null;
             try
             {
                 _logger.LogInformation("=== Starting Demo Data Seeding ===");
 
-                var salmiyaTenantId = Guid.NewGuid();
+                var demoTenantId = Guid.NewGuid();
                 var ownerId = Guid.NewGuid();
 
-                await SeedSalmiyaTenantAndOwnerAsync(salmiyaTenantId, ownerId);
+                await SeedDemoTenantAndOwnerAsync(demoTenantId, ownerId);
 
-                // Everything below creates tenant-scoped entities for Salmiya Academy -
+                // Everything below creates tenant-scoped entities for the AURA demo tenant -
                 // TenantSaveChangesInterceptor stamps every newly-added ITenantScoped entity
                 // with whatever the ambient tenant is on SaveChanges, so this must stay set to
-                // salmiyaTenantId for the rest of this method.
-                _tenantIdProvider.SetTenantId(salmiyaTenantId);
+                // demoTenantId for the rest of this method.
+                _tenantIdProvider.SetTenantId(demoTenantId);
 
-                var featureIds = await _context.Set<Feature>().Select(f => f.Id).ToListAsync();
+                var featureIds = await _context.Set<Feature>().Select(f => f.Id).ToListAsync(ct);
                 var enterprisePlanId = await _context.SubscriptionPlans
                     .Where(p => p.Code == "ENTERPRISE")
                     .Select(p => p.Id)
-                    .FirstAsync();
+                    .FirstAsync(ct);
                 var natCatIds = await _context.NationalityCategories
-                    .ToDictionaryAsync(c => c.Code, c => c.Id);
+                    .ToDictionaryAsync(c => c.Code, c => c.Id, ct);
 
-                await SeedTenantSettingsAsync(salmiyaTenantId, enterprisePlanId);
-                await EnableTenantFeaturesAsync(salmiyaTenantId, featureIds);
+                await SeedTenantSettingsAsync(demoTenantId, enterprisePlanId);
+                await EnableTenantFeaturesAsync(demoTenantId, featureIds);
 
-                await SeedSalmiyaDataAsync(salmiyaTenantId, natCatIds);
+                await SeedDemoTenantDataAsync(demoTenantId, natCatIds);
+                await EnsureTestAccountantUserAsync();
 
-                await transaction.CommitAsync();
+                if (transaction is not null)
+                    await transaction.CommitAsync(ct);
                 _logger.LogInformation("=== Demo Data Seeding Completed Successfully ===");
+
+                return new DemoSeedResult(DemoSeedOutcome.Seeded, demoTenantId, DemoTenantSlug, DemoOwnerUserName);
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction is not null)
+                    await transaction.RollbackAsync(CancellationToken.None);
                 _logger.LogError(ex, "Demo data seeding failed. Transaction rolled back.");
                 throw;
+            }
+            finally
+            {
+                _tenantIdProvider.SetTenantId(callerTenantId);
             }
         }
 
@@ -380,33 +412,33 @@ namespace SportAcademy.Infrastructure.Seeders
         // Same nullable-OwnerId-then-patch ordering as EnsureSystemTenantAndSuperAdminAsync above,
         // for the same reason - avoids needing the old FK-disable/re-enable dance for this demo
         // tenant too.
-        private async Task SeedSalmiyaTenantAndOwnerAsync(Guid salmiyaTenantId, Guid ownerId)
+        private async Task SeedDemoTenantAndOwnerAsync(Guid demoTenantId, Guid ownerId)
         {
-            _logger.LogInformation("Seeding Salmiya Academy tenant and owner...");
+            _logger.LogInformation("Seeding AURA demo tenant and owner...");
 
-            var salmiyaTenant = new Tenant
+            var demoTenant = new Tenant
             {
-                Id = salmiyaTenantId,
-                Name = "Salmiya Academy",
-                DisplayName = "Salmiya Swimming Academy",
-                Email = "info@salmiya-academy.com.kw",
-                Code = "SALMYIA",
-                Slug = "salmiya-academy",
+                Id = demoTenantId,
+                Name = "AURA",
+                DisplayName = "AURA Academy",
+                Email = "support@auraacademys.com",
+                Code = DemoTenantCode,
+                Slug = DemoTenantSlug,
                 Status = TenantStatus.Active,
                 OwnerId = null,
                 CreatedAt = DateTime.UtcNow
             };
-            _context.Tenants.Add(salmiyaTenant);
+            _context.Tenants.Add(demoTenant);
             await _context.SaveChangesAsync();
 
-            _tenantIdProvider.SetTenantId(salmiyaTenantId);
+            _tenantIdProvider.SetTenantId(demoTenantId);
 
             var owner = new AppUser
             {
                 Id = ownerId,
-                UserName = "mohammed.alatfy",
-                Email = "mohammed.alatfy@salmiya-academy.com.kw",
-                TenantId = salmiyaTenantId,
+                UserName = DemoOwnerUserName,
+                Email = "support@auraacademys.com",
+                TenantId = demoTenantId,
                 IsPasswordReset = false,
                 IsBanned = false,
                 EmailConfirmed = true,
@@ -420,29 +452,28 @@ namespace SportAcademy.Infrastructure.Seeders
                 throw new InvalidOperationException($"Failed to create Owner: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             _context.Profiles.Add(new Profile { AppUserId = owner.Id });
 
-            salmiyaTenant.OwnerId = ownerId;
+            demoTenant.OwnerId = ownerId;
             await _context.SaveChangesAsync();
 
             await _userManager.AddToRoleAsync(owner, "Owner");
 
-            _logger.LogInformation("Salmiya Academy tenant and owner seeded successfully.");
+            _logger.LogInformation("AURA demo tenant and owner seeded successfully.");
         }
 
-        // Runs on every startup (see the call site in SeedAsync, before the early-return that
-        // skips the rest of seeding once a tenant exists) so a demo Accountant login is always
-        // available to exercise the expense/payroll permission boundary, even against an
-        // already-seeded database. IgnoreQueryFilters here because no ambient tenant id is set
-        // yet - same reason SeedAsync's own "any tenant exists" check above needs it.
+        // Part of the demo seed: a demo Accountant login to exercise the expense/payroll
+        // permission boundary. Idempotent (a second call finds the user and returns).
+        // IgnoreQueryFilters on the tenant lookup because this can run before the ambient tenant
+        // is what the query filter expects.
         private async Task EnsureTestAccountantUserAsync()
         {
-            var salmiyaTenant = await _context.Tenants
+            var demoTenant = await _context.Tenants
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(t => t.Slug == "salmiya-academy");
+                .FirstOrDefaultAsync(t => t.Slug == DemoTenantSlug);
 
-            if (salmiyaTenant is null)
+            if (demoTenant is null)
                 return;
 
-            _tenantIdProvider.SetTenantId(salmiyaTenant.Id);
+            _tenantIdProvider.SetTenantId(demoTenant.Id);
 
             var existing = await _userManager.FindByNameAsync("sonnet");
             if (existing is not null)
@@ -452,7 +483,7 @@ namespace SportAcademy.Infrastructure.Seeders
             {
                 UserName = "sonnet",
                 Email = "sonnet@claude.com",
-                TenantId = salmiyaTenant.Id,
+                TenantId = demoTenant.Id,
                 IsPasswordReset = false,
                 IsBanned = false,
                 EmailConfirmed = true,
@@ -1042,17 +1073,19 @@ namespace SportAcademy.Infrastructure.Seeders
 
         private async Task SeedTenantSettingsAsync(Guid tenantId, int planId)
         {
-            _logger.LogInformation("Seeding tenant settings for Salmiya Academy...");
+            _logger.LogInformation("Seeding tenant settings for the AURA demo tenant...");
 
             _context.TenantProfiles.Add(new TenantProfile
             {
                 TenantId = tenantId,
-                OrganizationName = "Salmiya Swimming Academy",
-                Email = "info@salmiya-academy.com.kw",
+                OrganizationName = "AURA Academy",
+                Email = "support@auraacademys.com",
                 Phone = "+965 1800080",
-                Address = "Gulf Road, Salmiya, Kuwait",
-                Description = "Premier swimming and sports academy located in the heart of Salmiya, Kuwait. Offering world-class training facilities for all ages and skill levels.",
-                CommercialRegistration = "CR-2024-SALM-001"
+                Address = "Sports District, Kuwait City, Kuwait",
+                Description = "Demo academy showing how AURA runs a multi-branch sports academy: trainees, groups, attendance, subscriptions and staff in one place.",
+                CommercialRegistration = "CR-DEMO-001",
+                // A finished demo academy: no first-run "complete your profile" prompt.
+                IsSetupComplete = true
             });
 
             _context.TenantSettings.Add(new TenantSettings
@@ -1082,7 +1115,7 @@ namespace SportAcademy.Infrastructure.Seeders
 
         private async Task EnableTenantFeaturesAsync(Guid tenantId, List<Guid> featureIds)
         {
-            _logger.LogInformation("Enabling features for Salmiya Academy...");
+            _logger.LogInformation("Enabling features for the AURA demo tenant...");
 
             var now = DateTime.UtcNow;
             foreach (var featureId in featureIds)
@@ -1101,9 +1134,9 @@ namespace SportAcademy.Infrastructure.Seeders
             _logger.LogInformation("Features enabled successfully.");
         }
 
-        private async Task SeedSalmiyaDataAsync(Guid tenantId, Dictionary<string, int> natCats)
+        private async Task SeedDemoTenantDataAsync(Guid tenantId, Dictionary<string, int> natCats)
         {
-            _logger.LogInformation("=== Seeding Salmiya Academy Domain Data ===");
+            _logger.LogInformation("=== Seeding AURA Demo Tenant Domain Data ===");
 
             var faker = new Faker("en");
             var random = new Random();
@@ -1219,16 +1252,16 @@ namespace SportAcademy.Infrastructure.Seeders
             _context.Enrollments.AddRange(enrollments);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Salmiya Academy domain data seeded successfully.");
+            _logger.LogInformation("AURA demo tenant domain data seeded successfully.");
         }
 
         private static List<Branch> CreateBranches(Guid tenantId)
         {
             var branchData = new[]
             {
-                ("Salmiya Academy - Main Branch", "Salmiya", "+965 1800081", "main@salmiya-academy.com.kw", "29.3333", "48.0833"),
-                ("Salmiya Academy - Hawally Branch", "Hawally", "+965 1800082", "hawally@salmiya-academy.com.kw", "29.3325", "48.0017"),
-                ("Salmiya Academy - Jabriya Branch", "Jabriya", "+965 1800083", "jabriya@salmiya-academy.com.kw", "29.3258", "48.0583")
+                ("AURA Academy - Main Branch", "Salmiya", "+965 1800081", "main@aura-demo.example.com", "29.3333", "48.0833"),
+                ("AURA Academy - Hawally Branch", "Hawally", "+965 1800082", "hawally@aura-demo.example.com", "29.3325", "48.0017"),
+                ("AURA Academy - Jabriya Branch", "Jabriya", "+965 1800083", "jabriya@aura-demo.example.com", "29.3258", "48.0583")
             };
 
             return branchData.Select((data, idx) => new Branch
@@ -1415,7 +1448,7 @@ namespace SportAcademy.Infrastructure.Seeders
                     PhoneNumber = GenerateKuwaitiPhone(random),
                     SecondPhoneNumber = random.NextDouble() < 0.3 ? GenerateKuwaitiPhone(random) : null,
                     Address = Address.Create($"Street {random.Next(1, 250)}, Block {random.Next(1, 12)}", branch.City),
-                    Email = Email.Create($"{emp.First.ToLower()}.{emp.Last.ToLower()}@salmiya-academy.com.kw"),
+                    Email = Email.Create($"{emp.First.ToLower()}.{emp.Last.ToLower()}@example.com"),
                     Salary = random.Next(400, 1500),
                     HireDate = DateTime.UtcNow.AddDays(-random.Next(30, 1095)),
                     Position = emp.Position,

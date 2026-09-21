@@ -105,6 +105,9 @@ namespace SportAcademy.Infrastructure
 
             // Register seeders
             services.AddScoped<Seeders.AppDataSeeder>();
+            // The same scoped instance, seen through the interface the SuperAdmin "seed demo data"
+            // command depends on (Application must not reference Infrastructure).
+            services.AddScoped<IDemoDataSeeder>(sp => sp.GetRequiredService<Seeders.AppDataSeeder>());
 
             // Register Invitation Repository (new pattern)
             services.AddScoped<IInvitationRepository, InvitationRepository>();
