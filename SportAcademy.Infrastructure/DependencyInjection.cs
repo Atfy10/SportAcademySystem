@@ -52,7 +52,7 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
             services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
             services.AddScoped<ISubscriptionDiscountRequestRepository, SubscriptionDiscountRequestRepository>();
-            services.AddScoped<IFinancialDocumentNumberGenerator, SqlFinancialDocumentNumberGenerator>();
+            services.AddScoped<IDocumentNumberStore, SqlDocumentNumberStore>();
             services.AddScoped<IFamilyRepository, FamilyRepository>();
             services.AddScoped<INationalityCategoryRepository, NationalityCategoryRepository>();
             services.AddScoped<ICoachRepository, CoachRepository>();
