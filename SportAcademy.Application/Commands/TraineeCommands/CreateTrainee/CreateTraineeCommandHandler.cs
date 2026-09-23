@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
@@ -11,7 +10,6 @@ using SportAcademy.Domain.Exceptions.BaseExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 using SportAcademy.Domain.Exceptions.TraineeExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
-using SportAcademy.Domain.Helpers;
 using SportAcademy.Domain.ValueObjects;
 
 namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
@@ -21,8 +19,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
         private readonly ITraineeCodeGenerator _traineeCodeGenerator;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IFamilyRepository _familyRepository;
-        private readonly IUserRepository _userRepository;
-        private readonly IPasswordHasher<AppUser> _passwordHasher;
         private readonly ISportRepository _sportRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublisher _publisher;
@@ -33,8 +29,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             ITraineeCodeGenerator traineeCodeGenerator,
             ITraineeRepository traineeRepository,
             IFamilyRepository familyRepository,
-            IUserRepository userRepository,
-            IPasswordHasher<AppUser> passwordHasher,
             ISportRepository sportRepository,
             IUnitOfWork unitOfWork,
             IPhoneNumberNormalizer phoneNormalizer,
@@ -43,8 +37,6 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
             _traineeCodeGenerator = traineeCodeGenerator;
             _traineeRepository = traineeRepository;
             _familyRepository = familyRepository;
-            _userRepository = userRepository;
-            _passwordHasher = passwordHasher;
             _sportRepository = sportRepository;
             _unitOfWork = unitOfWork;
             _phoneNormalizer = phoneNormalizer;
@@ -172,21 +164,15 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            string username = await GenerateUniqueUsername(trainee.FirstName, trainee.LastName, cancellationToken);
-            string password = PersonValidationHelper.GeneratePassword();
-
-            var appUser = new AppUser
-            {
-                UserName = username,
-                Email = trainee.Email.Value,
-                PhoneNumber = trainee.PhoneNumber,
-                IsBanned = false
-            };
-            appUser.PasswordHash = _passwordHasher.HashPassword(appUser, password);
-            appUser.Trainee = trainee;
-
-            await _userRepository.AddAsyncWithoutSave(appUser, cancellationToken);
-
+            // No AppUser is created here - a trainee is a record the academy manages, not
+            // someone who signs in to this console, and there is no trainee-facing portal
+            // anywhere in the system for such an account to ever be used with. An earlier
+            // version of this handler did create one (with a generated username/password
+            // returned to the caller and never shown anywhere in the UI); it was inserted
+            // straight through the repository rather than UserManager.CreateAsync, so it never
+            // got a SecurityStamp - any later UserManager.UpdateAsync on that row (activate/
+            // deactivate, edit) threw "User security stamp cannot be null." That dead, silently
+            // broken account is the whole reason this comment exists: don't reintroduce it.
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             await _publisher.Publish(new TraineeCreatedEvent(trainee.Id), cancellationToken);
@@ -207,30 +193,11 @@ namespace SportAcademy.Application.Commands.Trainees.CreateTrainee
                 new CreateTraineeResponse
                 {
                     TraineeId = trainee.Id,
-                    Code = trainee.TraineeCode.Value,
-                    Username = username,
-                    Password = password
+                    Code = trainee.TraineeCode.Value
                 },
                 _operationType,
                 "Trainee created successfully"
             );
-        }
-
-        private async Task<string> GenerateUniqueUsername(string firstName, string lastName, CancellationToken cancellationToken)
-        {
-            string baseUsername = $"{firstName.ToLower()}{lastName.ToLower()}";
-            string username = baseUsername;
-            int suffix = 1;
-
-            while (await _userRepository.IsUsernameExistAsync(username, cancellationToken) && suffix < 100)
-            {
-                username = $"{baseUsername}{suffix++}";
-            }
-
-            if (suffix >= 100)
-                throw new InvalidOperationException("Unable to generate unique username");
-
-            return username;
         }
 
         private async Task<int> CreateTraineeId(Trainee trainee)
