@@ -1,5 +1,6 @@
 using MediatR;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
 using SportAcademy.Domain.Helpers;
@@ -13,23 +14,34 @@ public sealed class ImpersonationStartedHandler : INotificationHandler<Impersona
 {
     private readonly IUserRepository _userRepository;
     private readonly INotificationService _notificationService;
+    private readonly ITenantIdProvider _tenantIdProvider;
 
-    public ImpersonationStartedHandler(IUserRepository userRepository, INotificationService notificationService)
+    public ImpersonationStartedHandler(
+        IUserRepository userRepository, INotificationService notificationService, ITenantIdProvider tenantIdProvider)
     {
         _userRepository = userRepository;
         _notificationService = notificationService;
+        _tenantIdProvider = tenantIdProvider;
     }
 
     public async Task Handle(ImpersonationStartedEvent notification, CancellationToken cancellationToken)
     {
         var superAdminName = await _userRepository.GetDisplayNameAsync(notification.SuperAdminUserId, cancellationToken);
 
-        await _notificationService.SendNotificationAsync(
-            NotificationEventTypes.ImpersonationStarted,
-            notification.OwnerId.ToString(),
-            "Support Access Started",
-            $"{superAdminName} from the platform team started viewing your account " +
-            $"(reason: {notification.Reason}). This access expires at {notification.ExpiresAt:HH:mm} UTC.",
-            NotificationType.Warning);
+        // StartImpersonationCommandHandler runs as the SuperAdmin, whose ambient tenant is the
+        // System tenant, not the Owner's real one - without this, NotificationChannelDispatcher's
+        // feature-gate check and the persisted NotificationDelivery.TenantId audit row would both
+        // evaluate against the wrong tenant. Same pattern FirstTenantDashboardLoadHandler already
+        // uses for its own cross-tenant send.
+        using (_tenantIdProvider.Impersonate(notification.TenantId))
+        {
+            await _notificationService.SendNotificationAsync(
+                NotificationEventTypes.ImpersonationStarted,
+                notification.OwnerId.ToString(),
+                "Support Access Started",
+                $"{superAdminName} from the platform team started viewing your account " +
+                $"(reason: {notification.Reason}). This access expires at {notification.ExpiresAt:HH:mm} UTC.",
+                NotificationType.Warning);
+        }
     }
 }

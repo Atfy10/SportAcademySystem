@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using SportAcademy.Application.EventHandlers;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
 using SportAcademy.Domain.Helpers;
@@ -12,11 +13,17 @@ public class ImpersonationStartedHandlerTests
 {
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly Mock<INotificationService> _notificationServiceMock = new();
+    private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
     private readonly ImpersonationStartedHandler _handler;
 
     public ImpersonationStartedHandlerTests()
     {
-        _handler = new ImpersonationStartedHandler(_userRepoMock.Object, _notificationServiceMock.Object);
+        _tenantIdProviderMock
+            .Setup(p => p.Impersonate(It.IsAny<Guid>()))
+            .Returns(Mock.Of<IDisposable>());
+
+        _handler = new ImpersonationStartedHandler(
+            _userRepoMock.Object, _notificationServiceMock.Object, _tenantIdProviderMock.Object);
     }
 
     [Fact]
@@ -43,5 +50,23 @@ public class ImpersonationStartedHandlerTests
                 NotificationType.Warning,
                 It.IsAny<string?>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_SendsUnderTheOwnersRealTenantNotTheAmbientOne()
+    {
+        var tenantId = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var superAdminId = Guid.NewGuid();
+        var notification = new ImpersonationStartedEvent(
+            tenantId, ownerId, superAdminId, "Support ticket #123", DateTime.UtcNow.AddMinutes(60));
+
+        _userRepoMock
+            .Setup(r => r.GetDisplayNameAsync(superAdminId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("John Admin");
+
+        await _handler.Handle(notification, CancellationToken.None);
+
+        _tenantIdProviderMock.Verify(p => p.Impersonate(tenantId), Times.Once);
     }
 }

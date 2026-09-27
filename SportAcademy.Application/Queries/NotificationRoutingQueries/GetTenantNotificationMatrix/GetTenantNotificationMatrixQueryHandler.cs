@@ -45,12 +45,10 @@ public class GetTenantNotificationMatrixQueryHandler
                     // identical reasoning.
                     NotificationChannel.InApp => true,
                     _ when hasRule => explicitEnabled,
-                    // Same defaults as NotificationChannelDispatcher/AppDataSeeder's
-                    // ReconcileTenantNotificationChannelRulesAsync - Push rides along with every
-                    // InApp/SignalR push by default, Email only for the narrower set.
-                    NotificationChannel.Email => NotificationEventTypes.DefaultEmailOnKeys.Contains(eventType.Key),
-                    NotificationChannel.Push => true,
-                    _ => false,
+                    // Same NotificationEventTypes.DefaultEnabledFor NotificationChannelDispatcher
+                    // and AppDataSeeder's ReconcileTenantNotificationChannelRulesAsync both use -
+                    // single source of truth so the three can never quietly drift from each other.
+                    _ => NotificationEventTypes.DefaultEnabledFor(channel, eventType.Key),
                 };
 
                 cells.Add(new NotificationMatrixCellDto(

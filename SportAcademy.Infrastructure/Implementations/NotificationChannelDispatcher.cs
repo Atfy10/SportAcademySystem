@@ -76,18 +76,13 @@ public class NotificationChannelDispatcher : INotificationChannelDispatcher
             var matrixEnabledChannels = QueuedChannels
                 .Where(c => rules.TryGetValue(c, out var enabled)
                     ? enabled
-                    : c switch
-                    {
-                        // Every event that already reaches InApp/SignalR also reaches Push by
-                        // default - Push rides along with every notification unless a tenant's
-                        // own routing-matrix row (or the recipient's own preference, checked
-                        // below) explicitly turns it off. Email keeps its narrower default (only
-                        // the personally-actionable events) since it's a heavier, more visible
-                        // channel; WhatsApp has no real provider behind it yet either way.
-                        NotificationChannel.Email => NotificationEventTypes.DefaultEmailOnKeys.Contains(eventTypeKey),
-                        NotificationChannel.Push => true,
-                        _ => false,
-                    })
+                    // Every event that already reaches InApp/SignalR also reaches Push by
+                    // default - Push rides along with every notification unless a tenant's own
+                    // routing-matrix row (or the recipient's own preference, checked below)
+                    // explicitly turns it off. See NotificationEventTypes.DefaultEnabledFor -
+                    // single source of truth shared with GetTenantNotificationMatrixQueryHandler
+                    // and AppDataSeeder, so the three can never quietly drift from each other.
+                    : NotificationEventTypes.DefaultEnabledFor(c, eventTypeKey))
                 .ToList();
 
             // The routing matrix is a within-plan customization, not a way to unlock a channel

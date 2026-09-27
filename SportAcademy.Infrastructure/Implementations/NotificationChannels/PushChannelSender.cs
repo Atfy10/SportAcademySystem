@@ -80,6 +80,18 @@ public class PushChannelSender : INotificationChannelSender
             {
                 transientFailure = true;
                 lastError = ex.Message;
+
+                // If a sibling subscription already succeeded (or still does, later in this
+                // loop), this failure never surfaces in the returned ChannelSendResult - the
+                // delivery is recorded Sent overall, and this specific device is never retried.
+                // That's an accepted tradeoff (a push message targets a subscription, not a
+                // user, so "at least one device got it" counts as delivered), but it must not
+                // be silently lost - log it so an operator investigating "my phone never got
+                // pushes" for this user/subscription has something to find.
+                _logger.LogWarning(ex,
+                    "Push delivery failed for subscription {SubscriptionId} (user {UserId}), not pruned - " +
+                    "will not be individually retried even if another subscription for this recipient succeeds.",
+                    subscription.Id, subscription.UserId);
             }
         }
 

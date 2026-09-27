@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SportAcademy.Application.Common.Features;
 using SportAcademy.Application.Common.Limits;
 using SportAcademy.Domain.Authorization;
 using SportAcademy.Domain.Contract;
@@ -736,10 +737,12 @@ namespace SportAcademy.Infrastructure.Seeders
         // Fully replaces the old "SeedFeaturesAsync always inserts everything, assumes it only
         // ever runs once" approach. Adds any Feature this catalog defines that the database
         // doesn't have yet (on a genuinely fresh database, that's every feature - this is what
-        // populates Features now) and enables each newly-added one by default for every
-        // pre-existing tenant, matching what a fresh seed of that tenant would already produce.
-        // A tenant seeded later in this same call (the fresh-DB path) is deliberately excluded
-        // from that enablement loop - it gets every current feature via its own
+        // populates Features now) and grants each newly-added one to every pre-existing tenant
+        // whose current plan actually includes it (see ReconcileNewFeaturesIntoExistingPlansAsync
+        // and PlanFeatureReconciler) - never unconditionally, or a Basic tenant would get a
+        // Professional-only feature for free the moment it's added to the catalog. A tenant
+        // seeded later in this same call (the fresh-DB path) is deliberately excluded from that
+        // grant loop - it gets every feature its own chosen plan includes via its own
         // EnableTenantFeaturesAsync call further down in SeedAsync, using the ids returned here.
         // Must run unconditionally on every startup (see the call site in SeedAsync), or a
         // feature added to FeatureCatalog after go-live would never reach an already-seeded
@@ -767,27 +770,76 @@ namespace SportAcademy.Infrastructure.Seeders
                 _context.Set<Feature>().AddRange(missing);
                 await _context.SaveChangesAsync();
 
-                var tenantIds = await _context.Tenants.IgnoreQueryFilters().Select(t => t.Id).ToListAsync();
-                if (tenantIds.Count > 0)
+                // A newly-added feature must join each EXISTING plan's SubscriptionPlanFeature
+                // template too - ReconcileSubscriptionPlansAsync only ever populates that for a
+                // brand-new plan, so without this a feature added after go-live would never
+                // actually become part of any plan's grant, and the per-tenant loop below would
+                // have nothing to check it against.
+                await ReconcileNewFeaturesIntoExistingPlansAsync(missing);
+
+                // Gated by each tenant's actual current plan - this used to unconditionally
+                // enable every new feature for every existing tenant regardless of plan, which
+                // silently gave Basic/Starter tenants free access to Professional-only features
+                // (e.g. notifications-email/-push, both in ProfessionalOnlyFeatureNames) the
+                // moment they were added to the catalog. Same PlanFeatureReconciler rule every
+                // other plan-affecting change already goes through (ChangeTenantPlanCommandHandler,
+                // UpdatePlanFeaturesCommandHandler) - a tenant whose plan doesn't grant the new
+                // feature simply gets no TenantFeature row for it, same as "not enabled" anywhere
+                // else in this system.
+                var tenantsWithPlan = await _context.Tenants.IgnoreQueryFilters()
+                    .Include(t => t.Subscription)
+                    .Where(t => t.Subscription != null)
+                    .ToListAsync();
+
+                if (tenantsWithPlan.Count > 0)
                 {
                     var now = DateTime.UtcNow;
-                    foreach (var tenantId in tenantIds)
+                    var missingIds = missing.Select(f => f.Id).ToHashSet();
+                    var featureNameById = missing.ToDictionary(f => f.Id, f => f.Name);
+                    var planFeatureCache = new Dictionary<int, List<Guid>>();
+                    var grantedCount = 0;
+
+                    foreach (var tenant in tenantsWithPlan)
                     {
-                        foreach (var feature in missing)
+                        var planId = tenant.Subscription!.SubscriptionPlanId;
+                        if (!planFeatureCache.TryGetValue(planId, out var planFeatureIds))
                         {
+                            planFeatureIds = await _context.SubscriptionPlanFeatures
+                                .Where(pf => pf.SubscriptionPlanId == planId && missingIds.Contains(pf.FeatureId))
+                                .Select(pf => pf.FeatureId)
+                                .ToListAsync();
+                            planFeatureCache[planId] = planFeatureIds;
+                        }
+
+                        if (planFeatureIds.Count == 0) continue;
+
+                        // These are brand-new features, so no TenantFeature row can already
+                        // exist for them - PlanFeatureReconciler.ComputeUpdates only ever
+                        // produces "enable" here (empty currentFeatures), but reused as-is
+                        // rather than duplicating its rules.
+                        var updates = PlanFeatureReconciler.ComputeUpdates([], planFeatureIds, featureNameById);
+                        foreach (var (featureId, isEnabled) in updates)
+                        {
+                            if (!isEnabled) continue;
                             _context.TenantFeatures.Add(new TenantFeature
                             {
-                                TenantId = tenantId,
-                                FeatureId = feature.Id,
+                                TenantId = tenant.Id,
+                                FeatureId = featureId,
                                 IsEnabled = true,
                                 EnabledAt = now,
                                 EnabledBy = "System",
                             });
+                            grantedCount++;
                         }
                     }
 
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("New feature(s) enabled for {Count} existing tenant(s).", tenantIds.Count);
+                    if (grantedCount > 0)
+                    {
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation(
+                            "New feature(s) granted for {Count} tenant-feature row(s), gated by each tenant's current plan.",
+                            grantedCount);
+                    }
                 }
             }
 
@@ -826,6 +878,63 @@ namespace SportAcademy.Infrastructure.Seeders
                 .Select(f => f.Id)
                 .Concat(missing.Select(f => f.Id))
                 .ToList();
+        }
+
+        // A newly-added Feature needs a SubscriptionPlanFeature row in each EXISTING plan's
+        // template too, or GetPlanFeaturesAsync (used by every plan-affecting change:
+        // ChangeTenantPlanCommandHandler, UpdatePlanFeaturesCommandHandler, and now
+        // ReconcileFeaturesAsync's own per-tenant grant loop right after this call) would keep
+        // reporting the pre-existing set forever - only ReconcileSubscriptionPlansAsync's
+        // brand-new-plan path ever populated this before. Same Basic/Professional/Enterprise
+        // tier classification that method uses for a fresh plan, applied retroactively.
+        private async Task ReconcileNewFeaturesIntoExistingPlansAsync(List<Feature> missing)
+        {
+            if (missing.Count == 0) return;
+
+            var plans = await _context.SubscriptionPlans.ToListAsync();
+            if (plans.Count == 0) return;
+
+            var planIds = plans.Select(p => p.Id).ToHashSet();
+            var existingGrantSet = (await _context.SubscriptionPlanFeatures
+                    .Where(pf => planIds.Contains(pf.SubscriptionPlanId))
+                    .Select(pf => new { pf.SubscriptionPlanId, pf.FeatureId })
+                    .ToListAsync())
+                .Select(g => (g.SubscriptionPlanId, g.FeatureId))
+                .ToHashSet();
+
+            var basicMissing = missing.Where(f => BasicFeatureNames.Contains(f.Name)).Select(f => f.Id).ToList();
+            var professionalMissing = basicMissing
+                .Concat(missing.Where(f => ProfessionalOnlyFeatureNames.Contains(f.Name)).Select(f => f.Id))
+                .ToList();
+            // Anything not explicitly Basic or ProfessionalOnly is Enterprise-only, matching
+            // ReconcileSubscriptionPlansAsync's enterpriseFeatures = "everything" rule.
+            var enterpriseMissing = missing.Select(f => f.Id).ToList();
+
+            var added = new List<SubscriptionPlanFeature>();
+            foreach (var plan in plans)
+            {
+                var grantedIds = plan.Code switch
+                {
+                    "BASIC" => basicMissing,
+                    "PRO" => professionalMissing,
+                    "ENTERPRISE" => enterpriseMissing,
+                    _ => professionalMissing,
+                };
+
+                foreach (var featureId in grantedIds)
+                {
+                    if (existingGrantSet.Contains((plan.Id, featureId))) continue;
+                    added.Add(new SubscriptionPlanFeature { SubscriptionPlanId = plan.Id, FeatureId = featureId });
+                }
+            }
+
+            if (added.Count == 0) return;
+
+            _context.SubscriptionPlanFeatures.AddRange(added);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation(
+                "Granted {Count} new feature(s) into {PlanCount} existing plan(s)' templates.",
+                added.Count, plans.Count);
         }
 
         // Simpler than ReconcileFeaturesAsync above: NotificationEventType is a flat, one-time/
@@ -872,18 +981,11 @@ namespace SportAcademy.Infrastructure.Seeders
         // (e.g. via CreateTenantCommand) is simply covered by the next one; until then the
         // dispatcher's own fallback produces identical behavior.
         // (Channel, whether it defaults on for a given event key) pairs seeded as real, visible
-        // rows for every tenant - Push defaults on for every event (it rides along with every
-        // SignalR/InApp push, same as the bell/toast does, unless a tenant explicitly turns it
-        // off in the routing settings), Email only for the narrower personally-actionable set.
-        // WhatsApp gets no seeded rows at all: no real provider is configured yet (see
-        // IWhatsAppApiClient), so there's nothing for a tenant to meaningfully turn on.
-        private static bool DefaultEnabledFor(Domain.Enums.NotificationChannel channel, string eventTypeKey) => channel switch
-        {
-            Domain.Enums.NotificationChannel.Email => Domain.Helpers.NotificationEventTypes.DefaultEmailOnKeys.Contains(eventTypeKey),
-            Domain.Enums.NotificationChannel.Push => true,
-            _ => false,
-        };
-
+        // rows for every tenant - see NotificationEventTypes.DefaultEnabledFor (Push rides along
+        // with every SignalR/InApp push unless a tenant explicitly turns it off, Email only for
+        // the narrower personally-actionable set). WhatsApp gets no seeded rows at all: no real
+        // provider is configured yet (see IWhatsAppApiClient), so there's nothing for a tenant
+        // to meaningfully turn on.
         private static readonly Domain.Enums.NotificationChannel[] SeededChannels =
             [Domain.Enums.NotificationChannel.Email, Domain.Enums.NotificationChannel.Push];
 
@@ -922,7 +1024,7 @@ namespace SportAcademy.Infrastructure.Seeders
                             TenantId = tenantId,
                             EventTypeId = eventTypeId,
                             Channel = channel,
-                            IsEnabled = DefaultEnabledFor(channel, key),
+                            IsEnabled = Domain.Helpers.NotificationEventTypes.DefaultEnabledFor(channel, key),
                             UpdatedAt = now,
                             UpdatedBy = "System",
                         });

@@ -16,6 +16,18 @@ public class PersonServiceTests
     }
 
     [Fact]
+    public void CalculateAge_WithExplicitAsOf_UsesItInsteadOfServerLocalTime()
+    {
+        // Birthday is tomorrow relative to asOf - CalculateAge must resolve "today" from asOf,
+        // not from DateTime.Now, or a caller passing the tenant's own local date (e.g. via
+        // ITenantClock) could never actually override the server's timezone.
+        var asOf = new DateOnly(2026, 6, 14);
+        var birthDate = new DateOnly(1996, 6, 15);
+
+        _sut.CalculateAge(birthDate, asOf).Should().Be(29);
+    }
+
+    [Fact]
     public void GenerateUserName_ReturnsExpectedFormat()
     {
         var userName = _sut.GenerateUserName("Ahmed", "Al-Mutairi");

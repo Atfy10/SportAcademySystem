@@ -67,7 +67,7 @@ public class NotificationSettingsRepository : INotificationSettingsRepository
             }
             else
             {
-                _context.Set<TenantNotificationChannelRule>().Add(new TenantNotificationChannelRule
+                var newRow = new TenantNotificationChannelRule
                 {
                     TenantId = tenantId,
                     EventTypeId = eventTypeId,
@@ -75,7 +75,13 @@ public class NotificationSettingsRepository : INotificationSettingsRepository
                     IsEnabled = isEnabled,
                     UpdatedAt = now,
                     UpdatedBy = updatedBy,
-                });
+                };
+                _context.Set<TenantNotificationChannelRule>().Add(newRow);
+                // A second entry for the same (EventTypeId, Channel) later in this same rules
+                // list must update the row just added above, not insert a sibling that collides
+                // on the unique index at SaveChanges - existingByKey only snapshotted what was
+                // already in the database before this loop started.
+                existingByKey[(eventTypeId, channel)] = newRow;
             }
         }
 
@@ -112,13 +118,18 @@ public class NotificationSettingsRepository : INotificationSettingsRepository
             }
             else
             {
-                _context.Set<UserNotificationPreference>().Add(new UserNotificationPreference
+                var newRow = new UserNotificationPreference
                 {
                     UserId = userId,
                     Channel = channel,
                     IsEnabled = isEnabled,
                     UpdatedAt = now,
-                });
+                };
+                _context.Set<UserNotificationPreference>().Add(newRow);
+                // Same reasoning as UpsertTenantRulesAsync: a second entry for the same Channel
+                // later in this same preferences list must update the row just added above, not
+                // insert a sibling that collides on the unique index at SaveChanges.
+                existingByChannel[channel] = newRow;
             }
         }
 

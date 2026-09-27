@@ -5,17 +5,19 @@ namespace SportAcademy.Domain.Services
 {
     public class PersonService : IPersonService
     {
-        public int CalculateAge(DateOnly birthDate)
+        public int CalculateAge(DateOnly birthDate, DateOnly? asOf = null)
         {
-            // DateTime.Now (local), not UtcNow: birthDate is a calendar concept, and comparing
-            // it against a UTC instant's calendar date is wrong by exactly one day - and
-            // therefore one year, right around a birthday - for any tenant not in UTC+0 (this
-            // app's primary market is Arabic-region, UTC+2/+3, so this was live-broken there).
-            // Full-date comparison (not DayOfYear) also sidesteps a leap-year mismatch: Feb 29
-            // and any day after it don't line up across a leap/non-leap year pair under
-            // DayOfYear alone. Same algorithm as Trainee.GetAge(), the one call path in this
-            // codebase that already got this right.
-            var today = DateOnly.FromDateTime(DateTime.Now);
+            // birthDate is a calendar concept, so the "today" it's compared against must be one
+            // too - a raw UTC instant's calendar date is wrong by exactly one day (and therefore
+            // one year, right around a birthday) for any tenant not in UTC+0, and this app's
+            // primary market is Arabic-region, UTC+2/+3. A caller with real tenant context
+            // (e.g. via ITenantClock.GetLocalNowAsync) should always pass asOf explicitly - the
+            // DateTime.Now fallback below is only correct when this process's own OS timezone
+            // happens to match the tenant's, which is not guaranteed in a containerized
+            // deployment (see ITenantClock's remarks). Full-date comparison (not DayOfYear) also
+            // sidesteps a leap-year mismatch: Feb 29 and any day after it don't line up across a
+            // leap/non-leap year pair under DayOfYear alone. Same algorithm as Trainee.GetAge().
+            var today = asOf ?? DateOnly.FromDateTime(DateTime.Now);
             var age = today.Year - birthDate.Year;
             if (birthDate > today.AddYears(-age)) age--;
             return age;

@@ -82,7 +82,32 @@ public static class NotificationEventTypes
         UserActiveStatusChanged,
         UserBranchesChanged,
         UserRolesChanged,
-        ExcuseRequestReviewed,
+        // ExcuseRequestReviewed is deliberately NOT here despite the name reading like a
+        // personally-actionable event: ExcuseRequestReviewedHandler actually broadcasts it via
+        // SendNotificationToGroupsAsync(AllRoleGroups) - "an org-wide outcome announcement",
+        // per that handler's own comment - not a single recipient learning about their own
+        // request. Including it here would be exactly the "every payment-recorded event
+        // suddenly emails every Owner" flooding this set exists to prevent, just for a
+        // different event. SubscriptionDiscountRequestReviewed below is the real single-
+        // recipient analog (SendNotificationToUsersAsync, not a group).
         SubscriptionDiscountRequestReviewed,
     ];
+
+    /// <summary>
+    /// Single source of truth for "does this channel default on for this event, absent any
+    /// explicit tenant/user override" - previously three independent copies of this exact switch
+    /// (NotificationChannelDispatcher, GetTenantNotificationMatrixQueryHandler,
+    /// AppDataSeeder.DefaultEnabledFor) that all already read DefaultEmailOnKeys above but could
+    /// silently drift from each other on any other change (a new channel, WhatsApp's default
+    /// once a real provider ships) since nothing forced them to agree. Push defaults on for
+    /// every event (rides along with the SignalR/InApp push, same as the bell/toast); Email only
+    /// for DefaultEmailOnKeys' narrower personally-actionable set; every other channel (WhatsApp
+    /// today) defaults off.
+    /// </summary>
+    public static bool DefaultEnabledFor(NotificationChannel channel, string eventTypeKey) => channel switch
+    {
+        NotificationChannel.Email => DefaultEmailOnKeys.Contains(eventTypeKey),
+        NotificationChannel.Push => true,
+        _ => false,
+    };
 }
