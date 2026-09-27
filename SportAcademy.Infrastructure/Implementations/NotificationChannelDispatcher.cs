@@ -110,6 +110,15 @@ public class NotificationChannelDispatcher : INotificationChannelDispatcher
                         .ToListAsync(ct))
                     .ToDictionary(p => (p.UserId, p.Channel), p => p.IsEnabled);
 
+                // One batched query for the whole recipient list, not one round trip per
+                // (recipient, channel) pair - only when a channel that actually needs a
+                // resolved destination is enabled; Push never reaches this.
+                var needsContactResolution = enabledChannels.Contains(NotificationChannel.Email)
+                    || enabledChannels.Contains(NotificationChannel.WhatsApp);
+                var contactLookup = needsContactResolution
+                    ? await _contactResolver.ResolveContactsAsync(recipientUserIds, ct)
+                    : new Dictionary<Guid, (string? Email, string? Phone)>();
+
                 foreach (var userId in recipientUserIds)
                 {
                     foreach (var channel in enabledChannels)
@@ -119,10 +128,11 @@ public class NotificationChannelDispatcher : INotificationChannelDispatcher
                         if (prefLookup.TryGetValue((userId, channel), out var userEnabled) && !userEnabled)
                             continue;
 
+                        var contact = contactLookup.GetValueOrDefault(userId);
                         var destination = channel switch
                         {
-                            NotificationChannel.Email => await _contactResolver.ResolveEmailAsync(userId, ct),
-                            NotificationChannel.WhatsApp => await _contactResolver.ResolvePhoneAsync(userId, ct),
+                            NotificationChannel.Email => contact.Email,
+                            NotificationChannel.WhatsApp => contact.Phone,
                             _ => null,
                         };
 

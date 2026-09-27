@@ -16,8 +16,32 @@ public class ContactResolver : IContactResolver
     public async Task<string?> ResolveEmailAsync(Guid userId, CancellationToken ct = default)
     {
         var user = await FindUserAsync(userId, ct);
-        if (user is null) return null;
+        return user is null ? null : ResolveEmail(user);
+    }
 
+    public async Task<string?> ResolvePhoneAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await FindUserAsync(userId, ct);
+        return user is null ? null : ResolvePhone(user);
+    }
+
+    public async Task<Dictionary<Guid, (string? Email, string? Phone)>> ResolveContactsAsync(
+        IReadOnlyCollection<Guid> userIds, CancellationToken ct = default)
+    {
+        if (userIds.Count == 0) return new();
+
+        var users = await _context.Users
+            .Include(u => u.Employee)
+            .Include(u => u.Trainee)
+            .AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .ToListAsync(ct);
+
+        return users.ToDictionary(u => u.Id, u => (ResolveEmail(u), ResolvePhone(u)));
+    }
+
+    private static string? ResolveEmail(Domain.Entities.AppUser user)
+    {
         var employeeEmail = user.Employee?.Email?.ToString();
         if (!string.IsNullOrWhiteSpace(employeeEmail)) return employeeEmail;
 
@@ -27,11 +51,8 @@ public class ContactResolver : IContactResolver
         return string.IsNullOrWhiteSpace(user.Email) ? null : user.Email;
     }
 
-    public async Task<string?> ResolvePhoneAsync(Guid userId, CancellationToken ct = default)
+    private static string? ResolvePhone(Domain.Entities.AppUser user)
     {
-        var user = await FindUserAsync(userId, ct);
-        if (user is null) return null;
-
         if (!string.IsNullOrWhiteSpace(user.Employee?.PhoneNumber)) return user.Employee.PhoneNumber;
         if (!string.IsNullOrWhiteSpace(user.Trainee?.PhoneNumber)) return user.Trainee.PhoneNumber;
         return string.IsNullOrWhiteSpace(user.PhoneNumber) ? null : user.PhoneNumber;
