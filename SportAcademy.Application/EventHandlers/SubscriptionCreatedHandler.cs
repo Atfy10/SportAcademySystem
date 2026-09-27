@@ -37,6 +37,7 @@ public sealed class SubscriptionCreatedHandler : INotificationHandler<Subscripti
             : "System";
 
         await _notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.SubscriptionCreated,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "New Subscription",
             $"Subscription #{notification.SubscriptionId} created by {actorName}",

@@ -25,6 +25,7 @@ public sealed class SalaryPaymentCreatedHandler(
         // Accountant (the usual filer) so they can't approve their own request. See the
         // comment on SalaryPayment for why.
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.SalaryPaymentCreated,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "New Salary Payment Request",
             $"A salary payment of {payment.Amount + payment.Bonus} {payment.Currency} for {employeeName} ({branchName}) needs approval",

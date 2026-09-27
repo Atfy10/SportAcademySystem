@@ -82,6 +82,9 @@ builder.Services.Configure<TenantArchivalSettings>(
 builder.Services.Configure<MarketingSettings>(
     builder.Configuration.GetSection("Marketing"));
 
+builder.Services.Configure<WebPushSettings>(
+    builder.Configuration.GetSection("WebPush"));
+
 builder.Services.AddScoped<AuditingInterceptor>();
 
 builder.Services.AddScoped<SoftDeleteInterceptor>();

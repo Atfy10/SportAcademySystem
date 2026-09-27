@@ -6,8 +6,16 @@ namespace SportAcademy.Domain.Services
 {
     public class TraineeService : ITraineeService
     {
-        public int CalculateAge(DateOnly birthDate) =>
-            DateTime.UtcNow.Year - birthDate.Year - (DateTime.UtcNow.DayOfYear < birthDate.DayOfYear ? 1 : 0);
+        public int CalculateAge(DateOnly birthDate, DateOnly? asOf = null)
+        {
+            // Full-date comparison, not UtcNow + DayOfYear - see PersonService.CalculateAge's
+            // identical remarks for why, and for why a caller with real tenant context should
+            // always pass asOf explicitly rather than rely on the DateTime.Now fallback below.
+            var today = asOf ?? DateOnly.FromDateTime(DateTime.Now);
+            var age = today.Year - birthDate.Year;
+            if (birthDate > today.AddYears(-age)) age--;
+            return age;
+        }
 
         public int CreateTraineeCode(Trainee trainee, int branchId)
         {
@@ -28,8 +36,8 @@ namespace SportAcademy.Domain.Services
             return int.Parse(codeString);
         }
 
-        public bool IsAdult(DateOnly birthDate) =>
-            CalculateAge(birthDate) >= 15;
+        public bool IsAdult(DateOnly birthDate, DateOnly? asOf = null) =>
+            CalculateAge(birthDate, asOf) >= 15;
 
         public bool IsSSNValid(string ssn, DateOnly birthDate)
         {

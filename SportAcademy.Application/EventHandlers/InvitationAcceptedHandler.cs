@@ -4,6 +4,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Events;
+using SportAcademy.Domain.Helpers;
 
 namespace SportAcademy.Application.EventHandlers;
 
@@ -47,6 +48,7 @@ public sealed class InvitationAcceptedHandler : INotificationHandler<InvitationA
         // invisible to anyone actually using the product.
         var accepterName = await _userRepository.GetDisplayNameAsync(notification.UserId, cancellationToken);
         await _notificationService.SendNotificationAsync(
+            NotificationEventTypes.InvitationAccepted,
             notification.InvitedByUserId.ToString(),
             "Invitation Accepted",
             $"{accepterName} accepted your invitation and joined.",

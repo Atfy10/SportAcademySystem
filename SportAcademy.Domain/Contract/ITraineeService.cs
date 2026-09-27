@@ -11,7 +11,11 @@ namespace SportAcademy.Domain.Contract
     {
         int CreateTraineeCode(Trainee trainee, int branchId);
         bool IsSSNValid(string ssn, DateOnly birthDate);
-        int CalculateAge(DateOnly birthDate);
-        bool IsAdult(DateOnly birthDate);
+
+        /// <summary>Age as of <paramref name="asOf"/> (the caller's own tenant-local "today"),
+        /// or the server's local date if omitted - see IPersonService.CalculateAge's identical
+        /// remark on why a caller with real tenant context should always pass this.</summary>
+        int CalculateAge(DateOnly birthDate, DateOnly? asOf = null);
+        bool IsAdult(DateOnly birthDate, DateOnly? asOf = null);
     }
 }

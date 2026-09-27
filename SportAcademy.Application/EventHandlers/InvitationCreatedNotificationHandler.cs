@@ -15,6 +15,7 @@ public sealed class InvitationCreatedNotificationHandler(INotificationService no
     public async Task Handle(InvitationCreatedEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.InvitationCreated,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "Invitation Sent",
             $"An invitation was sent to {notification.Email} by {notification.ActorName}",

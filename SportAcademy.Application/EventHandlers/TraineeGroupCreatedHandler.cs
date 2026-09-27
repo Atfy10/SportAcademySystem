@@ -12,6 +12,7 @@ public sealed class TraineeGroupCreatedHandler(INotificationService notification
     public async Task Handle(TraineeGroupCreatedEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.TraineeGroupCreated,
             [NotificationGroupNames.Employees],
             "New Trainee Group",
             $"Trainee group \"{notification.TraineeGroupName}\" was created by {notification.ActorName}",

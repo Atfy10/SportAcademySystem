@@ -42,6 +42,7 @@ public sealed class ExcuseRequestReviewedHandler(
             : null;
 
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.ExcuseRequestReviewed,
             NotificationGroupNames.AllRoleGroups,
             title,
             message,
