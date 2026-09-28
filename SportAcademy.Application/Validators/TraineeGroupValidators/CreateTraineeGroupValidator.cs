@@ -54,6 +54,15 @@ namespace SportAcademy.Application.Validators.TraineeGroupValidators
             RuleFor(x => x.Schedules)
                 .NotEmpty().WithMessage("Please add at least one schedule slot for this group.");
 
+            // One slot per day - a group meets at most once daily, at its own time. Without this,
+            // the same weekday could be submitted twice (e.g. via a direct API call bypassing the
+            // frontend's own duplicate-day guard) and silently generate two session occurrences
+            // for the same day.
+            RuleFor(x => x.Schedules)
+                .Must(schedules => schedules.Select(s => s.Day).Distinct().Count() == schedules.Count)
+                .WithMessage("Each day can only be scheduled once.")
+                .When(x => x.Schedules is { Count: > 0 });
+
             RuleForEach(x => x.Schedules).ChildRules(schedule =>
             {
                 schedule.RuleFor(s => s.StartTime)
