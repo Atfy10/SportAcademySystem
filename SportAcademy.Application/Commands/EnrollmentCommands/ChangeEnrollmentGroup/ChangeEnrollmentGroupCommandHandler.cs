@@ -2,6 +2,7 @@ using MediatR;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
@@ -69,7 +70,21 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentG
             {
                 var sportTrainee = await _sportTraineeRepository.GetByIdWithIncludesAsync(
                     newSportId.Value, enrollment.TraineeId, cancellationToken);
-                if (sportTrainee is not null)
+                if (sportTrainee is null)
+                {
+                    // No skill on record for this sport (a trainee can be subscribed without a
+                    // SportTrainee row) - the group placement defines it, as in CreateEnrollment.
+                    if (trainee is not null && newGroup.SkillLevel != SkillLevel.NotSpecified)
+                    {
+                        await _sportTraineeRepository.AddAsyncWithoutSave(new SportTrainee
+                        {
+                            SportId = newSportId.Value,
+                            TraineeId = enrollment.TraineeId,
+                            SkillLevel = newGroup.SkillLevel
+                        }, cancellationToken);
+                    }
+                }
+                else
                 {
                     // Same rule as CreateEnrollment: never move a trainee down to a group below
                     // their own recorded skill level.
@@ -79,12 +94,10 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.ChangeEnrollmentG
 
                     // Moving up (or having no skill on record yet) raises the trainee's skill
                     // level to match the new group - the frontend warns about this before
-                    // submitting.
+                    // submitting. Saved together with the group change below rather than here, so
+                    // a capacity failure can't leave the trainee upgraded but not moved.
                     if (newGroup.SkillLevel > sportTrainee.SkillLevel)
-                    {
                         sportTrainee.SkillLevel = newGroup.SkillLevel;
-                        await _sportTraineeRepository.UpdateAsync(sportTrainee, cancellationToken);
-                    }
                 }
             }
 

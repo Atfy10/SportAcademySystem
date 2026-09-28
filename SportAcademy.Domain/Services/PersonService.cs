@@ -5,9 +5,23 @@ namespace SportAcademy.Domain.Services
 {
     public class PersonService : IPersonService
     {
-        public int CalculateAge(DateOnly birthDate)
-            => DateOnly.FromDateTime(DateTime.UtcNow).Year - birthDate.Year -
-               (DateOnly.FromDateTime(DateTime.UtcNow) < birthDate.AddYears(DateOnly.FromDateTime(DateTime.UtcNow).Year - birthDate.Year) ? 1 : 0);
+        public int CalculateAge(DateOnly birthDate, DateOnly? asOf = null)
+        {
+            // birthDate is a calendar concept, so the "today" it's compared against must be one
+            // too - a raw UTC instant's calendar date is wrong by exactly one day (and therefore
+            // one year, right around a birthday) for any tenant not in UTC+0, and this app's
+            // primary market is Arabic-region, UTC+2/+3. A caller with real tenant context
+            // (e.g. via ITenantClock.GetLocalNowAsync) should always pass asOf explicitly - the
+            // DateTime.Now fallback below is only correct when this process's own OS timezone
+            // happens to match the tenant's, which is not guaranteed in a containerized
+            // deployment (see ITenantClock's remarks). Full-date comparison (not DayOfYear) also
+            // sidesteps a leap-year mismatch: Feb 29 and any day after it don't line up across a
+            // leap/non-leap year pair under DayOfYear alone. Same algorithm as Trainee.GetAge().
+            var today = asOf ?? DateOnly.FromDateTime(DateTime.Now);
+            var age = today.Year - birthDate.Year;
+            if (birthDate > today.AddYears(-age)) age--;
+            return age;
+        }
 
         public string GenerateUserName(string firstName, string lastName)
         {

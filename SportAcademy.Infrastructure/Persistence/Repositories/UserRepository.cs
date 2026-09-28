@@ -117,7 +117,20 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public override async Task UpdateAsync(AppUser entity, CancellationToken cancellationToken = default)
         {
-            await _userManager.UpdateAsync(entity);
+            // UserManager.UpdateAsync validates the whole row (ValidateUserAsync) before saving,
+            // which includes checking SecurityStamp is set - Identity throws
+            // InvalidOperationException("User security stamp cannot be null.") rather than
+            // failing gracefully when it isn't. A row ever inserted straight through EF instead
+            // of UserManager.CreateAsync (CreateTraineeCommandHandler used to do this) never got
+            // one; backfilling it here makes any such legacy row editable/toggle-able again
+            // instead of permanently throwing on every activate/deactivate or edit attempt.
+            if (string.IsNullOrEmpty(entity.SecurityStamp))
+                entity.SecurityStamp = Guid.NewGuid().ToString();
+
+            var result = await _userManager.UpdateAsync(entity);
+            if (!result.Succeeded)
+                throw new InvalidOperationException(
+                    $"Failed to update user {entity.Id}: {string.Join("; ", result.Errors.Select(e => e.Description))}");
         }
 
         public override async Task DeleteAsync(AppUser entity, CancellationToken cancellationToken = default)

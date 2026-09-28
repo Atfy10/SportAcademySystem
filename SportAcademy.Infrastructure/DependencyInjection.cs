@@ -85,6 +85,17 @@ namespace SportAcademy.Infrastructure
 
             // Register Notification Service
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<INotificationChannelSender, Implementations.NotificationChannels.InAppChannelSender>();
+            services.AddScoped<INotificationChannelSender, Implementations.NotificationChannels.EmailChannelSender>();
+            services.AddScoped<INotificationChannelSender, Implementations.NotificationChannels.PushChannelSender>();
+            services.AddScoped<INotificationChannelSender, Implementations.NotificationChannels.WhatsAppChannelSender>();
+            // Swap this one line for a real provider (Twilio, Meta Cloud API, ...) once chosen -
+            // see IWhatsAppApiClient's remarks for why nothing more specific is wired yet.
+            services.AddScoped<IWhatsAppApiClient, Implementations.NotConfiguredWhatsAppApiClient>();
+            services.AddScoped<INotificationChannelDispatcher, NotificationChannelDispatcher>();
+            services.AddScoped<IContactResolver, ContactResolver>();
+            services.AddScoped<INotificationSettingsRepository, Persistence.Repositories.NotificationSettingsRepository>();
+            services.AddScoped<IPushSubscriptionRepository, Persistence.Repositories.PushSubscriptionRepository>();
 
             // Register Realtime Service
             services.AddScoped<IRealtimeService, RealtimeService>();
@@ -98,13 +109,16 @@ namespace SportAcademy.Infrastructure
             services.AddHostedService<RefreshTokenCleanupService>();
             services.AddHostedService<InvitationExpiryService>();
             services.AddHostedService<TenantArchivalService>();
-            services.AddHostedService<EmailQueueCleanupService>();
             services.AddHostedService<EnrollmentLapseService>();
             services.AddHostedService<SessionOccurrenceCompletionService>();
             services.AddHostedService<LimitReconciliationDeadlineService>();
+            services.AddHostedService<NotificationDeliveryWorker>();
 
             // Register seeders
             services.AddScoped<Seeders.AppDataSeeder>();
+            // The same scoped instance, seen through the interface the SuperAdmin "seed demo data"
+            // command depends on (Application must not reference Infrastructure).
+            services.AddScoped<IDemoDataSeeder>(sp => sp.GetRequiredService<Seeders.AppDataSeeder>());
 
             // Register Invitation Repository (new pattern)
             services.AddScoped<IInvitationRepository, InvitationRepository>();

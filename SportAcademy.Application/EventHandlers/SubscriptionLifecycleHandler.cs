@@ -12,6 +12,7 @@ public sealed class SubscriptionLifecycleHandler(INotificationService notificati
     public async Task Handle(SubscriptionLifecycleEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.SubscriptionLifecycle,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             $"Subscription {notification.Action}",
             $"Subscription #{notification.SubscriptionId} was {notification.Action.ToLowerInvariant()} by {notification.ActorName}",

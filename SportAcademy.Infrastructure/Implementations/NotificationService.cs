@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using SportAcademy.Application.DTOs.NotificationsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
@@ -15,19 +16,48 @@ namespace SportAcademy.Infrastructure.Implementations
         private readonly INotificationRepository _notificationRepository;
         private readonly IUserRepository _userRepository;
         private readonly ITenantIdProvider _tenantIdProvider;
+        private readonly INotificationChannelDispatcher _channelDispatcher;
+        private readonly ILogger<NotificationService> _logger;
 
         public NotificationService(IHubContext<NotificationHub, INotificationClient> hubContext,
             INotificationRepository notificationRepository,
             IUserRepository userRepository,
-            ITenantIdProvider tenantIdProvider)
+            ITenantIdProvider tenantIdProvider,
+            INotificationChannelDispatcher channelDispatcher,
+            ILogger<NotificationService> logger)
         {
             _hubContext = hubContext;
             _notificationRepository = notificationRepository;
             _userRepository = userRepository;
             _tenantIdProvider = tenantIdProvider;
+            _channelDispatcher = channelDispatcher;
+            _logger = logger;
         }
 
-        public async Task BroadcastNotificationAsync(string title, string message,
+        /// MediatR's default IPublisher awaits every INotificationHandler in turn and lets an
+        /// unhandled exception propagate straight back to whoever raised the event - which, for
+        /// most of these 22 handlers, is a business command still mid-request (recording a
+        /// payment, creating a subscription, ...). The InApp push above has already succeeded by
+        /// the time this runs; a DB hiccup in the channel-routing tables must not take the
+        /// triggering business operation down with it, so this is deliberately swallow-and-log,
+        /// not rethrown. Worst case on failure: that one notification's Email/Push/WhatsApp
+        /// queuing is silently skipped - InApp still delivered, and the next event for this
+        /// recipient dispatches normally.
+        private async Task DispatchChannelsSafelyAsync(int notificationId, IReadOnlyCollection<Guid> userIds, string eventType)
+        {
+            try
+            {
+                await _channelDispatcher.DispatchAsync(notificationId, userIds, eventType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Channel dispatch failed for notification {NotificationId} (event {EventType}) - InApp delivery is unaffected.",
+                    notificationId, eventType);
+            }
+        }
+
+        public async Task BroadcastNotificationAsync(string eventType, string title, string message,
             NotificationType type = NotificationType.System)
         {
             var notification = new Notification
@@ -50,9 +80,14 @@ namespace SportAcademy.Infrastructure.Implementations
                 IsRead = false,
                 CreatedAt = notification.CreatedAt
             });
+
+            // No per-recipient channel dispatch here: unlike every other send path, Broadcast
+            // never persists individual NotificationRecipient rows to build a recipient list
+            // from - there's nothing to resolve a destination or check a preference against.
+            // (Unused by any current caller - see INotificationService's remarks.)
         }
 
-        public async Task SendNotificationAsync(string userId, string title, string message,
+        public async Task SendNotificationAsync(string eventType, string userId, string title, string message,
             NotificationType type = NotificationType.System, string? actionUrl = null)
         {
             var notification = await _notificationRepository.AddWithRecipient(
@@ -75,13 +110,15 @@ namespace SportAcademy.Infrastructure.Implementations
                 IsRead = false,
                 CreatedAt = notification.CreatedAt
             });
+
+            await DispatchChannelsSafelyAsync(notification.Id, [Guid.Parse(userId)], eventType);
         }
 
-        public async Task SendNotificationToGroupAsync(string groupName, string title, string message,
+        public async Task SendNotificationToGroupAsync(string eventType, string groupName, string title, string message,
             NotificationType type = NotificationType.System)
-            => await SendNotificationToGroupsAsync([groupName], title, message, type);
+            => await SendNotificationToGroupsAsync(eventType, [groupName], title, message, type);
 
-        public async Task SendNotificationToGroupsAsync(IEnumerable<string> groupNames, string title, string message,
+        public async Task SendNotificationToGroupsAsync(string eventType, IEnumerable<string> groupNames, string title, string message,
             NotificationType type = NotificationType.System, IEnumerable<Guid>? extraUserIds = null)
         {
             var names = groupNames.Distinct().ToList();
@@ -110,24 +147,25 @@ namespace SportAcademy.Infrastructure.Implementations
             if (recipientIds.Count == 0) return;
 
             var groupLabel = ScopedGroup(string.Join("+", names));
-            await SendToUserIdsAsync(recipientIds, title, message, type, groupLabel);
+            await SendToUserIdsAsync(eventType, recipientIds, title, message, type, groupLabel);
         }
 
-        public async Task SendNotificationToUsersAsync(IEnumerable<Guid> userIds, string title, string message,
+        public async Task SendNotificationToUsersAsync(string eventType, IEnumerable<Guid> userIds, string title, string message,
             NotificationType type = NotificationType.System)
         {
             var ids = userIds.Distinct().ToHashSet();
             if (ids.Count == 0) return;
 
-            await SendToUserIdsAsync(ids, title, message, type);
+            await SendToUserIdsAsync(eventType, ids, title, message, type);
         }
 
-        /// Persists the notification, fans out a recipient row per user, and pushes live to
-        /// each of them by user id (Clients.Users) - independent of which SignalR "groups" (if
-        /// any) their connection has joined, so it works whether or not the hub's own group
-        /// bookkeeping is in sync.
+        /// Persists the notification, fans out a recipient row per user, pushes live to each of
+        /// them by user id (Clients.Users) - independent of which SignalR "groups" (if any)
+        /// their connection has joined, so it works whether or not the hub's own group
+        /// bookkeeping is in sync - and dispatches the tenant's configured Email/Push/WhatsApp
+        /// channels for this event on top of the InApp push above.
         private async Task SendToUserIdsAsync(
-            IReadOnlyCollection<Guid> userIds, string title, string message, NotificationType type, string? groupName = null)
+            string eventType, IReadOnlyCollection<Guid> userIds, string title, string message, NotificationType type, string? groupName = null)
         {
             var notification = new Notification
             {
@@ -149,6 +187,8 @@ namespace SportAcademy.Infrastructure.Implementations
                 IsRead = false,
                 CreatedAt = notification.CreatedAt
             });
+
+            await DispatchChannelsSafelyAsync(notification.Id, userIds, eventType);
         }
 
         private async Task<List<Guid>> ResolveRoleGroupMemberIdsAsync(string groupName) => groupName switch

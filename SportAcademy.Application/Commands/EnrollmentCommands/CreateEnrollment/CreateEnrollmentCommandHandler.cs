@@ -4,6 +4,7 @@ using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings.Manual;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EnrollmentExceptions;
 using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
@@ -138,11 +139,22 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             {
                 var sportTrainee = await _sportTraineeRepository.GetByIdWithIncludesAsync(
                     sportId.Value, request.TraineeId, cancellationToken);
-                // NotSpecified means "no skill on record" (including the SportTrainee row
-                // CreateSubscriptionDetailsCommandHandler auto-backfills at subscription time) -
-                // nothing to enforce against absent data, so sportTrainee being null is a no-op
-                // here too.
-                if (sportTrainee is not null)
+                // NotSpecified (or no SportTrainee row at all - subscribing to a sport does not
+                // create one) means "no skill on record": nothing to enforce against absent
+                // data, and the group placement is what defines the level.
+                if (sportTrainee is null)
+                {
+                    if (trainee is not null && group.SkillLevel != SkillLevel.NotSpecified)
+                    {
+                        await _sportTraineeRepository.AddAsyncWithoutSave(new SportTrainee
+                        {
+                            SportId = sportId.Value,
+                            TraineeId = request.TraineeId,
+                            SkillLevel = group.SkillLevel
+                        }, cancellationToken);
+                    }
+                }
+                else
                 {
                     // A trainee may never join a group below their own recorded skill level -
                     // downgrading isn't a thing a group assignment does.
@@ -154,12 +166,11 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                     // this sport, when nothing is on record yet - raises the trainee's skill
                     // level to match. The group placement is what defines the skill level, not
                     // the other way around; the frontend warns the user about this upgrade before
-                    // submitting.
+                    // submitting. Left as a tracked change rather than saved here: it must land in
+                    // the same SaveChanges as the enrollment itself, so a later failure can't
+                    // leave the trainee upgraded with no enrollment to show for it.
                     if (group.SkillLevel > sportTrainee.SkillLevel)
-                    {
                         sportTrainee.SkillLevel = group.SkillLevel;
-                        await _sportTraineeRepository.UpdateAsync(sportTrainee, cancellationToken);
-                    }
                 }
             }
 

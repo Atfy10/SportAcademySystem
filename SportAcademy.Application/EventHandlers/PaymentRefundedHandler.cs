@@ -12,6 +12,7 @@ public sealed class PaymentRefundedHandler(INotificationService notificationServ
     public async Task Handle(PaymentRefundedEvent notification, CancellationToken cancellationToken)
     {
         await notificationService.SendNotificationToGroupsAsync(
+            NotificationEventTypes.PaymentRefunded,
             [NotificationGroupNames.Admins, NotificationGroupNames.Owners],
             "Payment Refunded",
             $"{notification.Amount} refunded on payment {notification.PaymentNumber} by {notification.ActorName}",

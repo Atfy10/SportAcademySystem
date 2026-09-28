@@ -91,6 +91,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="WebPush" Version="1.0.13" />
 	</ItemGroup>
 
 	<ItemGroup>
