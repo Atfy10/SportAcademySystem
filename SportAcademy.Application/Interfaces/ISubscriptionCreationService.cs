@@ -12,7 +12,8 @@ namespace SportAcademy.Application.Interfaces
     //
     // DepositAmount/BalanceDueDate: null/null = paid in full now. With a deposit, only that much is
     // recorded as paid and the rest stays outstanding on the invoice until BalanceDueDate (the
-    // "collect date"), after which it shows as overdue.
+    // "collect date"), after which it shows as overdue. PaymentNote is the user's own description,
+    // stored as the payment's Notes exactly as typed.
     public record SubscriptionCreationRequest(
         int TraineeId,
         int SubscriptionTypeId,
@@ -26,7 +27,8 @@ namespace SportAcademy.Application.Interfaces
         int? DiscountCodeId,
         Guid? ActingUserId,
         decimal? DepositAmount = null,
-        DateOnly? BalanceDueDate = null);
+        DateOnly? BalanceDueDate = null,
+        string? PaymentNote = null);
 
     // Payment is null when nothing was collected at creation (a zero-total invoice).
     public record SubscriptionCreationResult(SubscriptionDetails Subscription, Invoice Invoice, Payment? Payment);

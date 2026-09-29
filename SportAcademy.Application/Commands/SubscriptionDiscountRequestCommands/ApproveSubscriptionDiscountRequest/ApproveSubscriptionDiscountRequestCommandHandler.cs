@@ -62,7 +62,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
                     DiscountPercentage: code.PercentageOff, DiscountCodeId: code.Id,
                     ActingUserId: entity.RequestedByUserId,
                     DepositAmount: entity.DepositAmount,
-                    BalanceDueDate: entity.BalanceDueDate),
+                    BalanceDueDate: entity.BalanceDueDate,
+                    PaymentNote: entity.DepositNote),
                 beforeCommit: async (created, ct) =>
                 {
                     entity.Status = SubscriptionDiscountRequestStatus.Approved;

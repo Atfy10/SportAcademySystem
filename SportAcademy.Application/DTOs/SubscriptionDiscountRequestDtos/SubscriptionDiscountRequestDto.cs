@@ -28,4 +28,13 @@ public record SubscriptionDiscountRequestDto(
     string? RejectionReason,
     int? CreatedSubscriptionDetailsId,
     decimal? DepositAmount = null,
-    DateOnly? BalanceDueDate = null);
+    DateOnly? BalanceDueDate = null,
+    string? DepositNote = null,
+    // Filled once approved, straight from what was stored: the invoice (list price minus the
+    // discount) and what was actually recorded as paid against it.
+    string? InvoiceNumber = null,
+    decimal? ListPrice = null,
+    decimal? DiscountAmount = null,
+    decimal? ChargedTotal = null,
+    decimal? AmountPaid = null,
+    string? PaymentNumber = null);

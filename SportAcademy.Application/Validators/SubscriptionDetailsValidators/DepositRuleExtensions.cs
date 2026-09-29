@@ -11,7 +11,8 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
             this AbstractValidator<T> validator,
             Expression<Func<T, bool>> payDeposit,
             Expression<Func<T, decimal?>> depositAmount,
-            Expression<Func<T, DateOnly?>> balanceDueDate)
+            Expression<Func<T, DateOnly?>> balanceDueDate,
+            Expression<Func<T, string?>>? depositNote = null)
         {
             var isDeposit = payDeposit.Compile();
 
@@ -31,6 +32,11 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
             validator.RuleFor(depositAmount)
                 .Null().WithMessage("A deposit amount was sent without \"Pay a deposit\" being selected.")
                 .When(x => !isDeposit(x));
+
+            // Stored as Payment.Notes (nvarchar(1000)); 500 leaves room and matches other reasons.
+            if (depositNote is not null)
+                validator.RuleFor(depositNote)
+                    .MaximumLength(500).WithMessage("The deposit description must not exceed 500 characters.");
         }
     }
 }

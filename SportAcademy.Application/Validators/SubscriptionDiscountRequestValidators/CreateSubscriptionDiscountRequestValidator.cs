@@ -31,7 +31,7 @@ namespace SportAcademy.Application.Validators.SubscriptionDiscountRequestValidat
 
             RuleFor(x => x.PaymentTypeId).GreaterThan(0).WithMessage("A payment type must be selected.");
 
-            this.ApplyDepositRules(x => x.PayDeposit, x => x.DepositAmount, x => x.BalanceDueDate);
+            this.ApplyDepositRules(x => x.PayDeposit, x => x.DepositAmount, x => x.BalanceDueDate, x => x.DepositNote);
 
             RuleFor(x => x.DiscountCode)
                 .NotEmpty().WithMessage("A discount code is required.")

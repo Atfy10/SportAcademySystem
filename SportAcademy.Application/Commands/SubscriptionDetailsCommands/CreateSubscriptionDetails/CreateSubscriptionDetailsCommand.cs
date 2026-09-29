@@ -12,7 +12,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
     //
     // PayDeposit: false (default) = the full total is recorded as paid now. true = only
     // DepositAmount is recorded now; the rest stays owed on the invoice until BalanceDueDate
-    // (the collect date), after which it's flagged overdue.
+    // (the collect date), after which it's flagged overdue. DepositNote: optional description of
+    // the deposit, saved as the payment's notes.
     public record CreateSubscriptionDetailsCommand(
         DateOnly StartDate,
         int TraineeId,
@@ -24,7 +25,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         int PaymentTypeId,
         bool PayDeposit = false,
         decimal? DepositAmount = null,
-        DateOnly? BalanceDueDate = null
+        DateOnly? BalanceDueDate = null,
+        string? DepositNote = null
         ) : IRequest<Result<SubscriptionCreatedDto>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch, IRequiresActiveSport
     {
         public string FeatureKey => "enrollment-management";

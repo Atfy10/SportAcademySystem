@@ -33,6 +33,7 @@ public class SubscriptionDiscountRequest : ITenantScoped, IBranchScoped, IAudita
     // against the *discounted* total at approval, when that total is finally known.
     public decimal? DepositAmount { get; set; }
     public DateOnly? BalanceDueDate { get; set; }
+    public string? DepositNote { get; set; }
     public required string DiscountCode { get; set; }   // raw code as typed, re-validated at approval time
     public SubscriptionDiscountRequestStatus Status { get; set; } = SubscriptionDiscountRequestStatus.PendingApproval;
     public Guid RequestedByUserId { get; set; }

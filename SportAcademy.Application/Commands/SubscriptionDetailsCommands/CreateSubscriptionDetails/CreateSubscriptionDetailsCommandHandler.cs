@@ -35,7 +35,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
                     DiscountPercentage: null, DiscountCodeId: null,
                     ActingUserId: _userContext.UserId,
                     DepositAmount: request.PayDeposit ? request.DepositAmount : null,
-                    BalanceDueDate: request.PayDeposit ? request.BalanceDueDate : null),
+                    BalanceDueDate: request.PayDeposit ? request.BalanceDueDate : null,
+                    PaymentNote: request.PayDeposit ? request.DepositNote : null),
                 ct: cancellationToken);
 
             return Result<SubscriptionCreatedDto>.Success(SubscriptionCreatedDto.From(created), _operation);

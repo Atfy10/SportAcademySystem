@@ -170,7 +170,9 @@ namespace SportAcademy.Application.Services
                         BranchId: request.BranchId,
                         Currency: currency,
                         Reference: null,
-                        Notes: request.DepositAmount.HasValue ? "Deposit" : null,
+                        // Exactly what the user wrote (shown on the receipt and the Payments
+                        // list); no invented English label when they wrote nothing.
+                        Notes: string.IsNullOrWhiteSpace(request.PaymentNote) ? null : request.PaymentNote.Trim(),
                         RecordedByUserId: request.ActingUserId,
                         Allocations: [new PaymentAllocationInput(invoice.Id, amountNow)]
                     ), ct);

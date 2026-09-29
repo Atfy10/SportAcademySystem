@@ -23,6 +23,13 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(r => r.SubscriptionType)
                 .Include(r => r.Sport)
                 .Include(r => r.Branch)
+                // What was actually charged once approved (the created subscription's invoice
+                // and the payments against it) - shown next to the request.
+                .Include(r => r.CreatedSubscriptionDetails!)
+                    .ThenInclude(sd => sd.InvoiceLines)
+                        .ThenInclude(l => l.Invoice)
+                            .ThenInclude(i => i.Allocations)
+                .AsSplitQuery()
                 .AsNoTracking();
 
         public async Task<(List<SubscriptionDiscountRequest> Items, int TotalCount)> GetPagedAsync(

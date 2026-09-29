@@ -54,7 +54,13 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("EnrollmentDate", opt => opt.MapFrom(src => src.EnrollmentDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("StartDate", opt => opt.MapFrom(src => src.SubscriptionDetails.StartDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
-                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
+                // What was actually charged for the subscription (its invoice total, after any
+                // discount) - not the list price, which ignores discounts and later price edits.
+                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src =>
+                    src.SubscriptionDetails.InvoiceLines
+                        .Where(l => l.Invoice.Status != InvoiceStatus.Cancelled)
+                        .Select(l => (decimal?)l.Invoice.GrandTotal)
+                        .FirstOrDefault() ?? src.SubscriptionDetails.SportPrice.Price))
                 // From the subscription's bill, not the enrollment's expiry date (which said
                 // "Overdue" for any expired subscription, paid or not). Same rule as
                 // SubscriptionBilling.PaymentState: settled = Paid; balance past its collect date
@@ -95,7 +101,13 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("StartDate", opt => opt.MapFrom(src => src.SubscriptionDetails.StartDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("ExpiryDate", opt => opt.MapFrom(src => src.ExpiryDate.ToString("yyyy-MM-dd")))
-                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
+                // What was actually charged for the subscription (its invoice total, after any
+                // discount) - not the list price, which ignores discounts and later price edits.
+                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src =>
+                    src.SubscriptionDetails.InvoiceLines
+                        .Where(l => l.Invoice.Status != InvoiceStatus.Cancelled)
+                        .Select(l => (decimal?)l.Invoice.GrandTotal)
+                        .FirstOrDefault() ?? src.SubscriptionDetails.SportPrice.Price))
                 // From the subscription's bill, not the enrollment's expiry date (which said
                 // "Overdue" for any expired subscription, paid or not). Same rule as
                 // SubscriptionBilling.PaymentState: settled = Paid; balance past its collect date

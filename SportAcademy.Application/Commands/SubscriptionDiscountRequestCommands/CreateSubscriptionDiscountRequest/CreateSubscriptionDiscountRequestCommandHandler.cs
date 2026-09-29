@@ -59,6 +59,7 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
                 PaymentTypeId = request.PaymentTypeId,
                 DepositAmount = request.PayDeposit ? request.DepositAmount : null,
                 BalanceDueDate = request.PayDeposit ? request.BalanceDueDate : null,
+                DepositNote = request.PayDeposit && !string.IsNullOrWhiteSpace(request.DepositNote) ? request.DepositNote.Trim() : null,
                 DiscountCode = normalized,
                 Status = SubscriptionDiscountRequestStatus.PendingApproval,
                 RequestedByUserId = requestedByUserId,

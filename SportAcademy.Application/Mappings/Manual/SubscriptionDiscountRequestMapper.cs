@@ -10,6 +10,26 @@ namespace SportAcademy.Application.Mappings.Manual
     public static class SubscriptionDiscountRequestMapper
     {
         public static SubscriptionDiscountRequestDto ToDto(
+            SubscriptionDiscountRequest r, IReadOnlyDictionary<Guid, string> nameLookup)
+        {
+            var dto = Core(r, nameLookup);
+            var invoice = r.CreatedSubscriptionDetails?.InvoiceLines
+                .Select(l => l.Invoice)
+                .FirstOrDefault(i => i is not null && i.Status != Domain.Enums.InvoiceStatus.Cancelled);
+            if (invoice is null) return dto;
+
+            return dto with
+            {
+                InvoiceNumber = invoice.InvoiceNumber,
+                ListPrice = invoice.SubTotal,
+                DiscountAmount = invoice.DiscountTotal,
+                ChargedTotal = invoice.GrandTotal,
+                AmountPaid = invoice.AmountPaid,
+                PaymentNumber = invoice.Allocations.OrderBy(a => a.Id).Select(a => a.PaymentNumber).FirstOrDefault(),
+            };
+        }
+
+        private static SubscriptionDiscountRequestDto Core(
             SubscriptionDiscountRequest r, IReadOnlyDictionary<Guid, string> nameLookup) => new(
             r.Id,
             r.TraineeId,
@@ -35,6 +55,7 @@ namespace SportAcademy.Application.Mappings.Manual
             r.RejectionReason,
             r.CreatedSubscriptionDetailsId,
             r.DepositAmount,
-            r.BalanceDueDate);
+            r.BalanceDueDate,
+            r.DepositNote);
     }
 }
