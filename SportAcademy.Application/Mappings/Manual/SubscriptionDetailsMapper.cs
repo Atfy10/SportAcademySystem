@@ -71,6 +71,7 @@ namespace SportAcademy.Application.Mappings.Manual
 
             dto.Price = invoice.GrandTotal;
             dto.InvoiceId = invoice.Id;
+            dto.InvoiceBranchId = invoice.BranchId;
             dto.InvoiceNumber = invoice.InvoiceNumber;
             dto.Currency = invoice.Currency;
             dto.AmountPaid = invoice.AmountPaid;

@@ -80,6 +80,7 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                 )
                 .ForMember(dest => dest.InvoiceNumber, opt => opt.Ignore())
                 .ForMember(dest => dest.InvoiceId, opt => opt.Ignore())
+                .ForMember(dest => dest.InvoiceBranchId, opt => opt.Ignore())
                 .ForMember(dest => dest.Currency, opt => opt.Ignore())
                 .ForMember(dest => dest.AmountPaid, opt => opt.Ignore())
                 .ForMember(dest => dest.Balance, opt => opt.Ignore())

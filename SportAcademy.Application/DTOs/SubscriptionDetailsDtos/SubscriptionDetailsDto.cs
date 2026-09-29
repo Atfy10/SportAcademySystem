@@ -28,6 +28,8 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
         // these say how much of it is settled and, if not, by when it has to be.
         public string? InvoiceNumber { get; set; }
         public int? InvoiceId { get; set; }
+        // The branch the bill belongs to - a balance must be collected at that branch.
+        public int? InvoiceBranchId { get; set; }
         public string? Currency { get; set; }
         public decimal AmountPaid { get; set; }
         public decimal Balance { get; set; }
