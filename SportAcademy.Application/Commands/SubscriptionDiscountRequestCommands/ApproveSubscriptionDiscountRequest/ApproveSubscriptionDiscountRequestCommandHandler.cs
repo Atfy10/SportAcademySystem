@@ -52,19 +52,26 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
             var code = await _discountCodeRepository.GetActiveByCodeAsync(entity.DiscountCode, cancellationToken)
                 ?? throw new InvalidDiscountCodeException(entity.DiscountCode);
 
-            var subscription = await _subscriptionCreationService.CreateAsync(
-                entity.TraineeId, entity.SubscriptionTypeId, entity.SportId, entity.BranchId,
-                entity.StartDate, entity.GroupType, entity.TrainingDays, entity.PaymentTypeId,
-                discountPercentage: code.PercentageOff, discountCodeId: code.Id,
-                actingUserId: entity.RequestedByUserId,
-                cancellationToken);
-
-            entity.Status = SubscriptionDiscountRequestStatus.Approved;
-            entity.ReviewedByUserId = _userContext.UserId;
-            entity.ReviewedAt = DateTime.UtcNow;
-            entity.CreatedSubscriptionDetailsId = subscription.Id;
-
-            await _repository.UpdateAsync(entity, cancellationToken);
+            // Marking the request Approved happens inside the creation transaction: if it were
+            // saved afterwards and that save failed, the subscription would exist while the
+            // request stayed Pending - and could be approved a second time into a duplicate.
+            await _subscriptionCreationService.CreateAsync(
+                new SubscriptionCreationRequest(
+                    entity.TraineeId, entity.SubscriptionTypeId, entity.SportId, entity.BranchId,
+                    entity.StartDate, entity.GroupType, entity.TrainingDays, entity.PaymentTypeId,
+                    DiscountPercentage: code.PercentageOff, DiscountCodeId: code.Id,
+                    ActingUserId: entity.RequestedByUserId,
+                    DepositAmount: entity.DepositAmount,
+                    BalanceDueDate: entity.BalanceDueDate),
+                beforeCommit: async (created, ct) =>
+                {
+                    entity.Status = SubscriptionDiscountRequestStatus.Approved;
+                    entity.ReviewedByUserId = _userContext.UserId;
+                    entity.ReviewedAt = DateTime.UtcNow;
+                    entity.CreatedSubscriptionDetailsId = created.Subscription.Id;
+                    await _repository.UpdateAsync(entity, ct);
+                },
+                ct: cancellationToken);
             await _publisher.Publish(new SubscriptionDiscountRequestReviewedEvent(entity.Id, Approved: true), cancellationToken);
 
             var saved = await _repository.GetByIdWithIncludesAsync(entity.Id, cancellationToken) ?? entity;

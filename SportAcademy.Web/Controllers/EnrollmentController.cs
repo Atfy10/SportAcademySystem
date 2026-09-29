@@ -208,6 +208,9 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        // Marking "Paid" records a real payment for the whole outstanding balance, so it needs
+        // the same permission as recording one on the Finance console.
+        [Authorize(Policy = "Permission:payment.record")]
         [HttpPatch("{id}/payment-status")]
         public async Task<IActionResult> UpdatePaymentStatus(
             [FromRoute] int id,

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SportAcademy.Application.Common;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.FinanceDtos;
 using SportAcademy.Application.Interfaces;
@@ -114,7 +115,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(sp => sp.Status == SalaryPaymentStatus.Paid && sp.PaidAt != null);
 
             if (from.HasValue) query = query.Where(sp => sp.PaidAt >= from.Value);
-            if (to.HasValue) query = query.Where(sp => sp.PaidAt <= to.Value);
+            if (to.HasValue)
+            {
+                var toExclusive = ReportDateRange.EndExclusive(to.Value);
+                query = query.Where(sp => sp.PaidAt < toExclusive);
+            }
             if (branchId.HasValue) query = query.Where(sp => sp.BranchId == branchId.Value);
 
             var rows = await query

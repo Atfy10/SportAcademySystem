@@ -216,15 +216,17 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             if (!string.IsNullOrWhiteSpace(paymentStatus))
             {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
                 query = paymentStatus switch
                 {
-                    "Overdue" => query.Where(e => e.ExpiryDate < DateTime.UtcNow),
-                    "Paid" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow
-                        && e.SubscriptionDetails != null
-                        && e.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)),
-                    "Pending" => query.Where(e => e.ExpiryDate >= DateTime.UtcNow
-                        && (e.SubscriptionDetails == null
-                            || !e.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid))),
+                    "Paid" => query.Where(e => e.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid >= l.Invoice.GrandTotal)),
+                    "Overdue" => query.Where(e => e.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid < l.Invoice.GrandTotal
+                        && l.Invoice.DueDate < today)),
+                    "Pending" => query.Where(e => !e.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled
+                        && (l.Invoice.AmountPaid >= l.Invoice.GrandTotal || l.Invoice.DueDate < today))),
                     _ => query.Where(e => false),
                 };
             }
@@ -238,10 +240,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         public async Task<int> CountActiveAsync(CancellationToken ct = default)
             => await _context.Enrollments.CountAsync(e => e.Status == EnrollmentStatus.Active, ct);
 
+        // Enrollments whose subscription still has money owed on it (overdue or not).
         public async Task<int> CountPendingPaymentAsync(CancellationToken ct = default)
             => await _context.Enrollments
-                .Where(e => e.SubscriptionDetails != null
-                    && !e.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid))
+                .Where(e => e.SubscriptionDetails.InvoiceLines.Any(l =>
+                    l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid < l.Invoice.GrandTotal))
                 .CountAsync(ct);
 
         public async Task<PagedData<EnrollmentCardDto>> GetAllAsync(PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default)

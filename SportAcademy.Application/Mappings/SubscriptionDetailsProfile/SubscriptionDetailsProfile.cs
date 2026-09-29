@@ -78,6 +78,15 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                     dest => dest.EmployeeName,
                     opt => opt.Ignore()
                 )
+                .ForMember(dest => dest.InvoiceNumber, opt => opt.Ignore())
+                .ForMember(dest => dest.InvoiceId, opt => opt.Ignore())
+                .ForMember(dest => dest.Currency, opt => opt.Ignore())
+                .ForMember(dest => dest.AmountPaid, opt => opt.Ignore())
+                .ForMember(dest => dest.Balance, opt => opt.Ignore())
+                .ForMember(dest => dest.BalanceDueDate, opt => opt.Ignore())
+                .ForMember(dest => dest.PaymentState, opt => opt.Ignore())
+                // Derived status + bill fields, identical to the hand-written list mapper.
+                .AfterMap((src, dest) => Manual.SubscriptionDetailsMapper.ApplyBilling(src, dest))
                 .ReverseMap()
                 .ForAllMembers(
                     opt => opt.Condition((src, dest, srcMember) => srcMember != null)

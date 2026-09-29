@@ -57,6 +57,8 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
                 GroupType = request.GroupType,
                 TrainingDays = request.TrainingDays.Distinct().OrderBy(d => d).ToList(),
                 PaymentTypeId = request.PaymentTypeId,
+                DepositAmount = request.PayDeposit ? request.DepositAmount : null,
+                BalanceDueDate = request.PayDeposit ? request.BalanceDueDate : null,
                 DiscountCode = normalized,
                 Status = SubscriptionDiscountRequestStatus.PendingApproval,
                 RequestedByUserId = requestedByUserId,

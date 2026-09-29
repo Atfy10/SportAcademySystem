@@ -110,6 +110,8 @@ namespace SportAcademy.Infrastructure
             services.AddHostedService<InvitationExpiryService>();
             services.AddHostedService<TenantArchivalService>();
             services.AddHostedService<EnrollmentLapseService>();
+            services.AddHostedService<SubscriptionLifecycleService>();
+            services.AddHostedService<OverdueBalanceService>();
             services.AddHostedService<SessionOccurrenceCompletionService>();
             services.AddHostedService<LimitReconciliationDeadlineService>();
             services.AddHostedService<NotificationDeliveryWorker>();

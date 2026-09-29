@@ -55,10 +55,16 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("StartDate", opt => opt.MapFrom(src => src.SubscriptionDetails.StartDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
+                // From the subscription's bill, not the enrollment's expiry date (which said
+                // "Overdue" for any expired subscription, paid or not). Same rule as
+                // SubscriptionBilling.PaymentState: settled = Paid; balance past its collect date
+                // = Overdue; anything else still owed = Pending.
                 .ForCtorParam("PaymentStatus", opt => opt.MapFrom(src =>
-                    src.ExpiryDate < DateTime.UtcNow ? "Overdue" :
-                    (src.SubscriptionDetails != null &&
-                        src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid >= l.Invoice.GrandTotal) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid < l.Invoice.GrandTotal
+                        && l.Invoice.DueDate < DateOnly.FromDateTime(DateTime.UtcNow)) ? "Overdue" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
                     // Suspended checked before Expired: suspension freezes the enrollment - the
@@ -90,10 +96,16 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("ExpiryDate", opt => opt.MapFrom(src => src.ExpiryDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
+                // From the subscription's bill, not the enrollment's expiry date (which said
+                // "Overdue" for any expired subscription, paid or not). Same rule as
+                // SubscriptionBilling.PaymentState: settled = Paid; balance past its collect date
+                // = Overdue; anything else still owed = Pending.
                 .ForCtorParam("PaymentStatus", opt => opt.MapFrom(src =>
-                    src.ExpiryDate < DateTime.UtcNow ? "Overdue" :
-                    (src.SubscriptionDetails != null &&
-                        src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid >= l.Invoice.GrandTotal) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid < l.Invoice.GrandTotal
+                        && l.Invoice.DueDate < DateOnly.FromDateTime(DateTime.UtcNow)) ? "Overdue" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
                     // Suspended checked before Expired: suspension freezes the enrollment - the

@@ -3,15 +3,16 @@ using SportAcademy.Application.Events;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Finance;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.PaymentExceptions;
 using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Services
 {
     // Extracted verbatim out of CreateSubscriptionDetailsCommandHandler - see
-    // ISubscriptionCreationService for why. Behavior for discountAmount: 0/discountCodeId: null
-    // (the plain path) must stay identical to what the handler did inline before this extraction.
+    // ISubscriptionCreationService for why.
     public class SubscriptionCreationService : ISubscriptionCreationService
     {
         private readonly ISubscriptionDetailsRepository _subscriptionDetailsRepository;
@@ -46,20 +47,25 @@ namespace SportAcademy.Application.Services
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<SubscriptionDetails> CreateAsync(
-            int traineeId, int subscriptionTypeId, int sportId, int branchId,
-            DateOnly startDate, TraineeGroupType groupType, IReadOnlyCollection<DayOfWeek> trainingDays,
-            int paymentTypeId,
-            decimal? discountPercentage, int? discountCodeId, Guid? actingUserId,
+        public async Task<SubscriptionCreationResult> CreateAsync(
+            SubscriptionCreationRequest request,
+            Func<SubscriptionCreationResult, CancellationToken, Task>? beforeCommit = null,
             CancellationToken ct = default)
         {
             var sportPrice = await _sportPriceRepository.GetByKeyWithIncludesAsync(
-                branchId, sportId, subscriptionTypeId, groupType, ct)
-                ?? throw new IdNotFoundException(nameof(SportPrice), $"{branchId}/{sportId}/{subscriptionTypeId}/{groupType}");
+                request.BranchId, request.SportId, request.SubscriptionTypeId, request.GroupType, ct)
+                ?? throw new IdNotFoundException(nameof(SportPrice),
+                    $"{request.BranchId}/{request.SportId}/{request.SubscriptionTypeId}/{request.GroupType}");
 
-            var discountAmount = discountPercentage.HasValue
-                ? Math.Round(sportPrice.Price * discountPercentage.Value / 100m, 3)
+            var discountAmount = request.DiscountPercentage.HasValue
+                ? Math.Round(sportPrice.Price * request.DiscountPercentage.Value / 100m, 3)
                 : 0m;
+            var netPrice = sportPrice.Price - Math.Min(discountAmount, sportPrice.Price);
+
+            // Checked here (not only in the validator) because the discount-request path only
+            // learns the discounted total at approval time.
+            if (request.DepositAmount is { } requestedDeposit && netPrice > 0 && requestedDeposit >= netPrice)
+                throw FinanceRuleException.DepositNotLessThanTotal(netPrice);
 
             // How long the subscription runs depends on the training days as much as on the plan:
             // the same number of sessions takes longer to use up at 2 days a week than at 3. The
@@ -69,18 +75,18 @@ namespace SportAcademy.Application.Services
             var subscriptionType = sportPrice.SportSubscriptionType.SubscriptionType;
             var totalSessions = TrainingScheduleService.CalculateTotalSessions(
                 subscriptionType.DaysPerMonth, subscriptionType.NumberOfMonths);
-            var endDate = TrainingScheduleService.ComputeEndDate(startDate, totalSessions, trainingDays);
+            var endDate = TrainingScheduleService.ComputeEndDate(request.StartDate, totalSessions, request.TrainingDays);
 
             var subDetails = new SubscriptionDetails
             {
-                StartDate = startDate,
+                StartDate = request.StartDate,
                 EndDate = endDate,
-                TraineeId = traineeId,
-                SubscriptionTypeId = subscriptionTypeId,
-                SportId = sportId,
-                BranchId = branchId,
-                GroupType = groupType,
-                TrainingDays = trainingDays.Distinct().OrderBy(d => d).ToList(),
+                TraineeId = request.TraineeId,
+                SubscriptionTypeId = request.SubscriptionTypeId,
+                SportId = request.SportId,
+                BranchId = request.BranchId,
+                GroupType = request.GroupType,
+                TrainingDays = request.TrainingDays.Distinct().OrderBy(d => d).ToList(),
             };
 
             await _subscriptionDetailsMangeService.ValidateSubscriptionAsync(subDetails, ct);
@@ -90,88 +96,90 @@ namespace SportAcademy.Application.Services
 
             ct.ThrowIfCancellationRequested();
 
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            SubscriptionCreationResult result;
+
             // Everything below is several independent SaveChanges calls (subDetails, the
             // back-filled SportTrainee, the carried-forward enrollment, the superseded
             // subscription's expiry, the invoice, the payment) - without an explicit transaction
-            // a failure partway through (e.g. the invoice number collision this was written to
-            // fix) left earlier steps already committed: an orphaned SubscriptionDetails row with
-            // no invoice/payment, while the UI reported the whole operation as failed. Wrapped in
-            // one transaction so a failure anywhere rolls back everything, matching
-            // AcceptInvitationCommandHandler's pattern.
+            // a failure partway through left earlier steps already committed: an orphaned
+            // SubscriptionDetails row with no invoice/payment, while the UI reported the whole
+            // operation as failed. Wrapped in one transaction so a failure anywhere rolls back
+            // everything, matching AcceptInvitationCommandHandler's pattern.
             await _unitOfWork.BeginTransactionAsync(ct);
             try
             {
                 await _subscriptionDetailsRepository.AddAsync(subDetails, ct);
 
                 // Subscribing is often how a trainee starts a brand-new sport, so it must not
-                // require them to already have a SportTrainee record for sportId. Back-fill one
+                // require them to already have a SportTrainee record for the sport. Back-fill one
                 // here with an unset skill level (NotSpecified) if they don't have it yet -
                 // CreateEnrollment's skill-level gate already treats NotSpecified the same as "no
                 // record at all", so this doesn't block them from later enrolling into any group
                 // for this sport.
-                var hasSportRecord = await _sportTraineeRepository.IsExistAsync(sportId, traineeId, ct);
+                var hasSportRecord = await _sportTraineeRepository.IsExistAsync(request.SportId, request.TraineeId, ct);
                 if (!hasSportRecord)
                 {
                     await _sportTraineeRepository.AddAsync(new SportTrainee
                     {
-                        SportId = sportId,
-                        TraineeId = traineeId,
+                        SportId = request.SportId,
+                        TraineeId = request.TraineeId,
                         SkillLevel = SkillLevel.NotSpecified
                     }, ct);
                 }
 
                 // A trainee can only be enrolled in one group per sport - if they already have a
                 // group enrollment for this sport (i.e. this is a renewal, not a first-time
-                // sign-up), carry that enrollment forward onto the new subscription instead of
-                // leaving it pointing at the now-superseded one. No manual re-enrollment step
-                // needed. First-time subscriptions (no existing enrollment) are untouched.
-                var existingEnrollment = await _enrollmentRepository.GetCurrentEnrollmentForSportAsync(traineeId, sportId, ct);
-                if (existingEnrollment is not null)
+                // sign-up), carry that enrollment forward onto the new subscription.
+                //
+                // Only when the renewal has already started, though. A renewal booked ahead of
+                // time (start date in the future) must leave the trainee training on - and
+                // consuming the sessions of - the subscription they're on now; resetting the
+                // enrollment today would throw away the sessions they already paid for.
+                // SubscriptionLifecycleService does the hand-over on the renewal's start date.
+                if (request.StartDate <= today)
                 {
-                    var oldSubscriptionDetailsId = existingEnrollment.SubscriptionDetailsId;
-
-                    // Not SubscriptionDetailsService.CalculateAllowedSessions(subDetails) - that
-                    // reads subDetails.SportPrice.SportSubscriptionType.SubscriptionType, which is
-                    // null on this freshly-created-and-added entity (no navigations loaded/attached).
-                    // sportPrice was fetched with includes specifically for this.
-                    existingEnrollment.SubscriptionDetailsId = subDetails.Id;
-                    existingEnrollment.SessionAllowed = TrainingScheduleService.CalculateTotalSessions(
-                        sportPrice.SportSubscriptionType.SubscriptionType.DaysPerMonth,
-                        sportPrice.SportSubscriptionType.SubscriptionType.NumberOfMonths);
-                    existingEnrollment.SessionRemaining = existingEnrollment.SessionAllowed;
-                    existingEnrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
-                    existingEnrollment.Status = EnrollmentStatus.Active;
-                    await _enrollmentRepository.UpdateAsync(existingEnrollment, ct);
-
-                    // Expire the superseded subscription immediately rather than waiting for the
-                    // lazy status flip in GetSubDetailsStatsAsync - otherwise it keeps showing as
-                    // Active until something else happens to query subscription stats.
-                    var oldSubscription = await _subscriptionDetailsRepository.GetByIdAsync(oldSubscriptionDetailsId, ct);
-                    if (oldSubscription is not null && oldSubscription.Status != SubscriptionStatus.Expired)
-                    {
-                        oldSubscription.Status = SubscriptionStatus.Expired;
-                        await _subscriptionDetailsRepository.UpdateAsync(oldSubscription, ct);
-                    }
+                    var existingEnrollment = await _enrollmentRepository.GetCurrentEnrollmentForSportAsync(
+                        request.TraineeId, request.SportId, ct);
+                    if (existingEnrollment is not null)
+                        await HandOverEnrollmentAsync(existingEnrollment, subDetails, totalSessions, ct);
                 }
 
-                // Subscriptions are typically paid for at the point of sale, so creation issues an
-                // Invoice and immediately records a full payment against it via the chosen method -
-                // not a deferred Accountant-only step. discountAmount/discountCodeId are 0/null on
-                // the plain (no discount code) path.
                 var currency = await _currencyReader.GetCurrencyAsync(ct) ?? "KWD";
-                var invoice = await _financeLedgerService.IssueSubscriptionInvoiceAsync(
-                    subDetails, sportPrice.Price, discountAmount, discountCodeId, currency, ct);
 
-                await _financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
-                    Amount: invoice.GrandTotal,
-                    PaymentTypeId: paymentTypeId,
-                    BranchId: branchId,
-                    Currency: currency,
-                    Reference: null,
-                    Notes: null,
-                    RecordedByUserId: actingUserId,
-                    Allocations: [new PaymentAllocationInput(invoice.Id, invoice.GrandTotal)]
-                ), ct);
+                // Paid in full: due today and settled right away. With a deposit: due on the
+                // collect date the user picked (a week out if, somehow, none was given).
+                var dueDate = request.DepositAmount.HasValue
+                    ? request.BalanceDueDate ?? today.AddDays(7)
+                    : today;
+
+                var invoice = await _financeLedgerService.IssueSubscriptionInvoiceAsync(
+                    subDetails, sportPrice.Price, discountAmount, request.DiscountCodeId, currency, dueDate, ct);
+
+                // Subscriptions are typically paid for at the point of sale, so creation records
+                // the payment immediately via the chosen method - the whole total, or just the
+                // deposit. A zero-total invoice (100% discount) is already Paid; there's nothing to
+                // record.
+                Payment? payment = null;
+                var amountNow = request.DepositAmount ?? invoice.GrandTotal;
+                if (invoice.GrandTotal > 0 && amountNow > 0)
+                {
+                    payment = await _financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
+                        Amount: amountNow,
+                        PaymentTypeId: request.PaymentTypeId,
+                        BranchId: request.BranchId,
+                        Currency: currency,
+                        Reference: null,
+                        Notes: request.DepositAmount.HasValue ? "Deposit" : null,
+                        RecordedByUserId: request.ActingUserId,
+                        Allocations: [new PaymentAllocationInput(invoice.Id, amountNow)]
+                    ), ct);
+                }
+
+                result = new SubscriptionCreationResult(subDetails, invoice, payment);
+
+                if (beforeCommit is not null)
+                    await beforeCommit(result, ct);
 
                 await _unitOfWork.CommitTransactionAsync(ct);
             }
@@ -183,7 +191,30 @@ namespace SportAcademy.Application.Services
 
             await _publisher.Publish(new SubscriptionCreatedEvent(subDetails.Id, subDetails.TraineeId), ct);
 
-            return subDetails;
+            return result;
+        }
+
+        private async Task HandOverEnrollmentAsync(
+            Enrollment existingEnrollment, SubscriptionDetails subDetails, int totalSessions, CancellationToken ct)
+        {
+            var oldSubscriptionDetailsId = existingEnrollment.SubscriptionDetailsId;
+
+            existingEnrollment.SubscriptionDetailsId = subDetails.Id;
+            existingEnrollment.SessionAllowed = totalSessions;
+            existingEnrollment.SessionRemaining = totalSessions;
+            existingEnrollment.ExpiryDate = subDetails.EndDate.ToDateTime(TimeOnly.MinValue);
+            existingEnrollment.Status = EnrollmentStatus.Active;
+            await _enrollmentRepository.UpdateAsync(existingEnrollment, ct);
+
+            // Expire the superseded subscription immediately rather than waiting for the daily
+            // lifecycle sweep - otherwise it keeps showing as Active until then.
+            var oldSubscription = await _subscriptionDetailsRepository.GetByIdAsync(oldSubscriptionDetailsId, ct);
+            if (oldSubscription is not null && oldSubscription.Id != subDetails.Id
+                && oldSubscription.Status != SubscriptionStatus.Expired)
+            {
+                oldSubscription.Status = SubscriptionStatus.Expired;
+                await _subscriptionDetailsRepository.UpdateAsync(oldSubscription, ct);
+            }
         }
     }
 }

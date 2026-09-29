@@ -26,4 +26,6 @@ public record SubscriptionDiscountRequestDto(
     string? ReviewedByName,
     DateTime? ReviewedAt,
     string? RejectionReason,
-    int? CreatedSubscriptionDetailsId);
+    int? CreatedSubscriptionDetailsId,
+    decimal? DepositAmount = null,
+    DateOnly? BalanceDueDate = null);

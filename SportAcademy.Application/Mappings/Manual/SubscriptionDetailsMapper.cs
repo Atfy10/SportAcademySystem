@@ -2,6 +2,8 @@ using SportAcademy.Application.DTOs.PaymentDtos;
 using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.DTOs.TraineeDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Mappings.Manual
 {
@@ -12,13 +14,15 @@ namespace SportAcademy.Application.Mappings.Manual
     {
         public static SubscriptionDetailsDto ToDto(SubscriptionDetails sd, string lang)
         {
+            // Voided payments were recorded in error - never show one as "the" payment.
             var latestPayment = sd.InvoiceLines
                 .SelectMany(l => l.Invoice.Allocations)
                 .Select(a => a.Payment)
+                .Where(p => p.Status != PaymentStatus.Voided)
                 .OrderByDescending(p => p.PaidDate)
                 .FirstOrDefault();
 
-            return new SubscriptionDetailsDto
+            var dto = new SubscriptionDetailsDto
             {
                 Id = sd.Id,
                 Trainee = new TraineeSubDetailsDto
@@ -50,6 +54,29 @@ namespace SportAcademy.Application.Mappings.Manual
                 },
                 Status = sd.Status,
             };
+
+            ApplyBilling(sd, dto);
+            return dto;
+        }
+
+        // Fills the derived status and the bill fields. Shared with the AutoMapper profile so
+        // every subscription endpoint reports the same status/balance for the same row.
+        public static void ApplyBilling(SubscriptionDetails sd, SubscriptionDetailsDto dto)
+        {
+            var today = SubscriptionBilling.Today;
+            dto.Status = SubscriptionBilling.EffectiveStatus(sd, today);
+
+            var invoice = sd.InvoiceLines is null ? null : SubscriptionBilling.CurrentInvoice(sd);
+            if (invoice is null) return;
+
+            dto.Price = invoice.GrandTotal;
+            dto.InvoiceId = invoice.Id;
+            dto.InvoiceNumber = invoice.InvoiceNumber;
+            dto.Currency = invoice.Currency;
+            dto.AmountPaid = invoice.AmountPaid;
+            dto.Balance = invoice.GrandTotal - invoice.AmountPaid;
+            dto.BalanceDueDate = dto.Balance > 0 ? invoice.DueDate : null;
+            dto.PaymentState = SubscriptionBilling.PaymentState(invoice, today);
         }
     }
 }

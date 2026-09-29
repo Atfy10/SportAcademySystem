@@ -3,41 +3,55 @@ using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Finance;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.PaymentExceptions;
 
 namespace SportAcademy.Application.Services
 {
+    // Not transactional on its own: every method here is several SaveChanges calls, so callers
+    // wrap them in IUnitOfWork (see UnitOfWorkExtensions.InTransactionAsync) - the command
+    // handlers for record/refund/void do, and SubscriptionCreationService already runs inside
+    // its own transaction. Invoice and Payment carry rowversion tokens, so two concurrent writes
+    // against the same balance fail with a concurrency conflict instead of both succeeding.
     public class FinanceLedgerService : IFinanceLedgerService
     {
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IPaymentRepository _paymentRepository;
         private readonly IBaseRepository<PaymentAllocation, int> _allocationRepository;
+        private readonly IBaseRepository<PaymentRefund, int> _refundRepository;
         private readonly IFinancialDocumentNumberGenerator _numberGenerator;
 
         public FinanceLedgerService(
             IInvoiceRepository invoiceRepository,
             IPaymentRepository paymentRepository,
             IBaseRepository<PaymentAllocation, int> allocationRepository,
+            IBaseRepository<PaymentRefund, int> refundRepository,
             IFinancialDocumentNumberGenerator numberGenerator)
         {
             _invoiceRepository = invoiceRepository;
             _paymentRepository = paymentRepository;
             _allocationRepository = allocationRepository;
+            _refundRepository = refundRepository;
             _numberGenerator = numberGenerator;
         }
 
         public async Task<Invoice> IssueSubscriptionInvoiceAsync(
             SubscriptionDetails subscription, decimal grossPrice, decimal discountAmount,
-            int? discountCodeId, string currency, CancellationToken ct = default)
+            int? discountCodeId, string currency, DateOnly dueDate, CancellationToken ct = default)
         {
             var invoiceNumber = await _numberGenerator.GenerateAsync("INV", ct);
+
+            // A discount can never take the total below zero (a 100% code makes it exactly zero).
+            discountAmount = Math.Min(discountAmount, grossPrice);
             var netPrice = grossPrice - discountAmount;
 
             var invoice = new Invoice
             {
                 InvoiceNumber = invoiceNumber,
-                Status = InvoiceStatus.Issued,
+                // Nothing to collect on a zero-total invoice - it's settled the moment it exists,
+                // rather than waiting on a zero-amount payment the ledger (rightly) refuses.
+                Status = netPrice == 0 ? InvoiceStatus.Paid : InvoiceStatus.Issued,
                 IssueDate = DateOnly.FromDateTime(DateTime.UtcNow),
-                DueDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(7),
+                DueDate = dueDate,
                 TraineeId = subscription.TraineeId,
                 BranchId = subscription.BranchId,
                 Currency = currency,
@@ -83,30 +97,45 @@ namespace SportAcademy.Application.Services
         public async Task<Payment> RecordPaymentAsync(RecordPaymentInput input, CancellationToken ct = default)
         {
             if (input.Allocations.Count == 0)
-                throw new ArgumentException("A payment must be allocated to at least one invoice.");
+                throw FinanceRuleException.NoAllocations();
 
             var allocatedTotal = input.Allocations.Sum(a => a.Amount);
             if (allocatedTotal != input.Amount)
-                throw new ArgumentException(
-                    $"Allocations (total {allocatedTotal}) must sum exactly to the payment amount ({input.Amount}).");
+                throw FinanceRuleException.AllocationsMismatch(allocatedTotal, input.Amount);
 
             var invoices = await _invoiceRepository.GetByIdsWithLinesAsync(
                 input.Allocations.Select(a => a.InvoiceId), ct);
 
-            foreach (var alloc in input.Allocations)
+            // Same invoice listed twice would slip past the per-row overpayment check below.
+            var perInvoice = input.Allocations
+                .GroupBy(a => a.InvoiceId)
+                .Select(g => (InvoiceId: g.Key, Amount: g.Sum(a => a.Amount)))
+                .ToList();
+
+            string? currency = string.IsNullOrWhiteSpace(input.Currency) ? null : input.Currency;
+
+            foreach (var (invoiceId, amount) in perInvoice)
             {
-                var invoice = invoices.SingleOrDefault(i => i.Id == alloc.InvoiceId)
-                    ?? throw new IdNotFoundException(nameof(Invoice), alloc.InvoiceId);
+                var invoice = invoices.SingleOrDefault(i => i.Id == invoiceId)
+                    ?? throw new IdNotFoundException(nameof(Invoice), invoiceId);
 
                 if (invoice.Status is InvoiceStatus.Cancelled)
-                    throw new ArgumentException($"Invoice {invoice.InvoiceNumber} is cancelled and cannot accept a payment.");
+                    throw FinanceRuleException.InvoiceCancelled(invoice.InvoiceNumber);
 
-                if (alloc.Amount <= 0)
-                    throw new ArgumentException("Each allocation amount must be greater than zero.");
+                if (amount <= 0)
+                    throw FinanceRuleException.AllocationNotPositive();
 
-                if (invoice.AmountPaid + alloc.Amount > invoice.GrandTotal)
-                    throw new ArgumentException(
-                        $"Allocation of {alloc.Amount} to invoice {invoice.InvoiceNumber} would exceed its outstanding balance.");
+                if (invoice.AmountPaid + amount > invoice.GrandTotal)
+                    throw FinanceRuleException.Overpayment(invoice.InvoiceNumber, invoice.Outstanding);
+
+                // Money is received at a branch and reported per branch - a payment taken at one
+                // branch silently settling another branch's invoice would misplace revenue.
+                if (invoice.BranchId != input.BranchId)
+                    throw FinanceRuleException.BranchMismatch(invoice.InvoiceNumber);
+
+                currency ??= invoice.Currency;
+                if (!string.Equals(invoice.Currency, currency, StringComparison.OrdinalIgnoreCase))
+                    throw FinanceRuleException.CurrencyMismatch(invoice.InvoiceNumber, invoice.Currency);
             }
 
             var paymentNumber = await _numberGenerator.GenerateAsync("PAY", ct);
@@ -118,7 +147,7 @@ namespace SportAcademy.Application.Services
                 Status = PaymentStatus.Completed,
                 PaidDate = DateTime.UtcNow,
                 BranchId = input.BranchId,
-                Currency = input.Currency,
+                Currency = currency!,
                 Amount = input.Amount,
                 RefundedAmount = 0,
                 RecordedByUserId = input.RecordedByUserId,
@@ -127,18 +156,18 @@ namespace SportAcademy.Application.Services
             };
             await _paymentRepository.AddAsync(payment, ct);
 
-            foreach (var alloc in input.Allocations)
+            foreach (var (invoiceId, amount) in perInvoice)
             {
-                var invoice = invoices.Single(i => i.Id == alloc.InvoiceId);
+                var invoice = invoices.Single(i => i.Id == invoiceId);
 
                 await _allocationRepository.AddAsync(new PaymentAllocation
                 {
                     PaymentNumber = paymentNumber,
-                    InvoiceId = alloc.InvoiceId,
-                    Amount = alloc.Amount,
+                    InvoiceId = invoiceId,
+                    Amount = amount,
                 }, ct);
 
-                invoice.AmountPaid += alloc.Amount;
+                invoice.AmountPaid += amount;
                 invoice.Status = ResolveStatusAfterPayment(invoice);
                 await _invoiceRepository.UpdateAsync(invoice, ct);
             }
@@ -146,17 +175,23 @@ namespace SportAcademy.Application.Services
             return payment;
         }
 
-        public async Task RefundPaymentAsync(string paymentNumber, decimal amount, CancellationToken ct = default)
+        public async Task<PaymentRefund> RefundPaymentAsync(
+            string paymentNumber, decimal amount, string reason, Guid? actingUserId,
+            DateOnly? newDueDate, CancellationToken ct = default)
         {
             var payment = await _paymentRepository.GetWithAllocationsAsync(paymentNumber, ct)
-                ?? throw new IdNotFoundException(nameof(Payment), paymentNumber);
+                ?? throw new PaymentNotFoundException(paymentNumber);
+
+            if (payment.Status is PaymentStatus.Voided)
+                throw FinanceRuleException.AlreadyVoided(paymentNumber);
 
             var refundable = payment.Amount - payment.RefundedAmount;
             if (amount <= 0 || amount > refundable)
-                throw new ArgumentException(
-                    $"Refund amount must be between 0 and the refundable balance ({refundable}).");
+                throw FinanceRuleException.RefundOutOfRange(refundable);
 
-            await ReverseAllocationsAsync(payment, amount, ct);
+            EnsureDueDateNotPast(newDueDate);
+
+            await ReverseAllocationsAsync(payment, amount, newDueDate, ct);
 
             payment.RefundedAmount += amount;
             payment.Status = payment.RefundedAmount >= payment.Amount
@@ -164,29 +199,68 @@ namespace SportAcademy.Application.Services
                 : PaymentStatus.PartiallyRefunded;
 
             await _paymentRepository.UpdateAsync(payment, ct);
+
+            return await AddRefundRecordAsync(payment, PaymentRefundKind.Refund, amount, reason, actingUserId, ct);
         }
 
-        public async Task VoidPaymentAsync(string paymentNumber, CancellationToken ct = default)
+        public async Task<PaymentRefund> VoidPaymentAsync(
+            string paymentNumber, string reason, Guid? actingUserId,
+            DateOnly? newDueDate, CancellationToken ct = default)
         {
             var payment = await _paymentRepository.GetWithAllocationsAsync(paymentNumber, ct)
-                ?? throw new IdNotFoundException(nameof(Payment), paymentNumber);
+                ?? throw new PaymentNotFoundException(paymentNumber);
+
+            if (payment.Status is PaymentStatus.Voided)
+                throw FinanceRuleException.AlreadyVoided(paymentNumber);
 
             var remaining = payment.Amount - payment.RefundedAmount;
-            if (remaining > 0)
-                await ReverseAllocationsAsync(payment, remaining, ct);
+            if (remaining <= 0)
+                throw FinanceRuleException.NothingToVoid(paymentNumber);
+
+            EnsureDueDateNotPast(newDueDate);
+
+            await ReverseAllocationsAsync(payment, remaining, newDueDate, ct);
 
             payment.RefundedAmount = payment.Amount;
             payment.Status = PaymentStatus.Voided;
 
             await _paymentRepository.UpdateAsync(payment, ct);
+
+            return await AddRefundRecordAsync(payment, PaymentRefundKind.Void, remaining, reason, actingUserId, ct);
+        }
+
+        private async Task<PaymentRefund> AddRefundRecordAsync(
+            Payment payment, PaymentRefundKind kind, decimal amount, string reason,
+            Guid? actingUserId, CancellationToken ct)
+        {
+            var refund = new PaymentRefund
+            {
+                PaymentNumber = payment.PaymentNumber,
+                Kind = kind,
+                Amount = amount,
+                Reason = reason.Trim(),
+                RefundedAt = DateTime.UtcNow,
+                RefundedByUserId = actingUserId,
+            };
+            await _refundRepository.AddAsync(refund, ct);
+            return refund;
+        }
+
+        private static void EnsureDueDateNotPast(DateOnly? newDueDate)
+        {
+            if (newDueDate is { } due && due < DateOnly.FromDateTime(DateTime.UtcNow))
+                throw FinanceRuleException.DueDateInPast();
         }
 
         // Walks the payment's allocations in order, pulling `amountToReverse` back out of the
         // invoices they were applied to (oldest allocation first) and dropping each invoice's
-        // status back down accordingly. Allocation rows themselves are left untouched - they
-        // stay the historical record of what was originally applied where; Payment.RefundedAmount
-        // is what tracks how much of that has since been given back.
-        private async Task ReverseAllocationsAsync(Payment payment, decimal amountToReverse, CancellationToken ct)
+        // status back down accordingly. Each allocation can only give back what it still holds
+        // (Amount - ReversedAmount), so repeated partial refunds across a multi-invoice payment
+        // move on to the next invoice instead of driving the first one's AmountPaid negative.
+        // Allocation.Amount itself is never changed - it stays the historical record of what was
+        // originally applied where.
+        private async Task ReverseAllocationsAsync(
+            Payment payment, decimal amountToReverse, DateOnly? newDueDate, CancellationToken ct)
         {
             var remaining = amountToReverse;
 
@@ -194,13 +268,25 @@ namespace SportAcademy.Application.Services
             {
                 if (remaining <= 0) break;
 
+                var available = allocation.Amount - allocation.ReversedAmount;
+                if (available <= 0) continue;
+
                 var invoice = allocation.Invoice
                     ?? await _invoiceRepository.GetWithLinesAndAllocationsAsync(allocation.InvoiceId, ct)
                     ?? throw new IdNotFoundException(nameof(Invoice), allocation.InvoiceId);
 
-                var applied = Math.Min(remaining, allocation.Amount);
+                var applied = Math.Min(remaining, available);
+                allocation.ReversedAmount += applied;
                 invoice.AmountPaid -= applied;
                 invoice.Status = ResolveStatusAfterPayment(invoice);
+
+                if (newDueDate is { } due)
+                {
+                    invoice.DueDate = due;
+                    invoice.OverdueNotifiedOn = null;
+                    invoice.DueSoonNotifiedOn = null;
+                }
+
                 await _invoiceRepository.UpdateAsync(invoice, ct);
 
                 remaining -= applied;
@@ -209,6 +295,7 @@ namespace SportAcademy.Application.Services
 
         private static InvoiceStatus ResolveStatusAfterPayment(Invoice invoice)
         {
+            if (invoice.GrandTotal == 0) return InvoiceStatus.Paid;
             if (invoice.AmountPaid <= 0) return InvoiceStatus.Issued;
             return invoice.AmountPaid >= invoice.GrandTotal ? InvoiceStatus.Paid : InvoiceStatus.PartiallyPaid;
         }

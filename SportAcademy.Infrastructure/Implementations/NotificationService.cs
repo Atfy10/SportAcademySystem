@@ -118,8 +118,16 @@ namespace SportAcademy.Infrastructure.Implementations
             NotificationType type = NotificationType.System)
             => await SendNotificationToGroupsAsync(eventType, [groupName], title, message, type);
 
-        public async Task SendNotificationToGroupsAsync(string eventType, IEnumerable<string> groupNames, string title, string message,
+        public Task SendNotificationToGroupsWithLinkAsync(string eventType, IEnumerable<string> groupNames, string title, string message,
+            NotificationType type, string actionUrl)
+            => SendToGroupsCoreAsync(eventType, groupNames, title, message, type, null, actionUrl);
+
+        public Task SendNotificationToGroupsAsync(string eventType, IEnumerable<string> groupNames, string title, string message,
             NotificationType type = NotificationType.System, IEnumerable<Guid>? extraUserIds = null)
+            => SendToGroupsCoreAsync(eventType, groupNames, title, message, type, extraUserIds, null);
+
+        private async Task SendToGroupsCoreAsync(string eventType, IEnumerable<string> groupNames, string title, string message,
+            NotificationType type, IEnumerable<Guid>? extraUserIds, string? actionUrl)
         {
             var names = groupNames.Distinct().ToList();
 
@@ -147,7 +155,7 @@ namespace SportAcademy.Infrastructure.Implementations
             if (recipientIds.Count == 0) return;
 
             var groupLabel = ScopedGroup(string.Join("+", names));
-            await SendToUserIdsAsync(eventType, recipientIds, title, message, type, groupLabel);
+            await SendToUserIdsAsync(eventType, recipientIds, title, message, type, groupLabel, actionUrl);
         }
 
         public async Task SendNotificationToUsersAsync(string eventType, IEnumerable<Guid> userIds, string title, string message,
@@ -165,14 +173,16 @@ namespace SportAcademy.Infrastructure.Implementations
         /// bookkeeping is in sync - and dispatches the tenant's configured Email/Push/WhatsApp
         /// channels for this event on top of the InApp push above.
         private async Task SendToUserIdsAsync(
-            string eventType, IReadOnlyCollection<Guid> userIds, string title, string message, NotificationType type, string? groupName = null)
+            string eventType, IReadOnlyCollection<Guid> userIds, string title, string message, NotificationType type,
+            string? groupName = null, string? actionUrl = null)
         {
             var notification = new Notification
             {
                 Title = title,
                 Message = message,
                 Type = type,
-                GroupName = groupName
+                GroupName = groupName,
+                ActionUrl = actionUrl,
             };
             await _notificationRepository.AddAsync(notification);
             await _notificationRepository.AddRecipientsForUsersAsync(notification.Id, userIds);
@@ -183,7 +193,7 @@ namespace SportAcademy.Infrastructure.Implementations
                 Title = title,
                 Message = message,
                 Type = type,
-                ActionUrl = null,
+                ActionUrl = actionUrl,
                 IsRead = false,
                 CreatedAt = notification.CreatedAt
             });

@@ -1,6 +1,8 @@
 using MediatR;
+using SportAcademy.Application.Common;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
@@ -13,7 +15,8 @@ public class UpdatePaymentStatusCommandHandler(
     IInvoiceRepository invoiceRepository,
     IFinanceLedgerService financeLedgerService,
     IPaymentTypeRepository paymentTypeRepository,
-    IUserContextService userContext)
+    IUserContextService userContext,
+    IUnitOfWork unitOfWork)
     : IRequestHandler<UpdatePaymentStatusCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
@@ -41,7 +44,7 @@ public class UpdatePaymentStatusCommandHandler(
                     ?? await paymentTypeRepository.GetFirstActiveAsync(cancellationToken)
                     ?? throw new NoDefaultPaymentTypeException();
 
-                await financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
+                await unitOfWork.InTransactionAsync(() => financeLedgerService.RecordPaymentAsync(new RecordPaymentInput(
                     Amount: outstanding,
                     PaymentTypeId: defaultPaymentType.Id,
                     BranchId: invoice.BranchId,
@@ -50,7 +53,7 @@ public class UpdatePaymentStatusCommandHandler(
                     Notes: "Marked paid via enrollment payment-status update.",
                     RecordedByUserId: userContext.UserId,
                     Allocations: [new PaymentAllocationInput(invoice.Id, outstanding)]
-                ), cancellationToken);
+                ), cancellationToken), cancellationToken);
             }
         }
 

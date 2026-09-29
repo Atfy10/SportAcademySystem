@@ -219,7 +219,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<SubscriptionDetails> Items, int TotalCount)> GetLatestSubscriptionsAsync(
-            PageRequest page, string? term = null, CancellationToken cancellationToken = default)
+            PageRequest page, string? term = null, CancellationToken cancellationToken = default,
+            string? status = null, string? paymentState = null)
         {
             // GroupBy(...).Select(g => g.OrderBy(...).First()) does not translate to SQL Server
             // ("could not be translated") - EF Core can't turn "order the group then take the
@@ -252,6 +253,9 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term)
                     || sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.Contains(term));
             }
+
+            query = ApplyEffectiveStatusFilter(query, status);
+            query = ApplyPaymentStateFilter(query, paymentState);
 
             var totalCount = await query.CountAsync(cancellationToken);
             var pageIds = await query
@@ -312,27 +316,78 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            // UTC, like every other date rule in the system (this used server-local DateTime.Today).
+            // No write here any more: the stored Active -> Expired flip is done by the daily
+            // SubscriptionLifecycleService, and every read derives the effective status anyway.
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var soon = today.AddDays(15);
+            var all = ApplyBranchFilter(_context.SubscriptionDetails).Where(sd => !sd.IsDeleted);
 
-            await _context.SubscriptionDetails
-                .Where(sd => sd.Status == SubscriptionStatus.Active && sd.EndDate < today)
-                .ExecuteUpdateAsync(s => s.SetProperty(sd => sd.Status, SubscriptionStatus.Expired), cancellationToken);
-
-            var total = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted, cancellationToken);
-            var active = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.Status == SubscriptionStatus.Active, cancellationToken);
-            var expired = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate < today, cancellationToken);
-            var expiringSoon = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.EndDate <= today.AddDays(15), cancellationToken);
+            var total = await all.CountAsync(cancellationToken);
+            var active = await all.CountAsync(sd => sd.Status == SubscriptionStatus.Active
+                && sd.StartDate <= today && sd.EndDate >= today, cancellationToken);
+            var upcoming = await all.CountAsync(sd => sd.Status == SubscriptionStatus.Active
+                && sd.StartDate > today && sd.EndDate >= today, cancellationToken);
+            var expired = await all.CountAsync(sd => sd.EndDate < today, cancellationToken);
+            var expiringSoon = await all.CountAsync(sd => sd.Status == SubscriptionStatus.Active
+                && sd.StartDate <= today && sd.EndDate >= today && sd.EndDate <= soon, cancellationToken);
+            var overdue = await ApplyPaymentStateFilter(all, "overdue").CountAsync(cancellationToken);
 
             return new SubscriptionStatsDto
             {
                 Total = total,
                 Active = active,
                 Expired = expired,
-                ExpiringSoon = expiringSoon
+                ExpiringSoon = expiringSoon,
+                Upcoming = upcoming,
+                Overdue = overdue,
+            };
+        }
+
+        // SQL mirror of SubscriptionBilling.EffectiveStatus - keep the two in step.
+        private static IQueryable<SubscriptionDetails> ApplyEffectiveStatusFilter(
+            IQueryable<SubscriptionDetails> query, string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return query;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var soon = today.AddDays(15);
+
+            return status.Trim().ToLowerInvariant() switch
+            {
+                "active" => query.Where(sd => sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate <= today && sd.EndDate >= today),
+                "upcoming" => query.Where(sd => sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate > today && sd.EndDate >= today),
+                "expiringsoon" => query.Where(sd => sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate <= today && sd.EndDate >= today && sd.EndDate <= soon),
+                "suspended" => query.Where(sd => sd.Status == SubscriptionStatus.Suspended),
+                "expired" => query.Where(sd => sd.Status == SubscriptionStatus.Expired
+                    || (sd.Status == SubscriptionStatus.Active && sd.EndDate < today)),
+                _ => query,
+            };
+        }
+
+        // SQL mirror of SubscriptionBilling.PaymentState over the subscription's non-cancelled invoice.
+        private static IQueryable<SubscriptionDetails> ApplyPaymentStateFilter(
+            IQueryable<SubscriptionDetails> query, string? paymentState)
+        {
+            if (string.IsNullOrWhiteSpace(paymentState)) return query;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            return paymentState.Trim().ToLowerInvariant() switch
+            {
+                "paid" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid >= l.Invoice.GrandTotal)),
+                "overdue" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid < l.Invoice.GrandTotal && l.Invoice.DueDate < today)),
+                "partiallypaid" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid > 0 && l.Invoice.AmountPaid < l.Invoice.GrandTotal && l.Invoice.DueDate >= today)),
+                "unpaid" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid == 0 && l.Invoice.GrandTotal > 0 && l.Invoice.DueDate >= today)),
+                // Anything still owed, overdue or not - "needs collecting".
+                "owed" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid < l.Invoice.GrandTotal)),
+                _ => query,
             };
         }
     }

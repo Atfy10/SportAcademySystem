@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using SportAcademy.Application.Commands.EnrollmentCommands.UpdatePaymentStatus;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Entities.Finance;
 using SportAcademy.Domain.Enums;
@@ -16,6 +17,7 @@ public class UpdatePaymentStatusCommandHandlerTests
     private readonly Mock<IFinanceLedgerService> _financeLedgerServiceMock = new();
     private readonly Mock<IPaymentTypeRepository> _paymentTypeRepoMock = new();
     private readonly Mock<IUserContextService> _userContextMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly UpdatePaymentStatusCommandHandler _handler;
 
     public UpdatePaymentStatusCommandHandlerTests()
@@ -25,7 +27,7 @@ public class UpdatePaymentStatusCommandHandlerTests
 
         _handler = new UpdatePaymentStatusCommandHandler(
             _enrollmentRepoMock.Object, _invoiceRepoMock.Object, _financeLedgerServiceMock.Object,
-            _paymentTypeRepoMock.Object, _userContextMock.Object);
+            _paymentTypeRepoMock.Object, _userContextMock.Object, _unitOfWorkMock.Object);
     }
 
     private static UpdatePaymentStatusCommand CreateValidCommand(int enrollmentId = 1, string status = "Paid") =>

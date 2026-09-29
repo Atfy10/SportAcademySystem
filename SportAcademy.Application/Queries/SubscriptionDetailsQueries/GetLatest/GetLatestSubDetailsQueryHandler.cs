@@ -30,7 +30,7 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetLatest
         public async Task<Result<PagedData<SubscriptionDetailsDto>>> Handle(GetLatestSubDetailsQuery request, CancellationToken cancellationToken)
         {
             var (items, totalCount) = await _subscriptionDetailsRepository.GetLatestSubscriptionsAsync(
-                request.Page, request.Term, cancellationToken);
+                request.Page, request.Term, cancellationToken, request.Status, request.PaymentState);
 
             // Manual mapper (not AutoMapper.Map) - see SubscriptionDetailsMapper for why: it
             // resolves Sport/Branch through their translation tables using the current request

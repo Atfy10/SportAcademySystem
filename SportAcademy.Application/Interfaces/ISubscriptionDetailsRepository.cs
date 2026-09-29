@@ -21,7 +21,10 @@ namespace SportAcademy.Application.Interfaces
         Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default);
         Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default);
         Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default);
+        // status: the *effective* status (active/upcoming/suspended/expired/expiringSoon);
+        // paymentState: paid/partiallyPaid/overdue/unpaid/owed. Case-insensitive, null = no filter.
         Task<(List<SubscriptionDetails> Items, int TotalCount)> GetLatestSubscriptionsAsync(
-            PageRequest page, string? term = null, CancellationToken cancellationToken = default);
+            PageRequest page, string? term = null, CancellationToken cancellationToken = default,
+            string? status = null, string? paymentState = null);
     }
 }

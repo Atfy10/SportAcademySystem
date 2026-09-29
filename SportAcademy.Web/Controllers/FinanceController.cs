@@ -39,11 +39,11 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetPayments(
             [FromQuery] int? page, [FromQuery] int? pageSize,
             [FromQuery] int? branchId, [FromQuery] int? paymentTypeId, [FromQuery] string? status,
-            [FromQuery] DateTime? from, [FromQuery] DateTime? to,
+            [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string? term,
             CancellationToken ct)
         {
             var result = await _mediator.Send(
-                new GetPaymentsQuery(PageRequest.Create(page, pageSize), branchId, paymentTypeId, status, from, to), ct);
+                new GetPaymentsQuery(PageRequest.Create(page, pageSize), branchId, paymentTypeId, status, from, to, term), ct);
             return Ok(result);
         }
 
@@ -59,15 +59,16 @@ namespace SportAcademy.Web.Controllers
         [HttpPost("payments/{paymentNumber}/refund")]
         public async Task<IActionResult> RefundPayment(string paymentNumber, [FromBody] RefundPaymentRequest request, CancellationToken ct)
         {
-            var result = await _mediator.Send(new RefundPaymentCommand(paymentNumber, request.Amount), ct);
+            var result = await _mediator.Send(new RefundPaymentCommand(paymentNumber, request.Amount, request.Reason ?? string.Empty, request.NewDueDate), ct);
             return Ok(result);
         }
 
         [Authorize(Policy = "Permission:payment.correct")]
         [HttpPost("payments/{paymentNumber}/void")]
-        public async Task<IActionResult> VoidPayment(string paymentNumber, CancellationToken ct)
+        public async Task<IActionResult> VoidPayment(string paymentNumber, [FromBody] VoidPaymentRequest? request, CancellationToken ct)
         {
-            var result = await _mediator.Send(new VoidPaymentCommand(paymentNumber), ct);
+            var result = await _mediator.Send(
+                new VoidPaymentCommand(paymentNumber, request?.Reason ?? string.Empty, request?.NewDueDate), ct);
             return Ok(result);
         }
 
@@ -104,5 +105,6 @@ namespace SportAcademy.Web.Controllers
         }
     }
 
-    public record RefundPaymentRequest(decimal Amount);
+    public record RefundPaymentRequest(decimal Amount, string? Reason, DateOnly? NewDueDate);
+    public record VoidPaymentRequest(string? Reason, DateOnly? NewDueDate);
 }

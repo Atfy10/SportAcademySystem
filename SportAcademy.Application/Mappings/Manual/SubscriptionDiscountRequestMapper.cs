@@ -33,6 +33,8 @@ namespace SportAcademy.Application.Mappings.Manual
             r.ReviewedByUserId.HasValue ? nameLookup.GetValueOrDefault(r.ReviewedByUserId.Value) : null,
             r.ReviewedAt,
             r.RejectionReason,
-            r.CreatedSubscriptionDetailsId);
+            r.CreatedSubscriptionDetailsId,
+            r.DepositAmount,
+            r.BalanceDueDate);
     }
 }

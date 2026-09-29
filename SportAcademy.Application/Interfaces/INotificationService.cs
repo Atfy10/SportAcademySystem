@@ -21,6 +21,11 @@ namespace SportAcademy.Application.Interfaces
         Task SendNotificationToGroupsAsync(string eventType, IEnumerable<string> groupNames, string title, string message,
             NotificationType type = NotificationType.System, IEnumerable<Guid>? extraUserIds = null);
 
+        /// Same as SendNotificationToGroupsAsync, plus a link the notification opens when clicked
+        /// (e.g. an overdue-balance alert taking the reader straight to the Outstanding page).
+        Task SendNotificationToGroupsWithLinkAsync(string eventType, IEnumerable<string> groupNames, string title, string message,
+            NotificationType type, string actionUrl);
+
         Task BroadcastNotificationAsync(string eventType, string title, string message,
             NotificationType type = NotificationType.System);
 

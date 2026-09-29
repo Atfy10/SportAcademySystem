@@ -43,6 +43,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations
             builder.Property(p => p.PaidDate)
                    .IsRequired();
 
+            builder.Property(p => p.RowVersion).IsRowVersion();
+
             // Relationships
 
             // 1:M Branch

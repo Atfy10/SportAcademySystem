@@ -1,6 +1,7 @@
 using AutoMapper;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Result;
@@ -449,6 +450,23 @@ namespace SportAcademy.Application.Behaviors
                     : ex.Message;
 
                 return CreateFailure<TResponse>(requestType, message, 400, ex.MessageKey);
+            }
+            // Two people changed the same record at once (rowversion mismatch - e.g. two refunds
+            // against one payment, two collections against one invoice). Nothing was saved; the
+            // user just needs to reload and retry against the current numbers.
+            catch (DbUpdateConcurrencyException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Concurrency conflict for {RequestType}",
+                    requestType);
+
+                return CreateFailure<TResponse>(
+                    requestType,
+                    _localizer["errors.concurrency"],
+                    409,
+                    "errors.concurrency");
             }
             catch (Exception ex)
             {

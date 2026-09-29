@@ -13,9 +13,7 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
                 .ApplyIdRuleFor("Subscription Details");
 
             RuleFor(x => x.StartDate)
-                .NotEmpty().WithMessage("Please select a start date.")
-                .Must(x => x <= DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)))
-                .WithMessage("Start date can’t be more than 30 days from today.");
+                .NotEmpty().WithMessage("Please select a start date.");
 
             RuleFor(x => x.EndDate)
                 .NotEmpty().WithMessage("Please select an end date.")

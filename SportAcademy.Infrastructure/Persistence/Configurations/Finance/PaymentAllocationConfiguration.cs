@@ -13,6 +13,7 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Finance
 
             builder.Property(a => a.PaymentNumber).IsRequired().HasMaxLength(50);
             builder.Property(a => a.Amount).HasPrecision(18, 3);
+            builder.Property(a => a.ReversedAmount).HasPrecision(18, 3).HasDefaultValue(0m);
 
             builder.HasOne(a => a.Payment)
                    .WithMany(p => p.Allocations)
