@@ -15,6 +15,8 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
         => _context.SaveChangesAsync(ct);
 
+    public void ClearChangeTracker() => _context.ChangeTracker.Clear();
+
     public async Task BeginTransactionAsync(CancellationToken ct = default)
     {
         if (_currentTransaction is not null)

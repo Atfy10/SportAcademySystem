@@ -468,6 +468,23 @@ namespace SportAcademy.Application.Behaviors
                     409,
                     "errors.concurrency");
             }
+            // Last line of defence: a constraint the database enforced that no validator caught.
+            // Say which kind of problem it was instead of "something went wrong".
+            catch (DbUpdateException ex) when (SqlErrorNumber(ex) is { } sqlError && DbErrorKey(sqlError) is { } key)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Database rejected {RequestType} with SQL error {SqlError}",
+                    requestType,
+                    sqlError);
+
+                return CreateFailure<TResponse>(
+                    requestType,
+                    _localizer[key],
+                    key == "errors.db.duplicate" ? 409 : 400,
+                    key);
+            }
             catch (Exception ex)
             {
                 var requestType = request.GetType().Name;
@@ -485,6 +502,22 @@ namespace SportAcademy.Application.Behaviors
                     "errors.generic");
             }
         }
+
+        // SqlException.Number without referencing the SQL Server client from this layer.
+        private static int? SqlErrorNumber(DbUpdateException ex)
+        {
+            var inner = ex.InnerException;
+            var number = inner?.GetType().GetProperty("Number")?.GetValue(inner);
+            return number is int n ? n : null;
+        }
+
+        private static string? DbErrorKey(int sqlError) => sqlError switch
+        {
+            2601 or 2627 => "errors.db.duplicate",      // unique index / constraint
+            2628 or 8152 => "errors.db.tooLong",        // string or binary data would be truncated
+            547 => "errors.db.reference",               // foreign key / check constraint
+            _ => null,
+        };
 
         /// <summary>Stamps the machine-readable code and the correlation reference onto a failure.</summary>
         private static TResult Stamp<TResult>(TResult result, string? code)

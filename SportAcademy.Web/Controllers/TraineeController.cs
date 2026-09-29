@@ -1,4 +1,4 @@
-﻿using CsvHelper;
+using CsvHelper;
 using CsvHelper.Configuration;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +8,10 @@ using SportAcademy.Application.Commands.Trainees.DeleteTrainee;
 using SportAcademy.Application.Commands.Trainees.ImportTrainees;
 using SportAcademy.Application.Commands.Trainees.UpdateTraineeAcademicInfo;
 using SportAcademy.Application.Commands.Trainees.UpdateTraineePersonalInfo;
+using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.Queries.TraineeQueries.GetImportTemplate;
 using SportAcademy.Application.Queries.CoachQueries.GetCoachsCount;
 using SportAcademy.Application.Queries.TraineeQueries.ExportTrainees;
 using SportAcademy.Application.Queries.TraineeQueries.GetActiveTraineesCount;
@@ -28,6 +31,7 @@ using SportAcademy.Web.Features.Trainees;
 using SportAcademy.Web.Features.Trainees.Mappings;
 using SportAcademy.Web.Features.Trainees.Requests;
 using System.Globalization;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SportAcademy.Web.Controllers
@@ -39,10 +43,12 @@ namespace SportAcademy.Web.Controllers
     public class TraineeController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly ILocalizationService _localizer;
 
-        public TraineeController(IMediator mediator)
+        public TraineeController(IMediator mediator, ILocalizationService localizer)
         {
             _mediator = mediator;
+            _localizer = localizer;
         }
 
         [HttpGet]
@@ -136,80 +142,77 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        // What the import screen shows (columns, required/optional, accepted values - this
+        // academy's own branch/category/sport names) and what the template is built from.
+        [Authorize(Policy = "Permission:trainee.register")]
+        [HttpGet("import/template")]
+        public async Task<ActionResult> GetImportTemplate(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTraineeImportTemplateQuery(), ct);
+            return Ok(result);
+        }
+
+        // The same, as a ready-to-fill CSV: localized headers + two sample rows that import as-is.
+        [Authorize(Policy = "Permission:trainee.register")]
+        [HttpGet("import/template.csv")]
+        public async Task<ActionResult> DownloadImportTemplate(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetTraineeImportTemplateQuery(), ct);
+            if (!result.IsSuccess || result.Data is null)
+                return Ok(result);
+
+            var columns = result.Data.Columns;
+            var bytes = TraineeCsvFile.Write(
+                columns.Select(c => c.Label).ToList(),
+                result.Data.SampleRows.Select(r => (IReadOnlyList<string?>)columns
+                    .Select(c => r.TryGetValue(c.Key, out var v) ? v : null).ToList()));
+
+            return File(bytes, "text/csv; charset=utf-8", "trainees-import-template.csv");
+        }
+
+        // Dry run: every row checked, nothing saved.
+        [Authorize(Policy = "Permission:trainee.register")]
+        [HttpPost("import/validate")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task<ActionResult> ValidateImport(IFormFile file, CancellationToken ct)
+        {
+            var (error, parsed) = await ReadImportFileAsync(file, ct);
+            if (error is not null) return error;
+
+            var result = await _mediator.Send(new ValidateTraineeImportCommand(parsed!.Headers, parsed.Rows), ct);
+            return Ok(result);
+        }
+
+        // Re-validates, then saves the valid rows (validRowsOnly=true) or nothing unless every
+        // row is valid (validRowsOnly=false).
         [Authorize(Policy = "Permission:trainee.register")]
         [HttpPost("import")]
         [RequestSizeLimit(10 * 1024 * 1024)]
-        public async Task<ActionResult> ImportCsv(IFormFile file, CancellationToken ct)
+        public async Task<ActionResult> ImportCsv(IFormFile file, [FromQuery] bool validRowsOnly = true, CancellationToken ct = default)
+        {
+            var (error, parsed) = await ReadImportFileAsync(file, ct);
+            if (error is not null) return error;
+
+            var result = await _mediator.Send(new ImportTraineesCommand(parsed!.Headers, parsed.Rows, validRowsOnly), ct);
+            return Ok(result);
+        }
+
+        private async Task<(ActionResult? Error, TraineeCsvFile.ReadResult? Parsed)> ReadImportFileAsync(IFormFile? file, CancellationToken ct)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("File is required.");
+                return (BadRequest(Result.Failure("Import", _localizer["import.file.empty"], 400)), null);
 
             if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
-                return BadRequest("Only .csv files are supported.");
+                return (BadRequest(Result.Failure("Import", _localizer["import.file.unreadable"], 400)), null);
 
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            try
             {
-                HasHeaderRecord = true,
-                MissingFieldFound = null,
-                HeaderValidated = null,
-                BadDataFound = null,
-                TrimOptions = TrimOptions.Trim,
-            };
-
-            using var reader = new StreamReader(file.OpenReadStream());
-            using var csv = new CsvReader(reader, config);
-
-            csv.Context.RegisterClassMap<ImportTraineeCsvRowMap>();
-
-            var records = csv.GetRecords<ImportTraineeCsvRow>().ToList();
-
-            if (records.Count == 0)
-                return BadRequest("CSV file is empty.");
-
-            var commands = new List<CreateTraineeCommand>();
-
-            foreach (var row in records)
-            {
-                var sportIds = new HashSet<int>();
-                if (!string.IsNullOrWhiteSpace(row.SportIds))
-                {
-                    foreach (var id in row.SportIds.Split('|', StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        if (int.TryParse(id.Trim(), out var sportId))
-                            sportIds.Add(sportId);
-                    }
-                }
-
-                var command = new CreateTraineeCommand
-                {
-                    FirstName = row.FirstName,
-                    LastName = row.LastName,
-                    SSN = row.SSN,
-                    PhoneNumber = row.PhoneNumber,
-                    Email = row.Email,
-                    BirthDate = DateOnly.ParseExact(row.BirthDate, "yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    Gender = Enum.Parse<Gender>(row.Gender, ignoreCase: true),
-                    Nationality = Enum.Parse<Nationality>(row.Nationality, ignoreCase: true),
-                    BranchId = int.Parse(row.BranchId),
-                    NationalityCategoryId = int.Parse(row.NationalityCategoryId),
-                    SportIds = sportIds,
-                    FamilyId = string.IsNullOrWhiteSpace(row.FamilyId) ? 0 : int.Parse(row.FamilyId),
-                    ParentNumber = string.IsNullOrWhiteSpace(row.ParentNumber) ? null : row.ParentNumber,
-                    GuardianName = string.IsNullOrWhiteSpace(row.GuardianName) ? null : row.GuardianName,
-                    Street = string.IsNullOrWhiteSpace(row.Street) ? null : row.Street,
-                    City = string.IsNullOrWhiteSpace(row.City) ? null : row.City,
-                };
-
-                commands.Add(command);
+                return (null, await TraineeCsvFile.ReadAsync(file, ct));
             }
-
-            var importCommand = new ImportTraineesCommand(commands);
-            var result = await _mediator.Send(importCommand, ct);
-
-            if (!result.IsSuccess)
-                return BadRequest(result);
-
-            return Ok(result);
+            catch (Exception ex) when (ex is CsvHelperException or DecoderFallbackException or InvalidDataException)
+            {
+                return (BadRequest(Result.Failure("Import", _localizer["import.file.unreadable"], 400)), null);
+            }
         }
 
         [HttpGet("for-specific-day")]

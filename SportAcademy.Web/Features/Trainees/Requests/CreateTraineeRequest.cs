@@ -23,5 +23,9 @@ public record CreateTraineeRequest(
     string Email,
     Nationality Nationality,
     string? Street,
-    string? City
+    string? City,
+    // Sent by the create form all along but previously missing here, so both were silently
+    // dropped on every new trainee.
+    List<string>? MedicalConditions = null,
+    string? ImageUrl = null
 );
