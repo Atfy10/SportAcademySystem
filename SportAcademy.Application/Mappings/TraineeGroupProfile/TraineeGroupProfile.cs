@@ -5,6 +5,7 @@ using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.DTOs.GroupScheduleDtos;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.Mappings.TraineeGroupProfile;
 
@@ -46,13 +47,14 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 )
             )
             .ForMember(dest => dest.TraineesCount,
-                opt => opt.MapFrom(src => src.Enrollments.Count)
+                opt => opt.MapFrom(src => src.Enrollments.Count(e => e.Status != EnrollmentStatus.Ended))
             )
             .ForMember(dest => dest.Members,
-                // Same enrollment set as TraineesCount above (no IsActive filter) - a
-                // suspended/expired enrollment is still a trainee on this group's roster, just
-                // with a status the SubscriptionStatus badge already conveys.
+                // Same enrollment set as TraineesCount above - a suspended/expired enrollment is
+                // still a trainee on this group's roster, just with a status the
+                // SubscriptionStatus badge already conveys. An Ended one has left the group.
                 opt => opt.MapFrom(src => src.Enrollments
+                    .Where(e => e.Status != EnrollmentStatus.Ended)
                     .Select(e => new TraineeGroupMemberDto(
                         e.TraineeId,
                         e.Trainee.FirstName + " " + e.Trainee.LastName,
@@ -81,7 +83,7 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 )
             )
             .ForMember(dest => dest.TraineesCount,
-                opt => opt.MapFrom(src => src.Enrollments.Count)
+                opt => opt.MapFrom(src => src.Enrollments.Count(e => e.Status != EnrollmentStatus.Ended))
             )
             .ForMember(dest => dest.MaximumCapacity,
                 opt => opt.MapFrom(src => src.MaximumCapacity)
@@ -127,7 +129,7 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
             .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.Coach.Employee.FirstName + " " + src.Coach.Employee.LastName))
             .ForCtorParam("BranchName", opt => opt.MapFrom(src => src.Branch.Name))
             .ForCtorParam("DurationInMinutes", opt => opt.MapFrom(src => src.DurationInMinutes))
-            .ForCtorParam("TraineesCount", opt => opt.MapFrom(src => src.Enrollments.Count))
+            .ForCtorParam("TraineesCount", opt => opt.MapFrom(src => src.Enrollments.Count(e => e.Status != EnrollmentStatus.Ended)))
             .ForCtorParam("MaximumCapacity", opt => opt.MapFrom(src => src.MaximumCapacity))
             .ForCtorParam("SkillLevel", opt => opt.MapFrom(src => src.SkillLevel.ToString()))
             .ForCtorParam("IsActive", opt => opt.MapFrom(src => src.IsActive))
@@ -137,7 +139,8 @@ public class TraineeGroupMappingProfile : AutoMapper.Profile
                 {
                     DayOfWeek = gs.Day.ToString(),
                     StartTime = gs.StartTime.ToString("HH:mm:ss")
-                }).ToList()));
+                }).ToList()))
+            .ForCtorParam("Type", opt => opt.MapFrom(src => src.Type));
 
         CreateMap<TraineeGroup, TraineeGroupDropdownDto>()
             .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))

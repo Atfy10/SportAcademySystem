@@ -27,6 +27,11 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Finance
 
             builder.Ignore(i => i.Outstanding);
 
+            builder.Property(i => i.RowVersion).IsRowVersion();
+
+            // The overdue sweep and the Outstanding page both filter on this.
+            builder.HasIndex(i => i.DueDate);
+
             builder.HasOne(i => i.Trainee)
                    .WithMany()
                    .HasForeignKey(i => i.TraineeId)

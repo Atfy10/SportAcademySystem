@@ -8,6 +8,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 using SportAcademy.Infrastructure.Persistence.Extensions.QueryExtensions;
 
@@ -27,10 +28,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             _languageProvider = languageProvider;
         }
 
+        // Rates follow Domain.Services.AttendanceRate: Present + Late over everything marked except
+        // Excused. 0 (not a divide-by-zero 500) when nothing has been marked yet.
         public async Task<int> GetGlobalAttendanceRate(CancellationToken ct = default)
-            => await _context.Attendances
-                .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct) * 100 /
-                await _context.Attendances.CountAsync(ct);
+            => await RateOfAsync(_context.Attendances, ct);
 
         public async Task<int> GetMonthlyAttendanceRate(Month month, int? year, CancellationToken ct = default)
         {
@@ -40,9 +41,37 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 query = query.Where(a => a.AttendanceDate.Year == year.Value);
             }
 
-            var total = await query.CountAsync(ct);
-            var present = await query.CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, ct);
-            return present * 100 / total;
+            return await RateOfAsync(query, ct);
+        }
+
+        private static async Task<int> RateOfAsync(IQueryable<Attendance> query, CancellationToken ct)
+        {
+            var counted = await query.CountAsync(a => a.AttendanceStatus != AttendanceStatus.Excused, ct);
+            var attended = await query.CountAsync(
+                a => a.AttendanceStatus == AttendanceStatus.Present || a.AttendanceStatus == AttendanceStatus.Late, ct);
+            return (int)Math.Round(AttendanceRate.Percent(attended, counted));
+        }
+
+        public async Task<Dictionary<int, double>> GetAttendanceRatesAsync(IReadOnlyCollection<int> traineeIds, CancellationToken ct = default)
+        {
+            if (traineeIds.Count == 0) return [];
+            var ids = traineeIds.Distinct().ToList();
+
+            var rows = await _context.Attendances
+                .AsNoTracking()
+                .Where(a => ids.Contains(a.Enrollment.TraineeId) && a.AttendanceStatus != AttendanceStatus.Excused)
+                .GroupBy(a => a.Enrollment.TraineeId)
+                .Select(g => new
+                {
+                    TraineeId = g.Key,
+                    Counted = g.Count(),
+                    Attended = g.Count(a => a.AttendanceStatus == AttendanceStatus.Present || a.AttendanceStatus == AttendanceStatus.Late),
+                })
+                .ToListAsync(ct);
+
+            var rates = rows.ToDictionary(r => r.TraineeId, r => AttendanceRate.Percent(r.Attended, r.Counted));
+            foreach (var id in ids) rates.TryAdd(id, 0);
+            return rates;
         }
 
         public async Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default)
@@ -69,9 +98,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 query = query.Where(a => 
                     DateOnly.FromDateTime(a.SessionOccurrence.StartDateTime) <= toDate.Value);
 
-            var total = await query.CountAsync(cancellationToken);
-            var attended = await query
-                .CountAsync(a => a.AttendanceStatus == AttendanceStatus.Present, cancellationToken);
+            // Excused sessions don't count; Late counts as attended - see AttendanceRate.
+            var total = await query.CountAsync(a => a.AttendanceStatus != AttendanceStatus.Excused, cancellationToken);
+            var attended = await query.CountAsync(
+                a => a.AttendanceStatus == AttendanceStatus.Present || a.AttendanceStatus == AttendanceStatus.Late,
+                cancellationToken);
 
             return (total, attended);
         }

@@ -22,6 +22,8 @@ public static class NotificationEventTypes
     public const string InvitationAccepted = "invitation-accepted";
     public const string InvitationCreated = "invitation-created";
     public const string PasswordResetByAdmin = "password-reset-by-admin";
+    public const string PaymentDueSoon = "payment-due-soon";
+    public const string PaymentOverdue = "payment-overdue";
     public const string PaymentRecorded = "payment-recorded";
     public const string PaymentRefunded = "payment-refunded";
     public const string PaymentVoided = "payment-voided";
@@ -50,6 +52,8 @@ public static class NotificationEventTypes
         (InvitationAccepted, "Invitation Accepted", "An invited user accepted their invitation and joined", NotificationType.System),
         (InvitationCreated, "Invitation Sent", "A new user invitation was created", NotificationType.System),
         (PasswordResetByAdmin, "Password Reset by Admin", "An admin reset a user's password on their behalf", NotificationType.Warning),
+        (PaymentDueSoon, "Balance Due Soon", "A subscription balance (after a deposit) is due within a few days", NotificationType.Info),
+        (PaymentOverdue, "Balance Overdue", "A subscription balance passed its collect date without being paid", NotificationType.Warning),
         (PaymentRecorded, "Payment Recorded", "A payment was recorded", NotificationType.System),
         (PaymentRefunded, "Payment Refunded", "A payment was refunded", NotificationType.Warning),
         (PaymentVoided, "Payment Voided", "A payment was voided", NotificationType.Warning),

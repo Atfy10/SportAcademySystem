@@ -161,7 +161,7 @@ public class TraineeGroupRepositoryTests
             _mapperMock.Object);
         var query = new SearchTraineeGroupsQuery("  swim  ", PageRequest.Create(1, 10));
 
-        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swim", query.Page, null, null, It.IsAny<CancellationToken>()))
+        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swim", query.Page, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedDataListTraineeGroupDto
             {
                 Items = new List<ListTraineeGroupDto>(),
@@ -171,7 +171,7 @@ public class TraineeGroupRepositoryTests
         await handler.Handle(query, CancellationToken.None);
 
         _traineeGroupRepoMock.Verify(
-            r => r.SearchAsync("swim", query.Page, null, null, It.IsAny<CancellationToken>()),
+            r => r.SearchAsync("swim", query.Page, null, null, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -184,7 +184,7 @@ public class TraineeGroupRepositoryTests
         var pageRequest = PageRequest.Create(3, 50);
         var query = new SearchTraineeGroupsQuery("swimming", pageRequest);
 
-        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swimming", pageRequest, null, null, It.IsAny<CancellationToken>()))
+        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swimming", pageRequest, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PagedDataListTraineeGroupDto
             {
                 Items = new List<ListTraineeGroupDto>(),
@@ -194,7 +194,7 @@ public class TraineeGroupRepositoryTests
         await handler.Handle(query, CancellationToken.None);
 
         _traineeGroupRepoMock.Verify(
-            r => r.SearchAsync("swimming", pageRequest, null, null, It.IsAny<CancellationToken>()),
+            r => r.SearchAsync("swimming", pageRequest, null, null, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 }

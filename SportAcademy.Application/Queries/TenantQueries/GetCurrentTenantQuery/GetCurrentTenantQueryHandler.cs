@@ -3,6 +3,7 @@ using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Mappings;
+using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Entities.Tenants;
 using SportAcademy.Domain.Enums;
 
@@ -11,14 +12,17 @@ namespace SportAcademy.Application.Queries.TenantQueries.GetCurrentTenantQuery;
 public class GetCurrentTenantQueryHandler : IRequestHandler<GetCurrentTenantQuery, Result<CurrentTenantResponse>>
 {
     private readonly IBaseRepository<Tenant, Guid> _tenantRepository;
+    private readonly ITenantRepository _tenants;
     private readonly IUserContextService _userContext;
     private readonly string _operation = OperationType.Get.ToString();
 
     public GetCurrentTenantQueryHandler(
         IBaseRepository<Tenant, Guid> tenantRepository,
+        ITenantRepository tenants,
         IUserContextService userContext)
     {
         _tenantRepository = tenantRepository;
+        _tenants = tenants;
         _userContext = userContext;
     }
 
@@ -32,6 +36,13 @@ public class GetCurrentTenantQueryHandler : IRequestHandler<GetCurrentTenantQuer
         if (tenant is null)
             return Result<CurrentTenantResponse>.Failure(_operation, "Tenant not found.", 404);
 
-        return Result<CurrentTenantResponse>.Success(tenant.ToCurrentResponse(), _operation);
+        var profile = await _tenants.GetProfileAsync(tenantId.Value, ct);
+        var response = tenant.ToCurrentResponse() with
+        {
+            LogoUrl = profile?.LogoUrl,
+            OrganizationName = profile?.OrganizationName,
+        };
+
+        return Result<CurrentTenantResponse>.Success(response, _operation);
     }
 }

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using SportAcademy.Domain.Services;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -219,7 +220,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<SubscriptionDetails> Items, int TotalCount)> GetLatestSubscriptionsAsync(
-            PageRequest page, string? term = null, CancellationToken cancellationToken = default)
+            PageRequest page, string? term = null, CancellationToken cancellationToken = default,
+            string? status = null, string? paymentState = null)
         {
             // GroupBy(...).Select(g => g.OrderBy(...).First()) does not translate to SQL Server
             // ("could not be translated") - EF Core can't turn "order the group then take the
@@ -235,11 +237,25 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // here against a plain, include-free query (branch-filtered, like
             // GetAllPaginatedAsync/GetReportAsync above), and GetFullSubDetails() is only used
             // afterward to hydrate the small, already-fixed set of ids for the current page.
-            var baseQuery = ApplyBranchFilter(_context.SubscriptionDetails);
+            // Status / payment filters narrow the candidates BEFORE one row per trainee+sport is
+            // picked: filtering "Upcoming" must find the renewal queued behind a running
+            // subscription, not look only at the running one and come back empty.
+            var baseQuery = ApplyPaymentStateFilter(
+                ApplyEffectiveStatusFilter(ApplyBranchFilter(_context.SubscriptionDetails), status),
+                paymentState);
 
+            // One row per trainee + sport + branch, chosen by priority rather than "newest id":
+            // the subscription running today first (so a renewal sold in advance doesn't hide the
+            // one the trainee is actually training on), else the next upcoming one (soonest
+            // start), else the most recent. Conditional aggregates keep this a single SQL GROUP BY.
+            var today = TenantCalendar.Today;
             var latestIdsQuery = baseQuery
-                .GroupBy(sd => new { sd.TraineeId, sd.SportPrice.SportId, sd.SportPrice.BranchId })
-                .Select(g => g.Max(sd => sd.Id));
+                .GroupBy(sd => new { sd.TraineeId, sd.SportId, sd.BranchId })
+                .Select(g =>
+                    g.Max(sd => sd.StartDate <= today && sd.EndDate >= today && sd.Status != SubscriptionStatus.Expired
+                        ? (int?)sd.Id : null)
+                    ?? g.Min(sd => sd.StartDate > today ? (int?)sd.Id : null)
+                    ?? g.Max(sd => sd.Id));
 
             var query = baseQuery.Where(sd => latestIdsQuery.Contains(sd.Id));
 
@@ -275,9 +291,36 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return (items, totalCount);
         }
 
+        // For rows of the subscriptions list: the next subscription each trainee already has queued
+        // in the same sport (a renewal sold in advance), which the list folds into the row of the
+        // one running now - so the row can say "renewal starts on ..." instead of it looking lost.
+        public async Task<Dictionary<(int TraineeId, int SportId), DateOnly>> GetNextQueuedStartDatesAsync(
+            IReadOnlyCollection<SubscriptionDetails> shown, CancellationToken ct = default)
+        {
+            if (shown.Count == 0) return [];
+            var today = TenantCalendar.Today;
+            var traineeIds = shown.Select(s => s.TraineeId).Distinct().ToList();
+            var shownIds = shown.Select(s => s.Id).ToList();
+
+            var queued = await ApplyBranchFilter(_context.SubscriptionDetails)
+                .AsNoTracking()
+                .Where(sd => traineeIds.Contains(sd.TraineeId)
+                    && !shownIds.Contains(sd.Id)
+                    && sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate > today)
+                .Select(sd => new { sd.TraineeId, sd.SportId, sd.StartDate })
+                .ToListAsync(ct);
+
+            var shownKeys = shown.Select(s => (s.TraineeId, s.SportId)).ToHashSet();
+            return queued
+                .Where(q => shownKeys.Contains((q.TraineeId, q.SportId)))
+                .GroupBy(q => (q.TraineeId, q.SportId))
+                .ToDictionary(g => g.Key, g => g.Min(q => q.StartDate));
+        }
+
         public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = TenantCalendar.Today;
 
             // ApplyBranchFilter is required here, not optional: SubscriptionDetails is
             // deliberately excluded from the automatic branch query filter (see
@@ -296,11 +339,24 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(sd => sd.Status == SubscriptionStatus.Active
                     && sd.EndDate >= today
                     && !sd.IsDeleted
-                    // A subscription already spent on an enrollment can't back another one -
-                    // including a closed enrollment, which consumed it just as much as an open
-                    // one did. (There is no unique index enforcing this at the database level;
+                    // A subscription already spent on an enrollment can't back another one: an open
+                    // enrollment holds it, and so does a closed one that used it all up. A closed
+                    // enrollment with sessions left over (the trainee was moved out of a group
+                    // that went private) does not - the subscription is continued in another
+                    // group. (There is no unique index enforcing this at the database level;
                     // it's this query and CreateEnrollmentCommandHandler that keep it true.)
-                    && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id));
+                    && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id
+                        && (e.EndDate == null || e.SessionRemaining <= 0))
+                    // An upcoming subscription already applied to the trainee's current enrollment
+                    // (CreateEnrollmentCommandHandler extends that enrollment's ExpiryDate to cover
+                    // it, and the lifecycle service only attaches it on its start date) is spent
+                    // too - without this it would be offered again and again until then.
+                    && !(sd.StartDate > today
+                        && _context.Enrollments.Any(e => e.TraineeId == sd.TraineeId
+                            && e.EndDate == null
+                            && e.TraineeGroup.Coach.SportId == sd.SportId
+                            && e.SubscriptionDetailsId != sd.Id
+                            && DateOnly.FromDateTime(e.ExpiryDate) >= sd.EndDate)));
 
             if (traineeId.HasValue)
             {
@@ -312,27 +368,78 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default)
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            // UTC, like every other date rule in the system (this used server-local DateTime.Today).
+            // No write here any more: the stored Active -> Expired flip is done by the daily
+            // SubscriptionLifecycleService, and every read derives the effective status anyway.
+            var today = TenantCalendar.Today;
+            var soon = today.AddDays(15);
+            var all = ApplyBranchFilter(_context.SubscriptionDetails).Where(sd => !sd.IsDeleted);
 
-            await _context.SubscriptionDetails
-                .Where(sd => sd.Status == SubscriptionStatus.Active && sd.EndDate < today)
-                .ExecuteUpdateAsync(s => s.SetProperty(sd => sd.Status, SubscriptionStatus.Expired), cancellationToken);
-
-            var total = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted, cancellationToken);
-            var active = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.Status == SubscriptionStatus.Active, cancellationToken);
-            var expired = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate < today, cancellationToken);
-            var expiringSoon = await ApplyBranchFilter(_context.SubscriptionDetails)
-                .CountAsync(sd => !sd.IsDeleted && sd.EndDate >= today && sd.EndDate <= today.AddDays(15), cancellationToken);
+            var total = await all.CountAsync(cancellationToken);
+            var active = await all.CountAsync(sd => sd.Status == SubscriptionStatus.Active
+                && sd.StartDate <= today && sd.EndDate >= today, cancellationToken);
+            var upcoming = await all.CountAsync(sd => sd.Status == SubscriptionStatus.Active
+                && sd.StartDate > today && sd.EndDate >= today, cancellationToken);
+            var expired = await all.CountAsync(sd => sd.EndDate < today, cancellationToken);
+            var expiringSoon = await all.CountAsync(sd => sd.Status == SubscriptionStatus.Active
+                && sd.StartDate <= today && sd.EndDate >= today && sd.EndDate <= soon, cancellationToken);
+            var overdue = await ApplyPaymentStateFilter(all, "overdue").CountAsync(cancellationToken);
 
             return new SubscriptionStatsDto
             {
                 Total = total,
                 Active = active,
                 Expired = expired,
-                ExpiringSoon = expiringSoon
+                ExpiringSoon = expiringSoon,
+                Upcoming = upcoming,
+                Overdue = overdue,
+            };
+        }
+
+        // SQL mirror of SubscriptionBilling.EffectiveStatus - keep the two in step.
+        private static IQueryable<SubscriptionDetails> ApplyEffectiveStatusFilter(
+            IQueryable<SubscriptionDetails> query, string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return query;
+            var today = TenantCalendar.Today;
+            var soon = today.AddDays(15);
+
+            return status.Trim().ToLowerInvariant() switch
+            {
+                "active" => query.Where(sd => sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate <= today && sd.EndDate >= today),
+                "upcoming" => query.Where(sd => sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate > today && sd.EndDate >= today),
+                "expiringsoon" => query.Where(sd => sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate <= today && sd.EndDate >= today && sd.EndDate <= soon),
+                "suspended" => query.Where(sd => sd.Status == SubscriptionStatus.Suspended),
+                "expired" => query.Where(sd => sd.Status == SubscriptionStatus.Expired
+                    || (sd.Status == SubscriptionStatus.Active && sd.EndDate < today)),
+                _ => query,
+            };
+        }
+
+        // SQL mirror of SubscriptionBilling.PaymentState over the subscription's non-cancelled invoice.
+        private static IQueryable<SubscriptionDetails> ApplyPaymentStateFilter(
+            IQueryable<SubscriptionDetails> query, string? paymentState)
+        {
+            if (string.IsNullOrWhiteSpace(paymentState)) return query;
+            var today = TenantCalendar.Today;
+
+            return paymentState.Trim().ToLowerInvariant() switch
+            {
+                "paid" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid >= l.Invoice.GrandTotal)),
+                "overdue" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid < l.Invoice.GrandTotal && l.Invoice.DueDate < today)),
+                "partiallypaid" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid > 0 && l.Invoice.AmountPaid < l.Invoice.GrandTotal && l.Invoice.DueDate >= today)),
+                "unpaid" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid == 0 && l.Invoice.GrandTotal > 0 && l.Invoice.DueDate >= today)),
+                // Anything still owed, overdue or not - "needs collecting".
+                "owed" => query.Where(sd => sd.InvoiceLines.Any(l => l.Invoice.Status != InvoiceStatus.Cancelled
+                    && l.Invoice.AmountPaid < l.Invoice.GrandTotal)),
+                _ => query,
             };
         }
     }

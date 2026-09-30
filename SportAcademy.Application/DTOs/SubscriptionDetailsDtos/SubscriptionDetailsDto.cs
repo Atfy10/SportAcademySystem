@@ -7,6 +7,9 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
     public record SubscriptionDetailsDto
     {
         public int Id { get; set; }
+        // Latest list only: start date of the next subscription this trainee already has queued in
+        // the same sport (shown in this row rather than as a row of its own).
+        public DateOnly? NextQueuedStartDate { get; set; }
         public TraineeSubDetailsDto Trainee { get; set; } = null!;
         public string SportName { get; set; } = null!;
         public string BranchName { get; set; } = null!;
@@ -20,6 +23,20 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
         // creation regardless of whether money had actually changed hands, which this
         // corrects. Reflects the most recently received payment when several exist.
         public PaymentSubDetailsDto? Payment { get; set; }
+        // Effective status: Active / Upcoming (starts later) / Suspended / Expired - see
+        // SubscriptionBilling.EffectiveStatus. Never the raw stored flag.
         public SubscriptionStatus Status { get; set; }
+
+        // The bill behind this subscription. Price above is the invoice total (after any discount);
+        // these say how much of it is settled and, if not, by when it has to be.
+        public string? InvoiceNumber { get; set; }
+        public int? InvoiceId { get; set; }
+        // The branch the bill belongs to - a balance must be collected at that branch.
+        public int? InvoiceBranchId { get; set; }
+        public string? Currency { get; set; }
+        public decimal AmountPaid { get; set; }
+        public decimal Balance { get; set; }
+        public DateOnly? BalanceDueDate { get; set; }
+        public SubscriptionPaymentState? PaymentState { get; set; }
     }
 }

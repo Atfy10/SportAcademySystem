@@ -7,7 +7,9 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetLatest
 {
     public record GetLatestSubDetailsQuery(
         PageRequest Page,
-        string? Term = null
+        string? Term = null,
+        string? Status = null,
+        string? PaymentState = null
     ) : IRequest<Result<PagedData<SubscriptionDetailsDto>>>, IPaginatedRequest
     {
         public PageRequest Page { get; set; } = Page;

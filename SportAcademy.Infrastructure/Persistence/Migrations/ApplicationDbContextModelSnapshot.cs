@@ -1035,6 +1035,9 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("DueDate")
                         .HasColumnType("date");
 
+                    b.Property<DateOnly?>("DueSoonNotifiedOn")
+                        .HasColumnType("date");
+
                     b.Property<decimal>("GrandTotal")
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
@@ -1055,6 +1058,15 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateOnly?>("OverdueNotifiedOn")
+                        .HasColumnType("date");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1084,6 +1096,8 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("DueDate");
 
                     b.HasIndex("InvoiceNumber")
                         .IsUnique();
@@ -1168,6 +1182,12 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal>("ReversedAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)")
+                        .HasDefaultValue(0m);
+
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceId");
@@ -1175,6 +1195,65 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.HasIndex("PaymentNumber");
 
                     b.ToTable("PaymentAllocations", (string)null);
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Finance.PaymentRefund", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PaymentNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("RefundedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("RefundedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentNumber");
+
+                    b.HasIndex("RefundedAt");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("PaymentRefunds", (string)null);
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.Finance.SalaryPayment", b =>
@@ -1285,6 +1364,9 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateOnly?>("BalanceDueDate")
+                        .HasColumnType("date");
+
                     b.Property<int>("BranchId")
                         .HasColumnType("int");
 
@@ -1296,6 +1378,14 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
 
                     b.Property<int?>("CreatedSubscriptionDetailsId")
                         .HasColumnType("int");
+
+                    b.Property<decimal?>("DepositAmount")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("DepositNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("DiscountCode")
                         .IsRequired()
@@ -1857,6 +1947,12 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("RefundedAmount")
                         .HasPrecision(18, 3)
                         .HasColumnType("decimal(18,3)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -4418,6 +4514,25 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Navigation("Payment");
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Finance.PaymentRefund", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Payment", "Payment")
+                        .WithMany("Refunds")
+                        .HasForeignKey("PaymentNumber")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.Finance.SalaryPayment", b =>
                 {
                     b.HasOne("SportAcademy.Domain.Entities.Branch", "Branch")
@@ -5482,6 +5597,8 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SportAcademy.Domain.Entities.Payment", b =>
                 {
                     b.Navigation("Allocations");
+
+                    b.Navigation("Refunds");
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.PaymentType", b =>

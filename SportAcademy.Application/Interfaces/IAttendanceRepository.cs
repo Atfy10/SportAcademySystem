@@ -16,6 +16,10 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<AttendanceDto>> GetAllAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<int> GetMonthlyAttendanceRate(Month month, int? year, CancellationToken ct = default);
         Task<int> GetGlobalAttendanceRate(CancellationToken ct = default);
+
+        // Attendance rate per trainee (see Domain.Services.AttendanceRate), for a whole page of
+        // trainees in one grouped query. Trainees with nothing marked yet are absent (rate 0).
+        Task<Dictionary<int, double>> GetAttendanceRatesAsync(IReadOnlyCollection<int> traineeIds, CancellationToken ct = default);
         Task<(int TotalSessions, int AttendedSessions)> GetAttendanceSummaryAsync(
             int traineeId,
             DateOnly? fromDate,

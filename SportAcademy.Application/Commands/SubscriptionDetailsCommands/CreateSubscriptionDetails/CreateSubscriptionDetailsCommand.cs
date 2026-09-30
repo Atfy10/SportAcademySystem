@@ -1,18 +1,19 @@
-﻿using MediatR;
+using MediatR;
 using SportAcademy.Application.Common.Result;
+using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscriptionDetails
 {
     // No EndDate: it's computed server-side from the plan's session count walked across
     // TrainingDays, so it can't disagree with the schedule the trainee will actually train on.
     // GroupType (public/private) is chosen here because it's what selects the price.
+    //
+    // PayDeposit: false (default) = the full total is recorded as paid now. true = only
+    // DepositAmount is recorded now; the rest stays owed on the invoice until BalanceDueDate
+    // (the collect date), after which it's flagged overdue. DepositNote: optional description of
+    // the deposit, saved as the payment's notes.
     public record CreateSubscriptionDetailsCommand(
         DateOnly StartDate,
         int TraineeId,
@@ -21,8 +22,12 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSu
         int BranchId,
         TraineeGroupType GroupType,
         List<DayOfWeek> TrainingDays,
-        int PaymentTypeId
-        ) : IRequest<Result<int>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch, IRequiresActiveSport
+        int PaymentTypeId,
+        bool PayDeposit = false,
+        decimal? DepositAmount = null,
+        DateOnly? BalanceDueDate = null,
+        string? DepositNote = null
+        ) : IRequest<Result<SubscriptionCreatedDto>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch, IRequiresActiveSport
     {
         public string FeatureKey => "enrollment-management";
     }

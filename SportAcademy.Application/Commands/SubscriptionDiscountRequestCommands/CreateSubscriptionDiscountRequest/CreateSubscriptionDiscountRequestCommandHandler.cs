@@ -23,14 +23,17 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
         private readonly IUserContextService _userContext;
         private readonly IUserRepository _userRepository;
         private readonly IPublisher _publisher;
+        private readonly Services.SubDetailsManagementService _subscriptionRules;
 
         public CreateSubscriptionDiscountRequestCommandHandler(
             ISubscriptionDiscountRequestRepository repository,
             IDiscountCodeRepository discountCodeRepository,
             IUserContextService userContext,
             IUserRepository userRepository,
-            IPublisher publisher)
+            IPublisher publisher,
+            Services.SubDetailsManagementService subscriptionRules)
         {
+            _subscriptionRules = subscriptionRules;
             _repository = repository;
             _discountCodeRepository = discountCodeRepository;
             _userContext = userContext;
@@ -45,6 +48,16 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
             _ = await _discountCodeRepository.GetActiveByCodeAsync(normalized, cancellationToken)
                 ?? throw new InvalidDiscountCodeException(request.DiscountCode);
 
+            // Same one-subscription-per-sport rule the approval will enforce - say so now, not
+            // after an approver has already looked at it.
+            await _subscriptionRules.ValidateSubscriptionAsync(new Domain.Entities.SubscriptionDetails
+            {
+                StartDate = request.StartDate,
+                EndDate = request.StartDate,
+                TraineeId = request.TraineeId,
+                SportId = request.SportId,
+            }, cancellationToken);
+
             var requestedByUserId = _userContext.UserId ?? Guid.Empty;
 
             var entity = new SubscriptionDiscountRequest
@@ -57,6 +70,9 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
                 GroupType = request.GroupType,
                 TrainingDays = request.TrainingDays.Distinct().OrderBy(d => d).ToList(),
                 PaymentTypeId = request.PaymentTypeId,
+                DepositAmount = request.PayDeposit ? request.DepositAmount : null,
+                BalanceDueDate = request.PayDeposit ? request.BalanceDueDate : null,
+                DepositNote = request.PayDeposit && !string.IsNullOrWhiteSpace(request.DepositNote) ? request.DepositNote.Trim() : null,
                 DiscountCode = normalized,
                 Status = SubscriptionDiscountRequestStatus.PendingApproval,
                 RequestedByUserId = requestedByUserId,

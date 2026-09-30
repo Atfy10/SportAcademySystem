@@ -22,7 +22,7 @@ public static class TraineeGroupProjections
         CoachName = g.Coach.Employee.FirstName + " " + g.Coach.Employee.LastName,
         BranchName = g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
         DurationInMinutes = g.DurationInMinutes,
-        TraineesCount = g.Enrollments.Count,
+        TraineesCount = g.Enrollments.Count(e => e.Status != EnrollmentStatus.Ended),
         MaximumCapacity = g.MaximumCapacity,
         SkillLevel = g.SkillLevel.ToString(),
         IsActive = g.IsActive,
@@ -30,6 +30,7 @@ public static class TraineeGroupProjections
         Schedules = g.GroupSchedules
             .Select(gs => new GroupSchedulesTimesDto { DayOfWeek = gs.Day.ToString(), StartTime = gs.StartTime })
             .ToList(),
+        Type = g.Type,
     };
 
     public static Expression<Func<TraineeGroup, ListTraineeGroupDto>> ToListDto(string lang) => g => new ListTraineeGroupDto(
@@ -39,7 +40,7 @@ public static class TraineeGroupProjections
         g.Coach.Employee.FirstName + " " + g.Coach.Employee.LastName,
         g.Branch.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? g.Branch.Name,
         g.DurationInMinutes,
-        g.Enrollments.Count,
+        g.Enrollments.Count(e => e.Status != EnrollmentStatus.Ended),
         g.MaximumCapacity,
         g.SkillLevel.ToString(),
         g.IsActive,
@@ -50,7 +51,8 @@ public static class TraineeGroupProjections
                 DayOfWeek = gs.Day.ToString(),
                 StartTime = gs.StartTime.ToString("HH:mm:ss"),
             })
-            .ToList());
+            .ToList(),
+        g.Type);
 
     /// <summary>
     /// The dropdown's shape as it comes out of the database, with training days still as raw

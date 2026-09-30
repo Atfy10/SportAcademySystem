@@ -12,12 +12,17 @@ public class GetAllTraineesOfSpecificDayQueryHandlerTests
 {
     private readonly Mock<IMapper> _mapperMock = new();
     private readonly Mock<ITraineeRepository> _traineeRepoMock = new();
+    private readonly Mock<IAttendanceRepository> _attendanceRepoMock = new();
     private readonly GetAllTraineesOfSpecificDayQueryHandler _handler;
 
     public GetAllTraineesOfSpecificDayQueryHandlerTests()
     {
+        _attendanceRepoMock
+            .Setup(r => r.GetAttendanceRatesAsync(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<int, double>());
         _handler = new GetAllTraineesOfSpecificDayQueryHandler(
             _traineeRepoMock.Object,
+            _attendanceRepoMock.Object,
             _mapperMock.Object);
     }
 

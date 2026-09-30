@@ -16,6 +16,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Finance
             builder.Property(r => r.DiscountCode).IsRequired().HasMaxLength(30);
             builder.Property(r => r.Status).IsRequired().HasConversion<string>().HasMaxLength(20);
             builder.Property(r => r.RejectionReason).HasMaxLength(500);
+            builder.Property(r => r.DepositAmount).HasPrecision(18, 3);
+            builder.Property(r => r.DepositNote).HasMaxLength(500);
 
             // Same storage shape as SubscriptionDetails' equivalents (string enum, delimited
             // day list) - these are the values the subscription is created from at approval time.

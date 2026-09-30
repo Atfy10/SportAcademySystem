@@ -38,5 +38,10 @@ namespace SportAcademy.Domain.Entities
         public virtual Branch Branch { get; set; } = null!;
         public virtual PaymentType PaymentType { get; set; } = null!;
         public ICollection<PaymentAllocation> Allocations { get; set; } = [];
+        public ICollection<PaymentRefund> Refunds { get; set; } = [];
+
+        // Optimistic-concurrency token: two people refunding/voiding the same payment at once
+        // must not both succeed against the same starting RefundedAmount.
+        public byte[] RowVersion { get; set; } = [];
     }
 }

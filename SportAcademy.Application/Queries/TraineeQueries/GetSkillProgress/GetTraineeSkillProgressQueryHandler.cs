@@ -37,10 +37,9 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetSkillProgress
                     .OrderBy(e => e.EffectiveDate)
                     .ToList();
 
-                if (sportEvents.Count == 0)
-                    continue;
-
-                var sportName = sportEvents[0].Sport?.Name ?? string.Empty;
+                // A sport with no recorded level yet is still returned (empty history), so the
+                // profile can say "set this trainee's level" instead of the sport being missing.
+                var sportName = sportTrainee.Sport?.Name ?? sportEvents.FirstOrDefault()?.Sport?.Name ?? string.Empty;
 
                 var history = new List<SkillLevelPeriodDto>();
                 for (var i = 0; i < sportEvents.Count; i++)

@@ -9,6 +9,7 @@ using SportAcademy.Application.Commands.TraineeGroupCommands.CreateTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.DeleteTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.PauseTraineeGroup;
 using SportAcademy.Application.Commands.TraineeGroupCommands.ResumeTraineeGroup;
+using SportAcademy.Application.Commands.TraineeGroupCommands.SwitchTraineeGroupToPrivate;
 using SportAcademy.Application.Commands.TraineeGroupCommands.UpdateTraineeGroup;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.AttendanceQueries.GetById;
@@ -52,11 +53,12 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] int? pageSize,
             [FromQuery] TimeOnly? fromTime,
             [FromQuery] TimeOnly? toTime,
+            [FromQuery] TraineeGroupType? type,
             CancellationToken cancellationToken
             )
         {
             var result = await _mediator.Send(
-                new GetAllTraineeGroupsQuery(PageRequest.Create(page, pageSize), fromTime, toTime),
+                new GetAllTraineeGroupsQuery(PageRequest.Create(page, pageSize), fromTime, toTime, type),
                 cancellationToken);
             return Ok(result);
         }
@@ -94,6 +96,19 @@ namespace SportAcademy.Web.Controllers
             CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new PauseTraineeGroupCommand(id, body?.Reason), cancellationToken);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:traineegroup.manage")]
+        [HttpPatch("{id}/switch-to-private")]
+        public async Task<IActionResult> SwitchToPrivate(
+            [FromRoute] int id,
+            [FromBody] SwitchTraineeGroupToPrivateRequest body,
+            CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(
+                new SwitchTraineeGroupToPrivateCommand(id, body.MaximumCapacity, body.KeepTraineeIds ?? []),
+                cancellationToken);
             return Ok(result);
         }
 
@@ -170,14 +185,17 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] int? pageSize,
             [FromQuery] TimeOnly? fromTime,
             [FromQuery] TimeOnly? toTime,
+            [FromQuery] TraineeGroupType? type,
             CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(
-                new SearchTraineeGroupsQuery(searchTerm, PageRequest.Create(page, pageSize), fromTime, toTime),
+                new SearchTraineeGroupsQuery(searchTerm, PageRequest.Create(page, pageSize), fromTime, toTime, type),
                 cancellationToken);
             return Ok(result);
         }
     }
 
     public record PauseTraineeGroupRequest(string? Reason);
+
+    public record SwitchTraineeGroupToPrivateRequest(int MaximumCapacity, List<int>? KeepTraineeIds);
 }

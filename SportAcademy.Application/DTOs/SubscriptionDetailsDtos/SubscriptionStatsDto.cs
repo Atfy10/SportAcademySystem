@@ -6,5 +6,9 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
         public int Active { get; init; }
         public int Expired { get; init; }
         public int ExpiringSoon { get; init; }
+        // Sold, but not started yet (start date in the future).
+        public int Upcoming { get; init; }
+        // Balance still owed and past its collect date.
+        public int Overdue { get; init; }
     }
 }

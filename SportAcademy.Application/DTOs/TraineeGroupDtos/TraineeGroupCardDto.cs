@@ -1,4 +1,5 @@
 ﻿using SportAcademy.Application.DTOs.GroupScheduleDtos;
+using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.DTOs.TraineeGroupDtos;
 
@@ -16,4 +17,5 @@ public record TraineeGroupCardDto
     public bool IsActive { get; init; }
     public string? InactiveReason { get; init; }
     public IReadOnlyList<GroupSchedulesTimesDto> Schedules { get; init; } = [];
+    public TraineeGroupType Type { get; init; }
 }

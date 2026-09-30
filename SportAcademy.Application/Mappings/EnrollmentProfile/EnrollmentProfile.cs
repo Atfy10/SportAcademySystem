@@ -53,12 +53,30 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.TraineeGroup.Coach.Employee.FirstName + " " + src.TraineeGroup.Coach.Employee.LastName))
                 .ForCtorParam("EnrollmentDate", opt => opt.MapFrom(src => src.EnrollmentDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("StartDate", opt => opt.MapFrom(src => src.SubscriptionDetails.StartDate.ToString("yyyy-MM-dd")))
-                .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
-                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
+                // The later of the subscription's end and the enrollment's own expiry: enrolling an
+                // upcoming subscription into the current group extends ExpiryDate ahead of the
+                // hand-over (see CreateEnrollmentCommandHandler), and the list must show that.
+                .ForCtorParam("EndDate", opt => opt.MapFrom(src =>
+                    DateOnly.FromDateTime(src.ExpiryDate) > src.SubscriptionDetails.EndDate
+                        ? DateOnly.FromDateTime(src.ExpiryDate).ToString("yyyy-MM-dd")
+                        : src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
+                // What was actually charged for the subscription (its invoice total, after any
+                // discount) - not the list price, which ignores discounts and later price edits.
+                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src =>
+                    src.SubscriptionDetails.InvoiceLines
+                        .Where(l => l.Invoice.Status != InvoiceStatus.Cancelled)
+                        .Select(l => (decimal?)l.Invoice.GrandTotal)
+                        .FirstOrDefault() ?? src.SubscriptionDetails.SportPrice.Price))
+                // From the subscription's bill, not the enrollment's expiry date (which said
+                // "Overdue" for any expired subscription, paid or not). Same rule as
+                // SubscriptionBilling.PaymentState: settled = Paid; balance past its collect date
+                // = Overdue; anything else still owed = Pending.
                 .ForCtorParam("PaymentStatus", opt => opt.MapFrom(src =>
-                    src.ExpiryDate < DateTime.UtcNow ? "Overdue" :
-                    (src.SubscriptionDetails != null &&
-                        src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid >= l.Invoice.GrandTotal) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid < l.Invoice.GrandTotal
+                        && l.Invoice.DueDate < DateOnly.FromDateTime(DateTime.UtcNow)) ? "Overdue" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
                     // Suspended checked before Expired: suspension freezes the enrollment - the
@@ -75,7 +93,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("TotalSessions", opt => opt.MapFrom(src => src.SessionAllowed))
                 .ForCtorParam("SessionRemaining", opt => opt.MapFrom(src => src.SessionRemaining))
                 .ForCtorParam("TraineeGroupId", opt => opt.MapFrom(src => src.TraineeGroupId))
-                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.TraineeGroup.Coach.SportId));
+                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.TraineeGroup.Coach.SportId))
+                .ForCtorParam("GroupType", opt => opt.MapFrom(src => src.TraineeGroup.Type));
 
             CreateMap<Enrollment, EnrollmentDetailDto>()
                 .ForCtorParam("Id", opt => opt.MapFrom(src => src.Id))
@@ -87,13 +106,28 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("CoachName", opt => opt.MapFrom(src => src.TraineeGroup.Coach.Employee.FirstName + " " + src.TraineeGroup.Coach.Employee.LastName))
                 .ForCtorParam("EnrollmentDate", opt => opt.MapFrom(src => src.EnrollmentDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("StartDate", opt => opt.MapFrom(src => src.SubscriptionDetails.StartDate.ToString("yyyy-MM-dd")))
-                .ForCtorParam("EndDate", opt => opt.MapFrom(src => src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
+                .ForCtorParam("EndDate", opt => opt.MapFrom(src =>
+                    DateOnly.FromDateTime(src.ExpiryDate) > src.SubscriptionDetails.EndDate
+                        ? DateOnly.FromDateTime(src.ExpiryDate).ToString("yyyy-MM-dd")
+                        : src.SubscriptionDetails.EndDate.ToString("yyyy-MM-dd")))
                 .ForCtorParam("ExpiryDate", opt => opt.MapFrom(src => src.ExpiryDate.ToString("yyyy-MM-dd")))
-                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src => src.SubscriptionDetails.SportPrice.Price))
+                // What was actually charged for the subscription (its invoice total, after any
+                // discount) - not the list price, which ignores discounts and later price edits.
+                .ForCtorParam("MonthlyFee", opt => opt.MapFrom(src =>
+                    src.SubscriptionDetails.InvoiceLines
+                        .Where(l => l.Invoice.Status != InvoiceStatus.Cancelled)
+                        .Select(l => (decimal?)l.Invoice.GrandTotal)
+                        .FirstOrDefault() ?? src.SubscriptionDetails.SportPrice.Price))
+                // From the subscription's bill, not the enrollment's expiry date (which said
+                // "Overdue" for any expired subscription, paid or not). Same rule as
+                // SubscriptionBilling.PaymentState: settled = Paid; balance past its collect date
+                // = Overdue; anything else still owed = Pending.
                 .ForCtorParam("PaymentStatus", opt => opt.MapFrom(src =>
-                    src.ExpiryDate < DateTime.UtcNow ? "Overdue" :
-                    (src.SubscriptionDetails != null &&
-                        src.SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid)) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid >= l.Invoice.GrandTotal) ? "Paid" :
+                    src.SubscriptionDetails != null && src.SubscriptionDetails.InvoiceLines.Any(l =>
+                        l.Invoice.Status != InvoiceStatus.Cancelled && l.Invoice.AmountPaid < l.Invoice.GrandTotal
+                        && l.Invoice.DueDate < DateOnly.FromDateTime(DateTime.UtcNow)) ? "Overdue" :
                     "Pending"))
                 .ForCtorParam("Status", opt => opt.MapFrom(src =>
                     // Suspended checked before Expired: suspension freezes the enrollment - the
@@ -112,7 +146,8 @@ namespace SportAcademy.Application.Mappings.EnrollmentProfile
                 .ForCtorParam("SubscriptionDetailsId", opt => opt.MapFrom(src => src.SubscriptionDetailsId))
                 .ForCtorParam("SessionRemaining", opt => opt.MapFrom(src => src.SessionRemaining))
                 .ForCtorParam("TraineeGroupId", opt => opt.MapFrom(src => src.TraineeGroupId))
-                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.TraineeGroup.Coach.SportId));
+                .ForCtorParam("SportId", opt => opt.MapFrom(src => src.TraineeGroup.Coach.SportId))
+                .ForCtorParam("GroupType", opt => opt.MapFrom(src => src.TraineeGroup.Type));
         }
     }
 }

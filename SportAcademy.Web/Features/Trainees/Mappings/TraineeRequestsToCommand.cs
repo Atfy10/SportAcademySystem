@@ -27,6 +27,8 @@ public static class TraineeRequestsToCommand
             Nationality = request.Nationality,
             Street = request.Street,
             City = request.City,
+            MedicalConditions = request.MedicalConditions ?? [],
+            ImageUrl = request.ImageUrl,
         };
 
     public static UpdateTraineePersonalInfoCommand ToCommand(this UpdateTraineePersonalInfoRequest request, int id)

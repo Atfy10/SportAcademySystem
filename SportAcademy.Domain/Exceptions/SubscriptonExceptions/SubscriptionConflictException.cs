@@ -1,16 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SportAcademy.Domain.Exceptions.BaseExceptions;
 
 namespace SportAcademy.Domain.Exceptions.SubscriptonExceptions
 {
-    public class SubscriptionConflictException : Exception
+    // A trainee can hold only one subscription per sport at a time, and a new one has to start
+    // after the latest one they have in that sport ends - never before or during it. Localizable
+    // (was a plain Exception, which reached the user as a generic "something went wrong") and
+    // tells them the first date that would be accepted.
+    public class SubscriptionConflictException : LocalizableException
     {
-        private static readonly string _message = "The trainee has an active subscription for same sport that conflicts with the new subscription.";
-        public SubscriptionConflictException() : base(_message) { }
-        public SubscriptionConflictException(Exception innerException)
-            : base(_message, innerException) { }
+        public SubscriptionConflictException(DateOnly existingEndDate)
+            : base(
+                "errors.subscription.sameSportConflict",
+                $"This trainee already has a subscription for this sport until {existingEndDate:yyyy-MM-dd}. A new one can start on {existingEndDate.AddDays(1):yyyy-MM-dd} at the earliest.",
+                existingEndDate.ToString("yyyy-MM-dd"),
+                existingEndDate.AddDays(1).ToString("yyyy-MM-dd"))
+        {
+        }
     }
 }

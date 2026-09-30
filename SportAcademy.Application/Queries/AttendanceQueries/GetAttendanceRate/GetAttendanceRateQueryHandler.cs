@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using SportAcademy.Domain.Services;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.AttendanceDtos;
 using SportAcademy.Application.Interfaces;
@@ -33,9 +34,7 @@ namespace SportAcademy.Application.Queries.AttendanceQueries.GetAttendanceRate
                     request.ToDate,
                     cancellationToken);
 
-            double rate = total == 0
-                ? 0
-                : Math.Round((double)(attended / total * 100), 2);
+            double rate = AttendanceRate.Percent(attended, total);
 
             var dto = new AttendanceRateDto(
                 request.TraineeId,

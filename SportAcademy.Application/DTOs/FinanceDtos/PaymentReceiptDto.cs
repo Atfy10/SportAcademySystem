@@ -2,7 +2,32 @@ using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Application.DTOs.FinanceDtos;
 
-public record PaymentReceiptAllocationDto(int InvoiceId, string InvoiceNumber, decimal Amount);
+// Everything a printable customer receipt needs: who paid for what, how much of the bill this
+// settled, what is still owed and by when, and any money given back since.
+public record PaymentReceiptAllocationDto(
+    int InvoiceId,
+    string InvoiceNumber,
+    decimal Amount,
+    decimal ReversedAmount = 0,
+    decimal InvoiceTotal = 0,
+    decimal InvoiceDiscount = 0,
+    decimal InvoicePaidToDate = 0,
+    decimal InvoiceBalance = 0,
+    DateOnly? InvoiceDueDate = null,
+    string? SportName = null,
+    string? SubscriptionTypeName = null,
+    DateOnly? SubscriptionStartDate = null,
+    DateOnly? SubscriptionEndDate = null);
+
+public record PaymentReceiptTraineeDto(int Id, string FullName, string? PhoneNumber, string? Code);
+
+public record PaymentRefundDto(
+    int Id,
+    PaymentRefundKind Kind,
+    decimal Amount,
+    string Reason,
+    DateTime RefundedAt,
+    string? RefundedByName);
 
 public record PaymentReceiptDto(
     string PaymentNumber,
@@ -15,4 +40,7 @@ public record PaymentReceiptDto(
     string Currency,
     string? Reference,
     string? Notes,
-    List<PaymentReceiptAllocationDto> Allocations);
+    List<PaymentReceiptAllocationDto> Allocations,
+    List<PaymentReceiptTraineeDto>? Trainees = null,
+    string? RecordedByName = null,
+    List<PaymentRefundDto>? Refunds = null);

@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using SportAcademy.Application.Commands.SubscriptionDetailsCommands.CreateSubscriptionDetails;
 using SportAcademy.Application.Interfaces;
 
@@ -11,10 +11,10 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 
+            // No upper bound: a subscription can be sold today for any future start (it shows as
+            // Upcoming until then). Past dates stay allowed for back-dating paper sign-ups.
             RuleFor(x => x.StartDate)
-                .NotEmpty().WithMessage("Please select a start date.")
-                .Must(x => x <= DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)))
-                .WithMessage("Start date can’t be more than 30 days from today.");
+                .NotEmpty().WithMessage("Please select a start date.");
 
             // No EndDate rule - it's derived from TrainingDays and the plan's session count in
             // SubscriptionCreationService, never submitted by the client.
@@ -43,6 +43,8 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
             RuleFor(x => x.PaymentTypeId)
                 .GreaterThan(0).WithMessage("A payment type must be selected.");
 
+            this.ApplyDepositRules(x => x.PayDeposit, x => x.DepositAmount, x => x.BalanceDueDate, x => x.DepositNote);
+
             RuleFor(x => x)
                 .MustAsync(async (cmd, ct) =>
                 {
@@ -50,6 +52,19 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
                     return exists;
                 })
                 .WithMessage("No price configured for this sport, branch, plan, and group type combination.");
+
+            // Deposit vs the real total. Only reachable once the price is known to exist (cascade
+            // stops at the rule above otherwise).
+            RuleFor(x => x)
+                .MustAsync(async (cmd, ct) =>
+                {
+                    var price = await sportPriceRepository.GetByKeyWithIncludesAsync(
+                        cmd.BranchId, cmd.SportId, cmd.SubscriptionTypeId, cmd.GroupType, ct);
+                    return price is null || cmd.DepositAmount < price.Price;
+                })
+                .When(x => x.PayDeposit && x.DepositAmount.HasValue)
+                .WithName(nameof(CreateSubscriptionDetailsCommand.DepositAmount))
+                .WithMessage("The deposit must be less than the subscription total. To pay everything now, untick \"Pay a deposit\".");
         }
     }
 }

@@ -8,7 +8,7 @@ namespace SportAcademy.Application.Interfaces
     {
         Task<int> GetCountAsync(CancellationToken cancellation = default);
         Task<PagedData<ListTraineeGroupDto>> GetAllOfSpecificDayAsync(PageRequest page, DateTime day, CancellationToken cancellationToken = default);
-        Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, CancellationToken cancellationToken = default);
+        Task<PagedData<TraineeGroupCardDto>> GetAllAsCardAsync(PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, Domain.Enums.TraineeGroupType? type = null, CancellationToken cancellationToken = default);
         Task<TraineeGroupDetailDto?> GetDetailsByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<List<TraineeGroupDropdownDto>> GetAllForDropdownAsync(int? sportId = null, Domain.Enums.SkillLevel? minSkillLevel = null, Domain.Enums.Gender? gender = null, Domain.Enums.TraineeGroupType? groupType = null, IReadOnlyCollection<DayOfWeek>? trainingDays = null, CancellationToken cancellationToken = default);
         Task<TraineeGroup?> GetByIdWithSchedulesAsync(int id, CancellationToken cancellationToken = default);
@@ -20,7 +20,7 @@ namespace SportAcademy.Application.Interfaces
         /// counted across the pattern chosen here.
         /// </summary>
         Task<List<GroupDayPatternDto>> GetDayPatternsAsync(int sportId, int branchId, Domain.Enums.TraineeGroupType? groupType = null, CancellationToken cancellationToken = default);
-        Task<PagedData<ListTraineeGroupDto>> SearchAsync(string term, PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, CancellationToken cancellationToken = default);
+        Task<PagedData<ListTraineeGroupDto>> SearchAsync(string term, PageRequest page, TimeOnly? fromTime = null, TimeOnly? toTime = null, Domain.Enums.TraineeGroupType? type = null, CancellationToken cancellationToken = default);
         Task<int?> GetSportIdAsync(int traineeGroupId, CancellationToken cancellationToken = default);
 
         /// <summary>Tracked, with Translations and GroupSchedules eagerly loaded - for the Update

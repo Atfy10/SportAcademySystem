@@ -44,12 +44,17 @@ namespace SportAcademy.Domain.Entities
         public virtual ICollection<Attendance> Attendances { get; set; } = [];
         public virtual SubscriptionDetails SubscriptionDetails { get; set; } = null!;
 
+        // From the subscription's bill (see SubscriptionBilling.PaymentState) - not from
+        // ExpiryDate, which made every expired subscription "Overdue" whether it was paid or not.
         public string GetPaymentStatus()
         {
-            if (ExpiryDate < DateTime.UtcNow) return "Overdue";
-            if (SubscriptionDetails != null &&
-                SubscriptionDetails.InvoiceLines.Any(l => l.Invoice.Status == InvoiceStatus.Paid))
-                return "Paid";
+            var invoices = SubscriptionDetails?.InvoiceLines
+                .Select(l => l.Invoice)
+                .Where(i => i is not null && i.Status != InvoiceStatus.Cancelled)
+                .ToList() ?? [];
+
+            if (invoices.Any(i => i.AmountPaid >= i.GrandTotal)) return "Paid";
+            if (invoices.Any(i => i.DueDate < DateOnly.FromDateTime(DateTime.UtcNow))) return "Overdue";
             return "Pending";
         }
 

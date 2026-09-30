@@ -15,7 +15,11 @@ namespace SportAcademy.Application.Commands.SubscriptionDiscountRequestCommands.
         TraineeGroupType GroupType,
         List<DayOfWeek> TrainingDays,
         int PaymentTypeId,
-        string DiscountCode
+        string DiscountCode,
+        bool PayDeposit = false,
+        decimal? DepositAmount = null,
+        DateOnly? BalanceDueDate = null,
+        string? DepositNote = null
     ) : IRequest<Result<SubscriptionDiscountRequestDto>>, IBranchScopedRequest, IRequiresFeature, IRequiresActiveBranch, IRequiresActiveSport
     {
         public string FeatureKey => "discount-offers";

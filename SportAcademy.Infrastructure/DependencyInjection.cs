@@ -104,12 +104,15 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<ITraineeService, TraineeService>();
             services.AddScoped<IPersonService, PersonService>();
             services.AddScoped<ITraineeCodeGenerator, SqlTraineeCodeGenerator>();
+            services.AddScoped<ITraineeImportLookup, Services.TraineeImportLookup>();
 
             // Register background services
             services.AddHostedService<RefreshTokenCleanupService>();
             services.AddHostedService<InvitationExpiryService>();
             services.AddHostedService<TenantArchivalService>();
             services.AddHostedService<EnrollmentLapseService>();
+            services.AddHostedService<SubscriptionLifecycleService>();
+            services.AddHostedService<OverdueBalanceService>();
             services.AddHostedService<SessionOccurrenceCompletionService>();
             services.AddHostedService<LimitReconciliationDeadlineService>();
             services.AddHostedService<NotificationDeliveryWorker>();

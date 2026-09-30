@@ -28,6 +28,12 @@ public class SubscriptionDiscountRequest : ITenantScoped, IBranchScoped, IAudita
     public TraineeGroupType GroupType { get; set; }
     public List<DayOfWeek> TrainingDays { get; set; } = [];
     public int PaymentTypeId { get; set; }
+
+    // Deposit captured at request time (null = pay in full on approval). The deposit is checked
+    // against the *discounted* total at approval, when that total is finally known.
+    public decimal? DepositAmount { get; set; }
+    public DateOnly? BalanceDueDate { get; set; }
+    public string? DepositNote { get; set; }
     public required string DiscountCode { get; set; }   // raw code as typed, re-validated at approval time
     public SubscriptionDiscountRequestStatus Status { get; set; } = SubscriptionDiscountRequestStatus.PendingApproval;
     public Guid RequestedByUserId { get; set; }

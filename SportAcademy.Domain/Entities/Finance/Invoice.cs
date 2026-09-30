@@ -29,6 +29,16 @@ public class Invoice : ITenantScoped, IAuditableEntity, ISoftDeletable, IBranchS
     public decimal AmountPaid { get; set; }
     public string? Notes { get; set; }
 
+    // Stamped by OverdueBalanceService so each overdue / due-soon balance is announced once,
+    // not every day. Cleared whenever DueDate moves (e.g. a refund reopening the balance with a
+    // new collect date), so the new date gets its own reminders.
+    public DateOnly? OverdueNotifiedOn { get; set; }
+    public DateOnly? DueSoonNotifiedOn { get; set; }
+
+    // Optimistic-concurrency token: two payments against the same invoice at once must not
+    // both pass the "no overpayment" check against the same starting AmountPaid.
+    public byte[] RowVersion { get; set; } = [];
+
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
     public string? DeletedBy { get; set; }

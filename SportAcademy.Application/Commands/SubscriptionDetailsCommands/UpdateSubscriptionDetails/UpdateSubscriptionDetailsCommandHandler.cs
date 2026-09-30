@@ -5,6 +5,7 @@ using SportAcademy.Application.DTOs.SubscriptionDetailsDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Domain.Exceptions.PaymentExceptions;
 using SportAcademy.Domain.Exceptions.SubscriptonExceptions;
 using SportAcademy.Domain.Services;
 using System.Buffers;
@@ -33,6 +34,15 @@ namespace SportAcademy.Application.Commands.SubscriptionDetailsCommands.UpdateSu
         {
             var subDetails = await _subscriptionDetailsRepository.GetByIdAsync(request.Id)
                 ?? throw new SubscriptionDetailsNotFoundException(request.Id.ToString());
+
+            // Who, what and where decide the price the invoice was issued for. Changing any of
+            // them here would silently leave the invoice billing for something else - only the
+            // dates are editable after billing.
+            if ((request.TraineeId is { } traineeId && traineeId != subDetails.TraineeId)
+                || (request.SportId is { } sportId && sportId != subDetails.SportId)
+                || (request.BranchId is { } branchId && branchId != subDetails.BranchId)
+                || (request.SubscriptionTypeId is { } typeId && typeId != subDetails.SubscriptionTypeId))
+                throw FinanceRuleException.SubscriptionBillingFieldsLocked();
 
             _mapper.Map(request, subDetails);
 

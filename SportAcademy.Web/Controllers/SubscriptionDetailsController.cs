@@ -109,10 +109,12 @@ namespace SportAcademy.Web.Controllers
             [FromQuery] int? page,
             [FromQuery] int? pageSize,
             [FromQuery] string? term,
+            [FromQuery] string? status,
+            [FromQuery] string? paymentState,
             CancellationToken ct)
         {
             var result = await _mediator.Send(
-                new GetLatestSubDetailsQuery(PageRequest.Create(page, pageSize), term), ct);
+                new GetLatestSubDetailsQuery(PageRequest.Create(page, pageSize), term, status, paymentState), ct);
             return Ok(result);
         }
 
