@@ -10,6 +10,7 @@ using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Regional;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Services;
 using SportAcademy.Domain.Entities;
 using SportAcademy.Infrastructure;
 using SportAcademy.Infrastructure.Implementations;
@@ -502,6 +503,14 @@ app.Use(async (context, next) =>
 
     var tenantIdProvider = context.RequestServices.GetRequiredService<ITenantIdProvider>();
     tenantIdProvider.SetTenantId(userContext.TenantId);
+
+    // The academy's own "today" (its time zone), used wherever a subscription's Upcoming/Active/
+    // Expired state is decided - see TenantCalendar.
+    if (userContext.TenantId is not null)
+    {
+        var clock = context.RequestServices.GetRequiredService<ITenantClock>();
+        TenantCalendar.Set(DateOnly.FromDateTime(await clock.GetLocalNowAsync(context.RequestAborted)));
+    }
 
     // Only "Employee" is branch-restricted (see IBranchAccessProvider) - every other
     // authenticated role stays unrestricted. Queried fresh per request (not baked into the

@@ -37,13 +37,12 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetAll
                 ? await _traineeRepository.SearchAsync("", request.Page, request.SportId, request.Status, request.SortBy, request.SortDir, cancellationToken)
                 : await _traineeRepository.GetAllPaginatedAsync<TraineeCardDto>(request.Page, cancellationToken);
 
+            // One grouped query for the whole page (was one query per trainee, with an integer
+            // division that turned every rate under 100% into 0).
+            var rates = await _attendanceRepository.GetAttendanceRatesAsync(
+                traineesDto.Items.Select(t => t.Id).ToList(), cancellationToken);
             foreach (var trainee in traineesDto.Items)
-            {
-                (int totalSessions, int attendendedSessions) = await _attendanceRepository.GetAttendanceSummaryAsync(trainee.Id, null, null, cancellationToken);
-                trainee.AttendanceRate = totalSessions == 0
-                    ? 0
-                    : Math.Round((double)(attendendedSessions / totalSessions * 100), 2);
-            }
+                trainee.AttendanceRate = rates.GetValueOrDefault(trainee.Id);
 
             return Result<PagedData<TraineeCardDto>>.Success(traineesDto, _operationType);
         }

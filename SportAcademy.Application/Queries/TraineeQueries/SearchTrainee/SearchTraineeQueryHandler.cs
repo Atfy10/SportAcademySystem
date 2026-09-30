@@ -40,13 +40,10 @@ namespace SportAcademy.Application.Queries.TraineeQueries.SearchTrainee
                 cancellationToken
             );
 
+            var rates = await _attendanceRepository.GetAttendanceRatesAsync(
+                trainees.Items.Select(t => t.Id).ToList(), cancellationToken);
             foreach (var trainee in trainees.Items)
-            {
-                (int totalSessions, int attendendedSessions) = await _attendanceRepository.GetAttendanceSummaryAsync(trainee.Id, null, null, cancellationToken);
-                trainee.AttendanceRate = totalSessions == 0
-                    ? 0
-                    : Math.Round((double)(attendendedSessions / totalSessions * 100), 2);
-            }
+                trainee.AttendanceRate = rates.GetValueOrDefault(trainee.Id);
 
             sw.Stop();
 

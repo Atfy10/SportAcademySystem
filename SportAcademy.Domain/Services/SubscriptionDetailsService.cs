@@ -41,9 +41,25 @@ namespace SportAcademy.Domain.Services
             return false;
         }
 
+        // The trainee's same-sport subscription a new (or re-dated) one would clash with: any other
+        // subscription in that sport that ends on or after the new start date - i.e. one that
+        // overlaps it, or one that starts later (a new subscription can't be slotted in before an
+        // existing/upcoming one). Returns the one ending last, so the message can say from when a
+        // new subscription would be accepted. Any status counts: a suspended subscription still
+        // owns its period.
+        public static SubscriptionDetails? FindSameSportConflict(
+            SubscriptionDetails candidate, IEnumerable<SubscriptionDetails>? existing)
+            => existing?
+                .Where(e => e.Id != candidate.Id
+                    && e.SportId == candidate.SportId
+                    && !e.IsDeleted
+                    && e.EndDate >= candidate.StartDate)
+                .OrderByDescending(e => e.EndDate)
+                .FirstOrDefault();
+
         public static bool IsSubscriptionActive(SubscriptionDetails subscriptionDetails)
-            => subscriptionDetails.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)
-            && subscriptionDetails.StartDate <= DateOnly.FromDateTime(DateTime.UtcNow);
+            => subscriptionDetails.EndDate >= TenantCalendar.Today
+            && subscriptionDetails.StartDate <= TenantCalendar.Today;
 
         // Distinct from "not currently active": a subscription that hasn't started yet
         // (StartDate in the future) isn't active *today* either, but it hasn't expired - it's
@@ -52,6 +68,6 @@ namespace SportAcademy.Domain.Services
         // !IsSubscriptionActive, or a future-dated (e.g. a renewal starting tomorrow) subscription
         // gets mislabeled Expired the moment it's created.
         public static bool HasExpired(SubscriptionDetails subscriptionDetails)
-            => subscriptionDetails.EndDate < DateOnly.FromDateTime(DateTime.UtcNow);
+            => subscriptionDetails.EndDate < TenantCalendar.Today;
     }
 }

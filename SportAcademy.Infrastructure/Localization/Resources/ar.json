@@ -93,6 +93,7 @@
   "errors.db.duplicate": "هذا السجل مكرر لسجل موجود بالفعل.",
   "errors.db.tooLong": "إحدى القيم أطول من المسموح.",
   "errors.db.reference": "يشير هذا إلى شيء غير موجود (أو ما زال مستخدماً في مكان آخر).",
+  "errors.subscription.sameSportConflict": "لدى هذا المتدرب اشتراك في نفس الرياضة حتى {0}. يمكن أن يبدأ الاشتراك الجديد في {1} كحد أدنى.",
   "errors.employee.alreadyCoach": "لدى هذا الموظف بالفعل سجل مدرب نشط.",
 
   "entity.Trainee": "المتدرب",

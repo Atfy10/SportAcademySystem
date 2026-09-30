@@ -1,18 +1,24 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using SportAcademy.Domain.Contract;
+using SportAcademy.Domain.Services;
 using SportAcademy.Infrastructure.Persistence.DBContext;
 
 namespace SportAcademy.Infrastructure.Services;
 
 public class TenantClock : ITenantClock
 {
+    private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(10);
+
     private readonly ApplicationDbContext _context;
     private readonly ITenantIdProvider _tenantIdProvider;
+    private readonly IMemoryCache? _cache;
 
-    public TenantClock(ApplicationDbContext context, ITenantIdProvider tenantIdProvider)
+    public TenantClock(ApplicationDbContext context, ITenantIdProvider tenantIdProvider, IMemoryCache? cache = null)
     {
         _context = context;
         _tenantIdProvider = tenantIdProvider;
+        _cache = cache;
     }
 
     public async Task<DateTime> GetLocalNowAsync(CancellationToken cancellationToken = default)
@@ -21,24 +27,27 @@ public class TenantClock : ITenantClock
         var tenantId = _tenantIdProvider.TenantId;
         if (tenantId is null) return utcNow;
 
+        // Cached per tenant: this now runs once per request (to set TenantCalendar.Today), and a
+        // tenant's time zone changes about never. An invalid/unrecognized IANA id must not break
+        // session generation or attendance marking - it falls back to UTC.
+        var timeZoneId = await GetTimeZoneIdAsync(tenantId.Value, cancellationToken);
+        var timeZone = TenantCalendar.FindTimeZone(timeZoneId);
+        return timeZone is null ? utcNow : TimeZoneInfo.ConvertTimeFromUtc(utcNow, timeZone);
+    }
+
+    private async Task<string?> GetTimeZoneIdAsync(Guid tenantId, CancellationToken ct)
+    {
+        var key = $"tenant-timezone:{tenantId}";
+        if (_cache is not null && _cache.TryGetValue(key, out string? cached))
+            return cached;
+
         var timeZoneId = await _context.TenantSettings
             .AsNoTracking()
             .Where(s => s.TenantId == tenantId)
             .Select(s => s.TimeZone)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(ct);
 
-        if (string.IsNullOrWhiteSpace(timeZoneId)) return utcNow;
-
-        try
-        {
-            var timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-            return TimeZoneInfo.ConvertTimeFromUtc(utcNow, timeZone);
-        }
-        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
-        {
-            // An invalid/unrecognized IANA id in TenantSettings.TimeZone must not break session
-            // generation or attendance marking - fall back to UTC rather than throwing.
-            return utcNow;
-        }
+        _cache?.Set(key, timeZoneId, CacheFor);
+        return timeZoneId;
     }
 }

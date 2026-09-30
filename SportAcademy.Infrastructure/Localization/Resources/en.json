@@ -93,6 +93,7 @@
   "errors.db.duplicate": "This record duplicates one that already exists.",
   "errors.db.tooLong": "One of the values is longer than allowed.",
   "errors.db.reference": "This refers to something that doesn't exist (or is still used elsewhere).",
+  "errors.subscription.sameSportConflict": "This trainee already has a subscription for this sport until {0}. A new one can start on {1} at the earliest.",
   "errors.employee.alreadyCoach": "This employee already has an active coach record.",
 
   "entity.Trainee": "trainee",

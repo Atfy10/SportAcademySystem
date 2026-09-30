@@ -20,13 +20,15 @@ namespace SportAcademy.Application.Services
         // split corrects.
         public async Task ValidateSubscriptionAsync(SubscriptionDetails sub, CancellationToken ct)
         {
-            var activeSubs = await _subscriptionDetailsRepository
-                .GetActiveSubscriptionDetailsForTraineeAsync(sub.TraineeId, ct);
+            // Every one of the trainee's subscriptions (any status), not just Active ones: a
+            // suspended or upcoming subscription still owns its dates, and the old Active-only
+            // check let a new subscription start before - or inside - an upcoming one.
+            var existing = await _subscriptionDetailsRepository
+                .GetSubscriptionDetailsForTraineeAsync(sub.TraineeId, ct);
 
-            var hasConflict = SubscriptionDetailsService.HasActiveSubscriptionConflict(
-                sub, activeSubs);
-            if (hasConflict)
-                throw new SubscriptionConflictException();
+            var conflict = SubscriptionDetailsService.FindSameSportConflict(sub, existing);
+            if (conflict is not null)
+                throw new SubscriptionConflictException(conflict.EndDate);
         }
     }
 }

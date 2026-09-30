@@ -28,7 +28,9 @@ namespace SportAcademy.Infrastructure.BackgroundServices
     public class SubscriptionLifecycleService : BackgroundService
     {
         private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
-        private static readonly TimeSpan Interval = TimeSpan.FromHours(3);
+        // Hourly, so a subscription starting today is handed its enrollment within an hour of the
+        // academy's own midnight (reads already show it as Active from that midnight).
+        private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<SubscriptionLifecycleService> _logger;
@@ -79,19 +81,39 @@ namespace SportAcademy.Infrastructure.BackgroundServices
             using var scope = _scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var tenantProvider = scope.ServiceProvider.GetRequiredService<ITenantIdProvider>();
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-            var handedOver = await HandOverStartedRenewalsAsync(context, tenantProvider, today, ct);
+            // Each academy on its own calendar: "today" is its local date (TenantSettings.TimeZone),
+            // the same date the console uses to show Upcoming vs Active.
+            var tenants = await context.Tenants
+                .IgnoreQueryFilters()
+                .Select(t => new
+                {
+                    t.Id,
+                    TimeZone = context.TenantSettings.IgnoreQueryFilters()
+                        .Where(s => s.TenantId == t.Id).Select(s => s.TimeZone).FirstOrDefault(),
+                })
+                .ToListAsync(ct);
 
-            // After the hand-over, so a renewal starting today has already taken the enrollment
-            // before the subscription it replaces is (also) expired by date below.
-            int expired;
-            using (tenantProvider.AllowCrossTenantOperation())
+            var handedOver = 0;
+            var expired = 0;
+            foreach (var tenant in tenants)
             {
-                expired = await context.SubscriptionDetails
-                    .IgnoreQueryFilters()
-                    .Where(sd => !sd.IsDeleted && sd.Status == SubscriptionStatus.Active && sd.EndDate < today)
-                    .ExecuteUpdateAsync(s => s.SetProperty(sd => sd.Status, SubscriptionStatus.Expired), ct);
+                var today = TenantCalendar.TodayIn(TenantCalendar.FindTimeZone(tenant.TimeZone));
+
+                handedOver += await HandOverStartedRenewalsAsync(context, tenantProvider, tenant.Id, today, ct);
+
+                // After the hand-over, so a renewal starting today has already taken the enrollment
+                // before the subscription it replaces is (also) expired by date below.
+                using (tenantProvider.AllowCrossTenantOperation())
+                {
+                    expired += await context.SubscriptionDetails
+                        .IgnoreQueryFilters()
+                        .Where(sd => sd.TenantId == tenant.Id && !sd.IsDeleted
+                            && sd.Status == SubscriptionStatus.Active && sd.EndDate < today)
+                        .ExecuteUpdateAsync(s => s.SetProperty(sd => sd.Status, SubscriptionStatus.Expired), ct);
+                }
+
+                context.ChangeTracker.Clear();
             }
 
             if (handedOver > 0 || expired > 0)
@@ -100,7 +122,7 @@ namespace SportAcademy.Infrastructure.BackgroundServices
         }
 
         private static async Task<int> HandOverStartedRenewalsAsync(
-            ApplicationDbContext context, ITenantIdProvider tenantProvider, DateOnly today, CancellationToken ct)
+            ApplicationDbContext context, ITenantIdProvider tenantProvider, Guid tenantId, DateOnly today, CancellationToken ct)
         {
             // Started, still running, and not yet backing any enrollment - but the trainee has an
             // open enrollment in the same sport that still points at an EARLIER subscription.
@@ -108,7 +130,8 @@ namespace SportAcademy.Infrastructure.BackgroundServices
             // no such enrollment and is left for staff to enroll as usual.
             var pending = await context.SubscriptionDetails
                 .IgnoreQueryFilters()
-                .Where(sd => !sd.IsDeleted
+                .Where(sd => sd.TenantId == tenantId
+                    && !sd.IsDeleted
                     && sd.Status == SubscriptionStatus.Active
                     && sd.StartDate <= today
                     && sd.EndDate >= today

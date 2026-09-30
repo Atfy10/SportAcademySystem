@@ -9,7 +9,7 @@ namespace SportAcademy.Domain.Services
     // filter and the stat card can't disagree.
     public static class SubscriptionBilling
     {
-        public static DateOnly Today => DateOnly.FromDateTime(DateTime.UtcNow);
+        public static DateOnly Today => TenantCalendar.Today;
 
         public static SubscriptionStatus EffectiveStatus(SubscriptionDetails sd, DateOnly today)
         {

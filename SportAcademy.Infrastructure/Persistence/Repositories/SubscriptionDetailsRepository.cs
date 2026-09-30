@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using SportAcademy.Domain.Services;
+using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using SportAcademy.Application.Common.Pagination;
@@ -238,9 +239,18 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // afterward to hydrate the small, already-fixed set of ids for the current page.
             var baseQuery = ApplyBranchFilter(_context.SubscriptionDetails);
 
+            // One row per trainee + sport + branch, chosen by priority rather than "newest id":
+            // the subscription running today first (so a renewal sold in advance doesn't hide the
+            // one the trainee is actually training on), else the next upcoming one (soonest
+            // start), else the most recent. Conditional aggregates keep this a single SQL GROUP BY.
+            var today = TenantCalendar.Today;
             var latestIdsQuery = baseQuery
                 .GroupBy(sd => new { sd.TraineeId, sd.SportPrice.SportId, sd.SportPrice.BranchId })
-                .Select(g => g.Max(sd => sd.Id));
+                .Select(g =>
+                    g.Max(sd => sd.StartDate <= today && sd.EndDate >= today && sd.Status != SubscriptionStatus.Expired
+                        ? (int?)sd.Id : null)
+                    ?? g.Min(sd => sd.StartDate > today ? (int?)sd.Id : null)
+                    ?? g.Max(sd => sd.Id));
 
             var query = baseQuery.Where(sd => latestIdsQuery.Contains(sd.Id));
 
@@ -281,7 +291,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = TenantCalendar.Today;
 
             // ApplyBranchFilter is required here, not optional: SubscriptionDetails is
             // deliberately excluded from the automatic branch query filter (see
@@ -319,7 +329,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // UTC, like every other date rule in the system (this used server-local DateTime.Today).
             // No write here any more: the stored Active -> Expired flip is done by the daily
             // SubscriptionLifecycleService, and every read derives the effective status anyway.
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = TenantCalendar.Today;
             var soon = today.AddDays(15);
             var all = ApplyBranchFilter(_context.SubscriptionDetails).Where(sd => !sd.IsDeleted);
 
@@ -349,7 +359,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             IQueryable<SubscriptionDetails> query, string? status)
         {
             if (string.IsNullOrWhiteSpace(status)) return query;
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = TenantCalendar.Today;
             var soon = today.AddDays(15);
 
             return status.Trim().ToLowerInvariant() switch
@@ -372,7 +382,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             IQueryable<SubscriptionDetails> query, string? paymentState)
         {
             if (string.IsNullOrWhiteSpace(paymentState)) return query;
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = TenantCalendar.Today;
 
             return paymentState.Trim().ToLowerInvariant() switch
             {

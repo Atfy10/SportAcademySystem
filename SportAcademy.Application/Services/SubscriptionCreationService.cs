@@ -96,7 +96,7 @@ namespace SportAcademy.Application.Services
 
             ct.ThrowIfCancellationRequested();
 
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = TenantCalendar.Today;
             SubscriptionCreationResult result;
 
             // Everything below is several independent SaveChanges calls (subDetails, the

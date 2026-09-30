@@ -1,3 +1,4 @@
+using SportAcademy.Domain.Services;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Enums;
 
@@ -21,7 +22,7 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
     {
         public static SubscriptionCreatedDto From(SubscriptionCreationResult created)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = TenantCalendar.Today;
             var sub = created.Subscription;
             var invoice = created.Invoice;
             return new SubscriptionCreatedDto(
