@@ -78,6 +78,7 @@ namespace SportAcademy.Application.Mappings.SubscriptionDetailsProfile
                     dest => dest.EmployeeName,
                     opt => opt.Ignore()
                 )
+                .ForMember(dest => dest.NextQueuedStartDate, opt => opt.Ignore())
                 .ForMember(dest => dest.InvoiceNumber, opt => opt.Ignore())
                 .ForMember(dest => dest.InvoiceId, opt => opt.Ignore())
                 .ForMember(dest => dest.InvoiceBranchId, opt => opt.Ignore())

@@ -245,7 +245,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // start), else the most recent. Conditional aggregates keep this a single SQL GROUP BY.
             var today = TenantCalendar.Today;
             var latestIdsQuery = baseQuery
-                .GroupBy(sd => new { sd.TraineeId, sd.SportPrice.SportId, sd.SportPrice.BranchId })
+                .GroupBy(sd => new { sd.TraineeId, sd.SportId, sd.BranchId })
                 .Select(g =>
                     g.Max(sd => sd.StartDate <= today && sd.EndDate >= today && sd.Status != SubscriptionStatus.Expired
                         ? (int?)sd.Id : null)
@@ -287,6 +287,33 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             var items = pageIds.Select(id => itemsById[id]).ToList();
 
             return (items, totalCount);
+        }
+
+        // For rows of the subscriptions list: the next subscription each trainee already has queued
+        // in the same sport (a renewal sold in advance), which the list folds into the row of the
+        // one running now - so the row can say "renewal starts on ..." instead of it looking lost.
+        public async Task<Dictionary<(int TraineeId, int SportId), DateOnly>> GetNextQueuedStartDatesAsync(
+            IReadOnlyCollection<SubscriptionDetails> shown, CancellationToken ct = default)
+        {
+            if (shown.Count == 0) return [];
+            var today = TenantCalendar.Today;
+            var traineeIds = shown.Select(s => s.TraineeId).Distinct().ToList();
+            var shownIds = shown.Select(s => s.Id).ToList();
+
+            var queued = await ApplyBranchFilter(_context.SubscriptionDetails)
+                .AsNoTracking()
+                .Where(sd => traineeIds.Contains(sd.TraineeId)
+                    && !shownIds.Contains(sd.Id)
+                    && sd.Status == SubscriptionStatus.Active
+                    && sd.StartDate > today)
+                .Select(sd => new { sd.TraineeId, sd.SportId, sd.StartDate })
+                .ToListAsync(ct);
+
+            var shownKeys = shown.Select(s => (s.TraineeId, s.SportId)).ToHashSet();
+            return queued
+                .Where(q => shownKeys.Contains((q.TraineeId, q.SportId)))
+                .GroupBy(q => (q.TraineeId, q.SportId))
+                .ToDictionary(g => g.Key, g => g.Min(q => q.StartDate));
         }
 
         public async Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default)

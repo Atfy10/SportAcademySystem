@@ -7,6 +7,9 @@ namespace SportAcademy.Application.DTOs.SubscriptionDetailsDtos
     public record SubscriptionDetailsDto
     {
         public int Id { get; set; }
+        // Latest list only: start date of the next subscription this trainee already has queued in
+        // the same sport (shown in this row rather than as a row of its own).
+        public DateOnly? NextQueuedStartDate { get; set; }
         public TraineeSubDetailsDto Trainee { get; set; } = null!;
         public string SportName { get; set; } = null!;
         public string BranchName { get; set; } = null!;

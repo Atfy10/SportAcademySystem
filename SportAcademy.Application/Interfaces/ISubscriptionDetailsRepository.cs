@@ -21,6 +21,8 @@ namespace SportAcademy.Application.Interfaces
         Task<List<SubscriptionDetailsDropdownDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default);
         Task<List<SubscriptionDetailsDropdownDto>> GetActiveForTraineeDropdownAsync(int? traineeId, CancellationToken cancellationToken = default);
         Task<SubscriptionStatsDto> GetSubDetailsStatsAsync(CancellationToken cancellationToken = default);
+        Task<Dictionary<(int TraineeId, int SportId), DateOnly>> GetNextQueuedStartDatesAsync(
+            IReadOnlyCollection<SubscriptionDetails> shown, CancellationToken ct = default);
         // status: the *effective* status (active/upcoming/suspended/expired/expiringSoon);
         // paymentState: paid/partiallyPaid/overdue/unpaid/owed. Case-insensitive, null = no filter.
         Task<(List<SubscriptionDetails> Items, int TotalCount)> GetLatestSubscriptionsAsync(

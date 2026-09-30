@@ -35,7 +35,14 @@ namespace SportAcademy.Application.Queries.SubscriptionDetailsQueries.GetLatest
             // Manual mapper (not AutoMapper.Map) - see SubscriptionDetailsMapper for why: it
             // resolves Sport/Branch through their translation tables using the current request
             // language, which a declarative AutoMapper profile can't take as a parameter.
-            var dtoItems = items.Select(sd => SubscriptionDetailsMapper.ToDto(sd, _languageProvider.Language)).ToList();
+            var queued = await _subscriptionDetailsRepository.GetNextQueuedStartDatesAsync(items, cancellationToken);
+            var dtoItems = items.Select(sd =>
+            {
+                var dto = SubscriptionDetailsMapper.ToDto(sd, _languageProvider.Language);
+                if (queued.TryGetValue((sd.TraineeId, sd.SportId), out var next))
+                    dto.NextQueuedStartDate = next;
+                return dto;
+            }).ToList();
 
             var pagedData = new PagedData<SubscriptionDetailsDto>
             {
