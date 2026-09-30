@@ -237,7 +237,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             // here against a plain, include-free query (branch-filtered, like
             // GetAllPaginatedAsync/GetReportAsync above), and GetFullSubDetails() is only used
             // afterward to hydrate the small, already-fixed set of ids for the current page.
-            var baseQuery = ApplyBranchFilter(_context.SubscriptionDetails);
+            // Status / payment filters narrow the candidates BEFORE one row per trainee+sport is
+            // picked: filtering "Upcoming" must find the renewal queued behind a running
+            // subscription, not look only at the running one and come back empty.
+            var baseQuery = ApplyPaymentStateFilter(
+                ApplyEffectiveStatusFilter(ApplyBranchFilter(_context.SubscriptionDetails), status),
+                paymentState);
 
             // One row per trainee + sport + branch, chosen by priority rather than "newest id":
             // the subscription running today first (so a renewal sold in advance doesn't hide the
@@ -263,9 +268,6 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     || sd.SportPrice.SportSubscriptionType.Sport.Name.Contains(term)
                     || sd.SportPrice.SportSubscriptionType.SubscriptionType.Name.Contains(term));
             }
-
-            query = ApplyEffectiveStatusFilter(query, status);
-            query = ApplyPaymentStateFilter(query, paymentState);
 
             var totalCount = await query.CountAsync(cancellationToken);
             var pageIds = await query
