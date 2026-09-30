@@ -174,5 +174,7 @@
   "identity.PasswordRequiresNonAlphanumeric": "Your password must include a symbol.",
   "identity.PasswordMismatch": "That password is incorrect.",
   "identity.UserAlreadyHasPassword": "This account already has a password set.",
-  "identity.InvalidToken": "That link is not valid or has already been used."
+  "identity.InvalidToken": "That link is not valid or has already been used.",
+  "errors.traineeGroup.alreadyPrivate": "This group is already private.",
+  "errors.traineeGroup.keptTraineeNotInGroup": "One or more of the selected trainees are not currently enrolled in this group."
 }

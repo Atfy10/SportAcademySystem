@@ -54,6 +54,26 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             if (!group.IsActive)
                 throw new TraineeGroupInactiveException(group.Id, group.InactiveReason);
 
+            var sportId = await _traineeGroupRepository.GetSportIdAsync(request.TraineeGroupId, cancellationToken);
+            var existingEnrollment = sportId is null
+                ? null
+                : await _enrollmentRepository.GetCurrentEnrollmentForSportAsync(
+                    request.TraineeId, sportId.Value, cancellationToken);
+
+            // Enrolling an upcoming (not yet started) subscription into the group the trainee is
+            // already training in is a pre-sold renewal, not a duplicate: extend the current
+            // enrollment's end date instead of refusing. Tried before the capacity check - the
+            // trainee already holds a seat in this group, so a full group must not block it.
+            if (existingEnrollment is not null && sportId is not null
+                && existingEnrollment.TraineeGroupId == request.TraineeGroupId
+                && existingEnrollment.Status == EnrollmentStatus.Active)
+            {
+                var extendedId = await TryExtendForUpcomingSubscriptionAsync(
+                    request, existingEnrollment, group, sportId.Value, cancellationToken);
+                if (extendedId is not null)
+                    return Result<int>.Success(extendedId.Value, _operationType);
+            }
+
             var activeCount = await _enrollmentRepository.GetActiveEnrollmentCountForGroupAsync(
                 request.TraineeGroupId, cancellationToken);
             if (activeCount >= group.MaximumCapacity)
@@ -63,12 +83,10 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             // carries the existing enrollment forward automatically (see
             // CreateSubscriptionDetailsCommandHandler), and moving groups goes through
             // ChangeEnrollmentGroupCommand, so a second CreateEnrollment for a sport the trainee
-            // is already in is always either a duplicate or the wrong tool for the job.
-            var sportId = await _traineeGroupRepository.GetSportIdAsync(request.TraineeGroupId, cancellationToken);
+            // is already in is always either a duplicate or the wrong tool for the job (the one
+            // exception, an upcoming subscription for the same group, is handled above).
             if (sportId is not null)
             {
-                var existingEnrollment = await _enrollmentRepository.GetCurrentEnrollmentForSportAsync(
-                    request.TraineeId, sportId.Value, cancellationToken);
                 if (existingEnrollment is not null)
                 {
                     // A Suspended enrollment is a distinct, actionable situation - guide the
@@ -117,8 +135,17 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
             var totalSessions = TrainingScheduleService.CalculateTotalSessions(
                 subscriptionType.DaysPerMonth, subscriptionType.NumberOfMonths);
 
+            // A subscription whose enrollment was ended while it still had sessions left (the
+            // trainee didn't carry on when their group became private) is continued here, not
+            // bought again: only the sessions still owed are granted, and the expiry is counted
+            // across just those.
+            var previous = await _enrollmentRepository.GetLatestEndedForSubscriptionAsync(
+                request.SubscriptionDetailsId, cancellationToken);
+            var continuedSessions = previous is { SessionRemaining: > 0 } ? previous.SessionRemaining : (int?)null;
+            var sessionsToGrant = continuedSessions ?? totalSessions;
+
             enrollment.ExpiryDate = TrainingScheduleService
-                .ComputeEndDate(DateOnly.FromDateTime(enrollment.EnrollmentDate), totalSessions, trainingDays)
+                .ComputeEndDate(DateOnly.FromDateTime(enrollment.EnrollmentDate), sessionsToGrant, trainingDays)
                 .ToDateTime(TimeOnly.MinValue);
 
             // A trainee can only join a group whose gender policy accepts them (Mixed accepts
@@ -174,7 +201,7 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                 }
             }
 
-            var daysPerMonth = SubscriptionDetailsService.CalculateAllowedSessions(subDetails);
+            var daysPerMonth = continuedSessions ?? SubscriptionDetailsService.CalculateAllowedSessions(subDetails);
             enrollment.SessionAllowed = daysPerMonth;
             enrollment.SessionRemaining = enrollment.SessionAllowed;
             enrollment.Status = EnrollmentStatus.Active;
@@ -220,6 +247,46 @@ namespace SportAcademy.Application.Commands.EnrollmentCommands.CreateEnrollment
                 enrollment.Id, request.TraineeGroupId, enrollment.EnrollmentDate), cancellationToken);
 
             return Result<int>.Success(enrollment.Id, _operationType);
+        }
+
+        // Returns the extended enrollment's id, or null when the requested subscription isn't an
+        // upcoming one of this trainee's - the caller then carries on with the normal rules
+        // (which refuse a second enrollment for the sport).
+        //
+        // Only the end date moves. The enrollment keeps pointing at the subscription it is
+        // training on, and its sessions stay untouched: SubscriptionLifecycleService hands the
+        // enrollment over to the upcoming subscription on its start date (resetting sessions and
+        // expiry), exactly as for a renewal sold ahead of time. Extending ExpiryDate now is what
+        // keeps the enrollment from lapsing in the meantime, and re-submitting is harmless since
+        // the date only ever moves forward.
+        private async Task<int?> TryExtendForUpcomingSubscriptionAsync(
+            CreateEnrollmentCommand request, Enrollment existing, TraineeGroup group, int sportId,
+            CancellationToken cancellationToken)
+        {
+            var upcoming = await _subRepository.GetSubscriptionDetailsWithSubTypeAsync(
+                request.SubscriptionDetailsId, cancellationToken);
+
+            if (upcoming is null
+                || upcoming.TraineeId != request.TraineeId
+                || upcoming.Id == existing.SubscriptionDetailsId
+                || upcoming.Status != SubscriptionStatus.Active
+                || upcoming.StartDate <= TenantCalendar.Today)
+                return null;
+
+            if (upcoming.SportId != sportId)
+                throw new SubscriptionGroupSportMismatchException(upcoming.Id, group.Id);
+
+            if (upcoming.GroupType != group.Type)
+                throw new SubscriptionGroupTypeMismatchException(upcoming.Id, group.Id, upcoming.GroupType, group.Type);
+
+            var newExpiry = upcoming.EndDate.ToDateTime(TimeOnly.MinValue);
+            if (newExpiry > existing.ExpiryDate)
+            {
+                existing.ExpiryDate = newExpiry;
+                await _enrollmentRepository.UpdateAsync(existing, cancellationToken);
+            }
+
+            return existing.Id;
         }
     }
 }

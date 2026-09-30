@@ -339,11 +339,24 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Where(sd => sd.Status == SubscriptionStatus.Active
                     && sd.EndDate >= today
                     && !sd.IsDeleted
-                    // A subscription already spent on an enrollment can't back another one -
-                    // including a closed enrollment, which consumed it just as much as an open
-                    // one did. (There is no unique index enforcing this at the database level;
+                    // A subscription already spent on an enrollment can't back another one: an open
+                    // enrollment holds it, and so does a closed one that used it all up. A closed
+                    // enrollment with sessions left over (the trainee was moved out of a group
+                    // that went private) does not - the subscription is continued in another
+                    // group. (There is no unique index enforcing this at the database level;
                     // it's this query and CreateEnrollmentCommandHandler that keep it true.)
-                    && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id));
+                    && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id
+                        && (e.EndDate == null || e.SessionRemaining <= 0))
+                    // An upcoming subscription already applied to the trainee's current enrollment
+                    // (CreateEnrollmentCommandHandler extends that enrollment's ExpiryDate to cover
+                    // it, and the lifecycle service only attaches it on its start date) is spent
+                    // too - without this it would be offered again and again until then.
+                    && !(sd.StartDate > today
+                        && _context.Enrollments.Any(e => e.TraineeId == sd.TraineeId
+                            && e.EndDate == null
+                            && e.TraineeGroup.Coach.SportId == sd.SportId
+                            && e.SubscriptionDetailsId != sd.Id
+                            && DateOnly.FromDateTime(e.ExpiryDate) >= sd.EndDate)));
 
             if (traineeId.HasValue)
             {

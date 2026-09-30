@@ -171,6 +171,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .OrderByDescending(e => e.EndDate)
                 .FirstOrDefaultAsync(ct);
 
+        public async Task<Enrollment?> GetLatestEndedForSubscriptionAsync(int subscriptionDetailsId, CancellationToken ct = default)
+            => await _context.Enrollments
+                .Where(e => e.SubscriptionDetailsId == subscriptionDetailsId && e.EndDate != null)
+                .OrderByDescending(e => e.EndDate)
+                .FirstOrDefaultAsync(ct);
+
         public async Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default)
         {
             var query = _context.Enrollments

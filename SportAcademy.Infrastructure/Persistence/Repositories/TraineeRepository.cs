@@ -558,7 +558,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                             && sd.GroupType == group.Type
                             // Not already claimed by another enrollment - same "unclaimed" rule
                             // GetActiveForTraineeDropdownAsync applies per-trainee.
-                            && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id))
+                            // (Open, or closed with nothing left - a closed enrollment with sessions
+                            // remaining leaves the subscription free to continue in this group.)
+                            && !_context.Enrollments.Any(e => e.SubscriptionDetailsId == sd.Id
+                                && (e.EndDate == null || e.SessionRemaining <= 0)))
                         .Select(sd => new
                         {
                             sd.Id,

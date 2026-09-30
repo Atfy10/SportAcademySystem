@@ -28,7 +28,7 @@ public class SearchTraineeGroupsQueryHandler : IRequestHandler<SearchTraineeGrou
             throw new InvalidSearchTermException(2);
         }
 
-        var result = await _traineeGroupRepository.SearchAsync(request.SearchTerm.Trim(), request.Page, request.FromTime, request.ToTime, cancellationToken);
+        var result = await _traineeGroupRepository.SearchAsync(request.SearchTerm.Trim(), request.Page, request.FromTime, request.ToTime, request.Type, cancellationToken);
         return Result<PagedData<ListTraineeGroupDto>>.Success(result, _operationType);
     }
 }

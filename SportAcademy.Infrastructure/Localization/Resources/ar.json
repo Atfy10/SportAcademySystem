@@ -174,5 +174,7 @@
   "identity.PasswordRequiresNonAlphanumeric": "يجب أن تحتوي كلمة المرور على رمز.",
   "identity.PasswordMismatch": "كلمة المرور غير صحيحة.",
   "identity.UserAlreadyHasPassword": "هذا الحساب لديه كلمة مرور بالفعل.",
-  "identity.InvalidToken": "هذا الرابط غير صالح أو تم استخدامه بالفعل."
+  "identity.InvalidToken": "هذا الرابط غير صالح أو تم استخدامه بالفعل.",
+  "errors.traineeGroup.alreadyPrivate": "هذه المجموعة خاصة بالفعل.",
+  "errors.traineeGroup.keptTraineeNotInGroup": "بعض المتدربين المحددين غير مسجلين حالياً في هذه المجموعة."
 }

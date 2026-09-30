@@ -6,6 +6,7 @@ using SportAcademy.Application.DTOs.GroupScheduleDtos;
 using SportAcademy.Application.DTOs.TraineeGroupDtos;
 using SportAcademy.Application.Queries.TraineeGroupQueries.Search;
 using SportAcademy.Application.Interfaces;
+using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
 
 namespace SportAcademy.Tests.Application.Handlers;
@@ -34,7 +35,7 @@ public class SearchTraineeGroupsQueryHandlerTests
         {
             Items = new List<ListTraineeGroupDto>
             {
-                new(1, "Swimming Group A", "Swimming", "Ahmed Ali", "Main Branch", 55, 10, 15, "Beginner", true, null, new List<GroupScheduleItemDto>())
+                new(1, "Swimming Group A", "Swimming", "Ahmed Ali", "Main Branch", 55, 10, 15, "Beginner", true, null, new List<GroupScheduleItemDto>(), TraineeGroupType.Public)
             },
             TotalCount = 1,
             Page = 1,
@@ -48,7 +49,7 @@ public class SearchTraineeGroupsQueryHandlerTests
         var query = CreateQuery("swim");
         var pagedData = CreatePagedData();
 
-        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swim", query.Page, null, null, It.IsAny<CancellationToken>()))
+        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swim", query.Page, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedData);
 
         var result = await _handler.Handle(query, CancellationToken.None);
@@ -65,13 +66,13 @@ public class SearchTraineeGroupsQueryHandlerTests
         var query = CreateQuery("  swim  ");
         var pagedData = CreatePagedData();
 
-        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swim", query.Page, null, null, It.IsAny<CancellationToken>()))
+        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swim", query.Page, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedData);
 
         await _handler.Handle(query, CancellationToken.None);
 
         _traineeGroupRepoMock.Verify(
-            r => r.SearchAsync("swim", query.Page, null, null, It.IsAny<CancellationToken>()),
+            r => r.SearchAsync("swim", query.Page, null, null, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -87,13 +88,13 @@ public class SearchTraineeGroupsQueryHandlerTests
             PageSize = 25
         };
 
-        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swimming", query.Page, null, null, It.IsAny<CancellationToken>()))
+        _traineeGroupRepoMock.Setup(r => r.SearchAsync("swimming", query.Page, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(pagedData);
 
         await _handler.Handle(query, CancellationToken.None);
 
         _traineeGroupRepoMock.Verify(
-            r => r.SearchAsync("swimming", query.Page, null, null, It.IsAny<CancellationToken>()),
+            r => r.SearchAsync("swimming", query.Page, null, null, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

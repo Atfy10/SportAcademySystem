@@ -1,3 +1,5 @@
+using SportAcademy.Domain.Enums;
+
 namespace SportAcademy.Application.DTOs.EnrollmentDtos;
 
 public record EnrollmentCardDto(
@@ -18,5 +20,6 @@ public record EnrollmentCardDto(
     int TotalSessions,
     int SessionRemaining,
     int TraineeGroupId,
-    int SportId
+    int SportId,
+    TraineeGroupType GroupType
 );

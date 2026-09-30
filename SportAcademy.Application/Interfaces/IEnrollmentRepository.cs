@@ -46,6 +46,13 @@ namespace SportAcademy.Application.Interfaces
         /// group, instead of creating a second enrollment row for the same pair.
         /// </summary>
         Task<Enrollment?> GetEndedEnrollmentForGroupAsync(int traineeId, int traineeGroupId, CancellationToken ct = default);
+
+        /// <summary>
+        /// The most recently closed (EndDate set) enrollment that was backed by this subscription,
+        /// if any - so an enrollment created against the same subscription later can pick up the
+        /// sessions the closed one left unused.
+        /// </summary>
+        Task<Enrollment?> GetLatestEndedForSubscriptionAsync(int subscriptionDetailsId, CancellationToken ct = default);
         Task<PagedData<EnrollmentCardDto>> SearchAsync(string term, PageRequest page, string? status = null, string? paymentStatus = null, CancellationToken ct = default);
         Task<int> CountAllAsync(CancellationToken ct = default);
         Task<int> CountActiveAsync(CancellationToken ct = default);
