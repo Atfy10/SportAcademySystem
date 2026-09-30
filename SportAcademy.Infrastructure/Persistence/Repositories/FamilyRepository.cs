@@ -86,5 +86,10 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
 
             return nextId;
         }
+
+        // The soft-delete query filter on Trainee leaves deleted trainees out, which is the point:
+        // they no longer count as members.
+        public Task<bool> HasActiveMembersAsync(int familyId, CancellationToken cancellationToken = default)
+            => _context.Trainees.AnyAsync(t => t.FamilyId == familyId, cancellationToken);
     }
 }

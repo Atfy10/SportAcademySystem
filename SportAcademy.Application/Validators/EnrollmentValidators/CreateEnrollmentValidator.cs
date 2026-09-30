@@ -9,10 +9,11 @@ namespace SportAcademy.Application.Validators.EnrollmentValidators
         {
             ClassLevelCascadeMode = CascadeMode.Stop;
 
+            // Any date: staff enroll ahead for a future term or back-date a late entry. The expiry
+            // is recomputed from this date by the handler, and the rule below still keeps it
+            // inside the subscription.
             RuleFor(x => x.EnrollmentDate)
-                .NotEmpty().WithMessage("Please provide an enrollment date.")
-                .LessThanOrEqualTo(DateTime.UtcNow.AddDays(7))
-                .WithMessage("Enrollment date can't be more than 7 days in the future.");
+                .NotEmpty().WithMessage("Please provide an enrollment date.");
 
             RuleFor(x => x.ExpiryDate)
                 .NotEmpty().WithMessage("Please provide an expiry date.")

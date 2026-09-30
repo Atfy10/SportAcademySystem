@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.FamilyCommands.AddTraineeToFamily;
+using SportAcademy.Application.Commands.FamilyCommands.DeleteFamily;
 using SportAcademy.Application.Commands.FamilyCommands.UpdateFamily;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.FamilyQueries.GetAllFamilies;
@@ -64,6 +65,15 @@ namespace SportAcademy.Web.Controllers
                 return BadRequest();
 
             var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+
+        // Only an empty family (no active members) - see DeleteFamilyCommandHandler.
+        [HttpDelete("{id:int}")]
+        [Authorize(Policy = "Permission:trainee.delete")]
+        public async Task<IActionResult> DeleteFamily(int id, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new DeleteFamilyCommand(id), cancellationToken);
             return Ok(result);
         }
 
