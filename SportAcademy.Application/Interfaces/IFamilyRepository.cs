@@ -17,5 +17,7 @@ namespace SportAcademy.Application.Interfaces
         Task<IReadOnlyList<FamilyDto>> SearchFamiliesWithCodeTranslatedAsync(int code, CancellationToken cancellationToken = default);
         Task<(string? Name, string? GuardianName)?> GetTranslatedNamesAsync(int id, string lang, CancellationToken cancellationToken = default);
         Task<Family?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default);
+        /// <summary>Whether any non-deleted trainee belongs to the family.</summary>
+        Task<bool> HasActiveMembersAsync(int familyId, CancellationToken cancellationToken = default);
     }
 }
