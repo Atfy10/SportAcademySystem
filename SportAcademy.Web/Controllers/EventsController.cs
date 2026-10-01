@@ -4,13 +4,20 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.EventCommands.CancelEvent;
 using SportAcademy.Application.Commands.EventCommands.CreateEvent;
 using SportAcademy.Application.Commands.EventCommands.DeleteEvent;
-using SportAcademy.Application.Commands.EventCommands.RegenerateEventEntryCode;
 using SportAcademy.Application.Commands.EventCommands.UpdateEvent;
+using SportAcademy.Application.Commands.EventTicketCommands.AdmitEventTicket;
+using SportAcademy.Application.Commands.EventTicketCommands.IssueEventTickets;
+using SportAcademy.Application.Commands.EventTicketCommands.ReissueEventTicket;
+using SportAcademy.Application.Commands.EventTicketCommands.RevokeEventTicket;
+using SportAcademy.Application.Commands.EventTicketCommands.UpdateEventTicket;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.EventQueries.GetEventById;
 using SportAcademy.Application.Queries.EventQueries.GetEventOverlaps;
 using SportAcademy.Application.Queries.EventQueries.GetEvents;
 using SportAcademy.Application.Queries.EventQueries.GetEventsReport;
+using SportAcademy.Application.Queries.EventTicketQueries.CheckEventTicket;
+using SportAcademy.Application.Queries.EventTicketQueries.GetCheckInEvents;
+using SportAcademy.Application.Queries.EventTicketQueries.GetEventTickets;
 using SportAcademy.Domain.Enums;
 
 namespace SportAcademy.Web.Controllers
@@ -98,15 +105,6 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        // Replaces the entry QR code - the old one stops working at once.
-        [Authorize(Policy = "Permission:event.manage")]
-        [HttpPost("{id:int}/entry-code")]
-        public async Task<IActionResult> RegenerateEntryCode(int id, CancellationToken ct)
-        {
-            var result = await _mediator.Send(new RegenerateEventEntryCodeCommand(id), ct);
-            return Ok(result);
-        }
-
         [Authorize(Policy = "Permission:event.manage")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id, CancellationToken ct)
@@ -115,6 +113,83 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
+        // -- Tickets: each guest gets a numbered ticket whose QR code staff scan at the door.
+
+        [Authorize(Policy = "Permission:event.view")]
+        [HttpGet("{id:int}/tickets")]
+        public async Task<IActionResult> GetTickets(
+            int id, [FromQuery] EventTicketFilter? filter, [FromQuery] string? term,
+            [FromQuery] int? page, [FromQuery] int? pageSize, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetEventTicketsQuery(
+                id, filter ?? EventTicketFilter.All, term, PageRequest.Create(page, pageSize)), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:event.manage")]
+        [HttpPost("{id:int}/tickets")]
+        public async Task<IActionResult> IssueTickets(int id, [FromBody] IssueTicketsBody body, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new IssueEventTicketsCommand(id, body.Count, body.GuestName), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:event.manage")]
+        [HttpPut("tickets/{ticketId:int}")]
+        public async Task<IActionResult> UpdateTicket(int ticketId, [FromBody] UpdateTicketBody body, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new UpdateEventTicketCommand(ticketId, body.GuestName), ct);
+            return Ok(result);
+        }
+
+        // New code for an unused ticket - the old one stops working at once.
+        [Authorize(Policy = "Permission:event.manage")]
+        [HttpPost("tickets/{ticketId:int}/reissue")]
+        public async Task<IActionResult> ReissueTicket(int ticketId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new ReissueEventTicketCommand(ticketId), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:event.manage")]
+        [HttpDelete("tickets/{ticketId:int}")]
+        public async Task<IActionResult> RevokeTicket(int ticketId, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new RevokeEventTicketCommand(ticketId), ct);
+            return Ok(result);
+        }
+
+        // -- Door check-in: staff scan a guest's ticket (check), then let them in (admit) - or
+        // refuse, which records nothing.
+
+        [Authorize(Policy = "Permission:event.checkin")]
+        [HttpGet("check-in/events")]
+        public async Task<IActionResult> GetCheckInEvents(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetCheckInEventsQuery(), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:event.checkin")]
+        [HttpPost("check-in/check")]
+        public async Task<IActionResult> CheckTicket([FromBody] TicketReferenceBody body, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new CheckEventTicketQuery(body.Code, body.EventId, body.Number), ct);
+            return Ok(result);
+        }
+
+        [Authorize(Policy = "Permission:event.checkin")]
+        [HttpPost("check-in/admit")]
+        public async Task<IActionResult> AdmitTicket([FromBody] TicketReferenceBody body, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new AdmitEventTicketCommand(body.Code, body.EventId, body.Number), ct);
+            return Ok(result);
+        }
+
         public record CancelEventBody(string Reason, EventCancellationMode Mode);
+        public record IssueTicketsBody(int Count, string? GuestName);
+        public record UpdateTicketBody(string? GuestName);
+        // The scanned QR (its link or bare token) - or, when it can't be scanned, event + number.
+        public record TicketReferenceBody(string? Code, int? EventId, int? Number);
     }
 }

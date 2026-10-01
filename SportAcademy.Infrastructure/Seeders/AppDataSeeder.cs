@@ -535,6 +535,9 @@ namespace SportAcademy.Infrastructure.Seeders
                 Permissions.TraineeGroup.Manage, Permissions.TraineeGroup.GenerateSessions, Permissions.Session.Manage,
                 Permissions.Attendance.Mark, Permissions.Attendance.ViewRate,
                 Permissions.Report.ViewAttendance, Permissions.Report.ViewSubscriptions,
+                // Door staff at events: scan a guest's ticket and let them in. Nothing else about
+                // events (no bookings, no money) - that's Event.View/Manage, which they don't get.
+                Permissions.Event.CheckIn,
             ],
             ["Accountant"] =
             [

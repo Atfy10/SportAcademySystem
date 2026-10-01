@@ -52,7 +52,7 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IFinancialStatementReader, FinancialStatementReader>();
             services.AddScoped<IEventRepository, EventRepository>();
             services.AddScoped<IEventCustomerRepository, EventCustomerRepository>();
-            services.AddScoped<IEventEntryStore, EventEntryStore>();
+            services.AddScoped<IEventTicketStore, EventTicketStore>();
             services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
             services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
             services.AddScoped<ISubscriptionDiscountRequestRepository, SubscriptionDiscountRequestRepository>();

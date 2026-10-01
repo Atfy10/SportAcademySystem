@@ -97,7 +97,7 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Domain.Entities.Finance.SubscriptionDiscountRequest> SubscriptionDiscountRequests { get; set; }
         public DbSet<Domain.Entities.Events.Event> Events { get; set; }
         public DbSet<Domain.Entities.Events.EventCustomer> EventCustomers { get; set; }
-        public DbSet<Domain.Entities.Events.EventAdmission> EventAdmissions { get; set; }
+        public DbSet<Domain.Entities.Events.EventTicket> EventTickets { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<TenantFeature> TenantFeatures { get; set; }
         public DbSet<TenantProfile> TenantProfiles { get; set; }
@@ -292,6 +292,9 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
                 [typeof(Attendance)] = ["Enrollment", "TraineeGroup", "BranchId"],
                 [typeof(SessionOccurrence)] = ["GroupSchedule", "TraineeGroup", "BranchId"],
                 [typeof(ExcuseRequest)] = ["Enrollment", "TraineeGroup", "BranchId"],
+                // A branch-restricted doorman only sees (and can only admit) tickets for events
+                // at their own branches.
+                [typeof(Domain.Entities.Events.EventTicket)] = ["Event", "BranchId"],
             };
 
             // These three still implement IBranchScoped (their BranchId is real and meaningful)
