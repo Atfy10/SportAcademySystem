@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.EmployeeCommands.ChangeEmployeePosition;
 using SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
+using SportAcademy.Application.Commands.EmployeeCommands.ImportEmployees;
 using SportAcademy.Application.Commands.EmployeeCommands.ToggleEmployeeStatus;
 using SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee;
 using SportAcademy.Application.Common.Localization;
@@ -16,10 +17,13 @@ using SportAcademy.Application.Queries.EmployeeQueries.GetAll;
 using SportAcademy.Application.Queries.EmployeeQueries.GetAllCoachs;
 using SportAcademy.Application.Queries.EmployeeQueries.GetById;
 using SportAcademy.Application.Queries.EmployeeQueries.GetCoachEmployeesWithoutCoachRecord;
+using SportAcademy.Application.Queries.EmployeeQueries.ExportEmployees;
+using SportAcademy.Application.Queries.EmployeeQueries.GetEmployeeImportTemplate;
 using SportAcademy.Application.Queries.EmployeeQueries.GetEmployeesCount;
 using SportAcademy.Application.Queries.EmployeeQueries.SearchEmployeess;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Web.Features.Import;
 
 namespace SportAcademy.Web.Controllers
 {
@@ -211,5 +215,75 @@ namespace SportAcademy.Web.Controllers
                                         PageRequest.Create(page, pageSize), sportId, branchId), ct);
             return Ok(result);
         }
+
+        // ── CSV import / export ───────────────────────────────────────────────────────────
+        // Same two-phase flow as the trainee import: a dry run that reports every problem by row
+        // and column, then an import of the rows that passed (re-checked first).
+
+        // What the import screen shows (columns, required/optional, accepted values - this
+        // academy's own branch names) and what the template is built from.
+        [Authorize(Policy = "Permission:employee.manage")]
+        [HttpGet("import/template")]
+        public async Task<ActionResult> GetImportTemplate(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetEmployeeImportTemplateQuery(), ct);
+            return Ok(result);
+        }
+
+        // The same, as a ready-to-fill CSV: localized headers + two sample rows that import as-is.
+        [Authorize(Policy = "Permission:employee.manage")]
+        [HttpGet("import/template.csv")]
+        public async Task<ActionResult> DownloadImportTemplate(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetEmployeeImportTemplateQuery(), ct);
+            if (!result.IsSuccess || result.Data is null)
+                return Ok(result);
+
+            var columns = result.Data.Columns;
+            var bytes = CsvImportFile.Write(
+                columns.Select(c => c.Label).ToList(),
+                result.Data.SampleRows.Select(r => (IReadOnlyList<string?>)columns
+                    .Select(c => r.TryGetValue(c.Key, out var v) ? v : null).ToList()));
+
+            return File(bytes, "text/csv; charset=utf-8", "employees-import-template.csv");
+        }
+
+        // Dry run: every row checked, nothing saved.
+        [Authorize(Policy = "Permission:employee.manage")]
+        [HttpPost("import/validate")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task<ActionResult> ValidateImport(IFormFile file, CancellationToken ct)
+        {
+            var (error, parsed) = await CsvImportFile.TryReadAsync(file, _localizer, ct);
+            if (error is not null) return BadRequest(Result.Failure("Import", error, 400));
+
+            var result = await _mediator.Send(new ValidateEmployeeImportCommand(parsed!.Headers, parsed.Rows), ct);
+            return Ok(result);
+        }
+
+        // Re-validates, then saves the valid rows (validRowsOnly=true) or nothing unless every
+        // row is valid (validRowsOnly=false).
+        [Authorize(Policy = "Permission:employee.manage")]
+        [HttpPost("import")]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public async Task<ActionResult> ImportCsv(IFormFile file, [FromQuery] bool validRowsOnly = true, CancellationToken ct = default)
+        {
+            var (error, parsed) = await CsvImportFile.TryReadAsync(file, _localizer, ct);
+            if (error is not null) return BadRequest(Result.Failure("Import", error, 400));
+
+            var result = await _mediator.Send(new ImportEmployeesCommand(parsed!.Headers, parsed.Rows, validRowsOnly), ct);
+            return Ok(result);
+        }
+
+        // The rows the console turns into a CSV. No ids = every employee the caller can see.
+        [Authorize(Policy = "Permission:employee.manage")]
+        [HttpPost("export")]
+        public async Task<ActionResult> Export([FromBody] ExportEmployeesRequest? request, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new ExportEmployeesQuery(request?.Ids), ct);
+            return Ok(result);
+        }
     }
+
+    public record ExportEmployeesRequest(List<int>? Ids);
 }

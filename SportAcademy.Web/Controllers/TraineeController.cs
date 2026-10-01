@@ -1,5 +1,3 @@
-using CsvHelper;
-using CsvHelper.Configuration;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,11 +25,11 @@ using SportAcademy.Application.Queries.TraineeQueries.GetTraineesCountOfSpecific
 using SportAcademy.Application.Queries.TraineeQueries.SearchTrainee;
 using SportAcademy.Application.Queries.TraineeQueries.SearchTraineeById;
 using SportAcademy.Domain.Enums;
+using SportAcademy.Web.Features.Import;
 using SportAcademy.Web.Features.Trainees;
 using SportAcademy.Web.Features.Trainees.Mappings;
 using SportAcademy.Web.Features.Trainees.Requests;
 using System.Globalization;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SportAcademy.Web.Controllers
@@ -162,7 +160,7 @@ namespace SportAcademy.Web.Controllers
                 return Ok(result);
 
             var columns = result.Data.Columns;
-            var bytes = TraineeCsvFile.Write(
+            var bytes = CsvImportFile.Write(
                 columns.Select(c => c.Label).ToList(),
                 result.Data.SampleRows.Select(r => (IReadOnlyList<string?>)columns
                     .Select(c => r.TryGetValue(c.Key, out var v) ? v : null).ToList()));
@@ -197,22 +195,10 @@ namespace SportAcademy.Web.Controllers
             return Ok(result);
         }
 
-        private async Task<(ActionResult? Error, TraineeCsvFile.ReadResult? Parsed)> ReadImportFileAsync(IFormFile? file, CancellationToken ct)
+        private async Task<(ActionResult? Error, CsvImportFile.ReadResult? Parsed)> ReadImportFileAsync(IFormFile? file, CancellationToken ct)
         {
-            if (file == null || file.Length == 0)
-                return (BadRequest(Result.Failure("Import", _localizer["import.file.empty"], 400)), null);
-
-            if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
-                return (BadRequest(Result.Failure("Import", _localizer["import.file.unreadable"], 400)), null);
-
-            try
-            {
-                return (null, await TraineeCsvFile.ReadAsync(file, ct));
-            }
-            catch (Exception ex) when (ex is CsvHelperException or DecoderFallbackException or InvalidDataException)
-            {
-                return (BadRequest(Result.Failure("Import", _localizer["import.file.unreadable"], 400)), null);
-            }
+            var (error, parsed) = await CsvImportFile.TryReadAsync(file, _localizer, ct);
+            return error is null ? (null, parsed) : (BadRequest(Result.Failure("Import", error, 400)), null);
         }
 
         [HttpGet("for-specific-day")]

@@ -5,6 +5,7 @@ using SportAcademy.Application.Commands.Trainees.CreateTrainee;
 using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.DTOs.TraineeDtos;
+using SportAcademy.Application.DTOs.ImportDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services.TraineeImport;
 using SportAcademy.Domain.Contract;
@@ -87,7 +88,7 @@ public class TraineeImportValidatorTests
             _branchAccess.Object, _limits.Object, _user.Object);
     }
 
-    private static TraineeImportRawRow Row(int number, params (string Header, string? Value)[] overrides)
+    private static ImportRawRow Row(int number, params (string Header, string? Value)[] overrides)
     {
         var cells = new Dictionary<string, string?>
         {
@@ -105,10 +106,10 @@ public class TraineeImportValidatorTests
             ["Sports"] = null,
         };
         foreach (var (h, v) in overrides) cells[h] = v;
-        return new TraineeImportRawRow(number, cells);
+        return new ImportRawRow(number, cells);
     }
 
-    private async Task<TraineeImportReport> Validate(params TraineeImportRawRow[] rows)
+    private async Task<TraineeImportReport> Validate(params ImportRawRow[] rows)
         => (await _sut.ValidateAsync(rows, Headers, CancellationToken.None)).Report;
 
     [Fact]
@@ -136,7 +137,7 @@ public class TraineeImportValidatorTests
     public async Task ExportedDisplayLabels_EnglishAndArabic_AreAcceptedAsHeaders()
     {
         var headers = new[] { "الاسم الأول", "Last Name", "Birth Date", "Gender", "Nationality", "Phone", "Email", "Branch", "Nationality Category" };
-        var row = new TraineeImportRawRow(2, new Dictionary<string, string?>
+        var row = new ImportRawRow(2, new Dictionary<string, string?>
         {
             ["الاسم الأول"] = "Ahmed", ["Last Name"] = "Salem", ["Birth Date"] = "10/04/1995", ["Gender"] = "ذكر",
             ["Nationality"] = "كويتي", ["Phone"] = "50001234", ["Email"] = "x@example.com", ["Branch"] = "الرئيسي",
@@ -178,7 +179,7 @@ public class TraineeImportValidatorTests
     {
         var report = await Validate(Row(2, ("PhoneNumber", "51112222")), Row(3, ("PhoneNumber", "051112222")));
 
-        report.Rows[0].Status.Should().Be(TraineeImportRowStatus.Valid);
+        report.Rows[0].Status.Should().Be(ImportRowStatus.Valid);
         report.Rows[1].Errors.Should().Contain(e => e.Message == "import.row.duplicateInFile");
     }
 

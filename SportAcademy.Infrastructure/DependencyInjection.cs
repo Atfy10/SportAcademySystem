@@ -109,6 +109,7 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IPersonService, PersonService>();
             services.AddScoped<ITraineeCodeGenerator, SqlTraineeCodeGenerator>();
             services.AddScoped<ITraineeImportLookup, Services.TraineeImportLookup>();
+            services.AddScoped<IEmployeeImportLookup, Services.EmployeeImportLookup>();
 
             // Register background services
             services.AddHostedService<RefreshTokenCleanupService>();

@@ -22,6 +22,10 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<EmployeeDto>> GetActiveAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetActiveCoachesAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<PagedData<EmployeeDto>> GetCoachEmployeesWithoutCoachRecordAsync(PageRequest page, CancellationToken cancellationToken = default);
+
+        /// <summary>The CSV export rows for these employees - or, with no ids, every employee the
+        /// caller's branch access lets them see.</summary>
+        Task<List<EmployeeExportDto>> GetExportDataAsync(IReadOnlyCollection<int>? ids, CancellationToken ct = default);
         
         /// <summary>
         /// 
