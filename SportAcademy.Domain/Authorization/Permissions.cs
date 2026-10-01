@@ -143,6 +143,16 @@ namespace SportAcademy.Domain.Authorization
             public const string Approve = "discountcode.approve";
         }
 
+        public static class Event
+        {
+            // Booking, editing and cancelling events, and managing event customers - Owner/Admin.
+            public const string Manage = "event.manage";
+            // Seeing events and event customers (Accountant too, for collecting balances).
+            public const string View = "event.view";
+            // The printable events report on the Events page (not part of report.view).
+            public const string Report = "event.report";
+        }
+
         public static class Tenant
         {
             public const string ManageSettings = "tenant.settings.manage";
@@ -194,6 +204,7 @@ namespace SportAcademy.Domain.Authorization
             Expense.Manage, Expense.View,
             Salary.Create, Salary.Approve, Salary.MarkPaid, Salary.View,
             DiscountCode.Manage, DiscountCode.Approve,
+            Event.Manage, Event.View, Event.Report,
             Tenant.ManageSettings, Tenant.ManageUsers, Tenant.ManageLimitReconciliation,
             Platform.TenantsRead, Platform.TenantsManage, Platform.OwnersManage, Platform.AuditRead, Platform.Impersonate,
             Platform.LeadsRead, Platform.LeadsManage,

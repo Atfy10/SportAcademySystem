@@ -17,9 +17,18 @@ public record PaymentReceiptAllocationDto(
     string? SportName = null,
     string? SubscriptionTypeName = null,
     DateOnly? SubscriptionStartDate = null,
-    DateOnly? SubscriptionEndDate = null);
+    DateOnly? SubscriptionEndDate = null,
+    // Set when the invoice billed an event booking instead of a subscription. EventStartsAt is
+    // the academy's wall-clock time.
+    int? EventId = null,
+    string? EventTitle = null,
+    DateTime? EventStartsAt = null);
 
 public record PaymentReceiptTraineeDto(int Id, string FullName, string? PhoneNumber, string? Code);
+
+// Who paid when it wasn't a trainee (an event's customer), from the name/phone copied onto the
+// invoice.
+public record PaymentReceiptPayerDto(string FullName, string? PhoneNumber);
 
 public record PaymentRefundDto(
     int Id,
@@ -43,4 +52,5 @@ public record PaymentReceiptDto(
     List<PaymentReceiptAllocationDto> Allocations,
     List<PaymentReceiptTraineeDto>? Trainees = null,
     string? RecordedByName = null,
-    List<PaymentRefundDto>? Refunds = null);
+    List<PaymentRefundDto>? Refunds = null,
+    List<PaymentReceiptPayerDto>? Payers = null);

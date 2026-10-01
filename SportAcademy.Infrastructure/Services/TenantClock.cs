@@ -35,6 +35,14 @@ public class TenantClock : ITenantClock
         return timeZone is null ? utcNow : TimeZoneInfo.ConvertTimeFromUtc(utcNow, timeZone);
     }
 
+    public async Task<TimeZoneInfo?> GetTimeZoneAsync(CancellationToken cancellationToken = default)
+    {
+        var tenantId = _tenantIdProvider.TenantId;
+        return tenantId is null
+            ? null
+            : TenantCalendar.FindTimeZone(await GetTimeZoneIdAsync(tenantId.Value, cancellationToken));
+    }
+
     private async Task<string?> GetTimeZoneIdAsync(Guid tenantId, CancellationToken ct)
     {
         var key = $"tenant-timezone:{tenantId}";

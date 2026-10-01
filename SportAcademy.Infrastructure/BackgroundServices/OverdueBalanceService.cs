@@ -129,7 +129,7 @@ namespace SportAcademy.Infrastructure.BackgroundServices
             => invoices.Select(i => new OwedRow(
                 i.Id,
                 i.TenantId,
-                i.Trainee != null ? i.Trainee.FirstName + " " + i.Trainee.LastName : i.InvoiceNumber,
+                i.Trainee != null ? i.Trainee.FirstName + " " + i.Trainee.LastName : i.PayerName ?? i.InvoiceNumber,
                 i.GrandTotal - i.AmountPaid,
                 i.Currency,
                 i.DueDate));

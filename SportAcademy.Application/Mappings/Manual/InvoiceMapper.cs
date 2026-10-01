@@ -11,7 +11,9 @@ namespace SportAcademy.Application.Mappings.Manual
             invoice.Status,
             invoice.IssueDate,
             invoice.DueDate,
-            invoice.Trainee is null ? null : $"{invoice.Trainee.FirstName} {invoice.Trainee.LastName}",
+            // Not every payer is a trainee (an event's customer isn't) - fall back to the payer
+            // copied onto the invoice.
+            invoice.Trainee is null ? invoice.PayerName : $"{invoice.Trainee.FirstName} {invoice.Trainee.LastName}",
             invoice.BranchId,
             invoice.Branch.Name,
             invoice.Currency,

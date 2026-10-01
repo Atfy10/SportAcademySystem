@@ -34,6 +34,7 @@ public static class FeatureCategories
         ["family-management"] = "Operations",
         ["nationality-categories"] = "Operations",
         ["session-management"] = "Operations",
+        ["event-management"] = "Operations",
         ["financial-reports"] = "Finance",
         ["discount-offers"] = "Finance",
         ["notifications"] = "Communication",

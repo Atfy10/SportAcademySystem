@@ -25,7 +25,7 @@ public class GetOutstandingBalancesQueryHandler : IRequestHandler<GetOutstanding
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var dtos = items.Select(i => new OutstandingInvoiceDto(
             i.Id, i.InvoiceNumber,
-            i.Trainee is null ? null : $"{i.Trainee.FirstName} {i.Trainee.LastName}",
+            i.Trainee is null ? i.PayerName : $"{i.Trainee.FirstName} {i.Trainee.LastName}",
             i.BranchId, i.Branch.Name, i.DueDate, i.GrandTotal, i.AmountPaid, i.GrandTotal - i.AmountPaid,
             i.DueDate < today
         )).ToList();

@@ -52,6 +52,7 @@ public class GetPaymentReceiptQueryHandler : IRequestHandler<GetPaymentReceiptQu
                     .Select(l => l.SubscriptionDetails)
                     .FirstOrDefault(sd => sd is not null);
                 var sport = subscription?.SportPrice?.SportSubscriptionType?.Sport;
+                var ev = invoice.Lines.Select(l => l.Event).FirstOrDefault(e => e is not null);
 
                 return new PaymentReceiptAllocationDto(
                     a.InvoiceId,
@@ -67,7 +68,10 @@ public class GetPaymentReceiptQueryHandler : IRequestHandler<GetPaymentReceiptQu
                         : sport.Translations.Where(t => t.LangCode == lang).Select(t => t.Name).FirstOrDefault() ?? sport.Name,
                     subscription?.SportPrice?.SportSubscriptionType?.SubscriptionType?.Name.ToString(),
                     subscription?.StartDate,
-                    subscription?.EndDate);
+                    subscription?.EndDate,
+                    ev?.Id,
+                    ev?.Title,
+                    ev is null ? null : SportAcademy.Domain.Services.TenantCalendar.ToLocal(ev.StartsAt));
             })
             .ToList();
 
@@ -80,6 +84,13 @@ public class GetPaymentReceiptQueryHandler : IRequestHandler<GetPaymentReceiptQu
                 $"{t.FirstName} {t.LastName}",
                 t.PhoneNumber,
                 t.TraineeCode?.Value))
+            .ToList();
+
+        var payers = payment.Allocations
+            .Select(a => a.Invoice)
+            .Where(i => i.Trainee is null && !string.IsNullOrWhiteSpace(i.PayerName))
+            .DistinctBy(i => (i.PayerName, i.PayerPhone))
+            .Select(i => new PaymentReceiptPayerDto(i.PayerName!, i.PayerPhone))
             .ToList();
 
         var refunds = payment.Refunds
@@ -105,7 +116,8 @@ public class GetPaymentReceiptQueryHandler : IRequestHandler<GetPaymentReceiptQu
             allocations,
             trainees,
             payment.RecordedByUserId is { } recordedBy ? names.GetValueOrDefault(recordedBy) : null,
-            refunds);
+            refunds,
+            payers);
 
         return Result<PaymentReceiptDto>.Success(dto, _operation);
     }

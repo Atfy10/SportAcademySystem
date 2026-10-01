@@ -9,5 +9,8 @@ namespace SportAcademy.Domain.Enums
         LateFee = 2,
         Adjustment = 3,
         Tax = 4,
+        // An event booking (see Event): the rental price, and its separate decoration charge.
+        EventFee = 5,
+        EventDecoration = 6,
     }
 }

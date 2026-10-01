@@ -16,6 +16,8 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Finance
             builder.Property(i => i.Currency).IsRequired().HasMaxLength(3);
             builder.Property(i => i.Status).IsRequired().HasConversion<string>().HasMaxLength(20);
             builder.Property(i => i.Notes).HasMaxLength(1000);
+            builder.Property(i => i.PayerName).HasMaxLength(200);
+            builder.Property(i => i.PayerPhone).HasMaxLength(20);
 
             // KWD (and several other Gulf currencies) has 3 decimal places - decimal(18,2)
             // would silently truncate fils.

@@ -552,6 +552,9 @@ namespace SportAcademy.Infrastructure.Seeders
                 // it approve/reject one too, alongside Owner/Admin. DiscountCode.Manage
                 // (minting codes) is deliberately NOT granted here - Owner/Admin only.
                 Permissions.DiscountCode.Approve,
+                // Sees events and their customers and runs the events report, so it can chase
+                // and collect event balances - booking/cancelling stays Owner/Admin.
+                Permissions.Event.View, Permissions.Event.Report,
             ],
             // Platform-level, read-only: sees tenant/audit data across the whole platform but
             // cannot mutate a tenant, ban an owner, or impersonate into one - a support/success
@@ -715,6 +718,10 @@ namespace SportAcademy.Infrastructure.Seeders
             ("profile-mgmt", "Profile Management", "User profile and preferences", true),
             ("ai-assistant", "AI Assistant", "AI-powered help and insights", false),
             ("backup-restore", "Backup & Restore", "Data backup and restoration", true),
+            // Enterprise-only by omission: it's in neither BasicFeatureNames nor
+            // ProfessionalOnlyFeatureNames, and anything in neither list is granted only to the
+            // Enterprise plan (see ReconcileNewFeaturesIntoExistingPlansAsync).
+            ("event-management", "Event Management", "Rent out branches for events, track event customers, bill and report on them", true),
         ];
 
         // Default bundle-builder pricing for the public marketing site's "build your own plan"
@@ -763,6 +770,7 @@ namespace SportAcademy.Infrastructure.Seeders
             ["discount-offers"] = (7m, false),
             ["session-management"] = (10m, false),
             ["backup-restore"] = (6m, false),
+            ["event-management"] = (12m, false),
         };
 
         // Fully replaces the old "SeedFeaturesAsync always inserts everything, assumes it only

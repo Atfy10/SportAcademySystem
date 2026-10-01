@@ -50,6 +50,11 @@ namespace SportAcademy.Application.Interfaces
         /// (most users are one or the other), else falls back to the login username.
         Task<string> GetDisplayNameAsync(Guid userId, CancellationToken ct = default);
 
+        /// Same naming rule as GetDisplayNameAsync, for many users in one query (list pages and
+        /// reports that show "created by" per row). Includes deactivated/deleted users - a record
+        /// they created still has to say who created it. Ids with no user are simply absent.
+        Task<Dictionary<Guid, string>> GetDisplayNamesAsync(IEnumerable<Guid> userIds, CancellationToken ct = default);
+
         /// Ids of every current-tenant user holding any of the given roles - resolved live from
         /// role assignments (not a connection-time cache), so a group notification's recipient
         /// list is always correct even for a user who has never connected to the SignalR hub.

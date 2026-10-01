@@ -1,4 +1,5 @@
 using FluentValidation;
+using SportAcademy.Domain.Services;
 using SportAcademy.Application.Commands.ExpenseCommands.CreateExpense;
 
 namespace SportAcademy.Application.Validators.ExpenseValidators
@@ -28,7 +29,10 @@ namespace SportAcademy.Application.Validators.ExpenseValidators
 
         private static bool BeWithinCurrentMonth(DateOnly date)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            // The academy's own date (its configured time zone), not UTC's - just after midnight
+            // in Kuwait it is still yesterday in UTC, which rejected today's expenses and, on the
+            // 1st, allowed only last month's.
+            var today = TenantCalendar.Today;
             var firstOfMonth = new DateOnly(today.Year, today.Month, 1);
             return date >= firstOfMonth && date <= today;
         }
