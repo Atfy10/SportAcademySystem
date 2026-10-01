@@ -53,10 +53,32 @@ namespace SportAcademy.Domain.Exceptions.EventExceptions
             $"Payment {paymentNumber} also settles other invoices. Refund it from the Payments page first, then cancel the event.",
             paymentNumber);
 
-        public static EventRuleException CapacityBelowAdmitted(int admitted) => new(
-            "errors.event.capacityBelowAdmitted",
-            $"{admitted} people have already been let in, so the capacity can't be lower than that.",
-            admitted);
+        public static EventRuleException CapacityBelowIssued(int issued) => new(
+            "errors.event.capacityBelowIssued",
+            $"{issued} tickets have already been issued, so the capacity can't be lower than that. Revoke unused tickets first.",
+            issued);
+
+        public static EventRuleException TooManyTickets(int remaining) => new(
+            "errors.event.tooManyTickets",
+            $"Only {remaining} more tickets can be issued for this event - that's its capacity.",
+            remaining);
+
+        public static EventRuleException TicketsTerminated() => new(
+            "errors.event.ticketsTerminated",
+            "This event has ended or was cancelled, so its tickets are closed for good and can't be changed.");
+
+        public static EventRuleException TicketAlreadyUsed() => new(
+            "errors.event.ticketAlreadyUsed",
+            "This ticket has already been used to get in, so it can't be changed.");
+
+        public static EventRuleException EndingWouldCloseTickets(int issued) => new(
+            "errors.event.endingWouldCloseTickets",
+            $"This event has {issued} tickets issued. Moving it so it ends in the past would close them for good - check the date and time.",
+            issued);
+
+        public static EventRuleException EndedTimesLocked() => new(
+            "errors.event.endedTimesLocked",
+            "This event has already ended, so its date and time can't be changed - its tickets are closed for good.");
 
         public static EventRuleException NoActingUser() => new(
             "errors.event.noActingUser",

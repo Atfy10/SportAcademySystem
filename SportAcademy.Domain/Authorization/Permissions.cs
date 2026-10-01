@@ -151,6 +151,9 @@ namespace SportAcademy.Domain.Authorization
             public const string View = "event.view";
             // The printable events report on the Events page (not part of report.view).
             public const string Report = "event.report";
+            // Scanning guests' tickets at the door and letting them in - Owner/Admin/Employee.
+            // Deliberately separate from View: door staff see no money and edit no bookings.
+            public const string CheckIn = "event.checkin";
         }
 
         public static class Tenant
@@ -204,7 +207,7 @@ namespace SportAcademy.Domain.Authorization
             Expense.Manage, Expense.View,
             Salary.Create, Salary.Approve, Salary.MarkPaid, Salary.View,
             DiscountCode.Manage, DiscountCode.Approve,
-            Event.Manage, Event.View, Event.Report,
+            Event.Manage, Event.View, Event.Report, Event.CheckIn,
             Tenant.ManageSettings, Tenant.ManageUsers, Tenant.ManageLimitReconciliation,
             Platform.TenantsRead, Platform.TenantsManage, Platform.OwnersManage, Platform.AuditRead, Platform.Impersonate,
             Platform.LeadsRead, Platform.LeadsManage,

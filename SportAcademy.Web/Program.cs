@@ -199,10 +199,10 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
-    // Event entry scans: a crowd arriving together often shares one venue Wi-Fi (one public IP),
-    // so this allows far more than "public" does. The entry code is 128 random bits, so a
-    // generous limit costs nothing in guessability.
-    options.AddPolicy("event-entry", httpContext =>
+    // Guests opening their event ticket links: a crowd arriving together often shares one venue
+    // Wi-Fi (one public IP), so this allows far more than "public" does. A ticket code is 128
+    // random bits, so a generous limit costs nothing in guessability.
+    options.AddPolicy("event-ticket", httpContext =>
     {
         var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions

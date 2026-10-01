@@ -42,12 +42,8 @@ public record EventDto(
     DateTime? CancelledAt,
     string? CancelReason,
     string? CancelledByName,
-    // The entry QR code's token (the code links to /e/{EntryToken}) and how many people it has
-    // let in so far, out of Capacity.
-    string EntryToken,
-    int AdmittedCount,
-    // When the entry QR code starts letting people in (EventEntryRules.OpensBefore before the
-    // start), on the academy's wall clock.
+    // When the door starts letting ticket holders in (EventEntryRules.OpensBefore before the
+    // start), on the academy's wall clock. The tickets themselves: GET api/events/{id}/tickets.
     DateTime EntryOpensAtLocal);
 
 // One payment applied to the event's invoice. Amount is what it put on this invoice;
