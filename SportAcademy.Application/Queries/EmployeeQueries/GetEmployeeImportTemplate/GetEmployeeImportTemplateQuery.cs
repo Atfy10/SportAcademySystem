@@ -61,6 +61,7 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetEmployeeImportTemp
 
             var country = await _countryReader.GetCountryAsync(ct);
             var phones = ImportSamplePhones.For(country, 2);
+            var localNationality = _localizer.Label(LocalNationality(country));
 
             var columns = Cols.All.Select(c => new ImportColumnInfo(
                 Key: c.Key,
@@ -86,7 +87,7 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetEmployeeImportTemp
                 [Cols.LastName] = "Al-Mutairi",
                 [Cols.BirthDate] = managerBirth.ToString("yyyy-MM-dd"),
                 [Cols.Gender] = _localizer.Label(Gender.Male),
-                [Cols.Nationality] = nationalities.FirstOrDefault() ?? string.Empty,
+                [Cols.Nationality] = localNationality,
                 [Cols.PhoneNumber] = phones[0],
                 [Cols.Email] = "yousef.almutairi@example.com",
                 [Cols.Ssn] = SampleNationalId(country, managerBirth, 1),
@@ -114,6 +115,17 @@ namespace SportAcademy.Application.Queries.EmployeeQueries.GetEmployeeImportTemp
                 columns, [manager, coach], branchNames, positions, genders, nationalities),
                 OperationType.Get.ToString());
         }
+
+        // The supported countries' own nationality, so the sample rows look like this academy's staff.
+        private static Nationality LocalNationality(string countryIso) => countryIso.ToUpperInvariant() switch
+        {
+            "EG" => Nationality.Egyptian,
+            "SA" => Nationality.Saudi,
+            "AE" => Nationality.Emirati,
+            "QA" => Nationality.Qatari,
+            "OM" => Nationality.Omanian,
+            _ => Nationality.Kuwaiti,
+        };
 
         // Every supported country's national ID starts with a century digit (2 = 1900s, 3 = 2000s)
         // and the birth date as yyMMdd (CountryRegionalRegistry); the rest is padded to the

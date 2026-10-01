@@ -70,6 +70,23 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 })
                 .ToListAsync(ct);
 
+            // CreatedBy is the auditing user's id; show who that is (their employee name, else
+            // their user name) - one query for the whole file.
+            var creatorIds = rows
+                .Select(r => Guid.TryParse(r.CreatedBy, out var g) ? g : (Guid?)null)
+                .Where(g => g.HasValue).Select(g => g!.Value).Distinct().ToList();
+            var creators = creatorIds.Count == 0
+                ? new Dictionary<string, string>()
+                : (await _context.AppUsers.AsNoTracking()
+                        .Where(u => creatorIds.Contains(u.Id))
+                        .Select(u => new
+                        {
+                            u.Id,
+                            Name = u.Employee != null ? u.Employee.FirstName + " " + u.Employee.LastName : u.UserName,
+                        })
+                        .ToListAsync(ct))
+                    .ToDictionary(u => u.Id.ToString(), u => u.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
             return rows.Select(e => new EmployeeExportDto
             {
                 FirstName = e.FirstName,
@@ -92,7 +109,7 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 HasLoginAccount = e.AppUserId != null,
                 IsCoach = e.IsCoach,
                 CreatedAt = e.CreatedAt,
-                CreatedBy = e.CreatedBy,
+                CreatedBy = e.CreatedBy is not null && creators.TryGetValue(e.CreatedBy, out var creator) ? creator : e.CreatedBy,
             }).ToList();
         }
 
