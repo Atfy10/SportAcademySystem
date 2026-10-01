@@ -44,7 +44,6 @@ namespace SportAcademy.Application.Mappings.Manual
             if (cmd.Salary.HasValue) employee.Salary = cmd.Salary.Value;
             if (cmd.PhoneNumber != null) employee.PhoneNumber = cmd.PhoneNumber;
             if (cmd.SecondPhoneNumber != null) employee.SecondPhoneNumber = cmd.SecondPhoneNumber;
-            if (cmd.Position.HasValue) employee.Position = cmd.Position.Value;
             if (cmd.BranchId.HasValue) employee.BranchId = cmd.BranchId.Value;
             if (cmd.ImageUrl != null) employee.ImageUrl = cmd.ImageUrl;
 

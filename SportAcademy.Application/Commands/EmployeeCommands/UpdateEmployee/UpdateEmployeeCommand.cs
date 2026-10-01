@@ -9,7 +9,8 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
     // Partial update: only Id is required, every other field is optional and left untouched
     // when omitted. The employee list/read DTOs don't currently expose Salary/Street/City, so
     // a frontend edit form can't safely re-submit a full-replacement command without risking
-    // blanking data it never had in the first place.
+    // blanking data it never had in the first place. Position is deliberately NOT here - changing
+    // it can delete the coach record, so it has its own ChangeEmployeePositionCommand.
     public record UpdateEmployeeCommand(
         int Id,
         string? FirstName = null,
@@ -19,7 +20,6 @@ namespace SportAcademy.Application.Commands.EmployeeCommands.UpdateEmployee
         string? City = null,
         string? PhoneNumber = null,
         string? SecondPhoneNumber = null,
-        Position? Position = null,
         int? BranchId = null,
         string? ImageUrl = null) : IRequest<Result<EmployeeDto>>, IRequiresFeature, IOptionallyBranchScopedRequest, IRequiresActiveOptionalBranch
     {

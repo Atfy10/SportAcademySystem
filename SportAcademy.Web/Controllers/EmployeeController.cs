@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.EmployeeCommands.ChangeEmployeePosition;
 using SportAcademy.Application.Commands.EmployeeCommands.CreateEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.DeleteEmployee;
 using SportAcademy.Application.Commands.EmployeeCommands.ToggleEmployeeStatus;
@@ -78,6 +79,16 @@ namespace SportAcademy.Web.Controllers
         [HttpPut("{id}")]
         [Authorize(Policy = "Permission:employee.manage")]
         public async Task<ActionResult> EditAsync(int id, UpdateEmployeeCommand command, CancellationToken ct)
+        {
+            var result = await _mediator.Send(command with { Id = id }, ct);
+            return Ok(result);
+        }
+
+        // Separate from PUT {id}: moving an employee out of Coach hard-deletes their coach record
+        // (refused with an explanatory message when they still have groups/training history).
+        [HttpPut("{id}/position")]
+        [Authorize(Policy = "Permission:employee.manage")]
+        public async Task<ActionResult> ChangePositionAsync(int id, ChangeEmployeePositionCommand command, CancellationToken ct)
         {
             var result = await _mediator.Send(command with { Id = id }, ct);
             return Ok(result);

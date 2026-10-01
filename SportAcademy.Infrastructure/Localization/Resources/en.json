@@ -95,6 +95,8 @@
   "errors.db.reference": "This refers to something that doesn't exist (or is still used elsewhere).",
   "errors.subscription.sameSportConflict": "This trainee already has a subscription for this sport until {0}. A new one can start on {1} at the earliest.",
   "errors.employee.alreadyCoach": "This employee already has an active coach record.",
+  "errors.employee.coachHasGroups": "This employee is still the coach of {0} group(s): {1}. Assign those groups to another coach before changing their position.",
+  "errors.employee.coachHasTrainingHistory": "This employee can't be moved out of the Coach position because {0} trainee coaching history record(s) refer to them. Keep their position as Coach and deactivate them instead if they no longer work here.",
 
   "entity.Trainee": "trainee",
   "entity.Employee": "employee",

@@ -58,10 +58,6 @@ namespace SportAcademy.Application.Validators.EmployeeValidators
             RuleFor(x => x.SecondPhoneNumber)
                 .ApplyDigitsMinLengthFor(8);
 
-            RuleFor(x => x.Position)
-                .IsInEnum().WithMessage("Invalid position value.")
-                .When(x => x.Position.HasValue);
-
             RuleFor(x => x.BranchId)
                 .GreaterThan(0)
                 .WithMessage("Please select a valid branch.")

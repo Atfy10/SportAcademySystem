@@ -229,6 +229,46 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
+        public async Task<CoachRemovalBlockers> GetRemovalBlockersAsync(int employeeId, CancellationToken cancellationToken = default)
+        {
+            // IgnoreQueryFilters drops the tenant filter AND the automatic branch filter on
+            // TraineeGroup - without that, a user restricted to some branches would not "see" a
+            // group the coach teaches at another branch, wrongly report the coach as removable,
+            // and the delete would then fail on the foreign key. Tenant is re-applied explicitly.
+            var tenantId = _tenantIdProvider.TenantId;
+
+            var groupNames = await _context.TraineeGroups
+                .IgnoreQueryFilters()
+                .Where(g => g.CoachId == employeeId && g.TenantId == tenantId)
+                .OrderBy(g => g.Name)
+                .Select(g => g.Name)
+                .ToListAsync(cancellationToken);
+
+            var historyCount = await _context.TraineeCareerEvents
+                .IgnoreQueryFilters()
+                .CountAsync(e => e.CoachId == employeeId && e.TenantId == tenantId, cancellationToken);
+
+            return new CoachRemovalBlockers(groupNames.Count, groupNames, historyCount);
+        }
+
+        public async Task HardDeleteAsync(int employeeId, CancellationToken cancellationToken = default)
+        {
+            var tenantId = _tenantIdProvider.TenantId;
+
+            // ExecuteDeleteAsync issues a real DELETE without going through SaveChanges, so the
+            // SoftDeleteInterceptor (which would turn it into IsDeleted = true) never sees it.
+            // IgnoreQueryFilters also reaches a Coach row that was soft-deleted earlier.
+            await _context.CoachBranchAccesses
+                .IgnoreQueryFilters()
+                .Where(a => a.CoachId == employeeId && a.TenantId == tenantId)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            await _context.Coachs
+                .IgnoreQueryFilters()
+                .Where(c => c.EmployeeId == employeeId && c.TenantId == tenantId)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
         public async Task<List<CoachDropdownItemDto>> GetAllForDropdownAsync(CancellationToken cancellationToken = default)
         {
             var coaches = await _context.Coachs
