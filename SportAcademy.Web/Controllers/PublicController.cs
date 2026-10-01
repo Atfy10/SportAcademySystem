@@ -1,10 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SportAcademy.Application.Commands.EventCommands.ScanEventEntry;
 using SportAcademy.Application.Commands.MarketingCommands.CreateLead;
 using SportAcademy.Application.Queries.PublicQueries.GetPublicPlans;
 using SportAcademy.Application.Queries.PublicQueries.GetBundleFeatures;
+using SportAcademy.Application.Queries.EventTicketQueries.GetPublicEventTicket;
 
 namespace SportAcademy.Web.Controllers;
 
@@ -82,19 +82,17 @@ public class PublicController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
-    // A guest scanned an event's entry QR code (the console's /e/{token} page calls this). Says
-    // whether they can go in - and, if so, takes one of the event's places for this phone.
-    [HttpPost("event-entry/{token}")]
-    [EnableRateLimiting("event-entry")]
-    public async Task<IActionResult> ScanEventEntry(string token, [FromBody] EventEntryScanRequest request, CancellationToken ct)
+    // A guest opened their event ticket link (the console's /ticket/{token} page calls this).
+    // Read-only: it shows the ticket to present at the door, where staff scan it and decide.
+    // Never lets anyone in, and shows nothing once the event has ended or been cancelled.
+    [HttpGet("event-tickets/{token}")]
+    [EnableRateLimiting("event-ticket")]
+    public async Task<IActionResult> GetEventTicket(string token, CancellationToken ct)
     {
-        var result = await _mediator.Send(new ScanEventEntryCommand(token, request.DeviceKey), ct);
+        var result = await _mediator.Send(new GetPublicEventTicketQuery(token), ct);
         return Ok(result);
     }
 }
-
-// DeviceKey: the entry page's random id for this phone, kept in its browser.
-public record EventEntryScanRequest(string DeviceKey);
 
 // A flat request DTO rather than binding CreateLeadCommand directly - IpHash and Referrer are
 // server-derived (see above), never trusted from the client body.

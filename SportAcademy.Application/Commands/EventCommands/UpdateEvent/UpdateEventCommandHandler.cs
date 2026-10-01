@@ -22,6 +22,7 @@ namespace SportAcademy.Application.Commands.EventCommands.UpdateEvent
         private readonly ITenantSettingsCurrencyReader _currencyReader;
         private readonly IUnitOfWork _unitOfWork;
         private readonly EventDetailsLoader _detailsLoader;
+        private readonly IEventTicketStore _ticketStore;
 
         public UpdateEventCommandHandler(
             IEventRepository eventRepository,
@@ -30,7 +31,8 @@ namespace SportAcademy.Application.Commands.EventCommands.UpdateEvent
             IFinanceLedgerService financeLedgerService,
             ITenantSettingsCurrencyReader currencyReader,
             IUnitOfWork unitOfWork,
-            EventDetailsLoader detailsLoader)
+            EventDetailsLoader detailsLoader,
+            IEventTicketStore ticketStore)
         {
             _eventRepository = eventRepository;
             _customerRepository = customerRepository;
@@ -39,6 +41,7 @@ namespace SportAcademy.Application.Commands.EventCommands.UpdateEvent
             _currencyReader = currencyReader;
             _unitOfWork = unitOfWork;
             _detailsLoader = detailsLoader;
+            _ticketStore = ticketStore;
         }
 
         public async Task<Result<EventDetailsDto>> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
@@ -49,9 +52,25 @@ namespace SportAcademy.Application.Commands.EventCommands.UpdateEvent
             if (ev.IsCancelled)
                 throw EventRuleException.CancelledReadOnly();
 
-            // People already let in by the entry QR code keep their places.
-            if (request.Capacity < ev.AdmittedCount)
-                throw EventRuleException.CapacityBelowAdmitted(ev.AdmittedCount);
+            // Every issued ticket keeps its place - revoke unused ones first to go lower.
+            var tickets = await _ticketStore.GetCountsAsync(ev.Id, cancellationToken);
+            if (request.Capacity < tickets.Issued)
+                throw EventRuleException.CapacityBelowIssued(tickets.Issued);
+
+            // Once an event has ended its tickets are terminated for good. Moving its times would
+            // quietly bring them back to life, so an ended event's date and time are fixed (its
+            // price, customer and notes can still be corrected).
+            var startsAt = TenantCalendar.ToUtc(request.StartsAt);
+            var endsAt = TenantCalendar.ToUtc(request.EndsAt);
+            var now = DateTime.UtcNow;
+            if (ev.EndsAt <= now && (Moved(ev.StartsAt, startsAt) || Moved(ev.EndsAt, endsAt)))
+                throw EventRuleException.EndedTimesLocked();
+
+            // The other way round: moving an event that hasn't ended so that it ends in the past
+            // would close its issued tickets for good, and the lock above would then stop anyone
+            // moving it back (e.g. a mistyped year). Refuse it while it has tickets.
+            if (ev.EndsAt > now && endsAt <= now && tickets.Issued > 0)
+                throw EventRuleException.EndingWouldCloseTickets(tickets.Issued);
 
             if (request.BranchId != ev.BranchId && !await _branchRepository.IsExistAsync(request.BranchId, cancellationToken))
                 throw new BranchNotFoundException(request.BranchId.ToString());
@@ -74,8 +93,8 @@ namespace SportAcademy.Application.Commands.EventCommands.UpdateEvent
             ev.DecorationFee = request.WithDecorations ? request.DecorationFee : 0m;
             ev.Capacity = request.Capacity;
             // Typed in the academy's time zone; stored as UTC.
-            ev.StartsAt = TenantCalendar.ToUtc(request.StartsAt);
-            ev.EndsAt = TenantCalendar.ToUtc(request.EndsAt);
+            ev.StartsAt = startsAt;
+            ev.EndsAt = endsAt;
             ev.Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
 
             await _unitOfWork.InTransactionAsync(async () =>
@@ -105,5 +124,8 @@ namespace SportAcademy.Application.Commands.EventCommands.UpdateEvent
             var dto = await _detailsLoader.LoadAsync(ev.Id, cancellationToken);
             return Result<EventDetailsDto>.Success(dto, _operation);
         }
+
+        // The form sends times to the minute; anything under a minute apart is the same time.
+        private static bool Moved(DateTime stored, DateTime sent) => Math.Abs((stored - sent).TotalMinutes) >= 1;
     }
 }

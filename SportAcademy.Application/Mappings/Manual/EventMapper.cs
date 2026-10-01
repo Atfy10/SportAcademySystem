@@ -61,8 +61,6 @@ namespace SportAcademy.Application.Mappings.Manual
                 e.CancelledAt,
                 e.CancelReason,
                 e.CancelledByUserId is { } by ? userNames.GetValueOrDefault(by) : null,
-                e.EntryToken,
-                e.AdmittedCount,
                 TenantCalendar.ToLocal(EventEntryRules.OpensAt(e.StartsAt)));
         }
 

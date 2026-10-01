@@ -36,12 +36,6 @@ public class Event : ITenantScoped, IBranchScoped, IAuditableEntity, ISoftDeleta
 
     public int? InvoiceId { get; set; }
 
-    // The entry QR code encodes a link carrying this token (see EventEntryRules.NewToken). Each
-    // phone that scans it inside the entry window takes one place, up to Capacity; AdmittedCount
-    // is how many places are taken (EventAdmission holds who/when).
-    public required string EntryToken { get; set; }
-    public int AdmittedCount { get; set; }
-
     public bool IsCancelled { get; set; }
     public DateTime? CancelledAt { get; set; }
     public Guid? CancelledByUserId { get; set; }
@@ -63,7 +57,9 @@ public class Event : ITenantScoped, IBranchScoped, IAuditableEntity, ISoftDeleta
     public Branch Branch { get; set; } = null!;
     public EventCustomer EventCustomer { get; set; } = null!;
     public Invoice? Invoice { get; set; }
-    public ICollection<EventAdmission> Admissions { get; set; } = [];
+    // The guests' entry tickets (issued on demand, never more than Capacity). Staff scan them
+    // at the door - see EventTicket and EventEntryRules.
+    public ICollection<EventTicket> Tickets { get; set; } = [];
 
     public decimal TotalPrice => Price + DecorationFee;
 }

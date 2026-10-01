@@ -82,7 +82,6 @@ namespace SportAcademy.Application.Commands.EventCommands.CreateEvent
                 EndsAt = TenantCalendar.ToUtc(request.EndsAt),
                 Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
                 CreatedByUserId = userId,
-                EntryToken = EventEntryRules.NewToken(),
             };
 
             // Customer, event, invoice and the first payment are separate SaveChanges calls -

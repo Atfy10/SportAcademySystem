@@ -2,12 +2,21 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using SportAcademy.Application.Commands.EventCommands.CancelEvent;
-using SportAcademy.Application.Commands.EventCommands.RegenerateEventEntryCode;
-using SportAcademy.Application.Commands.EventCommands.ScanEventEntry;
 using SportAcademy.Application.Commands.EventCommands.CreateEvent;
 using SportAcademy.Application.Commands.EventCommands.DeleteEvent;
 using SportAcademy.Application.Commands.EventCommands.UpdateEvent;
 using SportAcademy.Application.Commands.EventCustomerCommands.DeleteEventCustomer;
+using SportAcademy.Application.Commands.EventTicketCommands.AdmitEventTicket;
+using SportAcademy.Application.Commands.EventTicketCommands.IssueEventTickets;
+using SportAcademy.Application.Commands.EventTicketCommands.ReissueEventTicket;
+using SportAcademy.Application.Commands.EventTicketCommands.RevokeEventTicket;
+using SportAcademy.Application.Commands.EventTicketCommands.UpdateEventTicket;
+using SportAcademy.Application.Common.Pagination;
+using SportAcademy.Application.DTOs.EventDtos;
+using SportAcademy.Application.Queries.EventTicketQueries.CheckEventTicket;
+using SportAcademy.Application.Queries.EventTicketQueries.GetCheckInEvents;
+using SportAcademy.Application.Queries.EventTicketQueries.GetEventTickets;
+using SportAcademy.Application.Queries.EventTicketQueries.GetPublicEventTicket;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Application.Services;
 using SportAcademy.Domain.Contract;
@@ -307,7 +316,7 @@ public class EventBookingTests
     }
 
     private UpdateEventCommandHandler UpdateHandler() => new(
-        _events, _customers, _branches.Object, _ledger, _currency.Object, _unitOfWork.Object, _loader);
+        _events, _customers, _branches.Object, _ledger, _currency.Object, _unitOfWork.Object, _loader, new EventTicketStore(_ctx));
 
     private static UpdateEventCommand Edit(int id, int customerId, decimal price, bool withDecorations, decimal fee, int branchId = BranchId)
     {
@@ -409,18 +418,15 @@ public class EventBookingTests
     }
 
     [Fact]
-    public async Task Update_CapacityBelowPeopleAlreadyLetIn_IsRejected()
+    public async Task Update_CapacityBelowTicketsIssued_IsRejected()
     {
-        var (id, token) = await BookRunningEventAsync(capacity: 5);
-        await ScanAsync(token, "device-aaaa1");
-        await ScanAsync(token, "device-bbbb2");
-        var ev = await _ctx.Events.SingleAsync(e => e.Id == id);
-        _ctx.ChangeTracker.Clear();
+        var id = await BookRunningEventAsync(capacity: 5);
+        await IssueAsync(id, 2);
+        var ev = await _ctx.Events.AsNoTracking().SingleAsync(e => e.Id == id);
 
-        var start = DateTime.UtcNow.AddMinutes(-5);
         var act = () => UpdateHandler().Handle(new UpdateEventCommand(
             id, "Birthday party", BranchId, ev.EventCustomerId, true, 100m, 20m, Capacity: 1,
-            start, start.AddHours(3), null, null), default);
+            ev.StartsAt, ev.EndsAt, null, null), default);
 
         await act.Should().ThrowAsync<EventRuleException>();
     }
@@ -473,125 +479,375 @@ public class EventBookingTests
         line.Amount.Should().Be(50m);
     }
 
-    // ── Entry QR code ────────────────────────────────────────────────────────
+    // ── Tickets & door check-in ──────────────────────────────────────────────
 
-    private ScanEventEntryCommandHandler ScanHandler()
+    private EventTicketStore TicketStore() => new(_ctx);
+
+    private static Mock<IUserRepository> UserNames()
+    {
+        var users = new Mock<IUserRepository>();
+        users.Setup(u => u.GetDisplayNamesAsync(It.IsAny<IEnumerable<Guid>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<Guid, string> { [UserId] = "admin" });
+        return users;
+    }
+
+    private static ICurrentLanguageProvider English()
+    {
+        var language = new Mock<ICurrentLanguageProvider>();
+        language.SetupGet(l => l.Language).Returns("en");
+        return language.Object;
+    }
+
+    private EventTicketCheckService CheckService() => new(TicketStore(), UserNames().Object, English());
+
+    private async Task<List<EventTicketDto>> IssueAsync(int eventId, int count, string? guestName = null)
+        => (await new IssueEventTicketsCommandHandler(_events, TicketStore())
+            .Handle(new IssueEventTicketsCommand(eventId, count, guestName), default)).Data!;
+
+    private async Task<EventTicketCheckDto> CheckAsync(string? code, int? eventId = null, int? number = null)
+        => (await new CheckEventTicketQueryHandler(CheckService())
+            .Handle(new CheckEventTicketQuery(code, eventId, number), default)).Data!;
+
+    private async Task<EventTicketCheckDto> AdmitAsync(string? code, int? eventId = null, int? number = null)
+        => (await new AdmitEventTicketCommandHandler(CheckService(), TicketStore(), _user)
+            .Handle(new AdmitEventTicketCommand(code, eventId, number), default)).Data!;
+
+    private GetPublicEventTicketQueryHandler PublicHandler()
     {
         var tenants = new Mock<ITenantRepository>();
         tenants.Setup(t => t.IsFeatureEnabledAsync(TenantId, "event-management", It.IsAny<CancellationToken>())).ReturnsAsync(true);
         var clock = new Mock<ITenantClock>();
         clock.Setup(c => c.GetTimeZoneAsync(It.IsAny<CancellationToken>())).ReturnsAsync((TimeZoneInfo?)null);
-        var language = new Mock<ICurrentLanguageProvider>();
-        language.SetupGet(l => l.Language).Returns("en");
-        return new ScanEventEntryCommandHandler(
-            new EventEntryStore(_ctx), tenants.Object, new TestTenantIdProvider(), clock.Object, language.Object);
+        return new GetPublicEventTicketQueryHandler(TicketStore(), tenants.Object, new TestTenantIdProvider(), clock.Object, English());
     }
 
+    private async Task<PublicEventTicketDto> PublicTicketAsync(string token)
+        => (await PublicHandler().Handle(new GetPublicEventTicketQuery(token), default)).Data!;
+
     /// Books an event running from `startsInMinutes` from now, for `hours`, with `capacity` places.
-    private async Task<(int Id, string Token)> BookRunningEventAsync(int startsInMinutes = -5, int capacity = 50, double hours = 3)
+    private async Task<int> BookRunningEventAsync(int startsInMinutes = -5, int capacity = 50, double hours = 3)
     {
         var start = DateTime.UtcNow.AddMinutes(startsInMinutes);
         var created = (await CreateHandler().Handle(
             Booking() with { StartsAt = start, EndsAt = start.AddHours(hours), Capacity = capacity }, default)).Data!.Event;
-        return (created.Id, created.EntryToken);
+        return created.Id;
     }
 
-    private async Task<EventEntryResult> ScanAsync(string token, string device)
-        => (await ScanHandler().Handle(new ScanEventEntryCommand(token, device), default)).Data!.Result;
-
-    [Fact]
-    public async Task Scan_FirstTime_AdmitsAndNumbersThePerson()
+    // Ends the event a minute ago, as if time had passed since its tickets were issued.
+    private async Task EndEventAsync(int eventId)
     {
-        var (id, token) = await BookRunningEventAsync();
-
-        var result = (await ScanHandler().Handle(new ScanEventEntryCommand(token, "device-aaaa1"), default)).Data!;
-
-        result.Result.Should().Be(EventEntryResult.Admitted);
-        result.AdmissionNumber.Should().Be(1);
-        result.AdmittedCount.Should().Be(1);
-        result.Capacity.Should().Be(50);
-        result.AcademyName.Should().Be("AURA Academy");
-        (await _ctx.Events.SingleAsync(e => e.Id == id)).AdmittedCount.Should().Be(1);
+        var ev = await _ctx.Events.SingleAsync(e => e.Id == eventId);
+        ev.StartsAt = DateTime.UtcNow.AddHours(-3);
+        ev.EndsAt = DateTime.UtcNow.AddMinutes(-1);
+        await _ctx.SaveChangesAsync();
+        _ctx.ChangeTracker.Clear();
     }
 
     [Fact]
-    public async Task Scan_SamePhoneAgain_IsAlreadyAdmitted_AndTakesNoNewPlace()
+    public async Task IssueTickets_GivesEachARandomNumberAndItsOwnCode_UpToTheCapacity()
     {
-        var (id, token) = await BookRunningEventAsync();
-        await ScanAsync(token, "device-aaaa1");
+        var id = await BookRunningEventAsync(capacity: 3);
 
-        var again = (await ScanHandler().Handle(new ScanEventEntryCommand(token, "device-aaaa1"), default)).Data!;
+        var first = await IssueAsync(id, 2);
+        first.Should().OnlyContain(t => t.Number >= EventEntryRules.TicketNumberMin && t.Number <= EventEntryRules.TicketNumberMax);
+        first[0].Number.Should().NotBe(first[1].Number);
+        first.Should().OnlyContain(t => System.Text.RegularExpressions.Regex.IsMatch(t.Token, "^[0-9a-f]{32}$"));
+        first[0].Token.Should().NotBe(first[1].Token);
 
-        again.Result.Should().Be(EventEntryResult.AlreadyAdmitted);
-        again.AdmissionNumber.Should().Be(1);
-        (await _ctx.Events.SingleAsync(e => e.Id == id)).AdmittedCount.Should().Be(1);
+        var tooMany = () => IssueAsync(id, 2);
+        await tooMany.Should().ThrowAsync<EventRuleException>();
+
+        var named = await IssueAsync(id, 1, "  Sara  ");
+        named.Single().GuestName.Should().Be("Sara");
+        named.Single().Number.Should().NotBe(first[0].Number).And.NotBe(first[1].Number);
+        (await _ctx.EventTickets.CountAsync()).Should().Be(3);
     }
 
     [Fact]
-    public async Task Scan_WhenCapacityIsReached_RefusesEntryAsFull()
+    public async Task TicketNumbers_AreNotSequential()
     {
-        var (id, token) = await BookRunningEventAsync(capacity: 2);
+        var id = await BookRunningEventAsync(capacity: 50);
 
-        (await ScanAsync(token, "device-aaaa1")).Should().Be(EventEntryResult.Admitted);
-        (await ScanAsync(token, "device-bbbb2")).Should().Be(EventEntryResult.Admitted);
-        (await ScanAsync(token, "device-cccc3")).Should().Be(EventEntryResult.Full);
-        // Someone already inside who rescans is still recognised, not refused.
-        (await ScanAsync(token, "device-aaaa1")).Should().Be(EventEntryResult.AlreadyAdmitted);
+        var numbers = (await IssueAsync(id, 50)).Select(t => t.Number).ToList();
 
-        (await _ctx.Events.SingleAsync(e => e.Id == id)).AdmittedCount.Should().Be(2);
-        (await _ctx.EventAdmissions.CountAsync()).Should().Be(2);
+        numbers.Should().OnlyHaveUniqueItems();
+        // 50 random 6-digit numbers coming out as a run of consecutive ones is practically impossible.
+        numbers.Order().Zip(numbers.Order().Skip(1), (a, b) => b - a).Should().Contain(gap => gap > 1);
     }
 
     [Fact]
-    public async Task Scan_OpensFifteenMinutesBeforeTheStart()
+    public void NewTicketNumber_NeverRepeatsATakenNumber()
     {
-        var (_, soon) = await BookRunningEventAsync(startsInMinutes: 10);
-        var (_, later) = await BookRunningEventAsync(startsInMinutes: 20);
+        // Every number but one is taken: the only possible answer is the free one.
+        var taken = Enumerable.Range(EventEntryRules.TicketNumberMin, EventEntryRules.TicketNumberMax - EventEntryRules.TicketNumberMin + 1)
+            .Where(n => n != 555_555)
+            .ToHashSet();
 
-        (await ScanAsync(soon, "device-aaaa1")).Should().Be(EventEntryResult.Admitted);
-        (await ScanAsync(later, "device-aaaa1")).Should().Be(EventEntryResult.NotYetOpen);
+        EventEntryRules.NewTicketNumber(taken).Should().Be(555_555);
+        taken.Should().Contain(555_555);
     }
 
     [Fact]
-    public async Task Scan_AfterTheEnd_IsRefused()
+    public async Task RevokedTicket_FreesItsPlace_AndItsCodeStopsWorking()
     {
-        var (_, token) = await BookRunningEventAsync(startsInMinutes: -240, hours: 2);
+        var id = await BookRunningEventAsync(capacity: 3);
+        var tickets = await IssueAsync(id, 3);
 
-        (await ScanAsync(token, "device-aaaa1")).Should().Be(EventEntryResult.Ended);
+        await new RevokeEventTicketCommandHandler(TicketStore()).Handle(new RevokeEventTicketCommand(tickets[1].Id), default);
+
+        (await CheckAsync(tickets[1].Token)).Result.Should().Be(EventTicketCheckResult.Invalid);
+        (await CheckAsync(null, id, tickets[1].Number)).Result.Should().Be(EventTicketCheckResult.Invalid);
+        (await IssueAsync(id, 1)).Should().ContainSingle();
     }
 
     [Fact]
-    public async Task Scan_CancelledEvent_IsRefused()
+    public async Task Check_ValidTicket_SaysSo_ButLetsNobodyIn()
     {
-        var (id, token) = await BookRunningEventAsync();
+        var id = await BookRunningEventAsync();
+        var ticket = (await IssueAsync(id, 1, "Sara")).Single();
+
+        // The QR code holds the ticket's whole link; the scanner sends it as read.
+        var result = await CheckAsync($"https://app.example.com/ticket/{ticket.Token}?utm=x");
+
+        result.Result.Should().Be(EventTicketCheckResult.Valid);
+        result.Number.Should().Be(ticket.Number);
+        result.GuestName.Should().Be("Sara");
+        result.EventTitle.Should().Be("Birthday party");
+        result.AdmittedCount.Should().Be(0);
+        (await _ctx.EventTickets.SingleAsync()).AdmittedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Admit_LetsTheTicketInOnce_ThenItIsAlreadyUsed()
+    {
+        var id = await BookRunningEventAsync();
+        var ticket = (await IssueAsync(id, 2))[0];
+
+        var admitted = await AdmitAsync(ticket.Token);
+        admitted.Result.Should().Be(EventTicketCheckResult.Admitted);
+        admitted.AdmittedCount.Should().Be(1);
+        admitted.AdmittedByName.Should().Be("admin");
+        admitted.AdmittedAtLocal.Should().NotBeNull();
+
+        var again = await AdmitAsync(ticket.Token);
+        again.Result.Should().Be(EventTicketCheckResult.AlreadyUsed);
+        again.AdmittedByName.Should().Be("admin");
+        (await CheckAsync(ticket.Token)).Result.Should().Be(EventTicketCheckResult.AlreadyUsed);
+
+        var stored = await _ctx.EventTickets.SingleAsync(t => t.Id == ticket.Id);
+        stored.AdmittedByUserId.Should().Be(UserId);
+        (await _ctx.EventTickets.CountAsync(t => t.AdmittedAt != null)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Admit_ByEventAndNumber_WhenTheCodeCantBeScanned()
+    {
+        var id = await BookRunningEventAsync();
+        var tickets = await IssueAsync(id, 3);
+        var number = tickets[1].Number;
+        var notIssued = Enumerable.Range(EventEntryRules.TicketNumberMin, 10).First(n => tickets.All(t => t.Number != n));
+
+        (await AdmitAsync(null, id, number)).Result.Should().Be(EventTicketCheckResult.Admitted);
+        (await CheckAsync(null, id, number)).Result.Should().Be(EventTicketCheckResult.AlreadyUsed);
+        (await CheckAsync(null, id, notIssued)).Result.Should().Be(EventTicketCheckResult.Invalid);
+    }
+
+    [Fact]
+    public async Task Admit_OpensFifteenMinutesBeforeTheStart()
+    {
+        var soon = (await IssueAsync(await BookRunningEventAsync(startsInMinutes: 10), 1)).Single();
+        var later = (await IssueAsync(await BookRunningEventAsync(startsInMinutes: 20), 1)).Single();
+
+        (await AdmitAsync(soon.Token)).Result.Should().Be(EventTicketCheckResult.Admitted);
+        (await AdmitAsync(later.Token)).Result.Should().Be(EventTicketCheckResult.NotYetOpen);
+        (await _ctx.EventTickets.SingleAsync(t => t.Id == later.Id)).AdmittedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnknownOrReissuedCode_IsInvalid_AndRevealsNothing()
+    {
+        var id = await BookRunningEventAsync();
+        var ticket = (await IssueAsync(id, 1)).Single();
+
+        var reissued = (await new ReissueEventTicketCommandHandler(TicketStore())
+            .Handle(new ReissueEventTicketCommand(ticket.Id), default)).Data!;
+
+        reissued.Number.Should().NotBe(ticket.Number);
+        reissued.Token.Should().NotBe(ticket.Token);
+        // The old ticket can't get in by its number at the manual fallback either.
+        (await CheckAsync(null, id, ticket.Number)).Result.Should().Be(EventTicketCheckResult.Invalid);
+        var old = await AdmitAsync(ticket.Token);
+        old.Result.Should().Be(EventTicketCheckResult.Invalid);
+        old.EventTitle.Should().BeNull();
+        (await CheckAsync("0123456789abcdef0123456789abcdef")).Result.Should().Be(EventTicketCheckResult.Invalid);
+        (await CheckAsync("not a ticket")).Result.Should().Be(EventTicketCheckResult.Invalid);
+        (await AdmitAsync(reissued.Token)).Result.Should().Be(EventTicketCheckResult.Admitted);
+    }
+
+    [Fact]
+    public async Task UsedTicket_CantBeRevokedReissuedOrRenamed()
+    {
+        var id = await BookRunningEventAsync();
+        var ticket = (await IssueAsync(id, 1, "Sara")).Single();
+        await AdmitAsync(ticket.Token);
+
+        var revoke = () => new RevokeEventTicketCommandHandler(TicketStore()).Handle(new RevokeEventTicketCommand(ticket.Id), default);
+        var reissue = () => new ReissueEventTicketCommandHandler(TicketStore()).Handle(new ReissueEventTicketCommand(ticket.Id), default);
+        var rename = () => new UpdateEventTicketCommandHandler(TicketStore(), UserNames().Object)
+            .Handle(new UpdateEventTicketCommand(ticket.Id, "Someone else"), default);
+
+        await revoke.Should().ThrowAsync<EventRuleException>();
+        await reissue.Should().ThrowAsync<EventRuleException>();
+        await rename.Should().ThrowAsync<EventRuleException>();
+        (await _ctx.EventTickets.SingleAsync()).GuestName.Should().Be("Sara");
+    }
+
+    [Fact]
+    public async Task RunningEventWithTickets_CantBeMovedToEndInThePast()
+    {
+        var id = await BookRunningEventAsync();
+        await IssueAsync(id, 1);
+        var ev = await _ctx.Events.AsNoTracking().SingleAsync(e => e.Id == id);
+        _ctx.ChangeTracker.Clear();
+
+        // A mistyped year would close every ticket for good.
+        var lastYear = DateTime.UtcNow.AddYears(-1);
+        var act = () => UpdateHandler().Handle(new UpdateEventCommand(
+            id, "Birthday party", BranchId, ev.EventCustomerId, true, 100m, 20m, 50,
+            lastYear, lastYear.AddHours(3), null, null), default);
+
+        await act.Should().ThrowAsync<EventRuleException>();
+        (await _ctx.Events.AsNoTracking().SingleAsync(e => e.Id == id)).EndsAt.Should().Be(ev.EndsAt);
+    }
+
+    [Fact]
+    public async Task CancelledEvent_TerminatesItsTickets()
+    {
+        var id = await BookRunningEventAsync();
+        var ticket = (await IssueAsync(id, 1)).Single();
         await CancelHandler().Handle(new CancelEventCommand(id, "Called off", EventCancellationMode.RefundPayments), default);
 
-        (await ScanAsync(token, "device-aaaa1")).Should().Be(EventEntryResult.Cancelled);
+        (await AdmitAsync(ticket.Token)).Result.Should().Be(EventTicketCheckResult.Cancelled);
+        var page = await PublicTicketAsync(ticket.Token);
+        page.Result.Should().Be(EventTicketCheckResult.Cancelled);
+        page.Number.Should().BeNull();
     }
 
     [Fact]
-    public async Task Scan_UnknownOrReplacedCode_IsInvalid_AndRevealsNothing()
+    public async Task EndedEvent_TerminatesEveryTicket_ForGood()
     {
-        var (id, oldToken) = await BookRunningEventAsync();
-        await new RegenerateEventEntryCodeCommandHandler(_events, _loader).Handle(new RegenerateEventEntryCodeCommand(id), default);
+        var id = await BookRunningEventAsync();
+        var tickets = await IssueAsync(id, 2);
+        await AdmitAsync(tickets[0].Token);
+        await EndEventAsync(id);
 
-        var result = (await ScanHandler().Handle(new ScanEventEntryCommand(oldToken, "device-aaaa1"), default)).Data!;
+        // The door refuses it, used or not.
+        (await AdmitAsync(tickets[1].Token)).Result.Should().Be(EventTicketCheckResult.Ended);
+        (await CheckAsync(tickets[0].Token)).Result.Should().Be(EventTicketCheckResult.Ended);
+        (await _ctx.EventTickets.SingleAsync(t => t.Id == tickets[1].Id)).AdmittedAt.Should().BeNull();
 
-        result.Result.Should().Be(EventEntryResult.Invalid);
-        result.EventTitle.Should().BeNull();
-        result.AcademyName.Should().BeNull();
-        (await ScanAsync("0123456789abcdef0123456789abcdef", "device-aaaa1")).Should().Be(EventEntryResult.Invalid);
+        // The guest's page stops showing the ticket at all.
+        var page = await PublicTicketAsync(tickets[1].Token);
+        page.Result.Should().Be(EventTicketCheckResult.Ended);
+        page.AcademyName.Should().Be("AURA Academy");
+        page.Number.Should().BeNull();
+        page.GuestName.Should().BeNull();
+        page.StartsAtLocal.Should().BeNull();
+
+        // Nothing about the tickets can be changed any more.
+        var issue = () => IssueAsync(id, 1);
+        var rename = () => new UpdateEventTicketCommandHandler(TicketStore(), UserNames().Object)
+            .Handle(new UpdateEventTicketCommand(tickets[1].Id, "Late guest"), default);
+        var reissue = () => new ReissueEventTicketCommandHandler(TicketStore()).Handle(new ReissueEventTicketCommand(tickets[1].Id), default);
+        var revoke = () => new RevokeEventTicketCommandHandler(TicketStore()).Handle(new RevokeEventTicketCommand(tickets[1].Id), default);
+        await issue.Should().ThrowAsync<EventRuleException>();
+        await rename.Should().ThrowAsync<EventRuleException>();
+        await reissue.Should().ThrowAsync<EventRuleException>();
+        await revoke.Should().ThrowAsync<EventRuleException>();
+
+        // The record of who came stays.
+        var list = (await new GetEventTicketsQueryHandler(_events, TicketStore(), UserNames().Object)
+            .Handle(new GetEventTicketsQuery(id, EventTicketFilter.All, null, PageRequest.Create(1, 10)), default)).Data!;
+        list.Terminated.Should().BeTrue();
+        list.Issued.Should().Be(2);
+        list.Admitted.Should().Be(1);
+        list.Tickets.Items.Single(t => t.Number == tickets[0].Number).AdmittedByName.Should().Be("admin");
     }
 
     [Fact]
-    public async Task Create_GivesEachEventItsOwnEntryCode()
+    public async Task EndedEvent_CantBeMovedLater_ToReviveItsTickets()
     {
-        var (_, first) = await BookRunningEventAsync();
-        var (_, second) = await BookRunningEventAsync();
+        var id = await BookRunningEventAsync();
+        await IssueAsync(id, 1);
+        await EndEventAsync(id);
+        var ev = await _ctx.Events.AsNoTracking().SingleAsync(e => e.Id == id);
 
-        first.Should().MatchRegex("^[0-9a-f]{32}$");
-        second.Should().NotBe(first);
+        var later = DateTime.UtcNow.AddHours(1);
+        var move = () => UpdateHandler().Handle(new UpdateEventCommand(
+            id, "Birthday party", BranchId, ev.EventCustomerId, true, 100m, 20m, 50,
+            later, later.AddHours(3), null, null), default);
+        await move.Should().ThrowAsync<EventRuleException>();
+
+        // Correcting the price of an ended event (same times) is still fine.
+        var reprice = await UpdateHandler().Handle(new UpdateEventCommand(
+            id, "Birthday party", BranchId, ev.EventCustomerId, true, 90m, 20m, 50,
+            ev.StartsAt, ev.EndsAt, null, null), default);
+        reprice.IsSuccess.Should().BeTrue();
+        reprice.Data!.Event.Price.Should().Be(90m);
     }
+
+    [Fact]
+    public async Task PublicTicketPage_ShowsTheTicket_AndNeverLetsAnyoneIn()
+    {
+        var id = await BookRunningEventAsync();
+        var ticket = (await IssueAsync(id, 1, "Sara")).Single();
+
+        var page = await PublicTicketAsync(ticket.Token);
+
+        page.Result.Should().Be(EventTicketCheckResult.Valid);
+        page.Number.Should().Be(ticket.Number);
+        page.GuestName.Should().Be("Sara");
+        page.EventTitle.Should().Be("Birthday party");
+        page.AcademyName.Should().Be("AURA Academy");
+        (await _ctx.EventTickets.SingleAsync()).AdmittedAt.Should().BeNull();
+
+        await AdmitAsync(ticket.Token);
+        var used = await PublicTicketAsync(ticket.Token);
+        used.Result.Should().Be(EventTicketCheckResult.AlreadyUsed);
+        used.UsedAtLocal.Should().NotBeNull();
+
+        var unknown = await PublicTicketAsync("0123456789abcdef0123456789abcdef");
+        unknown.Result.Should().Be(EventTicketCheckResult.Invalid);
+        unknown.AcademyName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CheckInEvents_ListsTodaysEventsThatHaveNotEnded()
+    {
+        var running = await BookRunningEventAsync();
+        var issued = await IssueAsync(running, 2);
+        await AdmitAsync(issued[0].Token);
+        var ended = await BookRunningEventAsync();
+        await EndEventAsync(ended);
+
+        var events = (await new GetCheckInEventsQueryHandler(TicketStore(), English())
+            .Handle(new GetCheckInEventsQuery(), default)).Data!;
+
+        var only = events.Should().ContainSingle().Subject;
+        only.Id.Should().Be(running);
+        only.IsOpen.Should().BeTrue();
+        only.Issued.Should().Be(2);
+        only.Admitted.Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData("0123456789ABCDEF0123456789abcdef", "0123456789abcdef0123456789abcdef")]
+    [InlineData(" https://x.test/ticket/0123456789abcdef0123456789abcdef/ ", "0123456789abcdef0123456789abcdef")]
+    [InlineData("https://x.test/ticket/0123456789abcdef0123456789abcdef#top", "0123456789abcdef0123456789abcdef")]
+    [InlineData("https://x.test/ticket/short", null)]
+    [InlineData("", null)]
+    public void TicketCode_IsReadFromTheLinkOrTheBareToken(string code, string? expected)
+        => EventTicketCheckService.ParseToken(code).Should().Be(expected);
 
     [Fact]
     public async Task DeleteCustomer_WithEvents_IsRejected()

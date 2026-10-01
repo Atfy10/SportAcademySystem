@@ -21,11 +21,6 @@ namespace SportAcademy.Infrastructure.Persistence.Configurations.Events
 
             builder.Ignore(e => e.TotalPrice);
 
-            builder.Property(e => e.EntryToken).IsRequired().HasMaxLength(64);
-            // Scans look the event up by this, with no tenant context - it must be unique across
-            // every academy, not just within one.
-            builder.HasIndex(e => e.EntryToken).IsUnique();
-
             builder.Property(e => e.RowVersion).IsRowVersion();
 
             // The list, the report and the overlap check all filter by branch + date range.
