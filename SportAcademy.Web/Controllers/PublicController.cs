@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportAcademy.Application.Commands.EventCommands.ScanEventEntry;
 using SportAcademy.Application.Commands.MarketingCommands.CreateLead;
 using SportAcademy.Application.Queries.PublicQueries.GetPublicPlans;
 using SportAcademy.Application.Queries.PublicQueries.GetBundleFeatures;
@@ -80,7 +81,20 @@ public class PublicController : ControllerBase
         var result = await _mediator.Send(command, ct);
         return StatusCode(result.StatusCode, result);
     }
+
+    // A guest scanned an event's entry QR code (the console's /e/{token} page calls this). Says
+    // whether they can go in - and, if so, takes one of the event's places for this phone.
+    [HttpPost("event-entry/{token}")]
+    [EnableRateLimiting("event-entry")]
+    public async Task<IActionResult> ScanEventEntry(string token, [FromBody] EventEntryScanRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ScanEventEntryCommand(token, request.DeviceKey), ct);
+        return Ok(result);
+    }
 }
+
+// DeviceKey: the entry page's random id for this phone, kept in its browser.
+public record EventEntryScanRequest(string DeviceKey);
 
 // A flat request DTO rather than binding CreateLeadCommand directly - IpHash and Referrer are
 // server-derived (see above), never trusted from the client body.

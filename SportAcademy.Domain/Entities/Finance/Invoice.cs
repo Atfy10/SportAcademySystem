@@ -19,6 +19,13 @@ public class Invoice : ITenantScoped, IAuditableEntity, ISoftDeletable, IBranchS
     // Nullable so a future payer type (e.g. a family/company account) fits without a schema
     // change - today it is always set.
     public int? TraineeId { get; set; }
+
+    // Who is billed when the payer isn't a trainee (today: an event's customer). Copied onto the
+    // invoice when it's issued, like InvoiceLine prices, so renaming the customer later never
+    // rewrites a receipt already handed out. Readers show Trainee's name when there is one and
+    // fall back to this.
+    public string? PayerName { get; set; }
+    public string? PayerPhone { get; set; }
     public int BranchId { get; set; }
     public string Currency { get; set; } = "KWD";
 

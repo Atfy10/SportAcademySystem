@@ -49,6 +49,10 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
             services.AddScoped<IExpenseRepository, ExpenseRepository>();
+            services.AddScoped<IFinancialStatementReader, FinancialStatementReader>();
+            services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IEventCustomerRepository, EventCustomerRepository>();
+            services.AddScoped<IEventEntryStore, EventEntryStore>();
             services.AddScoped<ISalaryPaymentRepository, SalaryPaymentRepository>();
             services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
             services.AddScoped<ISubscriptionDiscountRequestRepository, SubscriptionDiscountRequestRepository>();

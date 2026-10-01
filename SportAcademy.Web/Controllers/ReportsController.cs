@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Common.Pagination;
 using SportAcademy.Application.Queries.ReportQueries.GetAttendanceReport;
+using SportAcademy.Application.DTOs.FinanceDtos;
 using SportAcademy.Application.Queries.ReportQueries.GetFinancialReport;
+using SportAcademy.Application.Queries.ReportQueries.GetFinancialStatement;
 using SportAcademy.Application.Queries.ReportQueries.GetOutstandingReport;
 using SportAcademy.Application.Queries.ReportQueries.GetPaymentMethodReport;
 using SportAcademy.Application.Queries.ReportQueries.GetRevenueReport;
@@ -51,6 +53,24 @@ namespace SportAcademy.Web.Controllers
             var result = await _mediator.Send(new GetFinancialReportQuery(from, to, branchId), ct);
             if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase) && result.IsSuccess)
                 return WriteCsv(result.Data!, "financial-report.csv");
+            return Ok(result);
+        }
+
+        // The same report itemized: every payment, refund, expense and paid salary, named and
+        // grouped into basic categories. CSV is one line per item.
+        [Authorize(Policy = "Permission:report.view")]
+        [HttpGet("financial/statement")]
+        public async Task<IActionResult> GetFinancialStatement(
+            [FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int? branchId,
+            [FromQuery] string? format, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetFinancialStatementQuery(from, to, branchId), ct);
+            if (string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase) && result.IsSuccess)
+            {
+                var rows = result.Data!.Sections.SelectMany(s => s.Categories.SelectMany(c => c.Items.Select(i =>
+                    new FinancialStatementCsvRow(s.Key, c.Name, i.Date, i.Title, i.Detail, i.Reference, i.BranchName, i.Amount))));
+                return WriteCsv(rows, "financial-statement.csv");
+            }
             return Ok(result);
         }
 

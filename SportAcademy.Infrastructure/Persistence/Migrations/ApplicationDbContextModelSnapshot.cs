@@ -671,6 +671,226 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.ToTable("Enrollments", (string)null);
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.Event", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AdmittedCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CancelledByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("DecorationFee")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("EndsAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EntryToken")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("EventCustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("WithDecorations")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntryToken")
+                        .IsUnique();
+
+                    b.HasIndex("EventCustomerId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("BranchId", "StartsAt");
+
+                    b.ToTable("Events", (string)null);
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.EventAdmission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AdmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeviceKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("EventId", "DeviceKey")
+                        .IsUnique();
+
+                    b.ToTable("EventAdmissions", (string)null);
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.EventCustomer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("NationalityCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FullName");
+
+                    b.HasIndex("NationalityCategoryId");
+
+                    b.HasIndex("TenantId", "PhoneNumber")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("EventCustomers", (string)null);
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.ExcuseRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -1073,6 +1293,14 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("OverdueNotifiedOn")
                         .HasColumnType("date");
 
+                    b.Property<string>("PayerName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PayerPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1140,6 +1368,9 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Property<int?>("DiscountCodeId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("EventId")
+                        .HasColumnType("int");
+
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
@@ -1165,6 +1396,8 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DiscountCodeId");
+
+                    b.HasIndex("EventId");
 
                     b.HasIndex("InvoiceId");
 
@@ -4353,6 +4586,78 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                     b.Navigation("TraineeGroup");
                 });
 
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.Event", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.Events.EventCustomer", "EventCustomer")
+                        .WithMany("Events")
+                        .HasForeignKey("EventCustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.Finance.Invoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("EventCustomer");
+
+                    b.Navigation("Invoice");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.EventAdmission", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.Events.Event", "Event")
+                        .WithMany("Admissions")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.EventCustomer", b =>
+                {
+                    b.HasOne("SportAcademy.Domain.Entities.NationalityCategory", "NationalityCategory")
+                        .WithMany()
+                        .HasForeignKey("NationalityCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SportAcademy.Domain.Entities.Tenants.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("NationalityCategory");
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("SportAcademy.Domain.Entities.ExcuseRequest", b =>
                 {
                     b.HasOne("SportAcademy.Domain.Entities.Enrollment", "Enrollment")
@@ -4488,6 +4793,11 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .HasForeignKey("DiscountCodeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SportAcademy.Domain.Entities.Events.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SportAcademy.Domain.Entities.Finance.Invoice", "Invoice")
                         .WithMany("Lines")
                         .HasForeignKey("InvoiceId")
@@ -4500,6 +4810,8 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DiscountCode");
+
+                    b.Navigation("Event");
 
                     b.Navigation("Invoice");
 
@@ -5555,6 +5867,16 @@ namespace SportAcademy.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SportAcademy.Domain.Entities.Enrollment", b =>
                 {
                     b.Navigation("Attendances");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.Event", b =>
+                {
+                    b.Navigation("Admissions");
+                });
+
+            modelBuilder.Entity("SportAcademy.Domain.Entities.Events.EventCustomer", b =>
+                {
+                    b.Navigation("Events");
                 });
 
             modelBuilder.Entity("SportAcademy.Domain.Entities.Family", b =>

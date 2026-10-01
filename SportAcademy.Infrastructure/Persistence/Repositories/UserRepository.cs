@@ -201,6 +201,29 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
             return result?.UserName ?? result?.EmployeeName ?? result?.TraineeName ?? "Unknown";
         }
 
+        public async Task<Dictionary<Guid, string>> GetDisplayNamesAsync(IEnumerable<Guid> userIds, CancellationToken ct = default)
+        {
+            var ids = userIds.Distinct().ToList();
+            if (ids.Count == 0) return [];
+
+            // IgnoreQueryFilters drops the soft-delete filter (a deleted user's records keep their
+            // author) - and the tenant filter with it, so re-apply the tenant check by hand.
+            var tenantId = _context.CurrentTenantId;
+            var rows = await _context.AppUsers
+                .IgnoreQueryFilters()
+                .Where(u => ids.Contains(u.Id) && u.TenantId == tenantId)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.UserName,
+                    EmployeeName = u.Employee != null ? u.Employee.FirstName + " " + u.Employee.LastName : null,
+                    TraineeName = u.Trainee != null ? u.Trainee.FirstName + " " + u.Trainee.LastName : null,
+                })
+                .ToListAsync(ct);
+
+            return rows.ToDictionary(r => r.Id, r => r.UserName ?? r.EmployeeName ?? r.TraineeName ?? "Unknown");
+        }
+
         public async Task<List<Guid>> GetUserIdsInRolesAsync(IEnumerable<string> roleNames, CancellationToken ct = default)
         {
             var names = roleNames.ToList();

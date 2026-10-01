@@ -18,5 +18,9 @@ namespace SportAcademy.Domain.Contract
         /// <summary>Current wall-clock time in the tenant's configured timezone, or plain UTC
         /// now if there is no tenant context or no timezone configured.</summary>
         Task<DateTime> GetLocalNowAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>The tenant's configured time zone, or null (treat as UTC) if there is no
+        /// tenant context or the configured id isn't recognized.</summary>
+        Task<TimeZoneInfo?> GetTimeZoneAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -1,8 +1,10 @@
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Events;
 using SportAcademy.Domain.Entities.Finance;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.BaseExceptions;
+using SportAcademy.Domain.Exceptions.EventExceptions;
 using SportAcademy.Domain.Exceptions.PaymentExceptions;
 
 namespace SportAcademy.Application.Services
@@ -92,6 +94,140 @@ namespace SportAcademy.Application.Services
 
             await _invoiceRepository.AddAsync(invoice, ct);
             return invoice;
+        }
+
+        public async Task<Invoice> IssueEventInvoiceAsync(
+            Event ev, EventCustomer customer, string currency, DateOnly dueDate, CancellationToken ct = default)
+        {
+            var invoiceNumber = await _numberGenerator.GenerateAsync("INV", ct);
+            var total = ev.TotalPrice;
+
+            var invoice = new Invoice
+            {
+                InvoiceNumber = invoiceNumber,
+                Status = total == 0 ? InvoiceStatus.Paid : InvoiceStatus.Issued,
+                IssueDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                DueDate = dueDate,
+                TraineeId = null,
+                PayerName = customer.FullName,
+                PayerPhone = customer.PhoneNumber,
+                BranchId = ev.BranchId,
+                Currency = currency,
+                SubTotal = total,
+                DiscountTotal = 0,
+                TaxTotal = 0,
+                GrandTotal = total,
+                AmountPaid = 0,
+            };
+
+            SetEventLines(invoice, ev);
+
+            await _invoiceRepository.AddAsync(invoice, ct);
+            return invoice;
+        }
+
+        public async Task ReviseEventInvoiceAsync(
+            Invoice invoice, Event ev, EventCustomer customer, DateOnly? dueDate, CancellationToken ct = default)
+        {
+            if (invoice.Status is InvoiceStatus.Cancelled)
+                throw FinanceRuleException.InvoiceCancelled(invoice.InvoiceNumber);
+
+            var total = ev.TotalPrice;
+            if (total < invoice.AmountPaid)
+                throw EventRuleException.TotalBelowPaid(invoice.AmountPaid);
+
+            // Money is reported per branch - moving an invoice that already holds money to another
+            // branch would move revenue that was received somewhere else.
+            if (invoice.BranchId != ev.BranchId && invoice.AmountPaid > 0)
+                throw EventRuleException.BranchLocked();
+
+            SetEventLines(invoice, ev);
+            invoice.BranchId = ev.BranchId;
+            invoice.PayerName = customer.FullName;
+            invoice.PayerPhone = customer.PhoneNumber;
+            invoice.SubTotal = total;
+            invoice.GrandTotal = total;
+            invoice.Status = ResolveStatusAfterPayment(invoice);
+
+            if (dueDate is { } due && due != invoice.DueDate)
+            {
+                invoice.DueDate = due;
+                invoice.OverdueNotifiedOn = null;
+                invoice.DueSoonNotifiedOn = null;
+            }
+
+            await _invoiceRepository.UpdateAsync(invoice, ct);
+        }
+
+        public async Task CloseInvoiceForCancelledEventAsync(Invoice invoice, CancellationToken ct = default)
+        {
+            if (invoice.Status is InvoiceStatus.Cancelled)
+                return;
+
+            if (invoice.AmountPaid <= 0)
+            {
+                invoice.Status = InvoiceStatus.Cancelled;
+            }
+            else if (invoice.AmountPaid < invoice.GrandTotal)
+            {
+                // Sum(Lines.LineTotal) == GrandTotal stays true: the waived remainder is a
+                // negative Adjustment line, and the invoice closes at exactly what was collected.
+                var waived = invoice.GrandTotal - invoice.AmountPaid;
+                invoice.Lines.Add(new InvoiceLine
+                {
+                    Type = InvoiceLineType.Adjustment,
+                    Description = "Event cancelled - remaining balance waived",
+                    Quantity = 1,
+                    UnitPrice = 0,
+                    DiscountAmount = waived,
+                    LineTotal = -waived,
+                });
+                // Recorded as a discount so SubTotal - DiscountTotal + TaxTotal == GrandTotal still
+                // holds for every reader of the invoice's figures.
+                invoice.DiscountTotal += waived;
+                invoice.GrandTotal = invoice.AmountPaid;
+                invoice.Status = InvoiceStatus.Paid;
+            }
+
+            await _invoiceRepository.UpdateAsync(invoice, ct);
+        }
+
+        // Brings the invoice's event lines in line with the event: one EventFee line, plus an
+        // EventDecoration line only while there's a decoration fee. Existing lines are updated in
+        // place (not deleted and re-added) so their ids stay stable for anything referencing them.
+        private static void SetEventLines(Invoice invoice, Event ev)
+        {
+            var feeLine = invoice.Lines.FirstOrDefault(l => l.Type == InvoiceLineType.EventFee);
+            if (feeLine is null)
+            {
+                feeLine = new InvoiceLine { Type = InvoiceLineType.EventFee, Description = "Event rental" };
+                invoice.Lines.Add(feeLine);
+            }
+            SetLine(feeLine, ev.Price, ev);
+
+            var decorationLine = invoice.Lines.FirstOrDefault(l => l.Type == InvoiceLineType.EventDecoration);
+            if (ev.DecorationFee > 0)
+            {
+                if (decorationLine is null)
+                {
+                    decorationLine = new InvoiceLine { Type = InvoiceLineType.EventDecoration, Description = "Event decorations" };
+                    invoice.Lines.Add(decorationLine);
+                }
+                SetLine(decorationLine, ev.DecorationFee, ev);
+            }
+            else if (decorationLine is not null)
+            {
+                invoice.Lines.Remove(decorationLine);
+            }
+        }
+
+        private static void SetLine(InvoiceLine line, decimal amount, Event ev)
+        {
+            line.Quantity = 1;
+            line.UnitPrice = amount;
+            line.DiscountAmount = 0;
+            line.LineTotal = amount;
+            line.EventId = ev.Id;
         }
 
         public async Task<Payment> RecordPaymentAsync(RecordPaymentInput input, CancellationToken ct = default)

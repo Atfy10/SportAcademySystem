@@ -95,6 +95,9 @@ namespace SportAcademy.Infrastructure.Persistence.DBContext
         public DbSet<Domain.Entities.Finance.SalaryPayment> SalaryPayments { get; set; }
         public DbSet<Domain.Entities.Finance.DiscountCode> DiscountCodes { get; set; }
         public DbSet<Domain.Entities.Finance.SubscriptionDiscountRequest> SubscriptionDiscountRequests { get; set; }
+        public DbSet<Domain.Entities.Events.Event> Events { get; set; }
+        public DbSet<Domain.Entities.Events.EventCustomer> EventCustomers { get; set; }
+        public DbSet<Domain.Entities.Events.EventAdmission> EventAdmissions { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
         public DbSet<TenantFeature> TenantFeatures { get; set; }
         public DbSet<TenantProfile> TenantProfiles { get; set; }

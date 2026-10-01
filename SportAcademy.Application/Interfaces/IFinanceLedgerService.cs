@@ -1,4 +1,5 @@
 using SportAcademy.Domain.Entities;
+using SportAcademy.Domain.Entities.Events;
 using SportAcademy.Domain.Entities.Finance;
 
 namespace SportAcademy.Application.Interfaces
@@ -32,6 +33,25 @@ namespace SportAcademy.Application.Interfaces
         Task<Invoice> IssueSubscriptionInvoiceAsync(
             SubscriptionDetails subscription, decimal grossPrice, decimal discountAmount,
             int? discountCodeId, string currency, DateOnly dueDate, CancellationToken ct = default);
+
+        // An event booking's invoice: an EventFee line for the rental price and, when decorated
+        // with a fee, an EventDecoration line. The payer is the event's customer, not a trainee,
+        // so their name/phone are copied onto the invoice (Invoice.PayerName/PayerPhone). The
+        // event must already be saved (its Id goes on the lines). A zero-total event is born Paid.
+        Task<Invoice> IssueEventInvoiceAsync(
+            Event ev, EventCustomer customer, string currency, DateOnly dueDate, CancellationToken ct = default);
+
+        // Re-prices an event's invoice after the event changed (price, decoration, customer or -
+        // while nothing is paid - branch). Never lets the total drop below what's already been
+        // collected. dueDate, when given, becomes the new collect date.
+        Task ReviseEventInvoiceAsync(
+            Invoice invoice, Event ev, EventCustomer customer, DateOnly? dueDate, CancellationToken ct = default);
+
+        // Settles an event's invoice when the event is cancelled: nothing collected -> the
+        // invoice is Cancelled; something collected and kept -> the rest is waived with an
+        // Adjustment line so the invoice closes as Paid at the amount collected and nothing stays
+        // owed. Refunding first (RefundPaymentAsync) and then calling this cancels it outright.
+        Task CloseInvoiceForCancelledEventAsync(Invoice invoice, CancellationToken ct = default);
 
         Task<Payment> RecordPaymentAsync(RecordPaymentInput input, CancellationToken ct = default);
 

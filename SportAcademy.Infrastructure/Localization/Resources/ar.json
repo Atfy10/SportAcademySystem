@@ -176,5 +176,19 @@
   "identity.UserAlreadyHasPassword": "هذا الحساب لديه كلمة مرور بالفعل.",
   "identity.InvalidToken": "هذا الرابط غير صالح أو تم استخدامه بالفعل.",
   "errors.traineeGroup.alreadyPrivate": "هذه المجموعة خاصة بالفعل.",
-  "errors.traineeGroup.keptTraineeNotInGroup": "بعض المتدربين المحددين غير مسجلين حالياً في هذه المجموعة."
+  "errors.traineeGroup.keptTraineeNotInGroup": "بعض المتدربين المحددين غير مسجلين حالياً في هذه المجموعة.",
+  "errors.event.customerPhoneExists": "يوجد بالفعل عميل فعاليات برقم الهاتف {0}.",
+  "errors.event.customerHasEvents": "لهذا العميل فعاليات مسجلة ولا يمكن حذفه. قم بإلغاء تفعيله بدلاً من ذلك.",
+  "errors.event.customerInactive": "هذا العميل غير مفعّل. أعد تفعيله قبل حجز فعالية جديدة.",
+  "errors.event.alreadyCancelled": "هذه الفعالية ملغاة بالفعل.",
+  "errors.event.cancelledReadOnly": "لا يمكن تعديل فعالية ملغاة.",
+  "errors.event.hasPayments": "تم تحصيل مبالغ لهذه الفعالية، لذا لا يمكن حذفها. قم بإلغائها بدلاً من ذلك.",
+  "errors.event.totalBelowPaid": "لا يمكن أن يكون الإجمالي الجديد أقل من {0} المحصّلة لهذه الفعالية.",
+  "errors.event.branchLocked": "تم تحصيل مبالغ لهذه الفعالية في فرعها، لذا لا يمكن تغيير الفرع.",
+  "errors.event.paymentExceedsTotal": "لا يمكن أن يتجاوز المبلغ المحصّل الآن إجمالي الفعالية ({0}).",
+  "errors.event.paymentShared": "الدفعة {0} تسدد فواتير أخرى أيضاً. قم باستردادها من صفحة المدفوعات أولاً، ثم ألغِ الفعالية.",
+  "errors.event.noActingUser": "جلستك لا تحدد مستخدماً، لذا لا يمكن تسجيل الفعالية. يرجى تسجيل الدخول مرة أخرى.",
+  "entity.Event": "فعالية",
+  "entity.EventCustomer": "عميل فعاليات",
+  "errors.event.capacityBelowAdmitted": "تم إدخال {0} أشخاص بالفعل، لذا لا يمكن أن تكون السعة أقل من ذلك."
 }

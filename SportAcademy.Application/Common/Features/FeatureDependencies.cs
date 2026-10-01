@@ -42,6 +42,9 @@ public static class FeatureDependencies
         ["pricing-management"] = ["sport-management", "branch-management"],
         ["discount-offers"] = ["subscription-plan"],
         ["family-management"] = ["trainee-management"],
+        // Events are billed through the ledger, booked at a branch, and their customers carry a
+        // nationality category.
+        ["event-management"] = ["payment-processing", "branch-management", "nationality-categories"],
     };
 
     // Built once from Requires by inverting every edge - not hand-maintained separately, so it

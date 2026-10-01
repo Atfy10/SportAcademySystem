@@ -199,6 +199,19 @@ builder.Services.AddRateLimiter(options =>
         });
     });
 
+    // Event entry scans: a crowd arriving together often shares one venue Wi-Fi (one public IP),
+    // so this allows far more than "public" does. The entry code is 128 random bits, so a
+    // generous limit costs nothing in guessability.
+    options.AddPolicy("event-entry", httpContext =>
+    {
+        var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(remoteIp, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 150,
+            Window = TimeSpan.FromMinutes(1),
+        });
+    });
+
     options.AddPolicy("token-revoke", httpContext =>
     {
         var remoteIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -508,8 +521,12 @@ app.Use(async (context, next) =>
     // Expired state is decided - see TenantCalendar.
     if (userContext.TenantId is not null)
     {
+        // One (cached) zone lookup serves both "today" and the zone itself. Event times are stored
+        // as UTC instants and entered/shown in the academy's own zone.
         var clock = context.RequestServices.GetRequiredService<ITenantClock>();
-        TenantCalendar.Set(DateOnly.FromDateTime(await clock.GetLocalNowAsync(context.RequestAborted)));
+        var zone = await clock.GetTimeZoneAsync(context.RequestAborted);
+        TenantCalendar.SetTimeZone(zone);
+        TenantCalendar.Set(TenantCalendar.TodayIn(zone));
     }
 
     // Only "Employee" is branch-restricted (see IBranchAccessProvider) - every other

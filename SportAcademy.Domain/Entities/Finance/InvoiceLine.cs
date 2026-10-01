@@ -26,7 +26,11 @@ public class InvoiceLine
     // referencing it can't be hard-deleted (only deactivated).
     public int? DiscountCodeId { get; set; }
 
+    // Set on the EventFee/EventDecoration lines of an event's invoice - which Event they billed.
+    public int? EventId { get; set; }
+
     public Invoice Invoice { get; set; } = null!;
     public SubscriptionDetails? SubscriptionDetails { get; set; }
     public DiscountCode? DiscountCode { get; set; }
+    public Events.Event? Event { get; set; }
 }

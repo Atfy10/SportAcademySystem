@@ -96,6 +96,8 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Include(p => p.Refunds)
                 .Include(p => p.Allocations).ThenInclude(a => a.Invoice).ThenInclude(i => i.Trainee)
                 .Include(p => p.Allocations).ThenInclude(a => a.Invoice).ThenInclude(i => i.Lines)
+                    .ThenInclude(l => l.Event)
+                .Include(p => p.Allocations).ThenInclude(a => a.Invoice).ThenInclude(i => i.Lines)
                     .ThenInclude(l => l.SubscriptionDetails!).ThenInclude(sd => sd.SportPrice)
                         .ThenInclude(sp => sp.SportSubscriptionType).ThenInclude(sst => sst.Sport).ThenInclude(s => s.Translations)
                 .Include(p => p.Allocations).ThenInclude(a => a.Invoice).ThenInclude(i => i.Lines)
@@ -119,7 +121,12 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                         && (a.Invoice.Trainee.FirstName.Contains(t)
                             || a.Invoice.Trainee.LastName.Contains(t)
                             || (a.Invoice.Trainee.FirstName + " " + a.Invoice.Trainee.LastName).Contains(t)
-                            || a.Invoice.Trainee.PhoneNumber.Contains(t))));
+                            || a.Invoice.Trainee.PhoneNumber.Contains(t)))
+                    // A non-trainee payer (an event's customer) is found by the name/phone
+                    // copied onto the invoice.
+                    || p.Allocations.Any(a => a.Invoice.PayerName != null
+                        && (a.Invoice.PayerName.Contains(t)
+                            || (a.Invoice.PayerPhone != null && a.Invoice.PayerPhone.Contains(t)))));
             }
 
             if (branchId.HasValue)
@@ -161,7 +168,11 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                     p.Allocations.OrderBy(a => a.Id)
                         .Where(a => a.Invoice.Trainee != null)
                         .Select(a => a.Invoice.Trainee!.FirstName + " " + a.Invoice.Trainee.LastName)
-                        .FirstOrDefault(),
+                        .FirstOrDefault()
+                        ?? p.Allocations.OrderBy(a => a.Id)
+                            .Where(a => a.Invoice.PayerName != null)
+                            .Select(a => a.Invoice.PayerName)
+                            .FirstOrDefault(),
                     p.Allocations.Where(a => a.Invoice.TraineeId != null).Select(a => a.Invoice.TraineeId).Distinct().Count(),
                     p.Allocations.OrderBy(a => a.Id).Select(a => a.Invoice.InvoiceNumber).ToList()))
                 .ToListAsync(ct);
