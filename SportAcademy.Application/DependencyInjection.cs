@@ -55,6 +55,7 @@ namespace SportAcademy.Application
             services.AddScoped<IFinancialDocumentNumberGenerator, FinancialDocumentNumberGenerator>();
             services.AddScoped<ISubscriptionCreationService, SubscriptionCreationService>();
             services.AddScoped<Services.TraineeImport.TraineeImportValidator>();
+            services.AddScoped<Services.EmployeeImport.EmployeeImportValidator>();
             services.AddScoped<TraineeGroupService>();
             services.AddScoped<IInvitationEmailSender, InvitationEmailSender>();
 

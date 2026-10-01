@@ -49,6 +49,53 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .ToPagedDataAsync(page, ct);
         }
 
+        public async Task<List<EmployeeExportDto>> GetExportDataAsync(IReadOnlyCollection<int>? ids, CancellationToken ct = default)
+        {
+            // Employee is excluded from the automatic branch filter (see the entity), so the
+            // caller's branch access is applied explicitly - same as the Employees list.
+            var query = ApplyBranchFilter(_context.Employees).AsNoTracking();
+            if (ids is { Count: > 0 })
+                query = query.Where(e => ids.Contains(e.Id));
+
+            var rows = await query
+                .OrderBy(e => e.Id)
+                .Select(e => new
+                {
+                    e.Id, e.FirstName, e.LastName, e.BirthDate, e.Gender, e.Nationality,
+                    e.PhoneNumber, e.SecondPhoneNumber, Email = e.Email.Value, e.SSN,
+                    BranchName = e.Branch.Name, e.Position, e.Salary,
+                    e.Address.Street, e.Address.City,
+                    e.HireDate, e.IsWork, e.AppUserId, IsCoach = e.Coach != null,
+                    e.CreatedAt, e.CreatedBy,
+                })
+                .ToListAsync(ct);
+
+            return rows.Select(e => new EmployeeExportDto
+            {
+                FirstName = e.FirstName,
+                LastName = e.LastName,
+                BirthDate = e.BirthDate,
+                Gender = e.Gender.ToString(),
+                Nationality = e.Nationality.ToString(),
+                PhoneNumber = e.PhoneNumber,
+                Email = e.Email,
+                SSN = e.SSN,
+                BranchName = e.BranchName,
+                Position = e.Position.ToString(),
+                Salary = e.Salary,
+                Street = e.Street,
+                City = e.City,
+                SecondPhoneNumber = e.SecondPhoneNumber,
+                Id = e.Id,
+                HireDate = e.HireDate,
+                IsWorking = e.IsWork,
+                HasLoginAccount = e.AppUserId != null,
+                IsCoach = e.IsCoach,
+                CreatedAt = e.CreatedAt,
+                CreatedBy = e.CreatedBy,
+            }).ToList();
+        }
+
         public async Task<int> GetActiveEmployeesCountAsync(CancellationToken ct = default)
             => await ApplyBranchFilter(_context.Employees)
                 .AsNoTracking()

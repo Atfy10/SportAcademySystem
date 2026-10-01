@@ -1,24 +1,46 @@
 using CsvHelper;
 using CsvHelper.Configuration;
-using SportAcademy.Application.DTOs.TraineeDtos;
+using SportAcademy.Application.Common.Localization;
+using SportAcademy.Application.DTOs.ImportDtos;
 using System.Globalization;
 using System.Text;
 
-namespace SportAcademy.Web.Features.Trainees;
+namespace SportAcademy.Web.Features.Import;
 
-// Reading and writing the trainee CSV. Deliberately forgiving about the file itself (encoding,
-// delimiter, Excel's ="..." text wrapping) so the only errors a user ever sees are about their
-// data, reported per row by TraineeImportValidator.
-public static class TraineeCsvFile
+// Reading and writing the import/template CSVs (trainees, employees). Deliberately forgiving
+// about the file itself (encoding, delimiter, Excel's ="..." text wrapping) so the only errors a
+// user ever sees are about their data, reported per row by the entity's import validator.
+public static class CsvImportFile
 {
-    static TraineeCsvFile()
+    static CsvImportFile()
     {
         // Windows-1256 (Arabic) - what Excel writes for plain "CSV (Comma delimited)" on an
         // Arabic Windows install.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
-    public sealed record ReadResult(IReadOnlyList<string> Headers, IReadOnlyList<TraineeImportRawRow> Rows);
+    public sealed record ReadResult(IReadOnlyList<string> Headers, IReadOnlyList<ImportRawRow> Rows);
+
+    // The upload as rows - or the one localized reason it can't be read (no file, not a .csv,
+    // undecodable), which the import endpoints return as a 400.
+    public static async Task<(string? Error, ReadResult? Parsed)> TryReadAsync(
+        IFormFile? file, ILocalizationService localizer, CancellationToken ct)
+    {
+        if (file == null || file.Length == 0)
+            return (localizer["import.file.empty"], null);
+
+        if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            return (localizer["import.file.unreadable"], null);
+
+        try
+        {
+            return (null, await ReadAsync(file, ct));
+        }
+        catch (Exception ex) when (ex is CsvHelperException or DecoderFallbackException or InvalidDataException)
+        {
+            return (localizer["import.file.unreadable"], null);
+        }
+    }
 
     public static async Task<ReadResult> ReadAsync(IFormFile file, CancellationToken ct)
     {
@@ -50,7 +72,7 @@ public static class TraineeCsvFile
             return new ReadResult([], []);
 
         var headers = csv.HeaderRecord.Select(h => h.Trim().Trim('﻿')).ToArray();
-        var rows = new List<TraineeImportRawRow>();
+        var rows = new List<ImportRawRow>();
 
         while (await csv.ReadAsync())
         {
@@ -63,9 +85,9 @@ public static class TraineeCsvFile
                 cells.TryAdd(headers[i], value);
             }
 
-            // A row of empty cells (",,,,") is Excel padding, not a trainee.
+            // A row of empty cells (",,,,") is Excel padding, not a record.
             if (anyValue)
-                rows.Add(new TraineeImportRawRow(csv.Parser.Row, cells));
+                rows.Add(new ImportRawRow(csv.Parser.Row, cells));
         }
 
         return new ReadResult(headers, rows);

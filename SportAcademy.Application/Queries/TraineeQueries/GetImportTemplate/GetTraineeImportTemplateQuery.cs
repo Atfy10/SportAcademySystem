@@ -1,9 +1,10 @@
 using MediatR;
-using PhoneNumbers;
+using SportAcademy.Application.Common.CsvImport;
 using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.DTOs.TraineeDtos;
+using SportAcademy.Application.DTOs.ImportDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
@@ -69,12 +70,13 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetImportTemplate
             var nationalities = Enum.GetValues<Nationality>().Select(n => _localizer.Label(n)).ToList();
 
             var country = await _countryReader.GetCountryAsync(ct);
-            var phones = SamplePhones(country);
+            var samplePhones = ImportSamplePhones.For(country, 3);
+            var phones = (Adult: samplePhones[0], Child: samplePhones[1], Parent: samplePhones[2]);
 
             string L(string key) => _localizer[$"import.column.{key}"];
             string H(string key) => _localizer[$"import.help.{key}"];
 
-            var columns = Cols.All.Select(c => new TraineeImportColumnInfo(
+            var columns = Cols.All.Select(c => new ImportColumnInfo(
                 Key: c.Key,
                 Label: L(c.Key),
                 Required: c.Required,
@@ -133,30 +135,6 @@ namespace SportAcademy.Application.Queries.TraineeQueries.GetImportTemplate
             return Result<TraineeImportTemplateDto>.Success(new TraineeImportTemplateDto(
                 columns, [adult, child], branchNames, categoryNames, sportNames, genders, nationalities, remaining),
                 OperationType.Get.ToString());
-        }
-
-        // Three distinct, valid mobile numbers for the tenant's country (libphonenumber's own
-        // example number, varied in its last digit), as plain national digits - a leading "+"
-        // is the first thing Excel strips when the file is opened and saved again.
-        private static (string Adult, string Child, string Parent) SamplePhones(string countryIso)
-        {
-            var util = PhoneNumberUtil.GetInstance();
-            var example = util.GetExampleNumberForType(countryIso, PhoneNumberType.MOBILE)
-                ?? util.GetExampleNumberForType("KW", PhoneNumberType.MOBILE);
-            if (example is null) return (string.Empty, string.Empty, string.Empty);
-
-            string Variant(int delta)
-            {
-                var national = example.NationalNumber;
-                var candidate = new PhoneNumber.Builder()
-                    .SetCountryCode(example.CountryCode)
-                    .SetNationalNumber(national - (national % 10) + (ulong)((national % 10 + (ulong)delta) % 10))
-                    .Build();
-                var chosen = util.IsValidNumber(candidate) ? candidate : example;
-                return new string(util.Format(chosen, PhoneNumberFormat.NATIONAL).Where(char.IsDigit).ToArray());
-            }
-
-            return (Variant(0), Variant(1), Variant(2));
         }
     }
 }

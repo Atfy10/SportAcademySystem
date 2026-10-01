@@ -1,9 +1,11 @@
 using FluentValidation;
 using SportAcademy.Application.Commands.Trainees.CreateTrainee;
+using SportAcademy.Application.Common.CsvImport;
 using SportAcademy.Application.Common.Limits;
 using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.TraineeImport;
 using SportAcademy.Application.DTOs.TraineeDtos;
+using SportAcademy.Application.DTOs.ImportDtos;
 using SportAcademy.Application.Interfaces;
 using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
@@ -26,13 +28,6 @@ namespace SportAcademy.Application.Services.TraineeImport
     public class TraineeImportValidator
     {
         public const int MaxRows = 2000;
-
-        private static readonly string[] DateFormats =
-        [
-            "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-M-d", "yyyy/M/d",
-            "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "d-M-yyyy", "dd.MM.yyyy", "d.M.yyyy",
-            "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-dd HH:mm:ss",
-        ];
 
         private readonly ITraineeImportLookup _lookup;
         private readonly IPhoneNumberNormalizer _phoneNormalizer;
@@ -82,7 +77,7 @@ namespace SportAcademy.Application.Services.TraineeImport
         public string ColumnLabel(string key) => _localizer[$"import.column.{key}"];
 
         public async Task<TraineeImportValidationResult> ValidateAsync(
-            IReadOnlyList<TraineeImportRawRow> rawRows, IReadOnlyList<string> headers, CancellationToken ct)
+            IReadOnlyList<ImportRawRow> rawRows, IReadOnlyList<string> headers, CancellationToken ct)
         {
             var fileErrors = new List<string>();
             var headerIndex = BuildHeaderIndex();
@@ -115,8 +110,8 @@ namespace SportAcademy.Application.Services.TraineeImport
             var categories = await _lookup.GetNationalityCategoriesAsync(ct);
             var sports = await _lookup.GetSportsAsync(ct);
             var limits = _lookup.GetFieldLimits();
-            var genders = EnumMatcher<Gender>();
-            var nationalities = EnumMatcher<Nationality>();
+            var genders = ImportValueParser.EnumMatcher<Gender>(_localizer);
+            var nationalities = ImportValueParser.EnumMatcher<Nationality>(_localizer);
 
             var parsed = new List<ParsedRow>(rawRows.Count);
             foreach (var raw in rawRows)
@@ -167,7 +162,7 @@ namespace SportAcademy.Application.Services.TraineeImport
             var rows = parsed.Select(p => new TraineeImportRowReport(
                 p.RowNumber,
                 p.DisplayName,
-                p.Errors.Count == 0 ? TraineeImportRowStatus.Valid : TraineeImportRowStatus.Invalid,
+                p.Errors.Count == 0 ? ImportRowStatus.Valid : ImportRowStatus.Invalid,
                 p.Errors)).ToList();
 
             var valid = parsed.Where(p => p.Errors.Count == 0 && p.Command is not null)
@@ -213,18 +208,18 @@ namespace SportAcademy.Application.Services.TraineeImport
             public string? Email { get; set; }
             public int FamilyId { get; set; }
             public CreateTraineeCommand? Command { get; set; }
-            public List<TraineeImportCellError> Errors { get; } = [];
+            public List<ImportCellError> Errors { get; } = [];
 
             public void AddError(string column, string? value, string message)
             {
                 // One message per column is enough - the first problem found is the one to fix.
                 if (column.Length > 0 && Errors.Any(e => e.Column == column)) return;
-                Errors.Add(new TraineeImportCellError(column, value, message));
+                Errors.Add(new ImportCellError(column, value, message));
             }
         }
 
         private async Task<ParsedRow> ParseRowAsync(
-            TraineeImportRawRow raw,
+            ImportRawRow raw,
             Dictionary<string, string> headerFor,
             IReadOnlyList<ImportNamedItem> branches,
             IReadOnlyList<ImportNamedItem> categories,
@@ -269,12 +264,8 @@ namespace SportAcademy.Application.Services.TraineeImport
             var birthRaw = Required(Cols.BirthDate);
             if (birthRaw is not null)
             {
-                var text = DigitNormalizer.ToAscii(birthRaw);
-                if (DateTime.TryParseExact(text, DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt)
-                    || (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var serial)
-                        && serial is > 1 and < 80000 && (dt = DateTime.FromOADate(serial)) != default))
+                if (ImportValueParser.TryParseDate(birthRaw, out birthDate))
                 {
-                    birthDate = DateOnly.FromDateTime(dt);
                     if (birthDate >= DateOnly.FromDateTime(DateTime.UtcNow))
                         row.AddError(ColumnLabel(Cols.BirthDate), birthRaw, _localizer["import.row.futureDate"]);
                 }
@@ -332,7 +323,7 @@ namespace SportAcademy.Application.Services.TraineeImport
             var branchRaw = Required(Cols.Branch);
             if (branchRaw is not null)
             {
-                var branch = Resolve(branches, branchRaw);
+                var branch = ImportValueParser.Resolve(branches, branchRaw);
                 if (branch is null)
                     row.AddError(ColumnLabel(Cols.Branch), branchRaw,
                         _localizer["import.row.unknownBranch", branchRaw, string.Join(", ", branches.Where(b => b.IsActive).Select(b => b.Name))]);
@@ -349,7 +340,7 @@ namespace SportAcademy.Application.Services.TraineeImport
             var categoryRaw = Required(Cols.NationalityCategory);
             if (categoryRaw is not null)
             {
-                var category = Resolve(categories, categoryRaw);
+                var category = ImportValueParser.Resolve(categories, categoryRaw);
                 if (category is null)
                     row.AddError(ColumnLabel(Cols.NationalityCategory), categoryRaw,
                         _localizer["import.row.unknownCategory", categoryRaw, string.Join(", ", categories.Select(c => c.Name))]);
@@ -362,9 +353,9 @@ namespace SportAcademy.Application.Services.TraineeImport
             var sportsRaw = Cell(Cols.Sports);
             if (sportsRaw is not null)
             {
-                foreach (var part in SplitList(sportsRaw))
+                foreach (var part in ImportValueParser.SplitList(sportsRaw))
                 {
-                    var sport = Resolve(sports, part);
+                    var sport = ImportValueParser.Resolve(sports, part);
                     if (sport is null)
                     {
                         row.AddError(ColumnLabel(Cols.Sports), part,
@@ -395,7 +386,7 @@ namespace SportAcademy.Application.Services.TraineeImport
             var conditionsRaw = Cell(Cols.MedicalConditions);
             if (conditionsRaw is not null)
             {
-                foreach (var c in SplitList(conditionsRaw))
+                foreach (var c in ImportValueParser.SplitList(conditionsRaw))
                 {
                     if (c.Length > limits.MedicalCondition)
                     {
@@ -408,7 +399,7 @@ namespace SportAcademy.Application.Services.TraineeImport
             }
 
             // Under 18 needs a guardian (same age rule as Trainee.AgeCategory).
-            if (birthDate != default && AgeOn(birthDate) < 18)
+            if (birthDate != default && ImportValueParser.AgeOn(birthDate) < 18)
             {
                 if (guardian is null)
                     row.AddError(ColumnLabel(Cols.GuardianName), null, _localizer["import.row.guardianRequired", ColumnLabel(Cols.GuardianName)]);
@@ -482,61 +473,5 @@ namespace SportAcademy.Application.Services.TraineeImport
             nameof(CreateTraineeCommand.FamilyId) => Cols.FamilyId,
             _ => property,
         });
-
-        private static int AgeOn(DateOnly birthDate)
-        {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var age = today.Year - birthDate.Year;
-            if (birthDate > today.AddYears(-age)) age--;
-            return age;
-        }
-
-        private static IEnumerable<string> SplitList(string value)
-            => value.Split(['|', ';', '،', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        // By id (a number) or by name in any language, ignoring case, spacing and letter variants.
-        private static ImportNamedItem? Resolve(IReadOnlyList<ImportNamedItem> items, string value)
-        {
-            var ascii = DigitNormalizer.ToAscii(value).Trim();
-            if (int.TryParse(ascii, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id))
-            {
-                var byId = items.FirstOrDefault(i => i.Id == id);
-                if (byId is not null) return byId;
-            }
-
-            var key = Cols.Normalize(value);
-            return items.FirstOrDefault(i => Cols.Normalize(i.Name) == key)
-                ?? items.FirstOrDefault(i => i.AlternateNames.Any(n => Cols.Normalize(n) == key));
-        }
-
-        // Enum name, number, and its English/Arabic labels.
-        private Dictionary<string, TEnum> EnumMatcher<TEnum>() where TEnum : struct, Enum
-        {
-            var map = new Dictionary<string, TEnum>();
-            foreach (var value in Enum.GetValues<TEnum>())
-            {
-                var labelKey = $"enum.{typeof(TEnum).Name}.{value}";
-                foreach (var name in new[]
-                {
-                    value.ToString(),
-                    Convert.ToInt32(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture),
-                    _localizer.GetIn("en", labelKey),
-                    _localizer.GetIn("ar", labelKey),
-                })
-                {
-                    var key = Cols.Normalize(name);
-                    if (key.Length > 0 && !key.StartsWith("enum")) map.TryAdd(key, value);
-                }
-            }
-            if (typeof(TEnum) == typeof(Gender))
-            {
-                // Common single-letter / alternate spellings.
-                map.TryAdd("m", (TEnum)(object)Gender.Male);
-                map.TryAdd("f", (TEnum)(object)Gender.Female);
-                map.TryAdd("ذ", (TEnum)(object)Gender.Male);
-                map.TryAdd("ا", (TEnum)(object)Gender.Female);
-            }
-            return map;
-        }
     }
 }
