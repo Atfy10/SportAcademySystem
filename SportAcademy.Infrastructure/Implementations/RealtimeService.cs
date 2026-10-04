@@ -43,6 +43,13 @@ public class RealtimeService : IRealtimeService
             .Group(NotificationGroupNames.ForTenant(tenantId, NotificationGroupNames.General))
             .TenantStatusChanged(newStatus);
 
+    // Clients.User resolves through SignalR's default IUserIdProvider, which reads the
+    // NameIdentifier claim - JwtTokenService puts the user id there.
+    public async Task NotifySessionRevokedAsync(Guid userId, string reason)
+        => await _hubContext.Clients
+            .User(userId.ToString())
+            .SessionRevoked(reason);
+
     /// Every domain-update broadcast is scoped to the current tenant's "General" SignalR
     /// group - never Clients.All - so one tenant's real-time updates can never reach another
     /// tenant's connected clients.

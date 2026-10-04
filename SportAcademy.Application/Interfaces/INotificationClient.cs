@@ -21,5 +21,11 @@ namespace SportAcademy.Application.Interfaces
         /// TenantStatusGuardMiddleware's 403. newStatus is the raw TenantStatus enum name
         /// (e.g. "Suspended", "Archived").
         Task TenantStatusChanged(string newStatus);
+
+        /// Pushed to every connection of ONE user the moment their sessions are revoked
+        /// (password changed/reset, roles/permissions/branch access changed, account
+        /// deactivated - see ISessionRevocationService). The client must sign out immediately.
+        /// reason is one of SessionRevocationReasons.
+        Task SessionRevoked(string reason);
     }
 }

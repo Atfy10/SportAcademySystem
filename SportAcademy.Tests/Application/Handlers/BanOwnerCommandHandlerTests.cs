@@ -12,14 +12,14 @@ public class BanOwnerCommandHandlerTests
 {
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly Mock<ITenantIdProvider> _tenantIdProviderMock = new();
-    private readonly Mock<IRefreshTokenRepository> _refreshTokenRepoMock = new();
+    private readonly Mock<ISessionRevocationService> _sessionRevocationMock = new();
     private readonly BanOwnerCommandHandler _handler;
 
     public BanOwnerCommandHandlerTests()
     {
         _tenantIdProviderMock.Setup(p => p.Impersonate(It.IsAny<Guid>())).Returns(Mock.Of<IDisposable>());
         _handler = new BanOwnerCommandHandler(
-            _userRepoMock.Object, _tenantIdProviderMock.Object, _refreshTokenRepoMock.Object);
+            _userRepoMock.Object, _tenantIdProviderMock.Object, _sessionRevocationMock.Object);
     }
 
     private static AppUser CreateOwner(Guid tenantId) => new()
@@ -44,7 +44,7 @@ public class BanOwnerCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_Ban_SetsIsBannedAndRevokesRefreshTokens()
+    public async Task Handle_Ban_SetsIsBannedAndRevokesAllSessions()
     {
         // F-02: banning must kill the owner's live session immediately, not leave it to fail
         // only the next time a held refresh token is actually presented.
@@ -57,11 +57,12 @@ public class BanOwnerCommandHandlerTests
         result.Data.Should().BeTrue();
         owner.IsBanned.Should().BeTrue();
         _userRepoMock.Verify(r => r.UpdateAsync(owner, It.IsAny<CancellationToken>()), Times.Once);
-        _refreshTokenRepoMock.Verify(r => r.RevokeAllUserTokensAsync(owner.Id, It.IsAny<CancellationToken>()), Times.Once);
+        _sessionRevocationMock.Verify(s => s.RevokeAllSessionsAsync(
+            owner, SessionRevocationReasons.AccountDeactivated, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_Unban_DoesNotRevokeAnyRefreshTokens()
+    public async Task Handle_Unban_DoesNotRevokeAnySessions()
     {
         // Un-banning shouldn't touch sessions at all - the owner just logs back in normally.
         var owner = CreateOwner(Guid.NewGuid());
@@ -72,8 +73,8 @@ public class BanOwnerCommandHandlerTests
 
         result.IsSuccess.Should().BeTrue();
         owner.IsBanned.Should().BeFalse();
-        _refreshTokenRepoMock.Verify(
-            r => r.RevokeAllUserTokensAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sessionRevocationMock.Verify(s => s.RevokeAllSessionsAsync(
+            It.IsAny<AppUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

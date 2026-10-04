@@ -123,6 +123,23 @@ public class JwtTokenServiceTests
     };
 
     [Fact]
+    public async Task GenerateJwtToken_CarriesTheUsersCurrentSecurityStamp()
+    {
+        // AccessTokenSessionValidator compares this claim with the user's stamp on every
+        // request - rotating the stamp is what ends sessions issued before it.
+        var user = CreateUser(Guid.NewGuid());
+        user.SecurityStamp = "stamp-at-issue-time";
+        var service = new JwtTokenService(
+            CreateConfiguration(), new FakeRefreshTokenRepository(), CreateRoleManagerMock().Object, CreateUserManagerMock().Object);
+
+        var token = await service.GenerateJwtToken(user);
+
+        var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(token);
+        jwt.Claims.Should().ContainSingle(c => c.Type == JwtTokenService.SecurityStampClaimType)
+            .Which.Value.Should().Be("stamp-at-issue-time");
+    }
+
+    [Fact]
     public async Task ValidateAndRefreshTokenAsync_BannedUser_RejectsRefresh()
     {
         // RefreshTokenRepository.GetByTokenHashAsync bypasses query filters (needed for the

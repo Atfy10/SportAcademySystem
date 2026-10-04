@@ -15,18 +15,21 @@ public class ToggleUserActiveCommandHandler : IRequestHandler<ToggleUserActiveCo
     private readonly IUserContextService _userContext;
     private readonly IEffectiveLimitService _limitService;
     private readonly IPublisher _publisher;
+    private readonly ISessionRevocationService _sessionRevocation;
     private readonly string _operation = OperationType.Update.ToString();
 
     public ToggleUserActiveCommandHandler(
         IUserRepository userRepository,
         IUserContextService userContext,
         IEffectiveLimitService limitService,
-        IPublisher publisher)
+        IPublisher publisher,
+        ISessionRevocationService sessionRevocation)
     {
         _userRepository = userRepository;
         _userContext = userContext;
         _limitService = limitService;
         _publisher = publisher;
+        _sessionRevocation = sessionRevocation;
     }
 
     public async Task<Result<bool>> Handle(ToggleUserActiveCommand request, CancellationToken cancellationToken)
@@ -49,6 +52,10 @@ public class ToggleUserActiveCommandHandler : IRequestHandler<ToggleUserActiveCo
 
         user.IsBanned = !user.IsBanned;
         await _userRepository.UpdateAsync(user, cancellationToken);
+
+        // Only on the way to deactivated - a reactivated user simply logs back in.
+        if (user.IsBanned)
+            await _sessionRevocation.RevokeAllSessionsAsync(user, SessionRevocationReasons.AccountDeactivated, cancellationToken);
 
         var actorName = _userContext.UserId is { } actorId
             ? await _userRepository.GetDisplayNameAsync(actorId, cancellationToken)

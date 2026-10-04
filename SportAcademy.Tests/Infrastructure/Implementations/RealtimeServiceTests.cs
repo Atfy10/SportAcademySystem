@@ -132,4 +132,23 @@ public class RealtimeServiceTests
         _clientProxyMock.Verify(c => c.TenantStatusChanged("Suspended"), Times.Once);
         _clientsMock.VerifyGet(c => c.All, Times.Never);
     }
+
+    [Fact]
+    public async Task NotifySessionRevokedAsync_TargetsOnlyThatUsersConnections()
+    {
+        // Reachable with no ambient tenant at all (the anonymous reset-password link), and must
+        // never reach anyone but the one user whose sessions were revoked.
+        var noTenantProviderMock = new Mock<ITenantIdProvider>();
+        noTenantProviderMock.Setup(p => p.TenantId).Returns((Guid?)null);
+        _clientsMock.Setup(c => c.User(It.IsAny<string>())).Returns(_clientProxyMock.Object);
+        var service = new RealtimeService(_hubContextMock.Object, noTenantProviderMock.Object);
+
+        var userId = Guid.NewGuid();
+        await service.NotifySessionRevokedAsync(userId, SessionRevocationReasons.PasswordChanged);
+
+        _clientsMock.Verify(c => c.User(userId.ToString()), Times.Once);
+        _clientProxyMock.Verify(c => c.SessionRevoked(SessionRevocationReasons.PasswordChanged), Times.Once);
+        _clientsMock.Verify(c => c.Group(It.IsAny<string>()), Times.Never);
+        _clientsMock.VerifyGet(c => c.All, Times.Never);
+    }
 }

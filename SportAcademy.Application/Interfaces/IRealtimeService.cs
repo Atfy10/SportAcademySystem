@@ -17,4 +17,8 @@ public interface IRealtimeService
     /// caller's own ambient tenant - the caller is always a SuperAdmin (System tenant) acting
     /// on a different tenant's status, so there is no ambient tenant to broadcast to.
     Task NotifyTenantStatusChangedAsync(Guid tenantId, string newStatus);
+
+    /// Targets a single user's connections (every device/tab), not a tenant group - the caller
+    /// may be in a different tenant (SuperAdmin) or in no tenant at all (reset-password link).
+    Task NotifySessionRevokedAsync(Guid userId, string reason);
 }

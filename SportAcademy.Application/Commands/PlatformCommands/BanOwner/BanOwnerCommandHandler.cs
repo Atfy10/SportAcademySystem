@@ -15,17 +15,17 @@ public class BanOwnerCommandHandler : IRequestHandler<BanOwnerCommand, Result<bo
 {
     private readonly IUserRepository _userRepository;
     private readonly ITenantIdProvider _tenantIdProvider;
-    private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly ISessionRevocationService _sessionRevocation;
     private readonly string _operation = OperationType.Update.ToString();
 
     public BanOwnerCommandHandler(
         IUserRepository userRepository,
         ITenantIdProvider tenantIdProvider,
-        IRefreshTokenRepository refreshTokenRepository)
+        ISessionRevocationService sessionRevocation)
     {
         _userRepository = userRepository;
         _tenantIdProvider = tenantIdProvider;
-        _refreshTokenRepository = refreshTokenRepository;
+        _sessionRevocation = sessionRevocation;
     }
 
     public async Task<Result<bool>> Handle(BanOwnerCommand request, CancellationToken ct)
@@ -56,11 +56,10 @@ public class BanOwnerCommandHandler : IRequestHandler<BanOwnerCommand, Result<bo
 
         // Only on the way to banned: un-banning shouldn't touch anything here, the owner just
         // logs back in normally. A live session must not survive a ban until its access token
-        // happens to expire on its own (F-02) - JwtTokenService already refuses to refresh a
-        // banned user's token, but this closes the gap immediately rather than waiting for the
-        // next refresh attempt to fail.
+        // happens to expire on its own (F-02) - this ends the access token, the refresh tokens
+        // and any open tab at once (see ISessionRevocationService).
         if (request.Banned)
-            await _refreshTokenRepository.RevokeAllUserTokensAsync(owner.Id, ct);
+            await _sessionRevocation.RevokeAllSessionsAsync(owner, SessionRevocationReasons.AccountDeactivated, ct);
 
         return Result<bool>.Success(owner.IsBanned, _operation);
     }

@@ -136,7 +136,8 @@ public class ToggleUserActiveOnTraineeCreatedAccountTests
             var publisher = new Mock<IPublisher>();
 
             var handler = new ToggleUserActiveCommandHandler(
-                userRepository, userContext.Object, limitService.Object, publisher.Object);
+                userRepository, userContext.Object, limitService.Object, publisher.Object,
+                Mock.Of<ISessionRevocationService>());
 
             var result = await handler.Handle(new ToggleUserActiveCommand(userId), CancellationToken.None);
 

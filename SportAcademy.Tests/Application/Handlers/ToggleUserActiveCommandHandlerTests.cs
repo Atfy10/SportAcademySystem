@@ -17,6 +17,7 @@ public class ToggleUserActiveCommandHandlerTests
     private readonly Mock<IUserContextService> _userContextMock = new();
     private readonly Mock<IEffectiveLimitService> _limitServiceMock = new();
     private readonly Mock<IPublisher> _publisherMock = new();
+    private readonly Mock<ISessionRevocationService> _sessionRevocationMock = new();
     private readonly ToggleUserActiveCommandHandler _handler;
 
     public ToggleUserActiveCommandHandlerTests()
@@ -29,7 +30,8 @@ public class ToggleUserActiveCommandHandlerTests
             .ReturnsAsync(new EffectiveLimit(LimitedResources.Users, null, LimitSource.Unlimited, 0, null));
 
         _handler = new ToggleUserActiveCommandHandler(
-            _userRepoMock.Object, _userContextMock.Object, _limitServiceMock.Object, _publisherMock.Object);
+            _userRepoMock.Object, _userContextMock.Object, _limitServiceMock.Object, _publisherMock.Object,
+            _sessionRevocationMock.Object);
     }
 
     private static AppUser CreateUser(Guid id, bool isBanned) => new()
@@ -53,6 +55,31 @@ public class ToggleUserActiveCommandHandlerTests
         _limitServiceMock.Verify(
             s => s.GetAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never,
             "banning never consumes a seat, so it must never be checked against the cap");
+    }
+
+    [Fact]
+    public async Task Handle_BanningActiveUser_RevokesAllSessions()
+    {
+        var userId = Guid.NewGuid();
+        var user = CreateUser(userId, isBanned: false);
+        _userRepoMock.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+        await _handler.Handle(new ToggleUserActiveCommand(userId), CancellationToken.None);
+
+        _sessionRevocationMock.Verify(s => s.RevokeAllSessionsAsync(
+            user, SessionRevocationReasons.AccountDeactivated, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_UnbanningUser_DoesNotRevokeSessions()
+    {
+        var userId = Guid.NewGuid();
+        _userRepoMock.Setup(r => r.GetByIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(CreateUser(userId, isBanned: true));
+
+        await _handler.Handle(new ToggleUserActiveCommand(userId), CancellationToken.None);
+
+        _sessionRevocationMock.Verify(s => s.RevokeAllSessionsAsync(
+            It.IsAny<AppUser>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

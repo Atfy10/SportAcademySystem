@@ -14,16 +14,19 @@ public class AdminResetUserPasswordCommandHandler : IRequestHandler<AdminResetUs
     private readonly IUserRepository _userRepository;
     private readonly IUserContextService _userContext;
     private readonly IPublisher _publisher;
+    private readonly ISessionRevocationService _sessionRevocation;
     private readonly string _operation = OperationType.Update.ToString();
 
     public AdminResetUserPasswordCommandHandler(
         IUserRepository userRepository,
         IUserContextService userContext,
-        IPublisher publisher)
+        IPublisher publisher,
+        ISessionRevocationService sessionRevocation)
     {
         _userRepository = userRepository;
         _userContext = userContext;
         _publisher = publisher;
+        _sessionRevocation = sessionRevocation;
     }
 
     public async Task<Result<bool>> Handle(AdminResetUserPasswordCommand request, CancellationToken cancellationToken)
@@ -60,6 +63,8 @@ public class AdminResetUserPasswordCommandHandler : IRequestHandler<AdminResetUs
                 400,
                 errors);
         }
+
+        await _sessionRevocation.RevokeAllSessionsAsync(targetUser, SessionRevocationReasons.PasswordReset, cancellationToken);
 
         var actorName = await _userRepository.GetDisplayNameAsync(admin.Id, cancellationToken);
         await _publisher.Publish(new PasswordResetByAdminEvent(targetUser.Id, actorName), cancellationToken);

@@ -13,12 +13,17 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 {
     private readonly IUserRepository _userRepository;
     private readonly IUserContextService _userContext;
+    private readonly ISessionRevocationService _sessionRevocation;
     private readonly string _operation = OperationType.Update.ToString();
 
-    public ChangePasswordCommandHandler(IUserRepository userRepository, IUserContextService userContext)
+    public ChangePasswordCommandHandler(
+        IUserRepository userRepository,
+        IUserContextService userContext,
+        ISessionRevocationService sessionRevocation)
     {
         _userRepository = userRepository;
         _userContext = userContext;
+        _sessionRevocation = sessionRevocation;
     }
 
     public async Task<Result<bool>> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
@@ -39,6 +44,10 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
             return Result<bool>.Failure(_operation,
                 "Failed to change password.", 400, errors);
         }
+
+        // Every device is signed out, this one included - the client sends the user back to the
+        // login page to sign in with the new password.
+        await _sessionRevocation.RevokeAllSessionsAsync(user, SessionRevocationReasons.PasswordChanged, cancellationToken);
 
         return Result<bool>.Success(true, _operation);
     }

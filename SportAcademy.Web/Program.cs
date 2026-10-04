@@ -146,6 +146,20 @@ builder.Services.AddAuthentication(options =>
                 context.Token = context.Request.Cookies["jwt"];
             }
             return Task.CompletedTask;
+        },
+
+        // Signature and lifetime alone would let an access token outlive a password change,
+        // role/permission change or deactivation for its full lifetime - see
+        // AccessTokenSessionValidator. Failing here answers 401, which the client handles by trying
+        // a refresh; ISessionRevocationService has already revoked those, so it signs out.
+        OnTokenValidated = async context =>
+        {
+            if (context.Principal is null)
+                return;
+
+            var cache = context.HttpContext.RequestServices.GetRequiredService<ISecurityStampCache>();
+            if (!await AccessTokenSessionValidator.IsSessionValidAsync(context.Principal, cache, context.HttpContext.RequestAborted))
+                context.Fail(AccessTokenSessionValidator.FailureMessage);
         }
     };
 });

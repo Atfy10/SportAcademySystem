@@ -22,18 +22,21 @@ public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUser
     private readonly IPermissionCacheInvalidator _cacheInvalidator;
     private readonly IUserContextService _userContext;
     private readonly IPublisher _publisher;
+    private readonly ISessionRevocationService _sessionRevocation;
     private readonly string _operation = OperationType.Update.ToString();
 
     public AssignRolesToUserCommandHandler(
         IUserRepository userRepository,
         IPermissionCacheInvalidator cacheInvalidator,
         IUserContextService userContext,
-        IPublisher publisher)
+        IPublisher publisher,
+        ISessionRevocationService sessionRevocation)
     {
         _userRepository = userRepository;
         _cacheInvalidator = cacheInvalidator;
         _userContext = userContext;
         _publisher = publisher;
+        _sessionRevocation = sessionRevocation;
     }
 
     public async Task<Result<bool>> Handle(AssignRolesToUserCommand request, CancellationToken cancellationToken)
@@ -56,6 +59,9 @@ public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUser
                 "Owner is set once at tenant setup and SuperAdmin is platform-only.",
                 400);
 
+        // Re-saving the same set from the Users & Roles page must not sign the user out.
+        var rolesChanged = !new HashSet<string>(currentRoles, StringComparer.OrdinalIgnoreCase).SetEquals(request.Roles);
+
         var (result, notFoundRoles) = await _userRepository.ReplaceRolesAsync(user, request.Roles, cancellationToken);
 
         if (!result.Succeeded)
@@ -71,6 +77,11 @@ public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUser
         // just-demoted user would keep their old effective permissions for up to the cache's
         // sliding window.
         _cacheInvalidator.Invalidate(request.UserId);
+
+        // Roles are baked into the access token as claims - every session issued under the old
+        // set has to end, not just keep working until its token expires.
+        if (rolesChanged)
+            await _sessionRevocation.RevokeAllSessionsAsync(user, SessionRevocationReasons.RolesChanged, cancellationToken);
 
         // Resolved here (not in the event handler) while IUserContextService is reliably valid
         // for this request - the resolved name travels with the event as plain data.

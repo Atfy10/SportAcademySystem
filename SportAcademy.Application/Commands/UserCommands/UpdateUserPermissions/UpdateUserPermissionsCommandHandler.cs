@@ -14,16 +14,19 @@ namespace SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions
         private readonly UserManager<AppUser> _userManager;
         private readonly IUserPermissionOverrideRepository _overrideRepository;
         private readonly IPermissionCacheInvalidator _cacheInvalidator;
+        private readonly ISessionRevocationService _sessionRevocation;
         private readonly string _operation = OperationType.Update.ToString();
 
         public UpdateUserPermissionsCommandHandler(
             UserManager<AppUser> userManager,
             IUserPermissionOverrideRepository overrideRepository,
-            IPermissionCacheInvalidator cacheInvalidator)
+            IPermissionCacheInvalidator cacheInvalidator,
+            ISessionRevocationService sessionRevocation)
         {
             _userManager = userManager;
             _overrideRepository = overrideRepository;
             _cacheInvalidator = cacheInvalidator;
+            _sessionRevocation = sessionRevocation;
         }
 
         public async Task<Result<bool>> Handle(UpdateUserPermissionsCommand request, CancellationToken cancellationToken)
@@ -43,9 +46,19 @@ namespace SportAcademy.Application.Commands.UserCommands.UpdateUserPermissions
                 .Select(o => new UserPermissionOverride { Permission = o.Permission, Effect = o.Effect })
                 .ToList();
 
+            // Re-saving an unchanged set from the Users & Roles page must not sign the user out.
+            var existing = await _overrideRepository.GetForUserAsync(user.Id, cancellationToken);
+            var overridesChanged = !existing
+                .Select(o => (o.Permission, o.Effect))
+                .ToHashSet()
+                .SetEquals(overrides.Select(o => (o.Permission, o.Effect)));
+
             await _overrideRepository.ReplaceForUserAsync(user.Id, user.TenantId, overrides, cancellationToken);
 
             _cacheInvalidator.Invalidate(user.Id);
+
+            if (overridesChanged)
+                await _sessionRevocation.RevokeAllSessionsAsync(user, SessionRevocationReasons.PermissionsChanged, cancellationToken);
 
             return Result<bool>.Success(true, _operation);
         }

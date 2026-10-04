@@ -81,6 +81,14 @@ namespace SportAcademy.Infrastructure
             services.AddScoped<ITenantStatusCache>(sp => sp.GetRequiredService<TenantStatusCache>());
             services.AddScoped<ITenantStatusCacheInvalidator>(sp => sp.GetRequiredService<TenantStatusCache>());
 
+            // Backs the per-request access-token stamp check (AccessTokenSessionValidator) - same
+            // one-instance-behind-both-interfaces pattern, so the reader and the invalidator
+            // share one cache.
+            services.AddScoped<SecurityStampCache>();
+            services.AddScoped<ISecurityStampCache>(sp => sp.GetRequiredService<SecurityStampCache>());
+            services.AddScoped<ISecurityStampCacheInvalidator>(sp => sp.GetRequiredService<SecurityStampCache>());
+            services.AddScoped<ISessionRevocationService, SessionRevocationService>();
+
             // Resolves a tenant's effective plan/override limits. Deliberately plain-scoped, no
             // cache - see EffectiveLimitService's own reasoning.
             services.AddScoped<IEffectiveLimitService, EffectiveLimitService>();

@@ -19,6 +19,7 @@ namespace SportAcademy.Infrastructure.Implementations
         private readonly UserManager<AppUser> _userManager;
         private const int RefreshTokenExpiryDays = 7;
         private const int GracePeriodMinutes = 10;
+        public const string SecurityStampClaimType = "sstamp";
 
         public JwtTokenService(
             IConfiguration configuration,
@@ -51,6 +52,10 @@ namespace SportAcademy.Infrastructure.Implementations
                 new(JwtRegisteredClaimNames.UniqueName, appUser.UserName!),
                 new(JwtRegisteredClaimNames.Email, appUser.Email!),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                // Checked against the user's current stamp on every request (see
+                // AccessTokenSessionValidator) - rotating the stamp is what ends every session the
+                // user already has, without waiting for these tokens to expire.
+                new(SecurityStampClaimType, appUser.SecurityStamp ?? string.Empty),
             };
 
             if (impersonationGrantId is { } grantId)

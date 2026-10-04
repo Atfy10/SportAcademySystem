@@ -16,6 +16,7 @@ public class UpdateUserBranchesCommandHandler : IRequestHandler<UpdateUserBranch
     private readonly IBranchRepository _branchRepository;
     private readonly IUserContextService _userContext;
     private readonly IPublisher _publisher;
+    private readonly ISessionRevocationService _sessionRevocation;
     private readonly string _operation = OperationType.Update.ToString();
 
     public UpdateUserBranchesCommandHandler(
@@ -23,13 +24,15 @@ public class UpdateUserBranchesCommandHandler : IRequestHandler<UpdateUserBranch
         IUserBranchAccessRepository userBranchAccessRepository,
         IBranchRepository branchRepository,
         IUserContextService userContext,
-        IPublisher publisher)
+        IPublisher publisher,
+        ISessionRevocationService sessionRevocation)
     {
         _userRepository = userRepository;
         _userBranchAccessRepository = userBranchAccessRepository;
         _branchRepository = branchRepository;
         _userContext = userContext;
         _publisher = publisher;
+        _sessionRevocation = sessionRevocation;
     }
 
     public async Task<Result<bool>> Handle(UpdateUserBranchesCommand request, CancellationToken ct)
@@ -45,7 +48,10 @@ public class UpdateUserBranchesCommandHandler : IRequestHandler<UpdateUserBranch
         // See NewlyAddedBranchGuard: this is a full-replace, not a diff - re-submitting a branch
         // the user already had access to (even one since deactivated) must not break.
         var existingBranchIds = (await _userBranchAccessRepository.GetForUserAsync(request.UserId, ct))
-            .Select(a => a.BranchId);
+            .Select(a => a.BranchId)
+            .ToList();
+        // Re-saving the same branches must not sign the user out.
+        var branchesChanged = !existingBranchIds.ToHashSet().SetEquals(request.BranchIds);
 
         var inactiveNewBranchId = await NewlyAddedBranchGuard.FindInactiveNewlyAddedBranchAsync(
             _branchRepository, request.BranchIds, existingBranchIds, ct);
@@ -57,6 +63,9 @@ public class UpdateUserBranchesCommandHandler : IRequestHandler<UpdateUserBranch
             .Select(branchId => new UserBranchAccess { BranchId = branchId });
 
         await _userBranchAccessRepository.ReplaceForUserAsync(user.Id, user.TenantId, access.ToList(), ct);
+
+        if (branchesChanged)
+            await _sessionRevocation.RevokeAllSessionsAsync(user, SessionRevocationReasons.PermissionsChanged, ct);
 
         var actorName = _userContext.UserId is { } actorId
             ? await _userRepository.GetDisplayNameAsync(actorId, ct)
