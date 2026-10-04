@@ -207,6 +207,7 @@
   "errors.event.customerInactive": "هذا العميل غير مفعّل. أعد تفعيله قبل حجز فعالية جديدة.",
   "errors.event.alreadyCancelled": "هذه الفعالية ملغاة بالفعل.",
   "errors.event.cancelledReadOnly": "لا يمكن تعديل فعالية ملغاة.",
+  "errors.event.completedReadOnly": "انتهت هذه الفعالية، لذا لا يمكن تعديلها أو إلغاؤها.",
   "errors.event.hasPayments": "تم تحصيل مبالغ لهذه الفعالية، لذا لا يمكن حذفها. قم بإلغائها بدلاً من ذلك.",
   "errors.event.totalBelowPaid": "لا يمكن أن يكون الإجمالي الجديد أقل من {0} المحصّلة لهذه الفعالية.",
   "errors.event.branchLocked": "تم تحصيل مبالغ لهذه الفعالية في فرعها، لذا لا يمكن تغيير الفرع.",

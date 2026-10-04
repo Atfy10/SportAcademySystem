@@ -796,6 +796,65 @@ public class EventBookingTests
         reprice.Data!.Event.Price.Should().Be(90m);
     }
 
+    // Ended on an earlier academy day - shown as Completed.
+    private async Task CompleteEventAsync(int eventId)
+    {
+        var ev = await _ctx.Events.SingleAsync(e => e.Id == eventId);
+        ev.StartsAt = DateTime.UtcNow.AddDays(-2);
+        ev.EndsAt = ev.StartsAt.AddHours(3);
+        await _ctx.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task CompletedEvent_CantBeEdited()
+    {
+        var created = (await CreateHandler().Handle(Booking(paidNow: 10m), default)).Data!.Event;
+        await CompleteEventAsync(created.Id);
+        var ev = await _ctx.Events.AsNoTracking().SingleAsync(e => e.Id == created.Id);
+
+        // Not even a change that leaves the date and time alone.
+        var act = () => UpdateHandler().Handle(new UpdateEventCommand(
+            ev.Id, "Renamed", BranchId, ev.EventCustomerId, true, 90m, 20m, 50,
+            ev.StartsAt, ev.EndsAt, "late note", null), default);
+
+        await act.Should().ThrowAsync<EventRuleException>()
+            .Where(e => e.MessageKey == "errors.event.completedReadOnly");
+        (await _ctx.Events.AsNoTracking().SingleAsync(e => e.Id == ev.Id)).Price.Should().Be(100m);
+    }
+
+    [Fact]
+    public async Task CompletedEvent_CantBeCancelled()
+    {
+        var created = (await CreateHandler().Handle(Booking(paidNow: 50m), default)).Data!.Event;
+        await CompleteEventAsync(created.Id);
+
+        var act = () => CancelHandler().Handle(
+            new CancelEventCommand(created.Id, "Too late", EventCancellationMode.RefundPayments), default);
+
+        await act.Should().ThrowAsync<EventRuleException>()
+            .Where(e => e.MessageKey == "errors.event.completedReadOnly");
+        (await _ctx.Events.AsNoTracking().SingleAsync(e => e.Id == created.Id)).IsCancelled.Should().BeFalse();
+        (await _ctx.Payments.SingleAsync()).Status.Should().Be(PaymentStatus.Completed);
+    }
+
+    [Fact]
+    public async Task CompletedEvent_BalanceCanStillBeCollected()
+    {
+        var created = (await CreateHandler().Handle(Booking(paidNow: 50m), default)).Data!.Event;
+        await CompleteEventAsync(created.Id);
+        var invoice = await _ctx.Invoices.SingleAsync();
+
+        await _ledger.RecordPaymentAsync(new RecordPaymentInput(
+            Amount: 70m, PaymentTypeId: 1, BranchId: BranchId, Currency: null, Reference: null,
+            Notes: null, RecordedByUserId: UserId,
+            Allocations: [new PaymentAllocationInput(invoice.Id, 70m)]));
+
+        var details = await _loader.LoadAsync(created.Id, default);
+        details.Event.Status.Should().Be(EventStatus.Completed);
+        details.Event.Balance.Should().Be(0m);
+        (await _ctx.Invoices.SingleAsync()).Status.Should().Be(InvoiceStatus.Paid);
+    }
+
     [Fact]
     public async Task PublicTicketPage_ShowsTheTicket_AndNeverLetsAnyoneIn()
     {

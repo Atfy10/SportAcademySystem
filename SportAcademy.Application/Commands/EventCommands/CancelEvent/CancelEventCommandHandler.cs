@@ -8,6 +8,7 @@ using SportAcademy.Domain.Contract;
 using SportAcademy.Domain.Enums;
 using SportAcademy.Domain.Exceptions.EventExceptions;
 using SportAcademy.Domain.Exceptions.PaymentExceptions;
+using SportAcademy.Domain.Services;
 
 namespace SportAcademy.Application.Commands.EventCommands.CancelEvent
 {
@@ -47,6 +48,9 @@ namespace SportAcademy.Application.Commands.EventCommands.CancelEvent
 
             if (ev.IsCancelled)
                 throw EventRuleException.AlreadyCancelled();
+
+            if (EventStatusRules.IsCompleted(ev.IsCancelled, ev.EndsAt, TenantCalendar.Today))
+                throw EventRuleException.CompletedReadOnly();
 
             var reason = request.Reason.Trim();
 

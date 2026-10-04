@@ -207,6 +207,7 @@
   "errors.event.customerInactive": "This customer is deactivated. Reactivate them before booking a new event.",
   "errors.event.alreadyCancelled": "This event is already cancelled.",
   "errors.event.cancelledReadOnly": "A cancelled event can't be changed.",
+  "errors.event.completedReadOnly": "This event is completed, so it can't be edited or cancelled.",
   "errors.event.hasPayments": "Money has already been collected for this event, so it can't be deleted. Cancel it instead.",
   "errors.event.totalBelowPaid": "The new total can't be less than the {0} already collected for this event.",
   "errors.event.branchLocked": "Money has already been collected for this event at its branch, so the branch can't be changed.",

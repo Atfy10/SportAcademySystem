@@ -30,6 +30,10 @@ namespace SportAcademy.Domain.Exceptions.EventExceptions
             "errors.event.cancelledReadOnly",
             "A cancelled event can't be changed.");
 
+        public static EventRuleException CompletedReadOnly() => new(
+            "errors.event.completedReadOnly",
+            "This event is completed, so it can't be edited or cancelled.");
+
         public static EventRuleException HasPayments() => new(
             "errors.event.hasPayments",
             "Money has already been collected for this event, so it can't be deleted. Cancel it instead.");

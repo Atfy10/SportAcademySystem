@@ -16,6 +16,12 @@ namespace SportAcademy.Domain.Services
             return EventStatus.Ongoing;
         }
 
+        // A Completed event (it ended on an earlier academy day) is history: it can't be edited
+        // or cancelled. Same boundary as Resolve, so the API refuses exactly what the console
+        // shows as Completed. endsAtUtc is the stored UTC column.
+        public static bool IsCompleted(bool isCancelled, DateTime endsAtUtc, DateOnly today)
+            => !isCancelled && DateOnly.FromDateTime(TenantCalendar.ToLocal(endsAtUtc)) < today;
+
         // The same boundaries as UTC instants, so list/report filters (which compare the stored
         // UTC columns) and Resolve always agree: Upcoming = StartsAt >= TomorrowStart; Completed
         // = EndsAt < TodayStart; Ongoing = neither.

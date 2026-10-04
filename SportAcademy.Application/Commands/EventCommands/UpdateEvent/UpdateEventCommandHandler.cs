@@ -52,14 +52,18 @@ namespace SportAcademy.Application.Commands.EventCommands.UpdateEvent
             if (ev.IsCancelled)
                 throw EventRuleException.CancelledReadOnly();
 
+            if (EventStatusRules.IsCompleted(ev.IsCancelled, ev.EndsAt, TenantCalendar.Today))
+                throw EventRuleException.CompletedReadOnly();
+
             // Every issued ticket keeps its place - revoke unused ones first to go lower.
             var tickets = await _ticketStore.GetCountsAsync(ev.Id, cancellationToken);
             if (request.Capacity < tickets.Issued)
                 throw EventRuleException.CapacityBelowIssued(tickets.Issued);
 
             // Once an event has ended its tickets are terminated for good. Moving its times would
-            // quietly bring them back to life, so an ended event's date and time are fixed (its
-            // price, customer and notes can still be corrected).
+            // quietly bring them back to life, so an ended event's date and time are fixed (until
+            // the day is over its price, customer and notes can still be corrected - after that
+            // it's Completed and refused above).
             var startsAt = TenantCalendar.ToUtc(request.StartsAt);
             var endsAt = TenantCalendar.ToUtc(request.EndsAt);
             var now = DateTime.UtcNow;
