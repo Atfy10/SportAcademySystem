@@ -76,7 +76,10 @@ public class GenerateSessionOccurrencesCommandHandler : IRequestHandler<Generate
             }
             else
             {
-                startDate = lastDate;
+                // The day after the last session, not the day of it: that day's session already
+                // exists, and starting on it created it a second time on every continuation
+                // (one schedule slot per weekday, so the next day can't hold a missed slot).
+                startDate = lastDate.AddDays(1);
             }
         }
 
