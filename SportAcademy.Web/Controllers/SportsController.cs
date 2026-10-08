@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Queries.TranslationQueries.GetArabicTranslation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.SportCommands.AddSkillLevel;
@@ -68,6 +69,15 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(new GetSportByIdQuery(Id));
             return Ok(result);
+        }
+
+        // The stored Arabic name/description, for the edit form.
+        [HttpGet("{id}/arabic")]
+        [Authorize(Policy = "Permission:sport.manage")]
+        public async Task<IActionResult> GetArabic(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetArabicTranslationQuery(TranslatableEntity.Sport, id), ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("paginated")]
