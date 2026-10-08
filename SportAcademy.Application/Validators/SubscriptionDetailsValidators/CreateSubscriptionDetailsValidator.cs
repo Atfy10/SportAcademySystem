@@ -51,6 +51,9 @@ namespace SportAcademy.Application.Validators.SubscriptionDetailsValidators
                     var exists = await sportPriceRepository.IsExistAsync(cmd.BranchId, cmd.SportId, cmd.SubscriptionTypeId, cmd.GroupType, ct);
                     return exists;
                 })
+                // Keyed to the plan field (an object-level rule otherwise reports under "", which no
+                // form input can show) - the console offers "Set price now" right there.
+                .OverridePropertyName(nameof(CreateSubscriptionDetailsCommand.SubscriptionTypeId))
                 .WithMessage("No price configured for this sport, branch, plan, and group type combination.");
 
             // Deposit vs the real total. Only reachable once the price is known to exist (cascade

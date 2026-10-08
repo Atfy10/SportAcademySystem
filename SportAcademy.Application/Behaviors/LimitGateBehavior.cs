@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using SportAcademy.Application.Common.Limits;
+using SportAcademy.Application.Common.Localization;
 using SportAcademy.Application.Common.Result;
 using SportAcademy.Application.Interfaces;
 
@@ -19,15 +20,18 @@ namespace SportAcademy.Application.Behaviors
     {
         private readonly IUserContextService _userContext;
         private readonly IEffectiveLimitService _limitService;
+        private readonly ILocalizationService _localizer;
         private readonly ILogger<LimitGateBehavior<TRequest, TResponse>> _logger;
 
         public LimitGateBehavior(
             IUserContextService userContext,
             IEffectiveLimitService limitService,
+            ILocalizationService localizer,
             ILogger<LimitGateBehavior<TRequest, TResponse>> logger)
         {
             _userContext = userContext;
             _limitService = limitService;
+            _localizer = localizer;
             _logger = logger;
         }
 
@@ -58,8 +62,14 @@ namespace SportAcademy.Application.Behaviors
                     "Blocked {RequestType} for tenant {TenantId}: resource '{ResourceKey}' is at {Used}/{Max}.",
                     requestType, tenantId, gated.ResourceKey, limit.Used, limit.MaxCount);
 
+                // Shown as-is by the console when it can't pre-warn (an Arabic-speaking academy got
+                // this sentence in English before), so it goes out in the request's language.
+                var resourceKey = "limits.resource." + limit.ResourceKey;
+                var resourceName = _localizer.Exists(resourceKey) ? _localizer[resourceKey] : limit.ResourceKey;
+                var message = _localizer["errors.limit.exceeded", limit.MaxCount ?? 0, resourceName, limit.Used];
+
                 return ResultFactory.CreateFailure<TResponse>(
-                    requestType, limit.ToMessage(), 403, limit.ToErrorDictionary());
+                    requestType, message, 403, limit.ToErrorDictionary());
             }
 
             return await next(cancellationToken);
