@@ -247,6 +247,30 @@ public class GenerateSessionOccurrencesCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ContinuingSchedule_DoesNotRecreateTheLastSession()
+    {
+        // The group trains every day; its last session was yesterday. Generating one more day must
+        // produce exactly today's session - not yesterday's again plus today's.
+        var schedules = Enum.GetValues<DayOfWeek>().Select((d, i) => CreateSchedule(d, i + 1)).ToArray();
+        var group = CreateTraineeGroup(schedules);
+        var lastOccurrence = DateTime.UtcNow.Date.AddDays(-1).AddHours(16).AddMinutes(30);
+        IEnumerable<SessionOccurrence>? added = null;
+
+        _traineeGroupRepoMock.Setup(r => r.GetByIdWithSchedulesAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(group);
+        _sessionOccurrenceRepoMock.Setup(r => r.GetLastOccurrenceDateAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lastOccurrence);
+        _sessionOccurrenceRepoMock.Setup(r => r.AddRangeAsync(It.IsAny<IEnumerable<SessionOccurrence>>(), It.IsAny<CancellationToken>()))
+            .Callback<IEnumerable<SessionOccurrence>, CancellationToken>((s, _) => added = s.ToList())
+            .Returns(Task.CompletedTask);
+
+        var result = await _handler.Handle(CreateCommand(traineeGroupId: 1, durationInDays: 1), CancellationToken.None);
+
+        result.Data.Should().Be(1);
+        added.Should().ContainSingle().Which.StartDateTime.Date.Should().Be(DateTime.UtcNow.Date);
+    }
+
+    [Fact]
     public async Task Handle_Exactly7DaysSinceLastSession_ContinuesFromLastDate()
     {
         var command = CreateCommand(traineeGroupId: 1, durationInDays: 7);

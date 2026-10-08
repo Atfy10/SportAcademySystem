@@ -1,4 +1,5 @@
 using MediatR;
+using SportAcademy.Application.Queries.TranslationQueries.GetArabicTranslation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SportAcademy.Application.Commands.BranchCommands.AddSportToBranch;
@@ -77,6 +78,16 @@ namespace SportAcademy.Web.Controllers
         {
             var result = await _mediator.Send(new GetBranchByIdQuery(id));
             return Ok(result);
+        }
+
+        // The stored Arabic name/city/country, for the edit form (GetById returns them already
+        // resolved to the request language, so it can't tell the form what's saved in Arabic).
+        [HttpGet("{id}/arabic")]
+        [Authorize(Policy = "Permission:branch.manage")]
+        public async Task<IActionResult> GetArabic(int id, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetArabicTranslationQuery(TranslatableEntity.Branch, id), ct);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet("{id}/stats")]

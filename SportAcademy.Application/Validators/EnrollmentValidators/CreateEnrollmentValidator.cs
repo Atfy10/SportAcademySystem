@@ -15,10 +15,9 @@ namespace SportAcademy.Application.Validators.EnrollmentValidators
             RuleFor(x => x.EnrollmentDate)
                 .NotEmpty().WithMessage("Please provide an enrollment date.");
 
-            RuleFor(x => x.ExpiryDate)
-                .NotEmpty().WithMessage("Please provide an expiry date.")
-                .GreaterThan(x => x.EnrollmentDate)
-                .WithMessage("Expiry date should be after the enrollment date.");
+            // No rule on ExpiryDate either: CreateEnrollmentCommandHandler always recomputes it
+            // from the enrollment date, the sessions granted and the group's training days, so a
+            // client value was demanded and then thrown away. Clients may omit it.
 
             // No rule on SessionAllowed: it isn't a client decision. The handler assigns the
             // quota from the subscription (SubscriptionDetailsService.CalculateAllowedSessions),

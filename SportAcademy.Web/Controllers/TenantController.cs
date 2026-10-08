@@ -9,6 +9,7 @@ using SportAcademy.Application.Commands.TenantCommands.UpdateTenantSettings;
 using SportAcademy.Application.DTOs.TenantDtos;
 using SportAcademy.Application.Queries.TenantQueries.ExportTenantSettings;
 using SportAcademy.Application.Queries.TenantQueries.GetMyLimitReconciliation;
+using SportAcademy.Application.Queries.TenantQueries.GetMyLimitUsage;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantFeatures;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantProfile;
 using SportAcademy.Application.Queries.TenantQueries.GetTenantSettings;
@@ -140,6 +141,16 @@ namespace SportAcademy.Web.Controllers
         public async Task<IActionResult> GetMyLimitReconciliation(CancellationToken ct)
         {
             var result = await _mediator.Send(new GetMyLimitReconciliationQuery(), ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        // Plan limits and usage for the caller's own tenant - lets the console show "48/50" on an
+        // add button and warn at the cap before a create fails with LIMIT_EXCEEDED. Any
+        // authenticated user: whoever can see the button may see why it's disabled.
+        [HttpGet("limits")]
+        public async Task<IActionResult> GetMyLimitUsage(CancellationToken ct)
+        {
+            var result = await _mediator.Send(new GetMyLimitUsageQuery(), ct);
             return StatusCode(result.StatusCode, result);
         }
 

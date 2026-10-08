@@ -11,6 +11,7 @@ using SportAcademy.Domain.Exceptions.PaymentTypeExceptions;
 using SportAcademy.Domain.Exceptions.AttendanceExceptions;
 using SportAcademy.Domain.Exceptions.SessionOccurrenceExceptions;
 using SportAcademy.Domain.Exceptions.SharedExceptions;
+using SportAcademy.Domain.Exceptions.TraineeExceptions;
 using SportAcademy.Domain.Exceptions.TraineeGroupExceptions;
 using SportAcademy.Domain.Exceptions.UserExceptions;
 using System.Diagnostics;
@@ -145,7 +146,8 @@ namespace SportAcademy.Application.Behaviors
                     requestType,
                     ex.Message);
 
-                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+                // Coded so a form can put the message on its national-ID field, not in a banner.
+                return CreateFailure<TResponse>(requestType, _localizer["errors.ssn.notUnique"], 409, "errors.ssn.notUnique");
             }
             catch (PhoneNumberNotUniqueException ex)
             {
@@ -156,7 +158,32 @@ namespace SportAcademy.Application.Behaviors
                     requestType,
                     ex.Message);
 
-                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+                return CreateFailure<TResponse>(requestType, _localizer["errors.phone.notUnique"], 409, "errors.phone.notUnique");
+            }
+            // Thrown by trainee creation for a taken email. Previously uncaught here, so it fell
+            // through to the generic "Something went wrong" 500 - the person had no idea the
+            // email was the problem.
+            catch (EmailExistException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Email conflict for {RequestType}. Message: {Message}",
+                    requestType,
+                    ex.Message);
+
+                return CreateFailure<TResponse>(requestType, _localizer["errors.email.notUnique"], 409, "errors.email.notUnique");
+            }
+            // Same: a minor registered without guardian details used to surface as a generic 500.
+            catch (GuardianInfoMissingException ex)
+            {
+                var requestType = request.GetType().Name;
+
+                _logger.LogWarning(ex,
+                    "Guardian details missing for {RequestType}",
+                    requestType);
+
+                return CreateFailure<TResponse>(requestType, _localizer["errors.trainee.guardianRequired"], 400, "errors.trainee.guardianRequired");
             }
             catch (InvalidSearchTermException ex)
             {
@@ -200,7 +227,9 @@ namespace SportAcademy.Application.Behaviors
                     requestType,
                     ex.Message);
 
-                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+                // Coded so the generate-sessions dialog can ask for a start date without
+                // matching on the English message text.
+                return CreateFailure<TResponse>(requestType, ex.Message, 409, "errors.sessions.gapTooLarge");
             }
             catch (GroupAtCapacityException ex)
             {
@@ -211,7 +240,7 @@ namespace SportAcademy.Application.Behaviors
                     requestType,
                     ex.Message);
 
-                return CreateFailure<TResponse>(requestType, ex.Message, 409);
+                return CreateFailure<TResponse>(requestType, ex.Message, 409, "errors.group.full");
             }
             catch (TraineeAlreadyEnrolledInSportException ex)
             {

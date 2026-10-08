@@ -15,6 +15,11 @@ namespace SportAcademy.Application.Interfaces
         Task<PagedData<FamilyDto>> GetAllPaginatedTranslatedAsync(PageRequest page, CancellationToken cancellationToken = default);
         Task<FamilyDto?> GetByIdTranslatedAsync(int id, CancellationToken cancellationToken = default);
         Task<IReadOnlyList<FamilyDto>> SearchFamiliesWithCodeTranslatedAsync(int code, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Families matching a free-text term: family code, family or guardian name (either
+        /// language), guardian phone, or any member's name or phone. At most <paramref name="limit"/>.
+        /// </summary>
+        Task<IReadOnlyList<FamilyDto>> SearchFamiliesTranslatedAsync(string term, int limit, CancellationToken cancellationToken = default);
         Task<(string? Name, string? GuardianName)?> GetTranslatedNamesAsync(int id, string lang, CancellationToken cancellationToken = default);
         Task<Family?> GetByIdWithTranslationsAsync(int id, CancellationToken cancellationToken = default);
         /// <summary>Whether any non-deleted trainee belongs to the family.</summary>

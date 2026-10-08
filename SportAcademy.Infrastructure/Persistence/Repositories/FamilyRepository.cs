@@ -62,6 +62,34 @@ namespace SportAcademy.Infrastructure.Persistence.Repositories
                 .Select(FamilyProjections.ToDto(_languageProvider.Language))
                 .ToListAsync(cancellationToken);
 
+        public async Task<IReadOnlyList<FamilyDto>> SearchFamiliesTranslatedAsync(string term, int limit, CancellationToken cancellationToken = default)
+        {
+            var text = term.Trim();
+            var isCode = int.TryParse(text, out var code);
+            // Phones are stored normalized (digits, country code) - match on the digits typed,
+            // and only once there are enough of them that "12" doesn't match half the academy.
+            var digits = new string(text.Where(char.IsDigit).ToArray());
+            var byPhone = digits.Length >= 4;
+
+            return await _context.Families
+                .AsNoTracking()
+                .Where(f =>
+                    (isCode && f.FamilyCode == code)
+                    || (f.Name != null && f.Name.Contains(text))
+                    || (f.GuardianName != null && f.GuardianName.Contains(text))
+                    || (byPhone && f.GuardianPhone != null && f.GuardianPhone.Contains(digits))
+                    || f.Translations.Any(t =>
+                        (t.Name != null && t.Name.Contains(text)) || (t.GuardianName != null && t.GuardianName.Contains(text)))
+                    || f.Members.Any(m =>
+                        (m.FirstName + " " + m.LastName).Contains(text)
+                        || (byPhone && m.PhoneNumber.Contains(digits))
+                        || (byPhone && m.ParentNumber != null && m.ParentNumber.Contains(digits))))
+                .OrderBy(f => f.FamilyCode)
+                .Take(limit)
+                .Select(FamilyProjections.ToDto(_languageProvider.Language))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<(string? Name, string? GuardianName)?> GetTranslatedNamesAsync(int id, string lang, CancellationToken cancellationToken = default)
         {
             var translation = await _context.FamilyTranslations

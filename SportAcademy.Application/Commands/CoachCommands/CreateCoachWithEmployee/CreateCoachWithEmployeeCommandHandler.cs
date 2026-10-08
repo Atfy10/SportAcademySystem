@@ -22,6 +22,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
         private readonly IUserRepository _userRepository;
         private readonly IPhoneNumberNormalizer _phoneNormalizer;
         private readonly IPublisher _publisher;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CreateCoachWithEmployeeCommandHandler(
             ICoachRepository coachRepository,
@@ -31,7 +32,8 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             IUserContextService userContext,
             IUserRepository userRepository,
             IPhoneNumberNormalizer phoneNormalizer,
-            IPublisher publisher)
+            IPublisher publisher,
+            IUnitOfWork unitOfWork)
         {
             _coachRepository = coachRepository;
             _employeeRepository = employeeRepository;
@@ -41,6 +43,7 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
             _userRepository = userRepository;
             _phoneNormalizer = phoneNormalizer;
             _publisher = publisher;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<Result<int>> Handle(CreateCoachWithEmployeeCommand request, CancellationToken ct)
@@ -68,22 +71,38 @@ namespace SportAcademy.Application.Commands.CoachCommands.CreateCoachWithEmploye
 
             ct.ThrowIfCancellationRequested();
 
-            await _employeeRepository.AddAsync(employee, ct);
+            // Employee, coach record and branch access are three saves; without a transaction a
+            // failure after the first left an employee with no coach record, and a retry then
+            // failed on the now-taken national ID.
+            Coach coach;
+            await _unitOfWork.BeginTransactionAsync(ct);
+            try
+            {
+                await _employeeRepository.AddAsync(employee, ct);
 
-            var coach = _mapper.Map<Coach>(request)
-                ?? throw new AutoMapperMappingException("Error occurred while mapping.");
+                coach = _mapper.Map<Coach>(request)
+                    ?? throw new AutoMapperMappingException("Error occurred while mapping.");
 
-            coach.EmployeeId = employee.Id;
+                coach.EmployeeId = employee.Id;
 
-            ct.ThrowIfCancellationRequested();
+                ct.ThrowIfCancellationRequested();
 
-            await _coachRepository.AddAsync(coach, ct);
+                await _coachRepository.AddAsync(coach, ct);
 
-            // See CreateCoachCommandHandler's identical call for why this is required - without
-            // it this brand-new coach has zero CoachBranchAccess rows and never appears in the
-            // group-creation coach picker at any branch, no matter how qualified.
-            await _coachBranchAccessRepository.ReplaceForCoachAsync(
-                coach.EmployeeId, coach.TenantId, [new CoachBranchAccess { BranchId = employee.BranchId }], ct);
+                // See CreateCoachCommandHandler's identical call for why this is required - without
+                // it this brand-new coach has zero CoachBranchAccess rows and never appears in the
+                // group-creation coach picker at any branch, no matter how qualified.
+                await _coachBranchAccessRepository.ReplaceForCoachAsync(
+                    coach.EmployeeId, coach.TenantId, [new CoachBranchAccess { BranchId = employee.BranchId }], ct);
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync(CancellationToken.None);
+                throw;
+            }
+            // Outside the try: CommitTransactionAsync rolls back and clears the transaction itself
+            // when it fails, so a second rollback here would only replace the real error.
+            await _unitOfWork.CommitTransactionAsync(ct);
 
             var actorName = _userContext.UserId is { } actorId
                 ? await _userRepository.GetDisplayNameAsync(actorId, ct)
